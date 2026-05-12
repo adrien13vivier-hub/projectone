@@ -2,9 +2,18 @@ name: Daily Portfolio Report v3.2
 
 on:
   schedule:
-    # 14h00 UTC = 16h00 Paris CEST (UTC+2) — lun-ven
-    # ⚠️ Hiver CET (UTC+1) : changer en "0 15 * * 1-5"
-    - cron: "0 14 * * 1-5"
+    # ──────────────────────────────────────────────
+    # Heure été CEST (UTC+2) — fin mars → fin octobre
+    #   10h Paris = 08h UTC
+    #   16h Paris = 14h UTC
+    # ──────────────────────────────────────────────
+    - cron: "0 8 * * 1-5"   # 10h00 Paris CEST (UTC+2) — ⚠️ hiver CET : changer en "0 9"
+    - cron: "0 14 * * 1-5"  # 16h00 Paris CEST (UTC+2) — ⚠️ hiver CET : changer en "0 15"
+    # ──────────────────────────────────────────────
+    # Hiver CET (UTC+1) — fin octobre → fin mars
+    #   10h Paris = 09h UTC  → remplacer "0 8" par "0 9"
+    #   16h Paris = 15h UTC  → remplacer "0 14" par "0 15"
+    # ──────────────────────────────────────────────
   workflow_dispatch:
 
 jobs:
