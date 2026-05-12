@@ -1,19 +1,19 @@
-# 📊 Rapport de Portefeuille — 12/05/2026 19:46 (Paris)
+# 📊 Rapport de Portefeuille — 12/05/2026 20:16 (Paris)
 
 ---
 
 ## 🌍 Contexte Économique
 
-**Tendance générale : ➡️ Neutre** (score macro : 4.6/10)
-**Taux EUR/USD :** 1 EUR = 1.1736 USD _(source : EODHD EURUSD.FOREX)_
+**Tendance : ➡️ Neutre** | Score macro : 4.7/10
+**EUR/USD :** 1 EUR = 1.1732 USD _(source : TwelveData)_
 
-| Indice | Variation | Dernier cours | Source |
-|--------|-----------|--------------|--------|
-| S&P 500 | ▼ -0.64% | 7,365.28 | EODHD |
+| Indice | Variation | Cours | Source |
+|--------|-----------|-------|--------|
+| S&P 500 | ▼ -0.56% | 7,371.29 | EODHD |
 | CAC 40 | ▼ -0.95% | 7,979.92 | EODHD |
 | Nikkei 225 | ▲ +0.52% | 62,742.57 | EODHD |
 
-**📰 Manchettes macro du jour :**
+**📰 Manchettes macro :**
 
 - Notice of the Annual General Meeting of Akcinė prekybos bendrovė “APRANGA” shareholders
 - Pranešimas apie Akcinės prekybos bendrovės „APRANGA“ šaukiamą eilinį visuotinį akcininkų susirinkimą
@@ -25,189 +25,179 @@
 
 ## 📈 Analyse par Valeur
 
-### 📕 Palantir Technologies `PLTR.US` (US69608A1088)
+### 📕 Palantir Technologies `PLTR.US`
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 114.40 € (-1.92% aujourd'hui) · _source : EODHD_ |
-| **Prix de revient unitaire** | 119.06 € |
-| **Coût total investi** | 238.12 € |
-| **Frais d'achat payés** | 6.95 € |
-| **Coût réel total** _(base rentabilité)_ | 245.07 € |
-| **Valeur de marché actuelle** | 228.80 € |
-| **PnL brut latent** | -9.32 € (-3.91%) |
-| **Frais de vente estimés** | 6.95 € |
-| **PnL net si vente aujourd'hui** | -23.22 € (-9.47%) |
-| **Sentiment presse** | Bull 100% / Bear 0% · _source : EODHD (analyse lexicale)_ |
-| **Consensus analystes** | StrongBuy:11 Buy:15 Hold:10 Sell:1 StrongSell:1 · _source : Finnhub_ |
-| **Score total** | 6.0/10 (Prix 4.6 · Sentiment 8.6 · Macro 4.6) |
+| **Cours actuel** | 113.99 € (-1.98%) · _TwelveData ✓ EODHD_ |
+| **Prix de revient** | 119.06 € · Coût total 238.12 € |
+| **Frais achat payés** | 6.95 € · Coût réel 245.07 € |
+| **Valeur marché** | 227.97 € |
+| **PnL brut latent** | -10.15 € (-4.26%) |
+| **Frais vente estimés** | 6.95 € |
+| **PnL net si vente** | -24.05 € (-9.81%) |
+| **Sentiment presse** | Bull 100% / Bear 0% · _EODHD (lexical)_ |
+| **Consensus analystes** | SB:11 B:15 H:10 S:1 SS:1 · _Finnhub_ |
+| **Score** | 6.0/10 (Prix 4.6 · Sent 8.6 · Macro 4.7) |
 
-**📰 Dernière actualité :** Lowe's DIY exposure, attractive entry point earns Buy rating at Citi
+📰 **Actualité :** Veteran Analyst Firm Hikes Palantir Price Target to $230 After Blowout Earnings
 
-**⚡ Recommandation : 🔵 ACHAT MODÉRÉ**
+**⚡ 🔵 ACHAT MODÉRÉ**
 
-**💬 Justification :** La position est en **perte nette de -23.22 € (-9.5%)** après frais d'achat et vente estimés. Le consensus analystes est **fortement haussier** (score 8.6/10), avec 100% de sentiment positif — StrongBuy:11 Buy:15 Hold:10 Sell:1 StrongSell:1. Le contexte macro est **neutre**, sans catalyseur directionnel fort.
+💬 Perte nette **-24.05 € (-9.8%)** après frais. Consensus **haussier** (score 8.6/10, Bull 100%) — SB:11 B:15 H:10 S:1 SS:1. Contexte macro **neutre**.
 
 ---
 
-### 📕 CoreWeave `CRWV.US` (US21873S1087)
+### 📕 CoreWeave `CRWV.US`
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 90.02 € (-7.89% aujourd'hui) · _source : EODHD_ |
-| **Prix de revient unitaire** | 93.91 € |
-| **Coût total investi** | 187.82 € |
-| **Frais d'achat payés** | 6.95 € |
-| **Coût réel total** _(base rentabilité)_ | 194.77 € |
-| **Valeur de marché actuelle** | 180.04 € |
-| **PnL brut latent** | -7.78 € (-4.14%) |
-| **Frais de vente estimés** | 6.95 € |
-| **PnL net si vente aujourd'hui** | -21.68 € (-11.13%) |
-| **Sentiment presse** | Bull 100% / Bear 0% · _source : EODHD (analyse lexicale)_ |
-| **Consensus analystes** | StrongBuy:10 Buy:18 Hold:12 Sell:1 StrongSell:1 · _source : Finnhub_ |
-| **Score total** | 6.0/10 (Prix 4.6 · Sentiment 8.5 · Macro 4.6) |
+| **Cours actuel** | 90.47 € (-8.25%) · _TwelveData ✓ EODHD_ |
+| **Prix de revient** | 93.91 € · Coût total 187.82 € |
+| **Frais achat payés** | 6.95 € · Coût réel 194.77 € |
+| **Valeur marché** | 180.93 € |
+| **PnL brut latent** | -6.89 € (-3.67%) |
+| **Frais vente estimés** | 6.95 € |
+| **PnL net si vente** | -20.79 € (-10.67%) |
+| **Sentiment presse** | Bull 100% / Bear 0% · _EODHD (lexical)_ |
+| **Consensus analystes** | SB:10 B:18 H:12 S:1 SS:1 · _Finnhub_ |
+| **Score** | 6.0/10 (Prix 4.6 · Sent 8.5 · Macro 4.7) |
 
-**📰 Dernière actualité :** Should You Buy, Hold, or Fold CoreWeave Stock After Solid Q1 Results?
+📰 **Actualité :** Should You Buy, Hold, or Fold CoreWeave Stock After Solid Q1 Results?
 
-**⚡ Recommandation : 🟡 GARDER**
+**⚡ 🔵 ACHAT MODÉRÉ**
 
-**💬 Justification :** La position est en **perte nette de -21.68 € (-11.1%)** après frais d'achat et vente estimés. Le consensus analystes est **fortement haussier** (score 8.5/10), avec 100% de sentiment positif — StrongBuy:10 Buy:18 Hold:12 Sell:1 StrongSell:1. Le contexte macro est **neutre**, sans catalyseur directionnel fort.
+💬 Perte nette **-20.79 € (-10.7%)** après frais. Consensus **haussier** (score 8.5/10, Bull 100%) — SB:10 B:18 H:12 S:1 SS:1. Contexte macro **neutre**.
 
 ---
 
-### 📗 Riot Platforms `RIOT.US` (US7672921050)
+### 📗 Riot Platforms `RIOT.US`
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 20.93 € (-3.08% aujourd'hui) · _source : EODHD_ |
-| **Prix de revient unitaire** | 15.84 € |
-| **Coût total investi** | 95.04 € |
-| **Frais d'achat payés** | 6.95 € |
-| **Coût réel total** _(base rentabilité)_ | 101.99 € |
-| **Valeur de marché actuelle** | 125.56 € |
-| **PnL brut latent** | +30.52 € (+32.11%) |
-| **Frais de vente estimés** | 6.95 € |
-| **PnL net si vente aujourd'hui** | +16.62 € (+16.30%) |
-| **Sentiment presse** | Bull 0% / Bear 0% · _source : EODHD (analyse lexicale)_ |
-| **Consensus analystes** | StrongBuy:6 Buy:17 Hold:2 Sell:0 StrongSell:0 · _source : Finnhub_ |
-| **Score total** | 5.8/10 (Prix 8.2 · Sentiment 4.0 · Macro 4.6) |
+| **Cours actuel** | 20.95 € (-3.75%) · _TwelveData ✓ EODHD_ |
+| **Prix de revient** | 15.84 € · Coût total 95.04 € |
+| **Frais achat payés** | 6.95 € · Coût réel 101.99 € |
+| **Valeur marché** | 125.68 € |
+| **PnL brut latent** | +30.64 € (+32.24%) |
+| **Frais vente estimés** | 6.95 € |
+| **PnL net si vente** | +16.74 € (+16.41%) |
+| **Sentiment presse** | Bull 0% / Bear 0% · _EODHD (lexical)_ |
+| **Consensus analystes** | SB:6 B:17 H:2 S:0 SS:0 · _Finnhub_ |
+| **Score** | 5.8/10 (Prix 8.2 · Sent 4.0 · Macro 4.7) |
 
-**📰 Dernière actualité :** Riot Platforms’ Nuclear Data Center Plan Reshapes Its Power First Story
+📰 **Actualité :** Riot Platforms’ Nuclear Data Center Plan Reshapes Its Power First Story
 
-**⚡ Recommandation : 🟡 GARDER**
+**⚡ 🟡 GARDER**
 
-**💬 Justification :** La position affiche un **gain net de +16.62 € (+16.3%)** après frais, confirmant une plus-value réelle. Le consensus est **défavorable** (score 4.0/10) : 0% de couverture négative — StrongBuy:6 Buy:17 Hold:2 Sell:0 StrongSell:0. Le contexte macro est **neutre**, sans catalyseur directionnel fort.
+💬 Gain net **+16.74 € (+16.4%)** après frais. Consensus **défavorable** (score 4.0/10, Bear 0%) — SB:6 B:17 H:2 S:0 SS:0. Contexte macro **neutre**.
 
 ---
 
-### 📗 JCDecaux `DEC.PA` (FR0000077919)
+### 📗 JCDecaux `DEC.PA`
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 18.57 € (+0.00% aujourd'hui) · _source : EODHD_ |
-| **Prix de revient unitaire** | 17.77 € |
-| **Coût total investi** | 35.54 € |
-| **Frais d'achat payés** | 1.99 € |
-| **Coût réel total** _(base rentabilité)_ | 37.53 € |
-| **Valeur de marché actuelle** | 37.14 € |
+| **Cours actuel** | 18.57 € (+0.00%) · _EODHD_ |
+| **Prix de revient** | 17.77 € · Coût total 35.54 € |
+| **Frais achat payés** | 1.99 € · Coût réel 37.53 € |
+| **Valeur marché** | 37.14 € |
 | **PnL brut latent** | +1.60 € (+4.50%) |
-| **Frais de vente estimés** | 1.99 € |
-| **PnL net si vente aujourd'hui** | -2.38 € (-6.34%) |
-| **Sentiment presse** | Bull 100% / Bear 0% · _source : EODHD (analyse lexicale)_ |
-| **Consensus analystes** | N/D · _source : ⚠️ Indisponible_ |
-| **Score total** | 6.0/10 (Prix 5.5 · Sentiment 7.5 · Macro 4.6) |
+| **Frais vente estimés** | 1.99 € |
+| **PnL net si vente** | -2.38 € (-6.34%) |
+| **Sentiment presse** | Bull 100% / Bear 0% · _EODHD (lexical)_ |
+| **Consensus analystes** | N/D · _⚠️ Indisponible_ |
+| **Score** | 6.0/10 (Prix 5.5 · Sent 7.5 · Macro 4.7) |
 
-**📰 Dernière actualité :** A Look At JCDecaux (ENXTPA:DEC) Valuation After Recent Share Price Momentum
+📰 **Actualité :** A Look At JCDecaux (ENXTPA:DEC) Valuation After Recent Share Price Momentum
 
-**⚡ Recommandation : 🟡 GARDER**
+**⚡ 🟡 GARDER**
 
-**💬 Justification :** La position est en **perte nette de -2.38 € (-6.3%)** après frais d'achat et vente estimés. Le consensus analystes est **fortement haussier** (score 7.5/10), avec 100% de sentiment positif — N/D. Le contexte macro est **neutre**, sans catalyseur directionnel fort.
+💬 Perte nette **-2.38 € (-6.3%)** après frais. Consensus **haussier** (score 7.5/10, Bull 100%) — N/D. Contexte macro **neutre**.
 
 ---
 
-### 📗 Crédit Agricole SA `ACA.PA` (FR0000045072)
+### 📗 Crédit Agricole SA `ACA.PA`
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 16.93 € (+0.03% aujourd'hui) · _source : EODHD_ |
-| **Prix de revient unitaire** | 16.90 € |
-| **Coût total investi** | 169.00 € |
-| **Frais d'achat payés** | 1.99 € |
-| **Coût réel total** _(base rentabilité)_ | 170.99 € |
-| **Valeur de marché actuelle** | 169.25 € |
+| **Cours actuel** | 16.93 € (+0.03%) · _EODHD_ |
+| **Prix de revient** | 16.90 € · Coût total 169.00 € |
+| **Frais achat payés** | 1.99 € · Coût réel 170.99 € |
+| **Valeur marché** | 169.25 € |
 | **PnL brut latent** | +0.25 € (+0.15%) |
-| **Frais de vente estimés** | 1.99 € |
-| **PnL net si vente aujourd'hui** | -3.73 € (-2.18%) |
-| **Sentiment presse** | Bull 0% / Bear 0% · _source : EODHD (analyse lexicale)_ |
-| **Consensus analystes** | N/D · _source : ⚠️ Indisponible_ |
-| **Score total** | 4.0/10 (Prix 5.0 · Sentiment 2.5 · Macro 4.6) |
+| **Frais vente estimés** | 1.99 € |
+| **PnL net si vente** | -3.73 € (-2.18%) |
+| **Sentiment presse** | Bull 0% / Bear 0% · _EODHD (lexical)_ |
+| **Consensus analystes** | N/D · _⚠️ Indisponible_ |
+| **Score** | 4.0/10 (Prix 5.0 · Sent 2.5 · Macro 4.7) |
 
-**📰 Dernière actualité :** CREDIT AGRICOLE S.A. ANNOUNCES REDEMPTION OF ¥14,500,000,000 Japanese Yen Callable Senior Non-Preferred Bonds issued on June 13, 2023 (ISIN: JP525022DP63)
+📰 **Actualité :** CREDIT AGRICOLE S.A. ANNOUNCES REDEMPTION OF ¥14,500,000,000 Japanese Yen Callable Senior Non-Preferred Bonds issued on June 13, 2023 (ISIN: JP525022DP63)
 
-**⚡ Recommandation : 🟠 À ÉVITER**
+**⚡ 🟠 À ÉVITER**
 
-**💬 Justification :** La position est en **perte nette de -3.73 € (-2.2%)** après frais d'achat et vente estimés. Le consensus est **défavorable** (score 2.5/10) : 0% de couverture négative — N/D. Le contexte macro est **neutre**, sans catalyseur directionnel fort.
+💬 Perte nette **-3.73 € (-2.2%)** après frais. Consensus **défavorable** (score 2.5/10, Bear 0%) — N/D. Contexte macro **neutre**.
 
 ---
 
-### 📕 Abionyx Pharma `ABNX.PA` (FR0012616852)
+### 📕 Abionyx Pharma `ABNX.PA`
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 3.65 € (+0.27% aujourd'hui) · _source : EODHD_ |
-| **Prix de revient unitaire** | 3.84 € |
-| **Coût total investi** | 38.40 € |
-| **Frais d'achat payés** | 1.99 € |
-| **Coût réel total** _(base rentabilité)_ | 40.39 € |
-| **Valeur de marché actuelle** | 36.50 € |
+| **Cours actuel** | 3.65 € (+0.27%) · _EODHD_ |
+| **Prix de revient** | 3.84 € · Coût total 38.40 € |
+| **Frais achat payés** | 1.99 € · Coût réel 40.39 € |
+| **Valeur marché** | 36.50 € |
 | **PnL brut latent** | -1.90 € (-4.95%) |
-| **Frais de vente estimés** | 1.99 € |
-| **PnL net si vente aujourd'hui** | -5.88 € (-14.56%) |
-| **Sentiment presse** | Bull 50% / Bear 50% · _source : ⚠️ Indisponible_ |
-| **Consensus analystes** | N/D · _source : ⚠️ Indisponible_ |
-| **Score total** | 4.7/10 (Prix 4.5 · Sentiment 5.0 · Macro 4.6) |
+| **Frais vente estimés** | 1.99 € |
+| **PnL net si vente** | -5.88 € (-14.56%) |
+| **Sentiment presse** | Bull 50% / Bear 50% · _⚠️ Indisponible_ |
+| **Consensus analystes** | N/D · _⚠️ Indisponible_ |
+| **Score** | 4.7/10 (Prix 4.5 · Sent 5.0 · Macro 4.7) |
 
-**📰 Dernière actualité :** Aucune actualité récente.
+📰 **Actualité :** Aucune actualité récente.
 
-**⚡ Recommandation : 🟡 GARDER**
+**⚡ 🟡 GARDER**
 
-**💬 Justification :** La position est en **perte nette de -5.88 € (-14.6%)** après frais d'achat et vente estimés. Le consensus est **neutre** (score 5.0/10) : 50% bull / 50% bear — N/D. Le contexte macro est **neutre**, sans catalyseur directionnel fort.
+💬 Perte nette **-5.88 € (-14.6%)** après frais. Consensus **neutre** (50% bull / 50% bear) — N/D. Contexte macro **neutre**.
 
 ---
 
-## 💼 Résumé Global du Portefeuille
+## 💼 Résumé Global
 
 | | Montant |
 |--|--------|
-| **Coût total investi** | 763.92 € |
-| **Valeur de marché totale** | 777.29 € |
-| **PnL brut latent** | +13.37 € (+1.75%) |
-| **PnL net estimé** _(frais achat + vente)_ | -40.27 € (-5.27%) |
+| Coût total investi | 763.92 € |
+| Valeur marché totale | 777.47 € |
+| PnL brut latent | +13.55 € (+1.77%) |
+| PnL net estimé | -40.09 € (-5.25%) |
 
 ---
 
-## 🧭 Conclusion & Synthèse Stratégique
+## ✅ Validation Croisée
 
-Les marchés évoluent dans un registre **neutre**, sans catalyseur fort dans un sens ou dans l'autre.
-
-Au sein du portefeuille, **Palantir Technologies** est la valeur la plus solide (score 6.0/10, PnL brut -3.9%) — position à conserver et potentiellement à renforcer.
-
-À l'inverse, **Crédit Agricole SA** présente le profil le plus fragile (score 4.0/10, PnL net -3.73 €). Une réévaluation est recommandée avant toute décision.
-
-### 🔭 3 Valeurs à Fort Potentiel Hors Portefeuille
-
-_(Sélectionnées sur score de sentiment + consensus analystes du jour)_
-
-| Valeur | Secteur | Cours | Variation | Score | Sentiment | Consensus |
-|--------|---------|-------|-----------|-------|-----------|----------|
-| **Microsoft** | IA / Cloud | 348.35 € | ▼ -0.93% | 9.1/10 | Bull 100% | StrongBuy:24 Buy:36 Hold:6 Sell:0 StrongSell:0 |
-| **NVIDIA** | IA / Semi-conducteurs | 185.85 € | ▼ -0.61% | 9.1/10 | Bull 100% | StrongBuy:24 Buy:42 Hold:4 Sell:1 StrongSell:0 |
-| **LVMH** | Luxe / Consommation | 453.05 € | ▲ +0.23% | 7.5/10 | Bull 100% | N/D |
-
-> Ces valeurs présentent un **fort consensus haussier** ce jour et une cohérence sectorielle avec les positions actuelles (IA, crypto, Europe).
+_Aucune divergence détectée entre les sources ce jour. Données cohérentes._
 
 ---
 
-_Rapport généré le 12/05/2026 à 19:46 heure de Paris._
-_Sources données : EODHD (principal) + Finnhub (fallback). Taux EUR/USD : 1.1736 — source : EODHD EURUSD.FOREX._
-_Frais de courtage : BoursoBank offre Découverte (brochure 13/11/2025)._
+## 🧭 Conclusion Stratégique
+
+Marchés en phase **neutre**.
+
+**Meilleure position :** Palantir Technologies (score 6.0/10, PnL brut -4.3%)
+**Position à surveiller :** Crédit Agricole SA (score 4.0/10, PnL net -3.73 €)
+
+### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille
+
+| Valeur | Secteur | Cours | Var. | Score | Sentiment |
+|--------|---------|-------|------|-------|-----------|
+| **NVIDIA** | IA / Semi-conducteurs | 186.14 € | ▼ -0.45% | 9.1/10 | Bull 100% |
+| **LVMH** | Luxe / Consommation | 453.05 € | ▲ +0.23% | 7.5/10 | Bull 100% |
+| **TotalEnergies** | Énergie | 78.30 € | ▲ +0.12% | 7.5/10 | Bull 100% |
+
+---
+
+_Rapport v3.2 — 12/05/2026 à 20:16 Paris_
+_Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)_
+_EUR/USD : 1 EUR = 1.1732 USD — TwelveData_
+_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_
