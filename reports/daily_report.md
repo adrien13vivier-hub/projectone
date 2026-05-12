@@ -1,15 +1,15 @@
-# 📊 Rapport de Portefeuille — 12/05/2026 20:16 (Paris)
+# 📊 Rapport de Portefeuille — 12/05/2026 20:39 (Paris)
 
 ---
 
 ## 🌍 Contexte Économique
 
 **Tendance : ➡️ Neutre** | Score macro : 4.7/10
-**EUR/USD :** 1 EUR = 1.1732 USD _(source : TwelveData)_
+**EUR/USD :** 1 EUR = 1.1738 USD _(source : TwelveData)_
 
 | Indice | Variation | Cours | Source |
 |--------|-----------|-------|--------|
-| S&P 500 | ▼ -0.56% | 7,371.29 | EODHD |
+| S&P 500 | ▼ -0.49% | 7,376.58 | EODHD |
 | CAC 40 | ▼ -0.95% | 7,979.92 | EODHD |
 | Nikkei 225 | ▲ +0.52% | 62,742.57 | EODHD |
 
@@ -29,13 +29,13 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 113.99 € (-1.98%) · _TwelveData ✓ EODHD_ |
+| **Cours actuel** | 114.06 € (-2.21%) · _TwelveData ✓ EODHD_ |
 | **Prix de revient** | 119.06 € · Coût total 238.12 € |
 | **Frais achat payés** | 6.95 € · Coût réel 245.07 € |
-| **Valeur marché** | 227.97 € |
-| **PnL brut latent** | -10.15 € (-4.26%) |
+| **Valeur marché** | 228.11 € |
+| **PnL brut latent** | -10.01 € (-4.20%) |
 | **Frais vente estimés** | 6.95 € |
-| **PnL net si vente** | -24.05 € (-9.81%) |
+| **PnL net si vente** | -23.91 € (-9.76%) |
 | **Sentiment presse** | Bull 100% / Bear 0% · _EODHD (lexical)_ |
 | **Consensus analystes** | SB:11 B:15 H:10 S:1 SS:1 · _Finnhub_ |
 | **Score** | 6.0/10 (Prix 4.6 · Sent 8.6 · Macro 4.7) |
@@ -44,7 +44,7 @@
 
 **⚡ 🔵 ACHAT MODÉRÉ**
 
-💬 Perte nette **-24.05 € (-9.8%)** après frais. Consensus **haussier** (score 8.6/10, Bull 100%) — SB:11 B:15 H:10 S:1 SS:1. Contexte macro **neutre**.
+💬 Perte nette **-23.91 € (-9.8%)** après frais. Consensus **haussier** (score 8.6/10, Bull 100%) — SB:11 B:15 H:10 S:1 SS:1. Contexte macro **neutre**.
 
 ---
 
@@ -52,13 +52,13 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 90.47 € (-8.25%) · _TwelveData ✓ EODHD_ |
+| **Cours actuel** | 90.17 € (-7.38%) · _TwelveData ✓ EODHD_ |
 | **Prix de revient** | 93.91 € · Coût total 187.82 € |
 | **Frais achat payés** | 6.95 € · Coût réel 194.77 € |
-| **Valeur marché** | 180.93 € |
-| **PnL brut latent** | -6.89 € (-3.67%) |
+| **Valeur marché** | 180.34 € |
+| **PnL brut latent** | -7.48 € (-3.98%) |
 | **Frais vente estimés** | 6.95 € |
-| **PnL net si vente** | -20.79 € (-10.67%) |
+| **PnL net si vente** | -21.38 € (-10.98%) |
 | **Sentiment presse** | Bull 100% / Bear 0% · _EODHD (lexical)_ |
 | **Consensus analystes** | SB:10 B:18 H:12 S:1 SS:1 · _Finnhub_ |
 | **Score** | 6.0/10 (Prix 4.6 · Sent 8.5 · Macro 4.7) |
@@ -67,7 +67,7 @@
 
 **⚡ 🔵 ACHAT MODÉRÉ**
 
-💬 Perte nette **-20.79 € (-10.7%)** après frais. Consensus **haussier** (score 8.5/10, Bull 100%) — SB:10 B:18 H:12 S:1 SS:1. Contexte macro **neutre**.
+💬 Perte nette **-21.38 € (-11.0%)** après frais. Consensus **haussier** (score 8.5/10, Bull 100%) — SB:10 B:18 H:12 S:1 SS:1. Contexte macro **neutre**.
 
 ---
 
@@ -75,13 +75,13 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 20.95 € (-3.75%) · _TwelveData ✓ EODHD_ |
+| **Cours actuel** | 20.98 € (-2.60%) · _TwelveData ✓ EODHD_ |
 | **Prix de revient** | 15.84 € · Coût total 95.04 € |
 | **Frais achat payés** | 6.95 € · Coût réel 101.99 € |
-| **Valeur marché** | 125.68 € |
-| **PnL brut latent** | +30.64 € (+32.24%) |
+| **Valeur marché** | 125.87 € |
+| **PnL brut latent** | +30.83 € (+32.44%) |
 | **Frais vente estimés** | 6.95 € |
-| **PnL net si vente** | +16.74 € (+16.41%) |
+| **PnL net si vente** | +16.93 € (+16.60%) |
 | **Sentiment presse** | Bull 0% / Bear 0% · _EODHD (lexical)_ |
 | **Consensus analystes** | SB:6 B:17 H:2 S:0 SS:0 · _Finnhub_ |
 | **Score** | 5.8/10 (Prix 8.2 · Sent 4.0 · Macro 4.7) |
@@ -90,7 +90,7 @@
 
 **⚡ 🟡 GARDER**
 
-💬 Gain net **+16.74 € (+16.4%)** après frais. Consensus **défavorable** (score 4.0/10, Bear 0%) — SB:6 B:17 H:2 S:0 SS:0. Contexte macro **neutre**.
+💬 Gain net **+16.93 € (+16.6%)** après frais. Consensus **défavorable** (score 4.0/10, Bear 0%) — SB:6 B:17 H:2 S:0 SS:0. Contexte macro **neutre**.
 
 ---
 
@@ -168,9 +168,9 @@
 | | Montant |
 |--|--------|
 | Coût total investi | 763.92 € |
-| Valeur marché totale | 777.47 € |
-| PnL brut latent | +13.55 € (+1.77%) |
-| PnL net estimé | -40.09 € (-5.25%) |
+| Valeur marché totale | 777.21 € |
+| PnL brut latent | +13.29 € (+1.74%) |
+| PnL net estimé | -40.35 € (-5.28%) |
 
 ---
 
@@ -184,20 +184,20 @@ _Aucune divergence détectée entre les sources ce jour. Données cohérentes._
 
 Marchés en phase **neutre**.
 
-**Meilleure position :** Palantir Technologies (score 6.0/10, PnL brut -4.3%)
+**Meilleure position :** Palantir Technologies (score 6.0/10, PnL brut -4.2%)
 **Position à surveiller :** Crédit Agricole SA (score 4.0/10, PnL net -3.73 €)
 
 ### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille
 
 | Valeur | Secteur | Cours | Var. | Score | Sentiment |
 |--------|---------|-------|------|-------|-----------|
-| **NVIDIA** | IA / Semi-conducteurs | 186.14 € | ▼ -0.45% | 9.1/10 | Bull 100% |
+| **NVIDIA** | IA / Semi-conducteurs | 187.19 € | ▼ -0.52% | 9.1/10 | Bull 100% |
 | **LVMH** | Luxe / Consommation | 453.05 € | ▲ +0.23% | 7.5/10 | Bull 100% |
 | **TotalEnergies** | Énergie | 78.30 € | ▲ +0.12% | 7.5/10 | Bull 100% |
 
 ---
 
-_Rapport v3.2 — 12/05/2026 à 20:16 Paris_
+_Rapport v3.2 — 12/05/2026 à 20:39 Paris_
 _Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)_
-_EUR/USD : 1 EUR = 1.1732 USD — TwelveData_
+_EUR/USD : 1 EUR = 1.1738 USD — TwelveData_
 _Frais courtage BoursoBank Découverte (brochure 13/11/2025)_

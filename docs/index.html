@@ -3,509 +3,454 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portfolio Report</title>
+  <title>Rapport Portfolio — 12/05/2026 20:39</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface2: #21262d;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --green: #3fb950;
-      --red: #f85149;
-      --yellow: #d29922;
-      --blue: #58a6ff;
-      --accent: #1f6feb;
+      --bg:          #0f1117;
+      --surface:     #161b27;
+      --surface-2:   #1e2535;
+      --border:      #2a3347;
+      --text:        #e2e8f0;
+      --muted:       #8892a4;
+      --faint:       #4a5568;
+      --accent:      #3b82f6;
+      --accent-glow: rgba(59,130,246,0.15);
+      --green:       #10b981;
+      --red:         #ef4444;
+      --yellow:      #f59e0b;
+      --orange:      #f97316;
+      --radius:      10px;
+      --font-body:   'Inter', sans-serif;
+      --font-mono:   'JetBrains Mono', monospace;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    [data-theme="light"] {
+      --bg:          #f8fafc;
+      --surface:     #ffffff;
+      --surface-2:   #f1f5f9;
+      --border:      #e2e8f0;
+      --text:        #1e293b;
+      --muted:       #64748b;
+      --faint:       #cbd5e1;
+      --accent-glow: rgba(59,130,246,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: var(--font-body);
       background: var(--bg);
       color: var(--text);
+      line-height: 1.7;
       font-size: 15px;
-      line-height: 1.6;
-      padding: 0 1rem 4rem;
+      min-height: 100dvh;
     }
-    .header {
-      background: var(--surface);
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
     }
-    .header svg { flex-shrink: 0; }
-    .header-title { font-size: 1rem; font-weight: 600; color: var(--text); }
-    .header-sub { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
+    [data-theme="light"] header { background: rgba(248,250,252,0.9); }
+    .logo { font-size: 15px; font-weight: 700; letter-spacing: -.3px; color: var(--text); }
+    .logo span { color: var(--accent); }
+    .header-meta { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-icon {
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 6px 10px;
+      font-size: 13px; cursor: pointer; transition: all .18s;
     }
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text);
-      margin: 2rem 0 0.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    h2 {
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--blue);
-      margin: 2rem 0 0.75rem;
-    }
-    h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-      margin: 2rem 0 0.75rem;
-      background: var(--surface);
-      padding: 0.6rem 1rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    p {
-      margin: 0.5rem 0;
-      color: var(--text);
-    }
-    blockquote {
-      border-left: 3px solid var(--accent);
-      margin: 0.75rem 0;
-      padding: 0.5rem 1rem;
-      background: var(--surface);
-      border-radius: 0 6px 6px 0;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-      font-size: 0.875rem;
-      background: var(--surface);
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    th {
-      background: var(--surface2);
-      color: var(--muted);
-      font-weight: 600;
-      text-align: left;
-      padding: 0.6rem 0.9rem;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      border-bottom: 1px solid var(--border);
-    }
-    td {
-      padding: 0.6rem 0.9rem;
-      border-bottom: 1px solid var(--border);
-      color: var(--text);
-    }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface2); }
-    /* Color positive/negative values */
-    td:last-child { font-weight: 500; }
+    .btn-icon:hover { background: var(--border); }
+    /* ── LAYOUT ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+    /* ── TYPOGRAPHY ── */
+    h1 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; line-height: 1.2;
+          margin-bottom: 8px; letter-spacing: -.5px; }
+    h2 { font-size: 1.2rem; font-weight: 700; margin: 40px 0 16px;
+          padding-bottom: 8px; border-bottom: 1px solid var(--border);
+          color: var(--text); }
+    h3 { font-size: 1rem; font-weight: 700; margin: 28px 0 12px; color: var(--text); }
+    h4 { font-size: .9rem; font-weight: 600; margin: 16px 0 8px; color: var(--muted); }
+    p  { color: var(--muted); margin-bottom: 10px; max-width: 72ch; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
     strong { color: var(--text); font-weight: 600; }
-    em { color: var(--muted); font-size: 0.8rem; }
-    hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 1.5rem 0;
+    em     { color: var(--muted); font-style: normal; }
+    code   { font-family: var(--font-mono); font-size: .82em;
+               background: var(--surface-2); border: 1px solid var(--border);
+               padding: 1px 5px; border-radius: 4px; color: var(--accent); }
+    ul { list-style: none; padding: 0; margin-bottom: 12px; }
+    li { padding: 4px 0 4px 16px; color: var(--muted); font-size: .9rem;
+           position: relative; }
+    li::before { content: '·'; position: absolute; left: 4px; color: var(--faint); }
+    /* ── TABLES ── */
+    .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--radius);
+                   border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th { background: var(--surface-2); color: var(--muted);
+           font-weight: 600; font-size: .78rem; text-transform: uppercase;
+           letter-spacing: .5px; padding: 10px 14px; text-align: left;
+           border-bottom: 1px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border);
+           vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--accent-glow); }
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; gap: 4px;
+               font-size: .78rem; font-weight: 700; padding: 3px 10px;
+               border-radius: 20px; white-space: nowrap; }
+    .buy-strong { background: rgba(16,185,129,.15); color: #10b981;
+                   border: 1px solid rgba(16,185,129,.3); }
+    .buy-mod    { background: rgba(59,130,246,.15); color: #60a5fa;
+                   border: 1px solid rgba(59,130,246,.3); }
+    .hold       { background: rgba(245,158,11,.12); color: #f59e0b;
+                   border: 1px solid rgba(245,158,11,.3); }
+    .avoid      { background: rgba(249,115,22,.12); color: #fb923c;
+                   border: 1px solid rgba(249,115,22,.3); }
+    .sell       { background: rgba(239,68,68,.12); color: #f87171;
+                   border: 1px solid rgba(239,68,68,.3); }
+    /* ── PnL COLORS ── */
+    .up { color: var(--green); font-weight: 600; }
+    .dn { color: var(--red);   font-weight: 600; }
+    /* ── ARCHIVE PANEL ── */
+    .archive-toggle { font-size: 12px; color: var(--accent); cursor: pointer;
+                        background: none; border: none; padding: 0;
+                        text-decoration: underline; margin-bottom: 16px; }
+    #archive-panel {
+      display: none; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 24px;
     }
-    a { color: var(--blue); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.78rem;
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
+    #archive-panel.open { display: block; }
+    .archive-list { list-style: none; padding: 0; }
+    .archive-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: .85rem;
+    }
+    .archive-list li:last-child { border: none; }
+    .archive-date { color: var(--text); font-family: var(--font-mono); font-size: .8rem; }
+    .archive-pnl  { color: var(--muted); }
+    /* ── LAST UPDATE BADGE ── */
+    .update-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; font-size: .78rem;
+      color: var(--muted); margin-bottom: 24px;
+    }
+    .update-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+    /* ── PRINT ── */
+    @media print {
+      header, .header-actions, .archive-toggle, #archive-panel { display: none; }
+      body { background: white; color: black; }
+      .badge { border: 1px solid #ccc; }
+    }
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      header { padding: 10px 14px; }
+      .container { padding: 20px 14px 60px; }
+      h2 { font-size: 1.05rem; }
+      td, th { padding: 8px 10px; font-size: .8rem; }
     }
   </style>
 </head>
 <body>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo">📊 <span>Portfolio</span> Analyzer</div>
+      <div class="header-meta">v3.2 · 12/05/2026 20:39</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>
+      <button class="btn-icon" data-theme-toggle aria-label="Changer de thème">☀️</button>
+    </div>
+  </header>
 
-<div class="header">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-  </svg>
-  <span class="header-title">Portfolio Analyzer</span>
-  <span class="header-sub">Page mise à jour automatiquement chaque jour à 16h</span>
-</div>
+  <div class="container">
+    <div class="update-badge">
+      <span class="update-dot"></span>
+      Dernière mise à jour : <strong>12/05/2026 20:39</strong>
+    </div>
 
-<div class="container">
-<h1>📊 Rapport de Portefeuille — 12/05/2026 à 18:20 (heure de Paris)</h1>
-<blockquote>
-<p>Généré automatiquement par GitHub Actions | Taux EUR/USD : <strong>1.0800</strong></p>
-</blockquote>
-<hr />
-<h2>🌍 Contexte de Marché</h2>
-<p>Tendance générale : Indéterminé (données indisponibles)</p>
-<hr />
-<h2>📁 Analyse des Positions</h2>
-<h3>🟢 Palantir Technologies (<code>PLTR</code>)</h3>
-<table>
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Quantité</td>
-<td>2 action(s)</td>
-</tr>
-<tr>
-<td>Prix de revient</td>
-<td>119.06 €</td>
-</tr>
-<tr>
-<td>Cours actuel (converti EUR)</td>
-<td>124.76 €</td>
-</tr>
-<tr>
-<td>Variation du jour</td>
-<td>-1.57%</td>
-</tr>
-<tr>
-<td><strong>Statut latent</strong></td>
-<td><strong>+4.79% (+11.40 €)</strong></td>
-</tr>
-<tr>
-<td>Valeur totale position</td>
-<td>249.52 €</td>
-</tr>
-<tr>
-<td>Consensus analystes</td>
-<td>Buy (Buy: 26</td>
-</tr>
-<tr>
-<td>Sentiment presse</td>
-<td>Neutre (données indisponibles)</td>
-</tr>
-<tr>
-<td>Score pondéré</td>
-<td>6.0/10</td>
-</tr>
-</tbody>
-</table>
-<p><strong>📰 Analyse Flash</strong></p>
-<blockquote>
-<p>Price Prediction: Archer Aviation Eyes 84% Upside</p>
-</blockquote>
-<p><strong>🎯 Action recommandée : 🔵 </strong>GARDER****</p>
-<p><strong>💬 Justification :</strong> Position à +4.8% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : Buy (Buy: 26 | Hold: 10 | Sell: 2).</p>
-<hr />
-<h3>🟢 CoreWeave (<code>CRWV</code>)</h3>
-<table>
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Quantité</td>
-<td>2 action(s)</td>
-</tr>
-<tr>
-<td>Prix de revient</td>
-<td>93.91 €</td>
-</tr>
-<tr>
-<td>Cours actuel (converti EUR)</td>
-<td>95.47 €</td>
-</tr>
-<tr>
-<td>Variation du jour</td>
-<td>-10.10%</td>
-</tr>
-<tr>
-<td><strong>Statut latent</strong></td>
-<td><strong>+1.66% (+3.12 €)</strong></td>
-</tr>
-<tr>
-<td>Valeur totale position</td>
-<td>190.94 €</td>
-</tr>
-<tr>
-<td>Consensus analystes</td>
-<td>Buy (Buy: 28</td>
-</tr>
-<tr>
-<td>Sentiment presse</td>
-<td>Neutre (données indisponibles)</td>
-</tr>
-<tr>
-<td>Score pondéré</td>
-<td>5.7/10</td>
-</tr>
-</tbody>
-</table>
-<p><strong>📰 Analyse Flash</strong></p>
-<blockquote>
-<p>CoreWeave Achieves #1 Ranking for Inference Speed and Price-Performance for Moonshot AI's Kimi K2.6 Model in Independent Benchmark</p>
-</blockquote>
-<p><strong>🎯 Action recommandée : 🔵 </strong>GARDER****</p>
-<p><strong>💬 Justification :</strong> Position à +1.7% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : Buy (Buy: 28 | Hold: 12 | Sell: 2).</p>
-<hr />
-<h3>🟢 Riot Platforms (<code>RIOT</code>)</h3>
-<table>
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Quantité</td>
-<td>6 action(s)</td>
-</tr>
-<tr>
-<td>Prix de revient</td>
-<td>15.84 €</td>
-</tr>
-<tr>
-<td>Cours actuel (converti EUR)</td>
-<td>22.01 €</td>
-</tr>
-<tr>
-<td>Variation du jour</td>
-<td>-6.20%</td>
-</tr>
-<tr>
-<td><strong>Statut latent</strong></td>
-<td><strong>+38.95% (+37.02 €)</strong></td>
-</tr>
-<tr>
-<td>Valeur totale position</td>
-<td>132.06 €</td>
-</tr>
-<tr>
-<td>Consensus analystes</td>
-<td>Buy (Buy: 23</td>
-</tr>
-<tr>
-<td>Sentiment presse</td>
-<td>Neutre (données indisponibles)</td>
-</tr>
-<tr>
-<td>Score pondéré</td>
-<td>7.8/10</td>
-</tr>
-</tbody>
-</table>
-<p><strong>📰 Analyse Flash</strong></p>
-<blockquote>
-<p>Riot Platforms: Long-Term Strong Growth Ahead After A Possible Near-Term Pullback (Rating Upgrade)</p>
-</blockquote>
-<p><strong>🎯 Action recommandée : 🟡 </strong>ACHAT MODÉRÉ****</p>
-<p><strong>💬 Justification :</strong> Le titre affiche +38.9% vs. coût. Sentiment neutre (données indisponibles) et consensus favorable (Buy (Buy: 23 | Hold: 2)). La tendance macro soutient la position.</p>
-<hr />
-<h3>🟢 JCDecaux (<code>JCD.PA</code>)</h3>
-<table>
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Quantité</td>
-<td>2 action(s)</td>
-</tr>
-<tr>
-<td>Prix de revient</td>
-<td>17.77 €</td>
-</tr>
-<tr>
-<td>Cours actuel (converti EUR)</td>
-<td>0.00 €</td>
-</tr>
-<tr>
-<td>Variation du jour</td>
-<td>+0.00%</td>
-</tr>
-<tr>
-<td><strong>Statut latent</strong></td>
-<td><strong>+0.00% (+0.00 €)</strong></td>
-</tr>
-<tr>
-<td>Valeur totale position</td>
-<td>0.00 €</td>
-</tr>
-<tr>
-<td>Consensus analystes</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td>Sentiment presse</td>
-<td>Neutre (données indisponibles)</td>
-</tr>
-<tr>
-<td>Score pondéré</td>
-<td>5.0/10</td>
-</tr>
-</tbody>
-</table>
-<p><strong>📰 Analyse Flash</strong></p>
-<blockquote>
-<p>Aucune actualité récente.</p>
-</blockquote>
-<p><strong>🎯 Action recommandée : 🔵 </strong>GARDER****</p>
-<p><strong>💬 Justification :</strong> Position à +0.0% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : N/A.</p>
-<hr />
-<h3>🟢 Crédit Agricole SA (<code>ACA.PA</code>)</h3>
-<table>
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Quantité</td>
-<td>10 action(s)</td>
-</tr>
-<tr>
-<td>Prix de revient</td>
-<td>16.90 €</td>
-</tr>
-<tr>
-<td>Cours actuel (converti EUR)</td>
-<td>0.00 €</td>
-</tr>
-<tr>
-<td>Variation du jour</td>
-<td>+0.00%</td>
-</tr>
-<tr>
-<td><strong>Statut latent</strong></td>
-<td><strong>+0.00% (+0.00 €)</strong></td>
-</tr>
-<tr>
-<td>Valeur totale position</td>
-<td>0.00 €</td>
-</tr>
-<tr>
-<td>Consensus analystes</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td>Sentiment presse</td>
-<td>Neutre (données indisponibles)</td>
-</tr>
-<tr>
-<td>Score pondéré</td>
-<td>5.0/10</td>
-</tr>
-</tbody>
-</table>
-<p><strong>📰 Analyse Flash</strong></p>
-<blockquote>
-<p>Aucune actualité récente.</p>
-</blockquote>
-<p><strong>🎯 Action recommandée : 🔵 </strong>GARDER****</p>
-<p><strong>💬 Justification :</strong> Position à +0.0% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : N/A.</p>
-<hr />
-<h3>🟢 Abionyx Pharma (<code>ABNX.PA</code>)</h3>
-<table>
-<thead>
-<tr>
-<th>Paramètre</th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Quantité</td>
-<td>10 action(s)</td>
-</tr>
-<tr>
-<td>Prix de revient</td>
-<td>3.84 €</td>
-</tr>
-<tr>
-<td>Cours actuel (converti EUR)</td>
-<td>0.00 €</td>
-</tr>
-<tr>
-<td>Variation du jour</td>
-<td>+0.00%</td>
-</tr>
-<tr>
-<td><strong>Statut latent</strong></td>
-<td><strong>+0.00% (+0.00 €)</strong></td>
-</tr>
-<tr>
-<td>Valeur totale position</td>
-<td>0.00 €</td>
-</tr>
-<tr>
-<td>Consensus analystes</td>
-<td>N/A</td>
-</tr>
-<tr>
-<td>Sentiment presse</td>
-<td>Neutre (données indisponibles)</td>
-</tr>
-<tr>
-<td>Score pondéré</td>
-<td>5.0/10</td>
-</tr>
-</tbody>
-</table>
-<p><strong>📰 Analyse Flash</strong></p>
-<blockquote>
-<p>Aucune actualité récente.</p>
-</blockquote>
-<p><strong>🎯 Action recommandée : 🔵 </strong>GARDER****</p>
-<p><strong>💬 Justification :</strong> Position à +0.0% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : N/A.</p>
-<hr />
-<h2>📈 Résumé du Portefeuille</h2>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Valeur</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Capital investi</td>
-<td>763.92 €</td>
-</tr>
-<tr>
-<td>Valorisation actuelle</td>
-<td>572.52 €</td>
-</tr>
-<tr>
-<td><strong>P&amp;L latent total</strong></td>
-<td><strong>-191.40 € (-25.06%)</strong></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<p><em>Rapport généré le 12/05/2026 à 18:20 (heure de Paris) — Données fournies par <a href="https://finnhub.io">Finnhub</a>. Ce rapport est informatif et ne constitue pas un conseil en investissement.</em></p>
-<div class="footer">
-  Page générée le 12/05/2026 à 18:20 &mdash; 
-  <a href="https://github.com/adrien13vivier-hub/portfolio-analyzer" target="_blank">Voir le repo GitHub</a>
-</div>
-</div>
+    <button class="archive-toggle" onclick="toggleArchive()">📂 Historique des rapports</button>
+    <div id="archive-panel">
+      <strong style="font-size:.85rem;">30 derniers rapports</strong>
+      <ul class="archive-list" id="archive-list">
+        <li><span style="color:var(--faint);font-size:.8rem">Chargement…</span></li>
+      </ul>
+    </div>
 
+    <div id="report-body">
+<h1>📊 Rapport de Portefeuille — 12/05/2026 20:39 (Paris)</h1>
+
+<hr>
+
+<h2>🌍 Contexte Économique</h2>
+
+<p><strong>Tendance : ➡️ Neutre</strong> | Score macro : 4.7/10</p>
+<p><strong>EUR/USD :</strong> 1 EUR = 1.1738 USD <em>(source : TwelveData)</em></p>
+
+<div class="table-wrap"><table>
+<tr><th>Indice</th><th>Variation</th><th>Cours</th><th>Source</th></tr>
+<tr><td>S&P 500</td><td><span class="dn">▼</span> -0.49%</td><td>7,376.58</td><td>EODHD</td></tr>
+<tr><td>CAC 40</td><td><span class="dn">▼</span> -0.95%</td><td>7,979.92</td><td>EODHD</td></tr>
+<tr><td>Nikkei 225</td><td><span class="up">▲</span> +0.52%</td><td>62,742.57</td><td>EODHD</td></tr>
+</table></div>
+
+<p><strong>📰 Manchettes macro :</strong></p>
+
+<ul>
+<li>Notice of the Annual General Meeting of Akcinė prekybos bendrovė “APRANGA” shareholders</li>
+<li>Pranešimas apie Akcinės prekybos bendrovės „APRANGA“ šaukiamą eilinį visuotinį akcininkų susirinkimą</li>
+<li>BIC discontinues Rocketbook and its Skin Creative activities</li>
+<li>BIC discontinue les activités de Rocketbook et de Skin Creative</li>
+<li>BIC annonce la nomination d’un nouveau Directeur Financier</li>
+</ul>
+
+<hr>
+
+<h2>📈 Analyse par Valeur</h2>
+
+<h3>📕 Palantir Technologies <code>PLTR.US</code></h3>
+
+<div class="table-wrap"><table>
+<tr><th>Champ</th><th>Valeur</th></tr>
+<tr><td><strong>Cours actuel</strong></td><td>114.06 € (-2.21%) · <em>TwelveData ✓ EODHD</em></td></tr>
+<tr><td><strong>Prix de revient</strong></td><td>119.06 € · Coût total 238.12 €</td></tr>
+<tr><td><strong>Frais achat payés</strong></td><td>6.95 € · Coût réel 245.07 €</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>228.11 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>-10.01 € (-4.20%)</td></tr>
+<tr><td><strong>Frais vente estimés</strong></td><td>6.95 €</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>-23.91 € (-9.76%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 100% / Bear 0% · <em>EODHD (lexical)</em></td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>SB:11 B:15 H:10 S:1 SS:1 · <em>Finnhub</em></td></tr>
+<tr><td><strong>Score</strong></td><td>6.0/10 (Prix 4.6 · Sent 8.6 · Macro 4.7)</td></tr>
+</table></div>
+
+<p>📰 <strong>Actualité :</strong> Veteran Analyst Firm Hikes Palantir Price Target to $230 After Blowout Earnings</p>
+
+<p><strong>⚡ <span class="badge buy-mod">🔵 ACHAT MODÉRÉ</span></strong></p>
+
+<p>💬 Perte nette <strong>-23.91 € (-9.8%)</strong> après frais. Consensus <strong>haussier</strong> (score 8.6/10, Bull 100%) — SB:11 B:15 H:10 S:1 SS:1. Contexte macro <strong>neutre</strong>.</p>
+
+<hr>
+
+<h3>📕 CoreWeave <code>CRWV.US</code></h3>
+
+<div class="table-wrap"><table>
+<tr><th>Champ</th><th>Valeur</th></tr>
+<tr><td><strong>Cours actuel</strong></td><td>90.17 € (-7.38%) · <em>TwelveData ✓ EODHD</em></td></tr>
+<tr><td><strong>Prix de revient</strong></td><td>93.91 € · Coût total 187.82 €</td></tr>
+<tr><td><strong>Frais achat payés</strong></td><td>6.95 € · Coût réel 194.77 €</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>180.34 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>-7.48 € (-3.98%)</td></tr>
+<tr><td><strong>Frais vente estimés</strong></td><td>6.95 €</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>-21.38 € (-10.98%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 100% / Bear 0% · <em>EODHD (lexical)</em></td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>SB:10 B:18 H:12 S:1 SS:1 · <em>Finnhub</em></td></tr>
+<tr><td><strong>Score</strong></td><td>6.0/10 (Prix 4.6 · Sent 8.5 · Macro 4.7)</td></tr>
+</table></div>
+
+<p>📰 <strong>Actualité :</strong> Should You Buy, Hold, or Fold CoreWeave Stock After Solid Q1 Results?</p>
+
+<p><strong>⚡ <span class="badge buy-mod">🔵 ACHAT MODÉRÉ</span></strong></p>
+
+<p>💬 Perte nette <strong>-21.38 € (-11.0%)</strong> après frais. Consensus <strong>haussier</strong> (score 8.5/10, Bull 100%) — SB:10 B:18 H:12 S:1 SS:1. Contexte macro <strong>neutre</strong>.</p>
+
+<hr>
+
+<h3>📗 Riot Platforms <code>RIOT.US</code></h3>
+
+<div class="table-wrap"><table>
+<tr><th>Champ</th><th>Valeur</th></tr>
+<tr><td><strong>Cours actuel</strong></td><td>20.98 € (-2.60%) · <em>TwelveData ✓ EODHD</em></td></tr>
+<tr><td><strong>Prix de revient</strong></td><td>15.84 € · Coût total 95.04 €</td></tr>
+<tr><td><strong>Frais achat payés</strong></td><td>6.95 € · Coût réel 101.99 €</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>125.87 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>+30.83 € (+32.44%)</td></tr>
+<tr><td><strong>Frais vente estimés</strong></td><td>6.95 €</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>+16.93 € (+16.60%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 0% / Bear 0% · <em>EODHD (lexical)</em></td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>SB:6 B:17 H:2 S:0 SS:0 · <em>Finnhub</em></td></tr>
+<tr><td><strong>Score</strong></td><td>5.8/10 (Prix 8.2 · Sent 4.0 · Macro 4.7)</td></tr>
+</table></div>
+
+<p>📰 <strong>Actualité :</strong> Riot Platforms’ Nuclear Data Center Plan Reshapes Its Power First Story</p>
+
+<p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
+
+<p>💬 Gain net <strong>+16.93 € (+16.6%)</strong> après frais. Consensus <strong>défavorable</strong> (score 4.0/10, Bear 0%) — SB:6 B:17 H:2 S:0 SS:0. Contexte macro <strong>neutre</strong>.</p>
+
+<hr>
+
+<h3>📗 JCDecaux <code>DEC.PA</code></h3>
+
+<div class="table-wrap"><table>
+<tr><th>Champ</th><th>Valeur</th></tr>
+<tr><td><strong>Cours actuel</strong></td><td>18.57 € (+0.00%) · <em>EODHD</em></td></tr>
+<tr><td><strong>Prix de revient</strong></td><td>17.77 € · Coût total 35.54 €</td></tr>
+<tr><td><strong>Frais achat payés</strong></td><td>1.99 € · Coût réel 37.53 €</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>37.14 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>+1.60 € (+4.50%)</td></tr>
+<tr><td><strong>Frais vente estimés</strong></td><td>1.99 €</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>-2.38 € (-6.34%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 100% / Bear 0% · <em>EODHD (lexical)</em></td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>N/D · <em>⚠️ Indisponible</em></td></tr>
+<tr><td><strong>Score</strong></td><td>6.0/10 (Prix 5.5 · Sent 7.5 · Macro 4.7)</td></tr>
+</table></div>
+
+<p>📰 <strong>Actualité :</strong> A Look At JCDecaux (ENXTPA:DEC) Valuation After Recent Share Price Momentum</p>
+
+<p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
+
+<p>💬 Perte nette <strong>-2.38 € (-6.3%)</strong> après frais. Consensus <strong>haussier</strong> (score 7.5/10, Bull 100%) — N/D. Contexte macro <strong>neutre</strong>.</p>
+
+<hr>
+
+<h3>📗 Crédit Agricole SA <code>ACA.PA</code></h3>
+
+<div class="table-wrap"><table>
+<tr><th>Champ</th><th>Valeur</th></tr>
+<tr><td><strong>Cours actuel</strong></td><td>16.93 € (+0.03%) · <em>EODHD</em></td></tr>
+<tr><td><strong>Prix de revient</strong></td><td>16.90 € · Coût total 169.00 €</td></tr>
+<tr><td><strong>Frais achat payés</strong></td><td>1.99 € · Coût réel 170.99 €</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>169.25 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>+0.25 € (+0.15%)</td></tr>
+<tr><td><strong>Frais vente estimés</strong></td><td>1.99 €</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>-3.73 € (-2.18%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 0% / Bear 0% · <em>EODHD (lexical)</em></td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>N/D · <em>⚠️ Indisponible</em></td></tr>
+<tr><td><strong>Score</strong></td><td>4.0/10 (Prix 5.0 · Sent 2.5 · Macro 4.7)</td></tr>
+</table></div>
+
+<p>📰 <strong>Actualité :</strong> CREDIT AGRICOLE S.A. ANNOUNCES REDEMPTION OF ¥14,500,000,000 Japanese Yen Callable Senior Non-Preferred Bonds issued on June 13, 2023 (ISIN: JP525022DP63)</p>
+
+<p><strong>⚡ <span class="badge avoid">🟠 À ÉVITER</span></strong></p>
+
+<p>💬 Perte nette <strong>-3.73 € (-2.2%)</strong> après frais. Consensus <strong>défavorable</strong> (score 2.5/10, Bear 0%) — N/D. Contexte macro <strong>neutre</strong>.</p>
+
+<hr>
+
+<h3>📕 Abionyx Pharma <code>ABNX.PA</code></h3>
+
+<div class="table-wrap"><table>
+<tr><th>Champ</th><th>Valeur</th></tr>
+<tr><td><strong>Cours actuel</strong></td><td>3.65 € (+0.27%) · <em>EODHD</em></td></tr>
+<tr><td><strong>Prix de revient</strong></td><td>3.84 € · Coût total 38.40 €</td></tr>
+<tr><td><strong>Frais achat payés</strong></td><td>1.99 € · Coût réel 40.39 €</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>36.50 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>-1.90 € (-4.95%)</td></tr>
+<tr><td><strong>Frais vente estimés</strong></td><td>1.99 €</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>-5.88 € (-14.56%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 50% / Bear 50% · <em>⚠️ Indisponible</em></td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>N/D · <em>⚠️ Indisponible</em></td></tr>
+<tr><td><strong>Score</strong></td><td>4.7/10 (Prix 4.5 · Sent 5.0 · Macro 4.7)</td></tr>
+</table></div>
+
+<p>📰 <strong>Actualité :</strong> Aucune actualité récente.</p>
+
+<p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
+
+<p>💬 Perte nette <strong>-5.88 € (-14.6%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear) — N/D. Contexte macro <strong>neutre</strong>.</p>
+
+<hr>
+
+<h2>💼 Résumé Global</h2>
+
+<div class="table-wrap"><table>
+<tr><td>Coût total investi</td><td>763.92 €</td></tr>
+<tr><td>Valeur marché totale</td><td>777.21 €</td></tr>
+<tr><td>PnL brut latent</td><td>+13.29 € (+1.74%)</td></tr>
+<tr><td>PnL net estimé</td><td>-40.35 € (-5.28%)</td></tr>
+</table></div>
+
+<hr>
+
+<h2>✅ Validation Croisée</h2>
+
+<p><em>Aucune divergence détectée entre les sources ce jour. Données cohérentes.</em></p>
+
+<hr>
+
+<h2>🧭 Conclusion Stratégique</h2>
+
+<p>Marchés en phase <strong>neutre</strong>.</p>
+
+<p><strong>Meilleure position :</strong> Palantir Technologies (score 6.0/10, PnL brut -4.2%)</p>
+<p><strong>Position à surveiller :</strong> Crédit Agricole SA (score 4.0/10, PnL net -3.73 €)</p>
+
+<h3>🔭 Watchlist — Top 3 Valeurs Hors Portefeuille</h3>
+
+<div class="table-wrap"><table>
+<tr><th>Valeur</th><th>Secteur</th><th>Cours</th><th>Var.</th><th>Score</th><th>Sentiment</th></tr>
+<tr><td><strong>NVIDIA</strong></td><td>IA / Semi-conducteurs</td><td>187.19 €</td><td><span class="dn">▼</span> -0.52%</td><td>9.1/10</td><td>Bull 100%</td></tr>
+<tr><td><strong>LVMH</strong></td><td>Luxe / Consommation</td><td>453.05 €</td><td><span class="up">▲</span> +0.23%</td><td>7.5/10</td><td>Bull 100%</td></tr>
+<tr><td><strong>TotalEnergies</strong></td><td>Énergie</td><td>78.30 €</td><td><span class="up">▲</span> +0.12%</td><td>7.5/10</td><td>Bull 100%</td></tr>
+</table></div>
+
+<hr>
+
+<p><em>Rapport v3.2 — 12/05/2026 à 20:39 Paris</em></p>
+<p><em>Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)</em></p>
+<p><em>EUR/USD : 1 EUR = 1.1738 USD — TwelveData</em></p>
+<p><em>Frais courtage BoursoBank Découverte (brochure 13/11/2025)</em></p>
+    </div>
+  </div>
+
+  <script>
+    // ── Thème clair/sombre ──
+    const root = document.documentElement;
+    const btn  = document.querySelector('[data-theme-toggle]');
+    let theme  = localStorage.getItem('theme') ||
+                 (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+    root.setAttribute('data-theme', theme);
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    });
+
+    // ── Colorisation des valeurs PnL dans les cellules ──
+    document.querySelectorAll('td').forEach(td => {
+      const t = td.textContent.trim();
+      if (/^[+]\d/.test(t) && t.includes('€')) td.style.color = 'var(--green)';
+      if (/^[-]\d/.test(t) && t.includes('€')) td.style.color = 'var(--red)';
+      if (/^[+]\d/.test(t) && t.includes('%')) td.style.color = 'var(--green)';
+      if (/^[-]\d/.test(t) && t.includes('%')) td.style.color = 'var(--red)';
+    });
+
+    // ── Archive ──
+    function toggleArchive() {
+      const panel = document.getElementById('archive-panel');
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) loadArchive();
+    }
+    async function loadArchive() {
+      try {
+        const r = await fetch('./archive.json');
+        const data = await r.json();
+        const ul = document.getElementById('archive-list');
+        ul.innerHTML = data.map(e =>
+          `<li>
+            <span class="archive-date">📅 ${e.date}</span>
+            <span class="archive-pnl">${e.pnl}</span>
+          </li>`
+        ).join('');
+      } catch(e) {
+        document.getElementById('archive-list').innerHTML =
+          '<li><span style="color:var(--faint)">Historique non disponible.</span></li>';
+      }
+    }
+  </script>
 </body>
 </html>
