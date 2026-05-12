@@ -1,42 +1,16 @@
-name: Publish Portfolio Web Page
+# Ce workflow est désactivé — la génération HTML est maintenant intégrée dans daily_analysis.yml
+# Fichier conservé pour référence uniquement
+name: Generate Page (DISABLED)
 
 on:
-  # Runs after the analysis workflow completes
-  workflow_run:
-    workflows: ["Daily Portfolio Analysis"]
-    types: [completed]
-  # Also allow manual trigger
   workflow_dispatch:
+    inputs:
+      disabled:
+        description: 'Ce workflow est désactivé, utiliser daily_analysis.yml'
+        required: false
 
 jobs:
-  publish:
-    name: Generate HTML Page
+  placeholder:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install markdown converter
-        run: pip install markdown
-
-      - name: Generate HTML from Markdown report
-        run: python generate_html.py
-
-      - name: Commit HTML page
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
-          git diff --cached --quiet || git commit -m "Update web report $(date +'%Y-%m-%d')"
-          git push
+      - run: echo "Ce workflow est désactivé. La génération HTML est intégrée dans daily_analysis.yml"
