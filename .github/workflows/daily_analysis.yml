@@ -1,53 +1,49 @@
-name: Daily Portfolio Analysis
+name: Daily Portfolio Report v3.1
 
 on:
   schedule:
-    - cron: "0 14 * * 1-5"    # 16h00 Paris (CEST)
-    - cron: "30 16 * * 1-5"   # 18h30 Paris (CEST)
+    # 14h00 UTC = 16h00 Paris CEST (UTC+2) — lun-ven
+    # ⚠️ Hiver CET (UTC+1) : changer en "0 15 * * 1-5"
+    - cron: "0 14 * * 1-5"
   workflow_dispatch:
 
 jobs:
-  analyze_and_publish:
-    name: Analyse + Génération page web
+  analyze:
+    name: Génère le rapport quotidien
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: pip
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pytz markdown
+        run: pip install requests
 
-      - name: Run portfolio analysis
+      - name: Run analyzer
         env:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
-        run: |
-          python portfolio_analyzer.py
-
-      - name: Generate HTML page
-        run: |
-          python generate_html.py
-
-      - name: Commit report + page
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add reports/daily_report.md docs/index.html
-          git diff --cached --quiet || git commit -m "Daily report $(date +'%Y-%m-%d %H:%M UTC')"
-          git push
+          EODHD_API_KEY:   ${{ secrets.EODHD_API_KEY }}
+        run: python portfolio_analyzer.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: daily-portfolio-report
+          name: rapport-${{ github.run_number }}
           path: reports/daily_report.md
-          retention-days: 30
+          retention-days: 90
+
+      - name: Commit rapport
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reports/daily_report.md
+          git diff --cached --quiet || git commit -m "📊 Rapport $(date +'%Y-%m-%d %H:%M UTC')"
+          git push
