@@ -25,7 +25,7 @@ import requests
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 
-# ─── CLÉS API ───────────────────────────────────────────────────────────────────────────────
+# ─── CLÉS API ────────────────────────────────────────────────────────────────
 FINNHUB_KEY    = os.environ.get("FINNHUB_API_KEY", "")
 EODHD_KEY      = os.environ.get("EODHD_API_KEY", "")
 TWELVEDATA_KEY = os.environ.get("TWELVEDATA_API_KEY", "")
@@ -42,10 +42,9 @@ EOD_BASE = "https://eodhd.com/api"
 TD_BASE  = "https://api.twelvedata.com"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
-# Seuil de divergence : si deux sources diffèrent de plus de X%, on signale
 DIVERGENCE_THRESHOLD_PCT = 2.0
 
-# ─── PORTEFEUILLE ───────────────────────────────────────────────────────────────────────────
+# ─── PORTEFEUILLE ─────────────────────────────────────────────────────────────
 PORTFOLIO = [
     {"name": "Palantir Technologies", "isin": "US69608A1088",
      "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",
@@ -291,15 +290,15 @@ def get_sentiment(asset: dict) -> tuple:
 
     news = get_company_news(asset, n=10)
     if news:
-        bull_w = {"growth","buy","bullish","surge","record","beat","strong",
-                  "gain","up","rise","soar","profit","positive","upgrade"}
-        bear_w = {"loss","sell","bearish","drop","miss","weak","cut","down",
-                  "fall","decline","risk","negative","downgrade","warn"}
+        bull_w = {"growth", "buy", "bullish", "surge", "record", "beat", "strong",
+                  "gain", "up", "rise", "soar", "profit", "positive", "upgrade"}
+        bear_w = {"loss", "sell", "bearish", "drop", "miss", "weak", "cut", "down",
+                  "fall", "decline", "risk", "negative", "downgrade", "warn"}
         words  = " ".join(news).lower().split()
         b = sum(1 for w in words if w in bull_w)
         s = sum(1 for w in words if w in bear_w)
         t = b + s or 1
-        return round(b/t*100,1), round(s/t*100,1), "EODHD (lexical)"
+        return round(b/t*100, 1), round(s/t*100, 1), "EODHD (lexical)"
     return 50.0, 50.0, "⚠️ Indisponible"
 
 
@@ -308,20 +307,20 @@ def get_consensus(asset: dict) -> tuple:
                 {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY})
     if isinstance(data, list) and data:
         r = data[0]
-        sb=r.get("strongBuy",0); b=r.get("buy",0)
-        h=r.get("hold",0); s=r.get("sell",0); ss=r.get("strongSell",0)
-        total = sb+b+h+s+ss
+        sb = r.get("strongBuy", 0); b = r.get("buy", 0)
+        h  = r.get("hold", 0);      s = r.get("sell", 0); ss = r.get("strongSell", 0)
+        total = sb + b + h + s + ss
         if total > 0:
             score = (sb*10 + b*7.5 + h*5 + s*2.5) / total
-            return round(score,2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub"
+            return round(score, 2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub"
 
     data = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
                 {"api_token": EODHD_KEY, "fmt": "json", "filter": "AnalystRatings"})
     if isinstance(data, dict) and data.get("Rating"):
-        rat = data["Rating"]
-        label = str(rat.get("Rating","")).lower()
-        tp = rat.get("TargetPrice","N/D")
-        m = {"strong buy":9.0,"buy":7.5,"hold":5.0,"sell":2.5,"strong sell":0.5}
+        rat   = data["Rating"]
+        label = str(rat.get("Rating", "")).lower()
+        tp    = rat.get("TargetPrice", "N/D")
+        m     = {"strong buy": 9.0, "buy": 7.5, "hold": 5.0, "sell": 2.5, "strong sell": 0.5}
         score = m.get(label, 5.0)
         return score, f"Rating:{rat.get('Rating','?')} TP:{tp}$", "EODHD"
 
@@ -336,24 +335,24 @@ def get_company_news(asset: dict, n: int = 2) -> list:
                 {"s": asset["ticker_eod"], "limit": n, "from": from_d,
                  "api_token": EODHD_KEY, "fmt": "json"})
     if isinstance(data, list) and data:
-        return [i.get("title","") for i in data if i.get("title")]
+        return [i.get("title", "") for i in data if i.get("title")]
 
     data = _get(f"{FH_BASE}/company-news",
                 {"symbol": asset["ticker_fh"], "from": from_d,
                  "to": to_d, "token": FINNHUB_KEY})
     if isinstance(data, list) and data:
-        return [i.get("headline","") for i in data[:n] if i.get("headline")]
+        return [i.get("headline", "") for i in data[:n] if i.get("headline")]
     return []
 
 
 def get_macro_news(n: int = 5) -> list:
     data = _get(f"{EOD_BASE}/news",
-                {"t":"general","limit":n,"api_token":EODHD_KEY,"fmt":"json"})
+                {"t": "general", "limit": n, "api_token": EODHD_KEY, "fmt": "json"})
     if isinstance(data, list) and data:
-        return [i.get("title","") for i in data if i.get("title")]
-    data = _get(f"{FH_BASE}/news",{"category":"general","token":FINNHUB_KEY})
+        return [i.get("title", "") for i in data if i.get("title")]
+    data = _get(f"{FH_BASE}/news", {"category": "general", "token": FINNHUB_KEY})
     if isinstance(data, list) and data:
-        return [i.get("headline","") for i in data[:n] if i.get("headline")]
+        return [i.get("headline", "") for i in data[:n] if i.get("headline")]
     return []
 
 
@@ -404,7 +403,7 @@ def build_report() -> str:
     print("[INFO] Chargement batch TwelveData (cours US)...")
     us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
     watch_td   = [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
-    all_td = list(set(us_tickers + watch_td))
+    all_td     = list(set(us_tickers + watch_td))
     td_prices  = td_fetch_batch(all_td)
     print(f"[INFO] TwelveData batch : {td_prices}")
 
@@ -460,15 +459,15 @@ def build_report() -> str:
             continue
 
         qty, cost, marche = asset["qty"], asset["cost_eur"], asset["marche"]
-        vm          = round(price_eur * qty, 2)
-        cout        = round(cost * qty, 2)
-        fee_a       = calc_fee(cout, marche)
-        fee_v       = calc_fee(vm, marche)
-        cout_reel   = round(cout + fee_a, 2)
-        pnl_brut    = round(vm - cout, 2)
-        pnl_brut_p  = round(pnl_brut / cout * 100, 2)
-        pnl_net     = round(vm - cout_reel - fee_v, 2)
-        pnl_net_p   = round(pnl_net / cout_reel * 100, 2)
+        vm         = round(price_eur * qty, 2)
+        cout       = round(cost * qty, 2)
+        fee_a      = calc_fee(cout, marche)
+        fee_v      = calc_fee(vm, marche)
+        cout_reel  = round(cout + fee_a, 2)
+        pnl_brut   = round(vm - cout, 2)
+        pnl_brut_p = round(pnl_brut / cout * 100, 2)
+        pnl_net    = round(vm - cout_reel - fee_v, 2)
+        pnl_net_p  = round(pnl_net / cout_reel * 100, 2)
 
         ps = score_price(price_eur, cost)
         bull, bear, sent_src = get_sentiment(asset)
@@ -481,16 +480,19 @@ def build_report() -> str:
         justif = justification(asset["name"], pnl_net, pnl_net_p,
                                sc, bull, bear, cons_str, macro_score, total_score)
 
-        total_cout += cout; total_vm += vm
-        total_pnl_brut += pnl_brut; total_pnl_net += pnl_net
+        total_cout += cout
+        total_vm   += vm
+        total_pnl_brut += pnl_brut
+        total_pnl_net  += pnl_net
         summaries.append({"name": asset["name"], "score": total_score,
                           "pnl_brut_pct": pnl_brut_p, "pnl_net": pnl_net})
 
         src_badge = f"_{price_src}_"
-        div_flag = f" `{div_note}`" if div_note else ""
+        div_flag  = f" `{div_note}`" if div_note else ""
+        icon      = "📗" if pnl_brut >= 0 else "📕"
 
         lines += [
-            f"### {'\ud83d\udcd7' if pnl_brut >= 0 else '\ud83d\udcd5'} {asset['name']} `{asset['ticker_eod']}`",
+            f"### {icon} {asset['name']} `{asset['ticker_eod']}`",
             "",
             "| Champ | Valeur |",
             "|-------|--------|",
@@ -547,9 +549,9 @@ def build_report() -> str:
 
     best  = max(summaries, key=lambda x: x["score"]) if summaries else None
     worst = min(summaries, key=lambda x: x["score"]) if summaries else None
-    ctx = ("Marchés en dynamique **positive**." if macro_score >= 6
-           else "Marchés sous **pression baissière**." if macro_score <= 4
-           else "Marchés en phase **neutre**.")
+    ctx   = ("Marchés en dynamique **positive**." if macro_score >= 6
+             else "Marchés sous **pression baissière**." if macro_score <= 4
+             else "Marchés en phase **neutre**.")
 
     lines += ["## 🧭 Conclusion Stratégique", "", ctx, ""]
     if best and worst:
@@ -561,16 +563,18 @@ def build_report() -> str:
             "",
         ]
 
+    # Watchlist — header sans backtick parasite (correction v3.2.1)
     lines += [
         "### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille",
         "",
         "| Valeur | Secteur | Cours | Var. | Score | Sentiment |",
-        "|--------|---------|-------|------|-------|-----------|`,
+        "|--------|---------|-------|------|-------|-----------|",
     ]
     watch_res = []
     for w in WATCHLIST:
         pe, chg, src, _ = get_price_eur(w, eur_usd, td_prices)
-        if not pe: continue
+        if not pe:
+            continue
         bull, bear, _ = get_sentiment(w)
         cs, cons_str, _ = get_consensus(w)
         sc = round((bull / 10 + cs) / 2, 2)
@@ -579,15 +583,17 @@ def build_report() -> str:
     watch_res.sort(key=lambda x: x["sc"], reverse=True)
     for w in watch_res[:3]:
         arr = "▲" if w["chg"] > 0 else "▼"
-        lines.append(f"| **{w['name']}** | {w['sector']} | {w['price']:.2f} € "
-                     f"| {arr} {w['chg']:+.2f}% | {w['sc']:.1f}/10 | Bull {w['bull']:.0f}% |")
+        lines.append(
+            f"| **{w['name']}** | {w['sector']} | {w['price']:.2f} € "
+            f"| {arr} {w['chg']:+.2f}% | {w['sc']:.1f}/10 | Bull {w['bull']:.0f}% |"
+        )
 
     lines += [
         "",
         "---",
         "",
         f"_Rapport v3.2 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
-        f"_Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)_",
+        "_Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)_",
         f"_EUR/USD : 1 EUR = {1/eur_usd:.4f} USD — {eurusd_src}_",
         "_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_",
     ]
