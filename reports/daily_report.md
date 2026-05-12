@@ -1,4 +1,4 @@
-# 📊 Rapport de Portefeuille — 11/05/2026 à 23:15 (heure de Paris)
+# 📊 Rapport de Portefeuille — 12/05/2026 à 18:07 (heure de Paris)
 
 > Généré automatiquement par GitHub Actions | Taux EUR/USD : **1.0800**
 
@@ -18,20 +18,20 @@ Tendance générale : Indéterminé (données indisponibles)
 |-----------|--------|
 | Quantité | 2 action(s) |
 | Prix de revient | 119.06 € |
-| Cours actuel (converti EUR) | 126.75 € |
-| Variation du jour | -0.66% |
-| **Statut latent** | **+6.46% (+15.38 €)** |
-| Valeur totale position | 253.50 € |
+| Cours actuel (converti EUR) | 124.38 € |
+| Variation du jour | -1.87% |
+| **Statut latent** | **+4.47% (+10.64 €)** |
+| Valeur totale position | 248.76 € |
 | Consensus analystes | Buy (Buy: 26 | Hold: 10 | Sell: 2) |
 | Sentiment presse | Neutre (données indisponibles) |
-| Score pondéré | 6.2/10 |
+| Score pondéré | 6.0/10 |
 
 **📰 Analyse Flash**
-> Sector Update: Tech Stocks Rise Late Afternoon
+> Price Prediction: Archer Aviation Eyes 84% Upside
 
 **🎯 Action recommandée : 🔵 **GARDER****
 
-**💬 Justification :** Position à +6.5% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : Buy (Buy: 26 | Hold: 10 | Sell: 2).
+**💬 Justification :** Position à +4.5% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : Buy (Buy: 26 | Hold: 10 | Sell: 2).
 
 ---
 
@@ -41,20 +41,20 @@ Tendance générale : Indéterminé (données indisponibles)
 |-----------|--------|
 | Quantité | 2 action(s) |
 | Prix de revient | 93.91 € |
-| Cours actuel (converti EUR) | 106.20 € |
-| Variation du jour | +0.48% |
-| **Statut latent** | **+13.09% (+24.59 €)** |
-| Valeur totale position | 212.41 € |
+| Cours actuel (converti EUR) | 0.00 € |
+| Variation du jour | +0.00% |
+| **Statut latent** | **+0.00% (+0.00 €)** |
+| Valeur totale position | 0.00 € |
 | Consensus analystes | Buy (Buy: 28 | Hold: 12 | Sell: 2) |
 | Sentiment presse | Neutre (données indisponibles) |
-| Score pondéré | 6.9/10 |
+| Score pondéré | 5.5/10 |
 
 **📰 Analyse Flash**
-> IDGT: Why The AI Infrastructure Cycle May Still Be Early
+> CoreWeave Achieves #1 Ranking for Inference Speed and Price-Performance for Moonshot AI's Kimi K2.6 Model in Independent Benchmark
 
-**🎯 Action recommandée : 🟡 **ACHAT MODÉRÉ****
+**🎯 Action recommandée : 🔵 **GARDER****
 
-**💬 Justification :** Le titre affiche +13.1% vs. coût. Sentiment neutre (données indisponibles) et consensus favorable (Buy (Buy: 28 | Hold: 12 | Sell: 2)). La tendance macro soutient la position.
+**💬 Justification :** Position à +0.0% vs. coût. Pas de signal fort — conserver en attendant plus de visibilité. Consensus : Buy (Buy: 28 | Hold: 12 | Sell: 2).
 
 ---
 
@@ -64,10 +64,10 @@ Tendance générale : Indéterminé (données indisponibles)
 |-----------|--------|
 | Quantité | 6 action(s) |
 | Prix de revient | 15.84 € |
-| Cours actuel (converti EUR) | 23.46 € |
-| Variation du jour | +5.23% |
-| **Statut latent** | **+48.12% (+45.74 €)** |
-| Valeur totale position | 140.78 € |
+| Cours actuel (converti EUR) | 21.97 € |
+| Variation du jour | -6.35% |
+| **Statut latent** | **+38.71% (+36.79 €)** |
+| Valeur totale position | 131.83 € |
 | Consensus analystes | Buy (Buy: 23 | Hold: 2) |
 | Sentiment presse | Neutre (données indisponibles) |
 | Score pondéré | 7.8/10 |
@@ -77,7 +77,7 @@ Tendance générale : Indéterminé (données indisponibles)
 
 **🎯 Action recommandée : 🟡 **ACHAT MODÉRÉ****
 
-**💬 Justification :** Le titre affiche +48.1% vs. coût. Sentiment neutre (données indisponibles) et consensus favorable (Buy (Buy: 23 | Hold: 2)). La tendance macro soutient la position.
+**💬 Justification :** Le titre affiche +38.7% vs. coût. Sentiment neutre (données indisponibles) et consensus favorable (Buy (Buy: 23 | Hold: 2)). La tendance macro soutient la position.
 
 ---
 
@@ -155,9 +155,9 @@ Tendance générale : Indéterminé (données indisponibles)
 | | Valeur |
 |-|--------|
 | Capital investi | 763.92 € |
-| Valorisation actuelle | 606.69 € |
-| **P&L latent total** | **-157.23 € (-20.58%)** |
+| Valorisation actuelle | 380.59 € |
+| **P&L latent total** | **-383.33 € (-50.18%)** |
 
 ---
 
-*Rapport généré le 11/05/2026 à 23:15 (heure de Paris) — Données fournies par [Finnhub](https://finnhub.io). Ce rapport est informatif et ne constitue pas un conseil en investissement.*
+*Rapport généré le 12/05/2026 à 18:07 (heure de Paris) — Données fournies par [Finnhub](https://finnhub.io). Ce rapport est informatif et ne constitue pas un conseil en investissement.*
