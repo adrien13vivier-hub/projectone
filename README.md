@@ -1,46 +1,56 @@
-# 📊 Portfolio Analyzer v3.1
+# 📊 Portfolio Analyzer v3.2
 
-Rapport quotidien automatisé à **16h00 Paris** — Finnhub + EODHD avec fallbacks croisés complets.
+Rapport quotidien automatisé à **16h00 Paris** — 3 sources avec validation croisée.
 
-## Structure
+## Architecture des sources
 
 ```
-portfolio-analyzer/
-├── portfolio_analyzer.py
-├── .github/workflows/daily_analysis.yml
-├── reports/daily_report.md
-└── README.md
+COURS US      : TwelveData (batch 1 requête) → EODHD → Finnhub
+EUR/USD       : TwelveData → Finnhub → EODHD
+COURS EU (.PA): EODHD → Finnhub
+INDICES MACRO : EODHD → Finnhub
+SENTIMENT     : Finnhub → EODHD (analyse lexicale)
+CONSENSUS     : Finnhub → EODHD fundamentals
+NEWS          : EODHD → Finnhub
 ```
 
-## Secrets GitHub requis
+## Protocole de validation croisée
+
+Si deux sources retournent un écart > **2%** sur un même cours :
+- ⚠️ Divergence signalée dans le rapport (section dédiée)
+- La **médiane** des deux valeurs est utilisée automatiquement
+- Chaque donnée affiche sa source réelle dans le rapport
+
+## Secrets GitHub requis (3)
 
 | Nom | Description |
 |-----|-------------|
-| `FINNHUB_API_KEY` | Clé Finnhub (sentiment, consensus, forex) |
-| `EODHD_API_KEY` | Clé EODHD régénérée (cours, indices, news) |
+| `FINNHUB_API_KEY` | Sentiment, consensus, forex fallback |
+| `EODHD_API_KEY` | Euronext, indices, news, fundamentals |
+| `TWELVEDATA_API_KEY` | Cours US en temps réel (batch) |
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
-## Fallbacks croisés v3.1
+## Limites plan TwelveData gratuit
 
-| Donnée | Source principale | Fallback |
-|--------|-----------------|----------|
-| Cours US | EODHD `real-time/*.US` | Finnhub `quote` |
-| Cours Euronext `.PA` | EODHD `real-time/*.PA` | Finnhub `quote` |
-| Taux EUR/USD | Finnhub `forex/rates` | EODHD `EURUSD.FOREX` |
-| Indices macro | EODHD `*.INDX` | Finnhub `^GSPC/^FCHI/^N225` |
-| Sentiment presse | Finnhub `news-sentiment` | Analyse lexicale EODHD news |
-| Consensus analystes | Finnhub `recommendation-trends` | EODHD `fundamentals` |
-| Actualités entreprise | EODHD `news` | Finnhub `company-news` |
-| Actualités macro | EODHD `news?t=general` | Finnhub `news?category=general` |
+| Capacité | Valeur |
+|----------|--------|
+| Crédits/minute | 8 |
+| Crédits/jour | 800 |
+| Indices (SPX, CAC40...) | ❌ Plan payant |
+| Actions Euronext | ❌ Plan payant |
+| Actions US (PLTR, CRWV, RIOT...) | ✅ |
+| Forex (EUR/USD) | ✅ |
+
+Le script gère automatiquement le rate limiting (pause entre batches).
 
 ## Algorithme de décision
 
 | Composante | Poids |
 |------------|-------|
-| Performance vs. prix de revient | 40 % |
-| Sentiment + consensus analystes | 35 % |
-| Tendance macro | 25 % |
+| Performance vs. prix de revient | 40% |
+| Sentiment + consensus analystes | 35% |
+| Tendance macro | 25% |
 
 | Score | Recommandation |
 |-------|----------------|
@@ -50,17 +60,13 @@ portfolio-analyzer/
 | ≥ 3.0 | 🟠 À ÉVITER |
 | < 3.0 | 🔴 VENDRE |
 
-## Frais courtage BoursoBank (Découverte — 13/11/2025)
+## Changelog
 
-| Marché | Barème |
-|--------|--------|
-| Euronext Paris/Amsterdam/Bruxelles | 1,99 € ≤ 500 € · 0,60 % au-delà |
-| Bourses américaines | 6,95 € ≤ 6 000 € · 0,12 % au-delà |
-| Bourses européennes hors Euronext | 11,95 € ≤ 4 000 € · 0,30 % au-delà |
-
-## Ajustement saisonnier cron
-
-| Saison | Cron |
-|--------|------|
-| Été CEST (UTC+2) | `0 14 * * 1-5` |
-| Hiver CET (UTC+1) | `0 15 * * 1-5` |
+### v3.2 (2026-05-12)
+- ✅ Intégration TwelveData comme source principale cours US + EUR/USD
+- ✅ Batch unique TwelveData (1 requête = portefeuille + watchlist US)
+- ✅ Protocole validation croisée 3 sources avec détection divergence > 2%
+- ✅ Médiane automatique en cas de divergence
+- ✅ Affichage source réelle pour chaque donnée dans le rapport
+- ✅ Rate limiting TwelveData géré automatiquement (8 crédits/min)
+- ✅ Tests live confirmés : PLTR ✅, CRWV ✅, RIOT ✅, EUR/USD ✅
