@@ -1,155 +1,210 @@
-name: Daily Portfolio Report v3.4
+name: Daily Portfolio Report v4.0
 
 on:
   schedule:
-    - cron: "0 8 * * 1-5"   # 10h00 Paris CEST (UTC+2) — hiver CET: changer en 0 9
-    - cron: "0 14 * * 1-5"  # 16h00 Paris CEST (UTC+2) — hiver CET: changer en 0 15
+    # 14:00 UTC = 16:00 Paris (CEST, heure d'été)
+    # En hiver CET (oct→mars) : changer en 0 15 * * 1-5
+    - cron: "0 14 * * 1-5"
   workflow_dispatch:
+    inputs:
+      force_mail:
+        description: "Forcer l'envoi du mail même sans erreur API"
+        required: false
+        default: "false"
 
 jobs:
   analyze:
-    name: Analyse & Rapport v3.4
+    name: Analyse & Rapport
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup Python 3.12
+      # ── 2. Python ──────────────────────────────────────────────────────────
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: pip
 
       - name: Install dependencies
-        run: pip install requests
+        run: |
+          pip install --upgrade pip
+          pip install requests matplotlib
 
-      - name: Run analyzer v3.4
-        id: analyzer
+      # ── 3. Analyse ─────────────────────────────────────────────────────────
+      - name: Run portfolio analysis
+        id: analysis
         env:
           FINNHUB_API_KEY:    ${{ secrets.FINNHUB_API_KEY }}
           EODHD_API_KEY:      ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
-        run: python portfolio_analyzer.py
-        # ↑ Le script écrit PORTFOLIO_PNL_NET et PORTFOLIO_PNL_PCT dans $GITHUB_ENV
+        run: |
+          mkdir -p reports/charts cache
+          python portfolio_analyzer.py
+          echo "Script terminé avec code $?"
 
-      - name: Generate HTML page
-        run: python generate_html.py
+      # ── 4. Commit rapport + graphiques ────────────────────────────────────
+      - name: Commit report & charts to repository
+        run: |
+          git config user.name  "Portfolio Bot"
+          git config user.email "bot@portfolio-analyzer"
+          git add reports/
+          git add cache/ || true
+          if git diff --cached --quiet; then
+            echo "Aucun changement à committer."
+          else
+            git commit -m "📊 Rapport quotidien $(date +'%Y-%m-%d %H:%M') Paris"
+            git push
+          fi
 
-      - name: Generate history chart
-        run: python generate_chart.py
-
-      - name: Upload artifact
+      # ── 5. Upload artifact (rapport + graphiques) ─────────────────────────
+      - name: Upload report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rapport-${{ github.run_number }}
+          name: portfolio-report-${{ github.run_number }}
           path: |
             reports/daily_report.md
+            reports/charts/*.png
             reports/history.csv
-            docs/index.html
-            docs/chart.html
-          retention-days: 90
+          retention-days: 30
 
-      - name: Commit rapport + page + historique
+      # ── 6. Préparer le corps du mail ──────────────────────────────────────
+      - name: Prepare email body
+        if: always()
+        id: mail_body
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add reports/daily_report.md reports/history.csv \
-                  docs/index.html docs/chart.html \
-                  cache/session_cache.json || true
-          git diff --cached --quiet || \
-            git commit -m "📊 Rapport v3.4 — $(date +'%Y-%m-%d %H:%M UTC')"
-          git push
+          DATE=$(date +'%d/%m/%Y')
+          PNL=${PORTFOLIO_PNL_NET:-"N/D"}
+          PCT=${PORTFOLIO_PNL_PCT:-"N/D"}
+          ERRORS=${HAS_API_ERRORS:-"false"}
+          ERR_DETAIL=${API_ERRORS_SUMMARY:-"Aucune"}
 
-  # ──────────────────────────────────────────────────────────────────────────
-  # ALERTE EMAIL — déclenchée si PnL global < seuil ou erreur API détectée
-  # ──────────────────────────────────────────────────────────────────────────
-  alert:
-    name: Alerte Email
-    runs-on: ubuntu-latest
-    needs: analyze
-    if: always()  # s'exécute même si analyze a échoué
+          if [ "$ERRORS" = "true" ]; then
+            STATUS_ICON="⚠️"
+            STATUS_MSG="Des données sont ERRONÉES ce run. Ne pas prendre de décision sans vérification."
+          else
+            STATUS_ICON="✅"
+            STATUS_MSG="Toutes les sources de données ont répondu correctement."
+          fi
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+          cat <<EOF > /tmp/mail_body.html
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head><meta charset="UTF-8"><style>
+            body { font-family: -apple-system, Arial, sans-serif; background:#f9f8f5; color:#111827; padding:0; margin:0; }
+            .container { max-width:640px; margin:32px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+            .header { background:#01696f; color:#fff; padding:24px 32px; }
+            .header h1 { margin:0; font-size:20px; }
+            .header p { margin:4px 0 0; opacity:0.85; font-size:14px; }
+            .body { padding:24px 32px; }
+            .kpi { display:flex; gap:16px; margin:16px 0; }
+            .kpi-box { flex:1; background:#f3f4f6; border-radius:8px; padding:14px 16px; text-align:center; }
+            .kpi-box .val { font-size:22px; font-weight:700; }
+            .kpi-box .lbl { font-size:11px; color:#6b7280; margin-top:4px; }
+            .positive { color:#16a34a; }
+            .negative { color:#dc2626; }
+            .neutral  { color:#374151; }
+            .alert { background:#fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:4px; margin:16px 0; font-size:13px; }
+            .ok-box { background:#dcfce7; border-left:4px solid #16a34a; padding:12px 16px; border-radius:4px; margin:16px 0; font-size:13px; }
+            .footer { background:#f3f4f6; padding:16px 32px; font-size:11px; color:#9ca3af; text-align:center; }
+            a.btn { display:inline-block; background:#01696f; color:#fff; text-decoration:none; padding:10px 20px; border-radius:6px; font-size:13px; font-weight:600; margin-top:16px; }
+          </style></head>
+          <body>
+          <div class="container">
+            <div class="header">
+              <h1>📊 Rapport Portefeuille — $DATE</h1>
+              <p>Analyse quotidienne automatisée · v4.0</p>
+            </div>
+            <div class="body">
+              <div class="kpi">
+                <div class="kpi-box">
+                  <div class="val $([ $(echo "$PNL >= 0" | bc -l 2>/dev/null || echo 1) -eq 1 ] && echo positive || echo negative)">${PNL} €</div>
+                  <div class="lbl">PnL Net estimé</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="val $([ $(echo "$PCT >= 0" | bc -l 2>/dev/null || echo 1) -eq 1 ] && echo positive || echo negative)">${PCT}%</div>
+                  <div class="lbl">Performance nette</div>
+                </div>
+                <div class="kpi-box">
+                  <div class="val neutral">${STATUS_ICON}</div>
+                  <div class="lbl">Statut APIs</div>
+                </div>
+              </div>
 
-      - name: Vérifier conditions d'alerte
-        id: check
-        env:
-          PORTFOLIO_PNL_NET: ${{ env.PORTFOLIO_PNL_NET }}
-          PORTFOLIO_PNL_PCT: ${{ env.PORTFOLIO_PNL_PCT }}
-        run: |
-          python - <<'EOF'
-          import os, sys
-
-          pnl_net = float(os.environ.get("PORTFOLIO_PNL_NET", "0") or "0")
-          pnl_pct = float(os.environ.get("PORTFOLIO_PNL_PCT", "0") or "0")
-
-          # Seuils d'alerte
-          ALERT_PNL_PCT  = -5.0   # PnL global < -5% → alerte
-          ALERT_PNL_EUR  = -50.0  # PnL net < -50 € → alerte
-
-          reason = []
-          if pnl_pct  < ALERT_PNL_PCT:  reason.append(f"PnL global {pnl_pct:+.2f}% (seuil {ALERT_PNL_PCT}%)")
-          if pnl_net  < ALERT_PNL_EUR:  reason.append(f"PnL net {pnl_net:+.2f} € (seuil {ALERT_PNL_EUR} €)")
-
-          # Erreurs API dans le rapport
-          import glob
-          report_files = glob.glob("reports/daily_report.md")
-          api_errors_found = False
-          if report_files:
-              with open(report_files[0], encoding="utf-8") as f:
-                  content = f.read()
-              if "## 🔴 Journal des Erreurs API" in content:
-                  reason.append("Erreurs API détectées dans le rapport")
-                  api_errors_found = True
-
-          # Échec du job analyze
-          if os.environ.get("ANALYZE_RESULT", "") == "failure":
-              reason.append("Job analyze en échec")
-
-          if reason:
-              print("SEND_ALERT=true")
-              print("ALERT_REASON=" + " | ".join(reason))
-              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                  f.write("SEND_ALERT=true\n")
-                  f.write("ALERT_REASON=" + " | ".join(reason) + "\n")
-          else:
-              print("SEND_ALERT=false — Aucune alerte nécessaire")
-              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                  f.write("SEND_ALERT=false\n")
           EOF
+
+          if [ "$ERRORS" = "true" ]; then
+            echo "    <div class=\"alert\"><strong>⚠️ Données erronées détectées :</strong><br>${ERR_DETAIL}</div>" >> /tmp/mail_body.html
+          else
+            echo "    <div class=\"ok-box\"><strong>✅ APIs :</strong> ${STATUS_MSG}</div>" >> /tmp/mail_body.html
+          fi
+
+          cat <<EOF >> /tmp/mail_body.html
+              <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
+              <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
+            </div>
+            <div class="footer">Portfolio Analyzer v4.0 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
+          </div>
+          </body></html>
+          EOF
+
+          echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
+
+      # ── 7. Envoi mail (toujours, sauf si aucune clé SMTP configurée) ───────
+      - name: Send daily report email
+        if: always() && env.MAIL_USERNAME != ''
+        uses: dawidd6/action-send-mail@v6
         env:
-          ANALYZE_RESULT: ${{ needs.analyze.result }}
-
-      - name: Envoyer alerte email
-        if: steps.check.outputs.SEND_ALERT == 'true'
-        uses: dawidd6/action-send-mail@v3
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
         with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
-          username: ${{ secrets.ALERT_GMAIL_USER }}
-          password: ${{ secrets.ALERT_GMAIL_APP_PASSWORD }}
-          to: ${{ secrets.ALERT_EMAIL_TO }}
-          from: Portfolio Analyzer <${{ secrets.ALERT_GMAIL_USER }}>
-          subject: "🚨 Alerte Portefeuille — ${{ steps.check.outputs.ALERT_REASON }}"
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port:    ${{ secrets.MAIL_PORT }}
+          secure:         true
+          username:       ${{ secrets.MAIL_USERNAME }}
+          password:       ${{ secrets.MAIL_PASSWORD }}
+          subject:        "📊 Rapport Portefeuille ${{ github.run_number }} — PnL ${{ env.PORTFOLIO_PNL_NET }}€ (${{ env.PORTFOLIO_PNL_PCT }}%) ${{ env.HAS_API_ERRORS == 'true' && '⚠️ Erreurs API' || '✅ OK' }}"
+          to:             ${{ secrets.MAIL_TO }}
+          from:           ${{ secrets.MAIL_FROM }}
+          html_body:      file:///tmp/mail_body.html
+          attachments:    reports/daily_report.md,reports/charts/*.png
+          ignore_cert:    false
+          convert_markdown: false
+          priority:       normal
+
+      # ── 8. Notification si erreurs API critiques (canal séparé) ───────────
+      - name: Send ALERT email on critical API errors
+        if: always() && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
+        uses: dawidd6/action-send-mail@v6
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port:    ${{ secrets.MAIL_PORT }}
+          secure:         true
+          username:       ${{ secrets.MAIL_USERNAME }}
+          password:       ${{ secrets.MAIL_PASSWORD }}
+          subject:        "🔴 ALERTE — Données erronées dans le rapport du ${{ github.run_number }}"
+          to:             ${{ secrets.MAIL_TO }}
+          from:           ${{ secrets.MAIL_FROM }}
           body: |
-            Bonjour,
+            ⚠️ ALERTE PORTFOLIO ANALYZER v4.0
 
-            Une alerte a été déclenchée sur votre portefeuille.
+            Des données sont erronées ou indisponibles dans le rapport du jour.
+            Ne prenez pas de décision d'investissement sans vérifier manuellement les cours.
 
-            📋 Motif(s) : ${{ steps.check.outputs.ALERT_REASON }}
+            Erreurs détectées :
+            ${{ env.API_ERRORS_SUMMARY }}
 
-            📊 PnL net global : ${{ env.PORTFOLIO_PNL_NET }} €
-            📉 PnL net (%)    : ${{ env.PORTFOLIO_PNL_PCT }} %
-
-            🔗 Rapport complet : https://portfolio-analyzer-v3.pages.dev
-            📈 Historique      : https://portfolio-analyzer-v3.pages.dev/chart.html
+            Run GitHub Actions : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             ---
-            Portfolio Analyzer v3.4 — GitHub Actions
-            Ce message est automatique, ne pas répondre.
+            Portfolio Analyzer v4.0 — Alerte automatique
+          priority:       high

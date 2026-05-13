@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v3.4
+Portfolio Analyzer v4.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Changements v3.4 :
-  - Consensus analystes RÉTABLI sur la watchlist
-  - Erreurs API explicites : chaque donnée manquante affiche
-    la source en échec ET le motif (timeout / 4xx / vide)
-  - Cache session JSON avec horodatage : données du matin
-    clairement signalées ⚠️ CACHE SESSION (HH:MM) à 16h
-  - Historique CSV : reports/history.csv mis à jour à chaque run
-  - Score watchlist corrigé (bull%→/10 avant moyenne)
-  - Cache news partagé entre analyse et sentiment (zéro double appel)
-  - EUR/USD appel Finnhub conditionnel (seulement si TD échoue)
+Changements v4.0 :
+  [1] Consensus analystes + sentiment CONSERVÉS et renforcés
+  [2] Données erronées : chaque bloc API en échec affiche
+      ❌ DONNÉES ERRONÉES — source : <motif> dans le rapport
+      ET dans un journal centralisé en fin de rapport.
+  [3] Graphique mensuel : historique des 6 derniers mois par
+      actif généré dans reports/charts/<ticker>_monthly.png
+      La recommandation intègre un 4e pilier « Historique » (20%).
+  [4] Alerte mail : PnL global, erreurs API et graphiques
+      exposés via GITHUB_ENV pour le workflow SMTP.
+
+Scoring v4.0 :
+  Prix vs PRU       : 30 %
+  Sentiment presse  : 20 %
+  Consensus         : 20 %
+  Historique mensuel: 30 %
+  (macro_score utilisé comme contexte mais pas dans score actif)
 
 Protocole sources :
   COURS US      : TwelveData (batch) → EODHD → Finnhub
-  EUR/USD       : TwelveData → Finnhub → EODHD → défaut
+  EUR/USD       : TwelveData → Finnhub → EODHD → cache → défaut
   COURS EU (.PA): EODHD → Finnhub
   INDICES MACRO : EODHD → Finnhub
   SENTIMENT     : Finnhub → EODHD (lexical sur cache news)
-  CONSENSUS     : Finnhub → EODHD fundamentals  [portfolio + watchlist]
-  NEWS          : EODHD → Finnhub (cache en mémoire partagé)
+  CONSENSUS     : Finnhub → EODHD fundamentals
+  HISTORIQUE    : EODHD (eod) → Finnhub (candles)
+  NEWS          : EODHD → Finnhub (cache mémoire partagé)
   CACHE SESSION : lecture si API down, écriture après succès
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
@@ -38,12 +46,12 @@ FINNHUB_KEY    = os.environ.get("FINNHUB_API_KEY", "")
 EODHD_KEY      = os.environ.get("EODHD_API_KEY", "")
 TWELVEDATA_KEY = os.environ.get("TWELVEDATA_API_KEY", "")
 
-if not FINNHUB_KEY:
-    raise EnvironmentError("Secret GitHub manquant : FINNHUB_API_KEY")
-if not EODHD_KEY:
-    raise EnvironmentError("Secret GitHub manquant : EODHD_API_KEY")
-if not TWELVEDATA_KEY:
-    raise EnvironmentError("Secret GitHub manquant : TWELVEDATA_API_KEY")
+missing_keys = []
+if not FINNHUB_KEY:    missing_keys.append("FINNHUB_API_KEY")
+if not EODHD_KEY:      missing_keys.append("EODHD_API_KEY")
+if not TWELVEDATA_KEY: missing_keys.append("TWELVEDATA_API_KEY")
+if missing_keys:
+    raise EnvironmentError(f"Secrets GitHub manquants : {', '.join(missing_keys)}")
 
 FH_BASE  = "https://finnhub.io/api/v1"
 EOD_BASE = "https://eodhd.com/api"
@@ -53,11 +61,12 @@ PARIS_TZ = ZoneInfo("Europe/Paris")
 DIVERGENCE_THRESHOLD_PCT = 2.0
 CACHE_PATH   = "cache/session_cache.json"
 HISTORY_PATH = "reports/history.csv"
+CHARTS_DIR   = "reports/charts"
 HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
                 "pnl_net_pct", "score", "rec"]
 
-# ─── PORTEFEUILLE ──────────────────────────────────────────────────────────
+# ─── PORTEFEUILLE ─────────────────────────────────────────────────────────────
 PORTFOLIO = [
     {"name": "Palantir Technologies", "isin": "US69608A1088",
      "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",
@@ -104,11 +113,10 @@ def calc_fee(amount: float, marche: str) -> float:
     return round(max(t["flat"] if amount <= t["threshold"] else t["rate"] * amount, t["min"]), 2)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CACHE SESSION — fallback si API down entre 10h et 16h
+# CACHE SESSION
 # ══════════════════════════════════════════════════════════════════════════════
 
 def load_session_cache() -> dict:
-    """Charge le cache du jour uniquement (ignore si daté d'hier ou plus)."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -126,7 +134,7 @@ def save_session_cache(cache: dict):
         json.dump(cache, f, ensure_ascii=False)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COUCHE HTTP — avec diagnostic d'erreur explicite
+# COUCHE HTTP — diagnostic d'erreur explicite
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _get(url: str, params: dict, timeout: int = 10) -> tuple:
@@ -163,7 +171,7 @@ def cross_validate(val1: float, src1: str, val2: float, src2: str) -> tuple:
 
 _td_cache: dict = {}
 _td_last_call: float = 0.0
-_td_errors: dict = {}  # ticker → message d'erreur
+_td_errors: dict = {}
 
 def td_fetch_batch(tickers: list) -> dict:
     global _td_last_call
@@ -213,7 +221,6 @@ def td_fetch_batch(tickers: list) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_eur_usd(session_cache: dict) -> tuple:
-    """Retourne (1_USD_en_EUR, source, note). Finnhub conditionnel."""
     errors = []
 
     data, err = _get(f"{TD_BASE}/price", {"symbol": "EUR/USD", "apikey": TWELVEDATA_KEY})
@@ -238,7 +245,7 @@ def get_eur_usd(session_cache: dict) -> tuple:
                 f"⚠️ CACHE SESSION ({saved_at}) — APIs en échec : {', '.join(errors)}",
                 None)
 
-    return (0.92, f"⚠️ VALEUR PAR DÉFAUT — toutes sources en échec : {', '.join(errors)}", None)
+    return (0.92, f"❌ DONNÉES ERRONÉES — valeur par défaut 0.92 · sources : {', '.join(errors)}", None)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # COURS PAR ACTIF
@@ -246,8 +253,6 @@ def get_eur_usd(session_cache: dict) -> tuple:
 
 def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
                   session_cache: dict) -> tuple:
-    """Retourne (prix_eur, chg_pct, source, note_divergence).
-    Signale explicitement chaque source en échec."""
     td_val = eod_val = None
     note   = None
     chg    = 0.0
@@ -266,10 +271,10 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
         if data:
             raw = data.get("close") or data.get("previousClose")
             if raw and float(raw) > 0:
-                chg    = float(data.get("change_p", 0.0))
+                chg     = float(data.get("change_p", 0.0))
                 eod_val = round(float(raw) * eur_usd, 4)
             else:
-                errors.append(f"EODHD:cours nul")
+                errors.append("EODHD:cours nul")
         else:
             errors.append(f"EODHD:{err}")
 
@@ -285,13 +290,13 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
             return round(float(data["c"]) * eur_usd, 4), float(data.get("dp", 0.0)), "Finnhub", None
         errors.append(f"Finnhub:{err or 'vide'}")
 
-    else:  # Euronext
+    else:
         data, err = _get(f"{EOD_BASE}/real-time/{asset['ticker_eod']}",
                          {"api_token": EODHD_KEY, "fmt": "json"})
         if data:
             raw = data.get("close") or data.get("previousClose")
             if raw and float(raw) > 0:
-                chg    = float(data.get("change_p", 0.0))
+                chg     = float(data.get("change_p", 0.0))
                 eod_val = round(float(raw), 4)
             else:
                 errors.append("EODHD:cours nul")
@@ -311,7 +316,6 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
         if eod_val:
             return eod_val, chg, "EODHD", None
 
-    # Fallback cache session
     cache_key = f"price_{asset['ticker_eod']}"
     if session_cache.get(cache_key):
         saved_at = session_cache.get("saved_at", "?")
@@ -320,7 +324,7 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
                 f"⚠️ CACHE SESSION ({saved_at}) — {src_err} en échec", None)
 
     src_err = ", ".join(errors) if errors else "toutes sources"
-    return None, 0.0, f"❌ DONNÉES INDISPONIBLES ({src_err})", None
+    return None, 0.0, f"❌ DONNÉES ERRONÉES ({src_err})", None
 
 # ══════════════════════════════════════════════════════════════════════════════
 # INDICES
@@ -339,13 +343,13 @@ def get_index(symbols: dict) -> dict:
         return {"price": float(data["c"]),
                 "change_pct": float(data.get("dp", 0.0)), "source": "Finnhub"}
     return {"price": 0.0, "change_pct": 0.0,
-            "source": f"❌ N/D (EODHD:{eod_err}, Finnhub:{err or 'vide'})"}
+            "source": f"❌ DONNÉES ERRONÉES (EODHD:{eod_err}, Finnhub:{err or 'vide'})"}
 
 # ══════════════════════════════════════════════════════════════════════════════
-# NEWS — cache en mémoire partagé (pas de double appel)
+# NEWS — cache mémoire partagé
 # ══════════════════════════════════════════════════════════════════════════════
 
-_news_cache: dict[str, list] = {}
+_news_cache: dict = {}
 
 def get_company_news(asset: dict, n: int = 2) -> list:
     key = asset["ticker_eod"]
@@ -381,19 +385,23 @@ def get_macro_news(n: int = 5) -> list:
     return []
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SENTIMENT
+# SENTIMENT  [CONSERVÉ v4.0]
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_sentiment(asset: dict) -> tuple:
+    """Retourne (bull%, bear%, source_str).
+    Toujours retourne une valeur numérique + source explicite.
+    Si les deux sources échouent → 50/50 + message ❌ DONNÉES ERRONÉES.
+    """
     data, err = _get(f"{FH_BASE}/news-sentiment",
                      {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY})
     if data and data.get("sentiment"):
         bull = float(data["sentiment"].get("bullishPercent", 0.5)) * 100
         bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
-        return round(bull, 1), round(bear, 1), "Finnhub"
+        return round(bull, 1), round(bear, 1), "Finnhub ✓"
     fh_err = err or "vide"
 
-    # Fallback lexical sur cache news (zéro appel supplémentaire)
+    # Fallback lexical sur cache news (zéro appel HTTP supplémentaire)
     news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
     if news:
         bull_w = {"growth", "buy", "bullish", "surge", "record", "beat", "strong",
@@ -404,14 +412,19 @@ def get_sentiment(asset: dict) -> tuple:
         b = sum(1 for w in words if w in bull_w)
         s = sum(1 for w in words if w in bear_w)
         t = b + s or 1
-        return round(b/t*100, 1), round(s/t*100, 1), f"EODHD (lexical) — Finnhub:{fh_err}"
-    return 50.0, 50.0, f"⚠️ Indisponible (Finnhub:{fh_err}, EODHD:aucune news)"
+        return round(b/t*100, 1), round(s/t*100, 1), f"EODHD lexical (Finnhub:{fh_err})"
+
+    return (50.0, 50.0,
+            f"❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:{fh_err}, EODHD:aucune news)")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONSENSUS ANALYSTES — portfolio ET watchlist
+# CONSENSUS ANALYSTES  [CONSERVÉ v4.0]
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_consensus(asset: dict) -> tuple:
+    """Retourne (score/10, detail_str, source_str).
+    Si les deux sources échouent → score 5.0 neutre + ❌ DONNÉES ERRONÉES.
+    """
     data, err = _get(f"{FH_BASE}/stock/recommendation",
                      {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY})
     if isinstance(data, list) and data:
@@ -421,7 +434,7 @@ def get_consensus(asset: dict) -> tuple:
         total = sb + b + h + s + ss
         if total > 0:
             score = (sb*10 + b*7.5 + h*5 + s*2.5) / total
-            return round(score, 2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub"
+            return round(score, 2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub ✓"
     fh_err = err or "vide"
 
     data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
@@ -430,13 +443,195 @@ def get_consensus(asset: dict) -> tuple:
         rat   = data["Rating"]
         label = str(rat.get("Rating", "")).lower()
         tp    = rat.get("TargetPrice", "N/D")
-        m     = {"strong buy": 9.0, "buy": 7.5, "hold": 5.0, "sell": 2.5, "strong sell": 0.5}
+        m     = {"strong buy": 9.0, "buy": 7.5, "hold": 5.0,
+                 "sell": 2.5, "strong sell": 0.5}
         score = m.get(label, 5.0)
-        return score, f"Rating:{rat.get('Rating','?')} TP:{tp}$ — Finnhub:{fh_err}", "EODHD"
+        return score, f"Rating:{rat.get('Rating','?')} TP:{tp}$ · Finnhub:{fh_err}", "EODHD ✓"
 
     eod_err = err or "vide"
-    return (5.0, f"⚠️ N/D (Finnhub:{fh_err}, EODHD:{eod_err})",
-            "⚠️ Indisponible")
+    return (5.0,
+            f"❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:{fh_err}, EODHD:{eod_err})",
+            "❌ Indisponible")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# HISTORIQUE MENSUEL — NOUVEAU v4.0
+# ══════════════════════════════════════════════════════════════════════════════
+
+def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
+    """
+    Récupère l'historique mensuel (clôtures ajustées) sur `months` mois.
+    Retourne (dates_list, prices_eur_list, source_str, error_str|None).
+    EODHD (eod mensuel) → Finnhub (candles hebdo agrégés).
+    """
+    from_d = str(date.today() - timedelta(days=months * 31))
+    to_d   = str(date.today())
+
+    # Source 1 : EODHD EOD mensuel
+    ticker_eod = asset["ticker_eod"]
+    data, err  = _get(f"{EOD_BASE}/eod/{ticker_eod}",
+                      {"api_token": EODHD_KEY, "fmt": "json",
+                       "period": "m", "from": from_d, "to": to_d})
+    if isinstance(data, list) and len(data) >= 2:
+        dates  = [d["date"] for d in data if d.get("adjusted_close") or d.get("close")]
+        closes = [float(d.get("adjusted_close") or d.get("close", 0)) for d in data
+                  if d.get("adjusted_close") or d.get("close")]
+        if asset["marche"] == "us":
+            closes = [round(c * eur_usd, 2) for c in closes]
+        return dates, closes, "EODHD", None
+    eod_err = err or "vide"
+
+    # Source 2 : Finnhub candles hebdo → agrégés en mois
+    from_ts = int((date.today() - timedelta(days=months * 31)).strftime("%s") if hasattr(date.today(), 'strftime') else
+                  (datetime.now() - timedelta(days=months * 31)).timestamp())
+    to_ts   = int(datetime.now().timestamp())
+    data, err = _get(f"{FH_BASE}/stock/candle",
+                     {"symbol": asset["ticker_fh"], "resolution": "W",
+                      "from": from_ts, "to": to_ts, "token": FINNHUB_KEY})
+    if isinstance(data, dict) and data.get("s") == "ok" and data.get("c"):
+        timestamps = data["t"]
+        closes_raw = data["c"]
+        # Agréger en mois : garder la dernière clôture de chaque mois
+        monthly: dict = {}
+        for ts, cl in zip(timestamps, closes_raw):
+            month_key = datetime.fromtimestamp(ts).strftime("%Y-%m")
+            monthly[month_key] = cl
+        dates  = sorted(monthly.keys())
+        closes = [round(monthly[k] * eur_usd, 2)
+                  if asset["marche"] == "us" else round(monthly[k], 2)
+                  for k in dates]
+        return dates, closes, "Finnhub (candles hebdo)", None
+
+    return ([], [], f"❌ DONNÉES ERRONÉES — historique indisponible "
+            f"(EODHD:{eod_err}, Finnhub:{err or 'vide'})", "Historique indisponible")
+
+
+def score_history(dates: list, closes: list) -> tuple:
+    """
+    Score 0–10 basé sur le momentum mensuel.
+    Retourne (score, label, ret_1m, ret_3m, ret_6m).
+    """
+    if len(closes) < 2:
+        return 5.0, "NEUTRE", 0.0, 0.0, 0.0
+
+    def safe_ret(idx_from, idx_to=-1):
+        try:
+            return (closes[idx_to] / closes[idx_from] - 1) * 100
+        except (IndexError, ZeroDivisionError):
+            return 0.0
+
+    ret_1m = safe_ret(-2)
+    ret_3m = safe_ret(-4) if len(closes) >= 4 else safe_ret(0)
+    ret_6m = safe_ret(-7) if len(closes) >= 7 else safe_ret(0)
+
+    score = 5.0
+    # Momentum 1 mois
+    if ret_1m >  5: score += 1.5
+    elif ret_1m > 2: score += 0.75
+    elif ret_1m < -5: score -= 1.5
+    elif ret_1m < -2: score -= 0.75
+    # Momentum 3 mois
+    if ret_3m > 10: score += 2.0
+    elif ret_3m > 5: score += 1.0
+    elif ret_3m < -10: score -= 2.0
+    elif ret_3m < -5: score -= 1.0
+    # Momentum 6 mois
+    if ret_6m > 15: score += 1.5
+    elif ret_6m > 7: score += 0.75
+    elif ret_6m < -15: score -= 1.5
+    elif ret_6m < -7: score -= 0.75
+
+    score = round(max(0.0, min(10.0, score)), 2)
+    label = "HAUSSIER" if score >= 6.5 else "BAISSIER" if score <= 3.5 else "NEUTRE"
+    return score, label, ret_1m, ret_3m, ret_6m
+
+
+def generate_monthly_chart(asset: dict, dates: list, closes: list,
+                            cost_eur: float, chart_path: str) -> bool:
+    """
+    Génère un graphique PNG de l'historique mensuel.
+    Retourne True si succès, False sinon.
+    """
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from matplotlib.patches import FancyArrowPatch
+
+        if len(dates) < 2:
+            return False
+
+        os.makedirs(os.path.dirname(chart_path), exist_ok=True)
+
+        # Convertir les dates en objets datetime
+        dt_dates = []
+        for d in dates:
+            try:
+                if len(d) == 7:  # format YYYY-MM
+                    dt_dates.append(datetime.strptime(d + "-01", "%Y-%m-%d"))
+                else:
+                    dt_dates.append(datetime.strptime(d, "%Y-%m-%d"))
+            except Exception:
+                pass
+
+        if len(dt_dates) < 2:
+            return False
+
+        # Couleur de la courbe selon performance
+        perf = (closes[-1] - closes[0]) / closes[0] * 100 if closes[0] > 0 else 0
+        line_color = "#16a34a" if perf >= 0 else "#dc2626"
+        fill_color = "#dcfce7" if perf >= 0 else "#fee2e2"
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        fig.patch.set_facecolor("#f9f8f5")
+        ax.set_facecolor("#f9f8f5")
+
+        ax.plot(dt_dates, closes, color=line_color, linewidth=2.5,
+                marker="o", markersize=5, zorder=3)
+        ax.fill_between(dt_dates, closes, min(closes) * 0.97,
+                        alpha=0.18, color=fill_color)
+
+        # Ligne PRU
+        ax.axhline(y=cost_eur, color="#6b7280", linestyle="--",
+                   linewidth=1.2, alpha=0.8, label=f"PRU : {cost_eur:.2f} €")
+
+        # Annotations premier et dernier point
+        ax.annotate(f"{closes[0]:.2f}€", (dt_dates[0], closes[0]),
+                    textcoords="offset points", xytext=(-10, 8),
+                    fontsize=8, color="#374151")
+        ax.annotate(f"{closes[-1]:.2f}€\n({perf:+.1f}%)",
+                    (dt_dates[-1], closes[-1]),
+                    textcoords="offset points", xytext=(8, 0),
+                    fontsize=9, fontweight="bold", color=line_color)
+
+        # Formatage axes
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+        ax.xaxis.set_major_locator(mdates.MonthLocator())
+        plt.xticks(rotation=30, ha="right", fontsize=8)
+        ax.yaxis.set_major_formatter(plt.FormatStrFormatter("%.2f€"))
+        ax.tick_params(axis="y", labelsize=8)
+
+        # Grille légère
+        ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_color("#e5e7eb")
+        ax.spines["bottom"].set_color("#e5e7eb")
+
+        ax.set_title(f"{asset['name']} — Historique mensuel 6 mois (€)",
+                     fontsize=11, fontweight="bold", color="#111827", pad=12)
+        ax.set_ylabel("Cours (€)", fontsize=8, color="#6b7280")
+        ax.legend(fontsize=8, framealpha=0.6)
+
+        plt.tight_layout()
+        plt.savefig(chart_path, dpi=130, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        return True
+
+    except Exception as e:
+        print(f"[WARN] Graphique {asset['name']} non généré : {e}")
+        return False
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCORING
@@ -458,7 +653,7 @@ def recommend(score):
     return "🔴 VENDRE"
 
 def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
-                  consensus, macro_score, total_score):
+                  consensus, macro_score, hist_score, hist_label, total_score):
     p1 = (f"Gain net **{net_pnl_eur:+.2f} € ({net_pnl_pct:+.1f}%)** après frais."
           if net_pnl_eur >= 0
           else f"Perte nette **{net_pnl_eur:+.2f} € ({net_pnl_pct:+.1f}%)** après frais.")
@@ -470,14 +665,14 @@ def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
     p3 = ("Contexte macro **favorable**." if macro_score >= 6
           else "Contexte macro **défavorable**." if macro_score <= 4
           else "Contexte macro **neutre**.")
-    return f"{p1} {p2} {p3}"
+    p4 = f"Momentum mensuel **{hist_label}** (score historique {hist_score:.1f}/10)."
+    return f"{p1} {p2} {p3} {p4}"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # HISTORIQUE CSV
 # ══════════════════════════════════════════════════════════════════════════════
 
 def append_history(now: datetime, rows: list):
-    """Ajoute les données du run courant dans reports/history.csv."""
     os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
     exists = os.path.isfile(HISTORY_PATH)
     with open(HISTORY_PATH, "a", newline="", encoding="utf-8") as f:
@@ -486,21 +681,23 @@ def append_history(now: datetime, rows: list):
             writer.writeheader()
         for row in rows:
             writer.writerow(row)
-    print(f"[INFO] Historique mis à jour : {len(rows)} lignes ajoutées.")
+    print(f"[INFO] Historique mis à jour : {len(rows)} lignes.")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # RAPPORT PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_report() -> tuple:
-    """Retourne (rapport_markdown, pnl_global_net, pnl_global_pct)."""
+    """Retourne (rapport_markdown, pnl_global_net, pnl_global_pct,
+                  liste_erreurs_api, liste_chemins_graphiques)."""
     now            = datetime.now(PARIS_TZ)
     lines          = []
     divergence_log = []
-    api_errors     = []  # messages d'erreur API à afficher en fin de rapport
+    api_errors     = []
     session_cache  = load_session_cache()
     new_cache      = {}
     history_rows   = []
+    charts_generated = []
 
     print("[INFO] Batch TwelveData...")
     us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
@@ -511,7 +708,7 @@ def build_report() -> tuple:
     eur_usd, eurusd_src, eurusd_note = get_eur_usd(session_cache)
     if eurusd_note:
         divergence_log.append(f"EUR/USD : {eurusd_note}")
-    if "⚠️" in eurusd_src or "❌" in eurusd_src:
+    if "❌" in eurusd_src or "⚠️" in eurusd_src:
         api_errors.append(f"EUR/USD : {eurusd_src}")
     new_cache["eur_usd"] = eur_usd
 
@@ -526,7 +723,7 @@ def build_report() -> tuple:
     macro_news = get_macro_news(5)
 
     lines += [
-        f"# 📊 Rapport de Portefeuille — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# 📊 Rapport de Portefeuille v4.0 — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "", "---", "",
         "## 🌍 Contexte Économique", "",
         f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
@@ -551,7 +748,6 @@ def build_report() -> tuple:
 
     for asset in PORTFOLIO:
         print(f"[INFO] {asset['name']}...")
-        # Charger les news en premier → réutilisées par get_sentiment sans appel supplémentaire
         news = get_company_news(asset, 2)
         price_eur, chg, price_src, div_note = get_price_eur(
             asset, eur_usd, td_prices, session_cache)
@@ -564,8 +760,9 @@ def build_report() -> tuple:
         if price_eur is None:
             lines += [
                 f"### ❌ {asset['name']} `{asset['ticker_eod']}`",
-                f"> **DONNÉES INDISPONIBLES** — {price_src}",
-                "> Aucune source (TwelveData / EODHD / Finnhub / cache) n'a fourni de cours valide.",
+                "",
+                "> **❌ DONNÉES ERRONÉES** — aucune source (TwelveData / EODHD / Finnhub / cache)",
+                f"> Détail : {price_src}",
                 "", "---", "",
             ]
             api_errors.append(f"{asset['name']} : cours totalement indisponible")
@@ -584,21 +781,39 @@ def build_report() -> tuple:
         pnl_net    = round(vm - cout_reel - fee_v, 2)
         pnl_net_p  = round(pnl_net / cout_reel * 100, 2)
 
-        ps            = score_price(price_eur, cost)
-        bull, bear, sent_src   = get_sentiment(asset)
+        # Sentiment
+        bull, bear, sent_src = get_sentiment(asset)
+        if "❌" in sent_src:
+            api_errors.append(f"{asset['name']} sentiment : {sent_src}")
+
+        # Consensus
         cs, cons_str, cons_src = get_consensus(asset)
-        # Normalisation cohérente : bull en % → /100*10 pour rester en échelle 0–10
-        sc          = round((bull / 100 * 10 + cs) / 2, 2)
-        total_score = round(ps * 0.40 + sc * 0.35 + macro_score * 0.25, 2)
+        if "❌" in cons_src:
+            api_errors.append(f"{asset['name']} consensus : {cons_str}")
+
+        # Historique mensuel
+        print(f"[INFO] Historique {asset['name']}...")
+        h_dates, h_closes, h_src, h_err = get_monthly_history(asset, eur_usd)
+        if h_err:
+            api_errors.append(f"{asset['name']} historique : {h_src}")
+        hist_score, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
+
+        # Génération graphique PNG
+        chart_filename = f"{CHARTS_DIR}/{asset['ticker_eod'].replace('.', '_')}_monthly.png"
+        chart_ok = generate_monthly_chart(asset, h_dates, h_closes, cost, chart_filename)
+        if chart_ok:
+            charts_generated.append(chart_filename)
+            print(f"[INFO] Graphique : {chart_filename}")
+
+        # Score final v4.0 : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%
+        ps          = score_price(price_eur, cost)
+        sent_score  = bull / 100 * 10
+        total_score = round(ps * 0.30 + sent_score * 0.20 + cs * 0.20 + hist_score * 0.30, 2)
         rec         = recommend(total_score)
         news_str    = news[0] if news else "Aucune actualité récente."
         justif      = justification(asset["name"], pnl_net, pnl_net_p,
-                                    sc, bull, bear, cons_str, macro_score, total_score)
-
-        if "⚠️" in sent_src:
-            api_errors.append(f"{asset['name']} sentiment : {sent_src}")
-        if "⚠️" in cons_src:
-            api_errors.append(f"{asset['name']} consensus : {cons_str}")
+                                    (sent_score + cs) / 2, bull, bear, cons_str,
+                                    macro_score, hist_score, hist_label, total_score)
 
         total_cout     += cout
         total_vm       += vm
@@ -613,12 +828,28 @@ def build_report() -> tuple:
             "price_eur": price_eur, "cost_eur": cost, "qty": qty,
             "vm": vm, "pnl_brut": pnl_brut, "pnl_brut_pct": pnl_brut_p,
             "pnl_net": pnl_net, "pnl_net_pct": pnl_net_p,
-            "score": total_score, "rec": rec.replace("🟢","").replace("🔵","").replace("🟡","").replace("🟠","").replace("🔴","").strip(),
+            "score": total_score,
+            "rec": rec.replace("🟢","").replace("🔵","").replace("🟡","")
+                      .replace("🟠","").replace("🔴","").strip(),
         })
 
         src_badge = f"_{price_src}_"
         div_flag  = f" `{div_note}`" if div_note else ""
         icon      = "📗" if pnl_brut >= 0 else "📕"
+        chart_ref = f"\n\n![Historique mensuel]({chart_filename})" if chart_ok else ""
+
+        # Bloc sentiment : affichage explicite si données erronées
+        sent_display = (f"Bull {bull:.0f}% / Bear {bear:.0f}% · _{sent_src}_"
+                        if "❌" not in sent_src
+                        else f"❌ DONNÉES ERRONÉES · _{sent_src}_")
+        # Bloc consensus : affichage explicite si données erronées
+        cons_display = (f"{cons_str} · _{cons_src}_"
+                        if "❌" not in cons_src
+                        else f"❌ DONNÉES ERRONÉES · _{cons_str}_")
+        # Historique : affichage si erreur
+        hist_display = (f"Ret. 1M {ret_1m:+.1f}% | 3M {ret_3m:+.1f}% | 6M {ret_6m:+.1f}% · _{h_src}_"
+                        if not h_err
+                        else f"❌ DONNÉES ERRONÉES · {h_src}")
 
         lines += [
             f"### {icon} {asset['name']} `{asset['ticker_eod']}`",
@@ -632,11 +863,13 @@ def build_report() -> tuple:
             f"| **PnL brut latent** | {pnl_brut:+.2f} € ({pnl_brut_p:+.2f}%) |",
             f"| **Frais vente estimés** | {fee_v:.2f} € |",
             f"| **PnL net si vente** | {pnl_net:+.2f} € ({pnl_net_p:+.2f}%) |",
-            f"| **Sentiment presse** | Bull {bull:.0f}% / Bear {bear:.0f}% · _{sent_src}_ |",
-            f"| **Consensus analystes** | {cons_str} · _{cons_src}_ |",
-            f"| **Score** | {total_score:.1f}/10 (Prix {ps:.1f} · Sent {sc:.1f} · Macro {macro_score:.1f}) |",
+            f"| **Sentiment presse** | {sent_display} |",
+            f"| **Consensus analystes** | {cons_display} |",
+            f"| **Historique mensuel** | {hist_display} |",
+            f"| **Score** | {total_score:.1f}/10 (Prix {ps:.1f}·30% + Sent {sent_score:.1f}·20% + Cons {cs:.1f}·20% + Hist {hist_score:.1f}·30%) |",
             "",
             f"📰 **Actualité :** {news_str}",
+            chart_ref,
             "",
             f"**⚡ {rec}**",
             "",
@@ -658,7 +891,6 @@ def build_report() -> tuple:
         "", "---", "",
     ]
 
-    # ── Validation croisée ──
     if divergence_log:
         lines += ["## ⚠️ Journal de Validation Croisée", "",
                   "_Divergences > 2% détectées — médiane utilisée automatiquement :_", ""]
@@ -670,13 +902,22 @@ def build_report() -> tuple:
                   "_Aucune divergence détectée. Données cohérentes entre les sources._",
                   "", "---", ""]
 
-    # ── Journal des erreurs API ──
+    # ── Journal des erreurs API — TOUJOURS affiché si erreurs ──
     if api_errors:
-        lines += ["## 🔴 Journal des Erreurs API", "",
-                  "_Les données suivantes sont erronées ou indisponibles ce run :_", ""]
+        lines += [
+            "## 🔴 Journal des Erreurs API",
+            "",
+            "> ⚠️ **Les données suivantes sont ERRONÉES ou INDISPONIBLES pour ce run.**",
+            "> Vérifiez l'état des APIs concernées avant de prendre une décision.",
+            "",
+        ]
         for e in api_errors:
-            lines.append(f"- {e}")
+            lines.append(f"- ❌ {e}")
         lines += ["", "---", ""]
+    else:
+        lines += ["## ✅ Toutes les APIs", "",
+                  "_Toutes les sources de données ont répondu correctement._",
+                  "", "---", ""]
 
     # ── Conclusion stratégique ──
     best  = max(summaries, key=lambda x: x["score"]) if summaries else None
@@ -692,7 +933,7 @@ def build_report() -> tuple:
             "",
         ]
 
-    # ── Watchlist avec consensus ──
+    # ── Watchlist ──
     lines += [
         "### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille",
         "",
@@ -704,9 +945,9 @@ def build_report() -> tuple:
         pe, chg, src, _ = get_price_eur(w, eur_usd, td_prices, session_cache)
         if not pe:
             continue
-        get_company_news(w, n=10)  # charge dans cache pour get_sentiment
-        bull, bear, _    = get_sentiment(w)
-        cs, cons_str, _  = get_consensus(w)
+        get_company_news(w, n=10)
+        bull, bear, _   = get_sentiment(w)
+        cs, cons_str, _ = get_consensus(w)
         sc = round((bull / 100 * 10 + cs) / 2, 2)
         watch_res.append({"name": w["name"], "sector": w["sector"],
                           "price": pe, "chg": chg, "sc": sc,
@@ -722,28 +963,39 @@ def build_report() -> tuple:
 
     lines += [
         "", "---", "",
-        f"_Rapport v3.4 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
-        "_Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)_",
+        f"_Rapport v4.0 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
+        "_Sources : TwelveData (cours US) + EODHD (Euronext/indices/historique) + Finnhub (sentiment/consensus)_",
         f"_EUR/USD : 1 EUR = {1/eur_usd:.4f} USD — {eurusd_src}_",
+        "_Scoring : Prix 30% + Sentiment 20% + Consensus 20% + Historique Mensuel 30%_",
         "_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_",
     ]
 
-    # Sauvegarder cache session et historique
     save_session_cache(new_cache)
     append_history(now, history_rows)
 
-    return "\n".join(lines), total_pnl_net, tot_np
+    return "\n".join(lines), total_pnl_net, tot_np, api_errors, charts_generated
 
 
 if __name__ == "__main__":
-    report, pnl_net, pnl_pct = build_report()
+    report, pnl_net, pnl_pct, api_errors, charts = build_report()
+
     os.makedirs("reports", exist_ok=True)
     with open("reports/daily_report.md", "w", encoding="utf-8") as f:
         f.write(report)
-    # Expose les valeurs pour le workflow GitHub Actions (alerte email)
+
+    # Expose les variables pour GitHub Actions (alerte mail)
     env_file = os.environ.get("GITHUB_ENV", "")
     if env_file:
+        has_errors = "true" if api_errors else "false"
+        errors_list = " | ".join(api_errors[:5]) if api_errors else "Aucune"
+        charts_list = ",".join(charts) if charts else ""
         with open(env_file, "a") as f:
             f.write(f"PORTFOLIO_PNL_NET={pnl_net:.2f}\n")
             f.write(f"PORTFOLIO_PNL_PCT={pnl_pct:.2f}\n")
-    print(f"✅ Rapport v3.4 — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
+            f.write(f"HAS_API_ERRORS={has_errors}\n")
+            f.write(f"API_ERRORS_SUMMARY={errors_list}\n")
+            f.write(f"CHARTS_LIST={charts_list}\n")
+
+    print(f"✅ Rapport v4.0 — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
+    if api_errors:
+        print(f"⚠️ {len(api_errors)} erreur(s) API : {'; '.join(api_errors[:3])}")
