@@ -1,33 +1,34 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v4.0
+Portfolio Analyzer v4.1
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Changements v4.0 :
-  [1] Consensus analystes + sentiment CONSERVÉS et renforcés
-  [2] Données erronées : chaque bloc API en échec affiche
-      ❌ DONNÉES ERRONÉES — source : <motif> dans le rapport
-      ET dans un journal centralisé en fin de rapport.
-  [3] Graphique mensuel : historique des 6 derniers mois par
-      actif généré dans reports/charts/<ticker>_monthly.png
-      La recommandation intègre un 4e pilier « Historique » (20%).
-  [4] Alerte mail : PnL global, erreurs API et graphiques
-      exposés via GITHUB_ENV pour le workflow SMTP.
+Changements v4.1 :
+  [1] Alpha Vantage ajouté comme source de SECOURS sur toutes les
+      fonctions de collecte globale :
+        - EUR/USD      : TwelveData → Finnhub → EODHD → AlphaVantage → cache → défaut
+        - Cours US     : TwelveData → EODHD → Finnhub → AlphaVantage
+        - Cours EU     : EODHD → Finnhub → AlphaVantage
+        - Indices macro: EODHD → Finnhub → AlphaVantage
+        - Historique   : EODHD → Finnhub → AlphaVantage (daily ajusté)
+  [2] ALPHAVANTAGE_API_KEY est OPTIONNEL — pas de crash si absent,
+      mais un avertissement est affiché. Ajouter le secret GitHub
+      ALPHAVANTAGE_API_KEY pour activer le fallback.
 
-Scoring v4.0 :
+Scoring v4.1 (inchangé) :
   Prix vs PRU       : 30 %
   Sentiment presse  : 20 %
   Consensus         : 20 %
   Historique mensuel: 30 %
   (macro_score utilisé comme contexte mais pas dans score actif)
 
-Protocole sources :
-  COURS US      : TwelveData (batch) → EODHD → Finnhub
-  EUR/USD       : TwelveData → Finnhub → EODHD → cache → défaut
-  COURS EU (.PA): EODHD → Finnhub
-  INDICES MACRO : EODHD → Finnhub
+Protocole sources v4.1 :
+  COURS US      : TwelveData (batch) → EODHD → Finnhub → AlphaVantage
+  EUR/USD       : TwelveData → Finnhub → EODHD → AlphaVantage → cache → défaut
+  COURS EU (.PA): EODHD → Finnhub → AlphaVantage
+  INDICES MACRO : EODHD → Finnhub → AlphaVantage
   SENTIMENT     : Finnhub → EODHD (lexical sur cache news)
   CONSENSUS     : Finnhub → EODHD fundamentals
-  HISTORIQUE    : EODHD (eod) → Finnhub (candles)
+  HISTORIQUE    : EODHD (eod) → Finnhub (candles) → AlphaVantage (daily ajusté)
   NEWS          : EODHD → Finnhub (cache mémoire partagé)
   CACHE SESSION : lecture si API down, écriture après succès
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -42,9 +43,10 @@ from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 
 # ─── CLÉS API ────────────────────────────────────────────────────────────────
-FINNHUB_KEY    = os.environ.get("FINNHUB_API_KEY", "")
-EODHD_KEY      = os.environ.get("EODHD_API_KEY", "")
-TWELVEDATA_KEY = os.environ.get("TWELVEDATA_API_KEY", "")
+FINNHUB_KEY      = os.environ.get("FINNHUB_API_KEY", "")
+EODHD_KEY        = os.environ.get("EODHD_API_KEY", "")
+TWELVEDATA_KEY   = os.environ.get("TWELVEDATA_API_KEY", "")
+ALPHAVANTAGE_KEY = os.environ.get("ALPHAVANTAGE_API_KEY", "")   # optionnel — secours
 
 missing_keys = []
 if not FINNHUB_KEY:    missing_keys.append("FINNHUB_API_KEY")
@@ -53,9 +55,13 @@ if not TWELVEDATA_KEY: missing_keys.append("TWELVEDATA_API_KEY")
 if missing_keys:
     raise EnvironmentError(f"Secrets GitHub manquants : {', '.join(missing_keys)}")
 
+if not ALPHAVANTAGE_KEY:
+    print("[WARN] ALPHAVANTAGE_API_KEY absent — le fallback Alpha Vantage est désactivé.")
+
 FH_BASE  = "https://finnhub.io/api/v1"
 EOD_BASE = "https://eodhd.com/api"
 TD_BASE  = "https://api.twelvedata.com"
+AV_BASE  = "https://www.alphavantage.co/query"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
 DIVERGENCE_THRESHOLD_PCT = 2.0
@@ -70,37 +76,43 @@ HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
 PORTFOLIO = [
     {"name": "Palantir Technologies", "isin": "US69608A1088",
      "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",
+     "ticker_av": "PLTR",
      "qty": 2,  "cost_eur": 119.06, "marche": "us"},
     {"name": "CoreWeave",             "isin": "US21873S1087",
      "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",
+     "ticker_av": "CRWV",
      "qty": 2,  "cost_eur": 93.91,  "marche": "us"},
     {"name": "Riot Platforms",        "isin": "US7672921050",
      "ticker_fh": "RIOT",    "ticker_eod": "RIOT.US",  "ticker_td": "RIOT",
+     "ticker_av": "RIOT",
      "qty": 6,  "cost_eur": 15.84,  "marche": "us"},
     {"name": "JCDecaux",              "isin": "FR0000077919",
      "ticker_fh": "DEC.PA",  "ticker_eod": "DEC.PA",   "ticker_td": None,
+     "ticker_av": "DEC.PAR",
      "qty": 2,  "cost_eur": 17.77,  "marche": "euronext"},
     {"name": "Crédit Agricole SA",    "isin": "FR0000045072",
      "ticker_fh": "ACA.PA",  "ticker_eod": "ACA.PA",   "ticker_td": None,
+     "ticker_av": "ACA.PAR",
      "qty": 10, "cost_eur": 16.90,  "marche": "euronext"},
     {"name": "Abionyx Pharma",        "isin": "FR0012616852",
      "ticker_fh": "ABNX.PA", "ticker_eod": "ABNX.PA",  "ticker_td": None,
+     "ticker_av": "ABNX.PAR",
      "qty": 10, "cost_eur": 3.84,   "marche": "euronext"},
 ]
 
 INDICES = {
-    "S&P 500":    {"eod": "GSPC.INDX", "fh": "^GSPC"},
-    "CAC 40":     {"eod": "FCHI.INDX", "fh": "^FCHI"},
-    "Nikkei 225": {"eod": "N225.INDX", "fh": "^N225"},
+    "S&P 500":    {"eod": "GSPC.INDX", "fh": "^GSPC", "av": "SPY"},
+    "CAC 40":     {"eod": "FCHI.INDX", "fh": "^FCHI", "av": "EWQ"},
+    "Nikkei 225": {"eod": "N225.INDX", "fh": "^N225", "av": "EWJ"},
 }
 
 WATCHLIST = [
-    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "marche": "us",       "sector": "IA / Semi-conducteurs"},
-    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "marche": "us",       "sector": "IA / Cloud"},
-    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "marche": "us",       "sector": "Crypto / Fintech"},
-    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "marche": "euronext", "sector": "Luxe / Consommation"},
-    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "marche": "euronext", "sector": "Énergie"},
-    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "marche": "euronext", "sector": "Aéronautique / Défense"},
+    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "ticker_av": "NVDA",    "marche": "us",       "sector": "IA / Semi-conducteurs"},
+    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "ticker_av": "MSFT",    "marche": "us",       "sector": "IA / Cloud"},
+    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "ticker_av": "COIN",    "marche": "us",       "sector": "Crypto / Fintech"},
+    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "ticker_av": "MC.PAR",  "marche": "euronext", "sector": "Luxe / Consommation"},
+    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "ticker_av": "TTE.PAR", "marche": "euronext", "sector": "Énergie"},
+    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "ticker_av": "AIR.PAR", "marche": "euronext", "sector": "Aéronautique / Défense"},
 ]
 
 BROKERAGE = {
@@ -150,6 +162,108 @@ def _get(url: str, params: dict, timeout: int = 10) -> tuple:
         return None, "Connexion impossible"
     except Exception as e:
         return None, str(e)[:60]
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ALPHA VANTAGE — helpers
+# ══════════════════════════════════════════════════════════════════════════════
+
+def av_get_quote(ticker_av: str) -> tuple:
+    """
+    Retourne (price_usd_or_local, erreur_str) via Alpha Vantage GLOBAL_QUOTE.
+    Utilisé en dernier recours quand toutes les autres sources sont down.
+    """
+    if not ALPHAVANTAGE_KEY:
+        return None, "Clé absente"
+    data, err = _get(AV_BASE, {
+        "function": "GLOBAL_QUOTE",
+        "symbol":   ticker_av,
+        "apikey":   ALPHAVANTAGE_KEY,
+    })
+    if err:
+        return None, err
+    quote = data.get("Global Quote", {}) if isinstance(data, dict) else {}
+    price_str = quote.get("05. price")
+    if price_str:
+        try:
+            return float(price_str), None
+        except ValueError:
+            return None, "Valeur non numérique"
+    # Gestion limite API gratuite (5 req/min, 500 req/jour)
+    if isinstance(data, dict) and data.get("Note"):
+        return None, "Rate limit AlphaVantage"
+    if isinstance(data, dict) and data.get("Information"):
+        return None, "Quota journalier AlphaVantage"
+    return None, "Réponse vide"
+
+
+def av_get_forex(from_sym: str, to_sym: str) -> tuple:
+    """
+    Retourne (taux, erreur_str) via Alpha Vantage CURRENCY_EXCHANGE_RATE.
+    """
+    if not ALPHAVANTAGE_KEY:
+        return None, "Clé absente"
+    data, err = _get(AV_BASE, {
+        "function":   "CURRENCY_EXCHANGE_RATE",
+        "from_currency": from_sym,
+        "to_currency":   to_sym,
+        "apikey":        ALPHAVANTAGE_KEY,
+    })
+    if err:
+        return None, err
+    rate_info = data.get("Realtime Currency Exchange Rate", {}) if isinstance(data, dict) else {}
+    rate_str  = rate_info.get("5. Exchange Rate")
+    if rate_str:
+        try:
+            return float(rate_str), None
+        except ValueError:
+            return None, "Valeur non numérique"
+    if isinstance(data, dict) and (data.get("Note") or data.get("Information")):
+        return None, "Rate limit / Quota AlphaVantage"
+    return None, "Réponse vide"
+
+
+def av_get_monthly_history(ticker_av: str, months: int = 6) -> tuple:
+    """
+    Retourne (dates_list, closes_list, erreur_str) via Alpha Vantage
+    TIME_SERIES_DAILY_ADJUSTED (compact = 100 derniers jours).
+    Les données sont agrégées en dernière clôture mensuelle.
+    """
+    if not ALPHAVANTAGE_KEY:
+        return [], [], "Clé absente"
+    data, err = _get(AV_BASE, {
+        "function":   "TIME_SERIES_DAILY_ADJUSTED",
+        "symbol":     ticker_av,
+        "outputsize": "compact",
+        "apikey":     ALPHAVANTAGE_KEY,
+    })
+    if err:
+        return [], [], err
+    ts = data.get("Time Series (Daily)", {}) if isinstance(data, dict) else {}
+    if not ts:
+        if isinstance(data, dict) and (data.get("Note") or data.get("Information")):
+            return [], [], "Rate limit / Quota AlphaVantage"
+        return [], [], "Réponse vide"
+
+    cutoff = date.today() - timedelta(days=months * 31)
+    monthly: dict = {}
+    for day_str, values in ts.items():
+        try:
+            d = datetime.strptime(day_str, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if d < cutoff:
+            continue
+        month_key = d.strftime("%Y-%m")
+        close_str = values.get("5. adjusted close") or values.get("4. close")
+        if close_str:
+            monthly[month_key] = float(close_str)
+
+    if len(monthly) < 2:
+        return [], [], "Données insuffisantes (<2 mois)"
+
+    dates  = sorted(monthly.keys())
+    closes = [round(monthly[k], 4) for k in dates]
+    return dates, closes, None
 
 # ══════════════════════════════════════════════════════════════════════════════
 # VALIDATION CROISÉE
@@ -239,6 +353,12 @@ def get_eur_usd(session_cache: dict) -> tuple:
         return round(1 / float(data["close"]), 6), "EODHD", None
     errors.append(f"EODHD:{err or 'vide'}")
 
+    # ── Secours Alpha Vantage ──
+    av_rate, av_err = av_get_forex("EUR", "USD")
+    if av_rate and av_rate > 0:
+        return round(1 / av_rate, 6), "AlphaVantage", None
+    errors.append(f"AlphaVantage:{av_err or 'vide'}")
+
     if session_cache.get("eur_usd"):
         saved_at = session_cache.get("saved_at", "?")
         return (session_cache["eur_usd"],
@@ -290,6 +410,14 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
             return round(float(data["c"]) * eur_usd, 4), float(data.get("dp", 0.0)), "Finnhub", None
         errors.append(f"Finnhub:{err or 'vide'}")
 
+        # ── Secours Alpha Vantage (actifs US) ──
+        av_ticker = asset.get("ticker_av")
+        if av_ticker:
+            av_price, av_err = av_get_quote(av_ticker)
+            if av_price and av_price > 0:
+                return round(av_price * eur_usd, 4), 0.0, "AlphaVantage", None
+            errors.append(f"AlphaVantage:{av_err or 'vide'}")
+
     else:
         data, err = _get(f"{EOD_BASE}/real-time/{asset['ticker_eod']}",
                          {"api_token": EODHD_KEY, "fmt": "json"})
@@ -316,6 +444,14 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
         if eod_val:
             return eod_val, chg, "EODHD", None
 
+        # ── Secours Alpha Vantage (actifs EU) ──
+        av_ticker = asset.get("ticker_av")
+        if av_ticker:
+            av_price, av_err = av_get_quote(av_ticker)
+            if av_price and av_price > 0:
+                return round(av_price, 4), 0.0, "AlphaVantage", None
+            errors.append(f"AlphaVantage:{av_err or 'vide'}")
+
     cache_key = f"price_{asset['ticker_eod']}"
     if session_cache.get(cache_key):
         saved_at = session_cache.get("saved_at", "?")
@@ -337,13 +473,27 @@ def get_index(symbols: dict) -> dict:
         return {"price": float(data.get("close") or data.get("previousClose", 0)),
                 "change_pct": float(data.get("change_p", 0.0)), "source": "EODHD"}
     eod_err = err or "vide"
+
     data, err = _get(f"{FH_BASE}/quote",
                      {"symbol": symbols["fh"], "token": FINNHUB_KEY})
     if data and data.get("c"):
         return {"price": float(data["c"]),
                 "change_pct": float(data.get("dp", 0.0)), "source": "Finnhub"}
+    fh_err = err or "vide"
+
+    # ── Secours Alpha Vantage (ETF proxy pour l'indice) ──
+    av_sym = symbols.get("av")
+    if av_sym:
+        av_price, av_err = av_get_quote(av_sym)
+        if av_price and av_price > 0:
+            return {"price": av_price, "change_pct": 0.0,
+                    "source": f"AlphaVantage (proxy ETF {av_sym})"}
+        av_err_msg = av_err or "vide"
+    else:
+        av_err_msg = "symbole absent"
+
     return {"price": 0.0, "change_pct": 0.0,
-            "source": f"❌ DONNÉES ERRONÉES (EODHD:{eod_err}, Finnhub:{err or 'vide'})"}
+            "source": f"❌ DONNÉES ERRONÉES (EODHD:{eod_err}, Finnhub:{fh_err}, AlphaVantage:{av_err_msg})"}
 
 # ══════════════════════════════════════════════════════════════════════════════
 # NEWS — cache mémoire partagé
@@ -454,14 +604,14 @@ def get_consensus(asset: dict) -> tuple:
             "❌ Indisponible")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HISTORIQUE MENSUEL — NOUVEAU v4.0
+# HISTORIQUE MENSUEL — v4.1 : ajout fallback Alpha Vantage
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
     """
     Récupère l'historique mensuel (clôtures ajustées) sur `months` mois.
     Retourne (dates_list, prices_eur_list, source_str, error_str|None).
-    EODHD (eod mensuel) → Finnhub (candles hebdo agrégés).
+    EODHD (eod mensuel) → Finnhub (candles hebdo agrégés) → AlphaVantage (daily ajusté).
     """
     from_d = str(date.today() - timedelta(days=months * 31))
     to_d   = str(date.today())
@@ -481,8 +631,7 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
     eod_err = err or "vide"
 
     # Source 2 : Finnhub candles hebdo → agrégés en mois
-    from_ts = int((date.today() - timedelta(days=months * 31)).strftime("%s") if hasattr(date.today(), 'strftime') else
-                  (datetime.now() - timedelta(days=months * 31)).timestamp())
+    from_ts = int((datetime.now() - timedelta(days=months * 31)).timestamp())
     to_ts   = int(datetime.now().timestamp())
     data, err = _get(f"{FH_BASE}/stock/candle",
                      {"symbol": asset["ticker_fh"], "resolution": "W",
@@ -490,7 +639,6 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
     if isinstance(data, dict) and data.get("s") == "ok" and data.get("c"):
         timestamps = data["t"]
         closes_raw = data["c"]
-        # Agréger en mois : garder la dernière clôture de chaque mois
         monthly: dict = {}
         for ts, cl in zip(timestamps, closes_raw):
             month_key = datetime.fromtimestamp(ts).strftime("%Y-%m")
@@ -500,9 +648,23 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
                   if asset["marche"] == "us" else round(monthly[k], 2)
                   for k in dates]
         return dates, closes, "Finnhub (candles hebdo)", None
+    fh_err = err or "vide"
+
+    # Source 3 : Alpha Vantage daily ajusté (secours)
+    av_ticker = asset.get("ticker_av")
+    if av_ticker:
+        av_dates, av_closes, av_err = av_get_monthly_history(av_ticker, months)
+        if av_dates and len(av_dates) >= 2:
+            if asset["marche"] == "us":
+                av_closes = [round(c * eur_usd, 2) for c in av_closes]
+            return av_dates, av_closes, "AlphaVantage (daily ajusté)", None
+        av_err_msg = av_err or "vide"
+    else:
+        av_err_msg = "ticker_av absent"
 
     return ([], [], f"❌ DONNÉES ERRONÉES — historique indisponible "
-            f"(EODHD:{eod_err}, Finnhub:{err or 'vide'})", "Historique indisponible")
+            f"(EODHD:{eod_err}, Finnhub:{fh_err}, AlphaVantage:{av_err_msg})",
+            "Historique indisponible")
 
 
 def score_history(dates: list, closes: list) -> tuple:
@@ -524,17 +686,14 @@ def score_history(dates: list, closes: list) -> tuple:
     ret_6m = safe_ret(-7) if len(closes) >= 7 else safe_ret(0)
 
     score = 5.0
-    # Momentum 1 mois
     if ret_1m >  5: score += 1.5
     elif ret_1m > 2: score += 0.75
     elif ret_1m < -5: score -= 1.5
     elif ret_1m < -2: score -= 0.75
-    # Momentum 3 mois
     if ret_3m > 10: score += 2.0
     elif ret_3m > 5: score += 1.0
     elif ret_3m < -10: score -= 2.0
     elif ret_3m < -5: score -= 1.0
-    # Momentum 6 mois
     if ret_6m > 15: score += 1.5
     elif ret_6m > 7: score += 0.75
     elif ret_6m < -15: score -= 1.5
@@ -563,11 +722,10 @@ def generate_monthly_chart(asset: dict, dates: list, closes: list,
 
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
 
-        # Convertir les dates en objets datetime
         dt_dates = []
         for d in dates:
             try:
-                if len(d) == 7:  # format YYYY-MM
+                if len(d) == 7:
                     dt_dates.append(datetime.strptime(d + "-01", "%Y-%m-%d"))
                 else:
                     dt_dates.append(datetime.strptime(d, "%Y-%m-%d"))
@@ -577,7 +735,6 @@ def generate_monthly_chart(asset: dict, dates: list, closes: list,
         if len(dt_dates) < 2:
             return False
 
-        # Couleur de la courbe selon performance
         perf = (closes[-1] - closes[0]) / closes[0] * 100 if closes[0] > 0 else 0
         line_color = "#16a34a" if perf >= 0 else "#dc2626"
         fill_color = "#dcfce7" if perf >= 0 else "#fee2e2"
@@ -591,11 +748,9 @@ def generate_monthly_chart(asset: dict, dates: list, closes: list,
         ax.fill_between(dt_dates, closes, min(closes) * 0.97,
                         alpha=0.18, color=fill_color)
 
-        # Ligne PRU
         ax.axhline(y=cost_eur, color="#6b7280", linestyle="--",
                    linewidth=1.2, alpha=0.8, label=f"PRU : {cost_eur:.2f} €")
 
-        # Annotations premier et dernier point
         ax.annotate(f"{closes[0]:.2f}€", (dt_dates[0], closes[0]),
                     textcoords="offset points", xytext=(-10, 8),
                     fontsize=8, color="#374151")
@@ -604,14 +759,12 @@ def generate_monthly_chart(asset: dict, dates: list, closes: list,
                     textcoords="offset points", xytext=(8, 0),
                     fontsize=9, fontweight="bold", color=line_color)
 
-        # Formatage axes
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         ax.xaxis.set_major_locator(mdates.MonthLocator())
         plt.xticks(rotation=30, ha="right", fontsize=8)
         ax.yaxis.set_major_formatter(plt.FormatStrFormatter("%.2f€"))
         ax.tick_params(axis="y", labelsize=8)
 
-        # Grille légère
         ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -723,7 +876,7 @@ def build_report() -> tuple:
     macro_news = get_macro_news(5)
 
     lines += [
-        f"# 📊 Rapport de Portefeuille v4.0 — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# 📊 Rapport de Portefeuille v4.1 — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "", "---", "",
         "## 🌍 Contexte Économique", "",
         f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
@@ -761,7 +914,7 @@ def build_report() -> tuple:
             lines += [
                 f"### ❌ {asset['name']} `{asset['ticker_eod']}`",
                 "",
-                "> **❌ DONNÉES ERRONÉES** — aucune source (TwelveData / EODHD / Finnhub / cache)",
+                "> **❌ DONNÉES ERRONÉES** — aucune source (TwelveData / EODHD / Finnhub / AlphaVantage / cache)",
                 f"> Détail : {price_src}",
                 "", "---", "",
             ]
@@ -781,31 +934,26 @@ def build_report() -> tuple:
         pnl_net    = round(vm - cout_reel - fee_v, 2)
         pnl_net_p  = round(pnl_net / cout_reel * 100, 2)
 
-        # Sentiment
         bull, bear, sent_src = get_sentiment(asset)
         if "❌" in sent_src:
             api_errors.append(f"{asset['name']} sentiment : {sent_src}")
 
-        # Consensus
         cs, cons_str, cons_src = get_consensus(asset)
         if "❌" in cons_src:
             api_errors.append(f"{asset['name']} consensus : {cons_str}")
 
-        # Historique mensuel
         print(f"[INFO] Historique {asset['name']}...")
         h_dates, h_closes, h_src, h_err = get_monthly_history(asset, eur_usd)
         if h_err:
             api_errors.append(f"{asset['name']} historique : {h_src}")
         hist_score, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
 
-        # Génération graphique PNG
         chart_filename = f"{CHARTS_DIR}/{asset['ticker_eod'].replace('.', '_')}_monthly.png"
         chart_ok = generate_monthly_chart(asset, h_dates, h_closes, cost, chart_filename)
         if chart_ok:
             charts_generated.append(chart_filename)
             print(f"[INFO] Graphique : {chart_filename}")
 
-        # Score final v4.0 : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%
         ps          = score_price(price_eur, cost)
         sent_score  = bull / 100 * 10
         total_score = round(ps * 0.30 + sent_score * 0.20 + cs * 0.20 + hist_score * 0.30, 2)
@@ -838,15 +986,12 @@ def build_report() -> tuple:
         icon      = "📗" if pnl_brut >= 0 else "📕"
         chart_ref = f"\n\n![Historique mensuel]({chart_filename})" if chart_ok else ""
 
-        # Bloc sentiment : affichage explicite si données erronées
         sent_display = (f"Bull {bull:.0f}% / Bear {bear:.0f}% · _{sent_src}_"
                         if "❌" not in sent_src
                         else f"❌ DONNÉES ERRONÉES · _{sent_src}_")
-        # Bloc consensus : affichage explicite si données erronées
         cons_display = (f"{cons_str} · _{cons_src}_"
                         if "❌" not in cons_src
                         else f"❌ DONNÉES ERRONÉES · _{cons_str}_")
-        # Historique : affichage si erreur
         hist_display = (f"Ret. 1M {ret_1m:+.1f}% | 3M {ret_3m:+.1f}% | 6M {ret_6m:+.1f}% · _{h_src}_"
                         if not h_err
                         else f"❌ DONNÉES ERRONÉES · {h_src}")
@@ -902,7 +1047,6 @@ def build_report() -> tuple:
                   "_Aucune divergence détectée. Données cohérentes entre les sources._",
                   "", "---", ""]
 
-    # ── Journal des erreurs API — TOUJOURS affiché si erreurs ──
     if api_errors:
         lines += [
             "## 🔴 Journal des Erreurs API",
@@ -919,7 +1063,6 @@ def build_report() -> tuple:
                   "_Toutes les sources de données ont répondu correctement._",
                   "", "---", ""]
 
-    # ── Conclusion stratégique ──
     best  = max(summaries, key=lambda x: x["score"]) if summaries else None
     worst = min(summaries, key=lambda x: x["score"]) if summaries else None
     ctx   = ("Marchés en dynamique **positive**." if macro_score >= 6
@@ -933,7 +1076,6 @@ def build_report() -> tuple:
             "",
         ]
 
-    # ── Watchlist ──
     lines += [
         "### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille",
         "",
@@ -963,8 +1105,8 @@ def build_report() -> tuple:
 
     lines += [
         "", "---", "",
-        f"_Rapport v4.0 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
-        "_Sources : TwelveData (cours US) + EODHD (Euronext/indices/historique) + Finnhub (sentiment/consensus)_",
+        f"_Rapport v4.1 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
+        "_Sources : TwelveData (cours US) + EODHD (Euronext/indices/historique) + Finnhub (sentiment/consensus) + AlphaVantage (secours)_",
         f"_EUR/USD : 1 EUR = {1/eur_usd:.4f} USD — {eurusd_src}_",
         "_Scoring : Prix 30% + Sentiment 20% + Consensus 20% + Historique Mensuel 30%_",
         "_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_",
@@ -983,7 +1125,6 @@ if __name__ == "__main__":
     with open("reports/daily_report.md", "w", encoding="utf-8") as f:
         f.write(report)
 
-    # Expose les variables pour GitHub Actions (alerte mail)
     env_file = os.environ.get("GITHUB_ENV", "")
     if env_file:
         has_errors = "true" if api_errors else "false"
@@ -996,6 +1137,6 @@ if __name__ == "__main__":
             f.write(f"API_ERRORS_SUMMARY={errors_list}\n")
             f.write(f"CHARTS_LIST={charts_list}\n")
 
-    print(f"✅ Rapport v4.0 — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
+    print(f"✅ Rapport v4.1 — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
     if api_errors:
         print(f"⚠️ {len(api_errors)} erreur(s) API : {'; '.join(api_errors[:3])}")
