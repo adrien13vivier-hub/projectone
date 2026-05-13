@@ -42,9 +42,10 @@ jobs:
       - name: Run portfolio analysis
         id: analysis
         env:
-          FINNHUB_API_KEY:    ${{ secrets.FINNHUB_API_KEY }}
-          EODHD_API_KEY:      ${{ secrets.EODHD_API_KEY }}
-          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          FINNHUB_API_KEY:      ${{ secrets.FINNHUB_API_KEY }}
+          EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
+          TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
+          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
         run: |
           mkdir -p reports/charts cache docs
           python portfolio_analyzer.py
@@ -54,9 +55,10 @@ jobs:
       - name: Generate HTML report for Cloudflare Pages
         id: generate_html
         env:
-          FINNHUB_API_KEY:    ${{ secrets.FINNHUB_API_KEY }}
-          EODHD_API_KEY:      ${{ secrets.EODHD_API_KEY }}
-          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          FINNHUB_API_KEY:      ${{ secrets.FINNHUB_API_KEY }}
+          EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
+          TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
+          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
         run: |
           mkdir -p docs
           python generate_html.py
@@ -166,7 +168,7 @@ jobs:
               <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
               <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
             </div>
-            <div class="footer">Portfolio Analyzer v4.1 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
+            <div class="footer">Portfolio Analyzer v4.1 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
           </div>
           </body></html>
           EOF
