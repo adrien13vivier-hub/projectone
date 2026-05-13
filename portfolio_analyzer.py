@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v3.2
+Portfolio Analyzer v3.3
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Protocole 3 sources avec validation croisée :
+Optimisations v3.3 vs v3.2 :
+  - Cache session JSON (fallback si API down entre 10h et 16h)
+  - Suppression get_consensus sur watchlist (inutile pour scoring)
+  - EUR/USD : appel Finnhub seulement si TwelveData échoue
+  - Cache news entreprise partagé entre analyse et sentiment
+  - Score watchlist corrigé (bull % → /10 avant moyenne)
+  - Import date remonté au niveau module
 
+Protocole sources :
   COURS US      : TwelveData (batch) → EODHD → Finnhub
-  EUR/USD       : TwelveData → Finnhub → EODHD → valeur par défaut
+  EUR/USD       : TwelveData → Finnhub → EODHD → défaut
   COURS EU (.PA): EODHD → Finnhub
   INDICES MACRO : EODHD → Finnhub
-  SENTIMENT     : Finnhub → EODHD (analyse lexicale)
+  SENTIMENT     : Finnhub → EODHD (lexical sur cache news)
   CONSENSUS     : Finnhub → EODHD fundamentals
-  NEWS          : EODHD → Finnhub
-
-Validation croisée : si écart > 2% entre deux sources sur
-un même cours → ⚠️ Divergence signalée dans le rapport.
+  NEWS          : EODHD → Finnhub (cache partagé)
+  CACHE SESSION : lecture si API down, écriture après succès
 
 Plan TwelveData gratuit : 8 crédits/minute, US uniquement.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
 import os
+import json
 import time
 import requests
 from datetime import datetime, date, timedelta
@@ -43,6 +49,7 @@ TD_BASE  = "https://api.twelvedata.com"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
 DIVERGENCE_THRESHOLD_PCT = 2.0
+CACHE_PATH = "cache/session_cache.json"
 
 # ─── PORTEFEUILLE ─────────────────────────────────────────────────────────────
 PORTFOLIO = [
@@ -91,6 +98,27 @@ def calc_fee(amount: float, marche: str) -> float:
     return round(max(t["flat"] if amount <= t["threshold"] else t["rate"] * amount, t["min"]), 2)
 
 # ══════════════════════════════════════════════════════════════════════════════
+# CACHE SESSION — fallback si API down lors de la seconde exécution
+# ══════════════════════════════════════════════════════════════════════════════
+
+def load_session_cache() -> dict:
+    """Charge le cache du jour (ignore si daté d'hier ou plus)."""
+    try:
+        with open(CACHE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if data.get("date") == str(date.today()):
+            return data
+    except Exception:
+        pass
+    return {}
+
+def save_session_cache(cache: dict):
+    os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+    cache["date"] = str(date.today())
+    with open(CACHE_PATH, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False)
+
+# ══════════════════════════════════════════════════════════════════════════════
 # COUCHE HTTP
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -104,17 +132,16 @@ def _get(url: str, params: dict, timeout: int = 10):
     return None
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PROTOCOLE DE VALIDATION CROISÉE
+# VALIDATION CROISÉE
 # ══════════════════════════════════════════════════════════════════════════════
 
 def cross_validate(val1: float, src1: str, val2: float, src2: str) -> tuple:
-    """Compare deux prix. Si écart > seuil → signale divergence et retourne médiane."""
     if val1 and val2 and val1 > 0 and val2 > 0:
         ecart_pct = abs(val1 - val2) / val1 * 100
         if ecart_pct > DIVERGENCE_THRESHOLD_PCT:
             mediane = round((val1 + val2) / 2, 4)
             note = (f"⚠️ Divergence {ecart_pct:.1f}% entre {src1} ({val1:.4f}) "
-                    f"et {src2} ({val2:.4f}) → médiane utilisée : {mediane:.4f}")
+                    f"et {src2} ({val2:.4f}) → médiane : {mediane:.4f}")
             return mediane, note
     return val1 if val1 and val1 > 0 else val2, None
 
@@ -126,14 +153,13 @@ _td_cache = {}
 _td_last_call = 0.0
 
 def td_fetch_batch(tickers: list) -> dict:
-    """Récupère les prix de tous les tickers US en une seule requête TwelveData.
-    Respecte la limite de 8 crédits/minute avec pause automatique.
-    Retourne dict {ticker: price_float ou None}."""
+    """Récupère les prix US en une seule requête TwelveData (max 6/batch).
+    Respecte la limite 8 crédits/minute avec pause automatique."""
     global _td_last_call
 
-    to_fetch = [t for t in tickers if t not in _td_cache]
+    to_fetch = [t for t in tickers if t and t not in _td_cache]
     if not to_fetch:
-        return {t: _td_cache.get(t) for t in tickers}
+        return {t: _td_cache.get(t) for t in tickers if t}
 
     elapsed = time.time() - _td_last_call
     if elapsed < 10 and _td_last_call > 0:
@@ -142,9 +168,8 @@ def td_fetch_batch(tickers: list) -> dict:
     results = {}
     for i in range(0, len(to_fetch), 6):
         batch = to_fetch[i:i+6]
-        symbol_str = ",".join(batch)
-        data = _get(f"{TD_BASE}/price",
-                    {"symbol": symbol_str, "apikey": TWELVEDATA_KEY})
+        data  = _get(f"{TD_BASE}/price",
+                     {"symbol": ",".join(batch), "apikey": TWELVEDATA_KEY})
         _td_last_call = time.time()
 
         if isinstance(data, dict):
@@ -166,51 +191,52 @@ def td_fetch_batch(tickers: list) -> dict:
             time.sleep(12)
 
     for t in tickers:
-        if t not in results:
+        if t and t not in results:
             results[t] = _td_cache.get(t)
     return results
 
 # ══════════════════════════════════════════════════════════════════════════════
-# SOURCES DE DONNÉES
+# EUR/USD — TwelveData → Finnhub (seulement si TD échoue) → EODHD → défaut
 # ══════════════════════════════════════════════════════════════════════════════
 
-def get_eur_usd() -> tuple:
-    """Retourne (1_USD_en_EUR, source, note_divergence_ou_None).
-    Priorité : TwelveData → Finnhub → EODHD."""
-    td_val, fh_val = None, None
+def get_eur_usd(session_cache: dict) -> tuple:
+    """Retourne (1_USD_en_EUR, source, note_divergence).
+    Appel Finnhub uniquement si TwelveData échoue (optimisation v3.3)."""
 
+    # TwelveData en priorité (déjà compté dans le batch si possible)
     data = _get(f"{TD_BASE}/price", {"symbol": "EUR/USD", "apikey": TWELVEDATA_KEY})
     if data and data.get("price"):
-        eurusd = float(data["price"])
-        td_val = round(1 / eurusd, 6)
+        td_val = round(1 / float(data["price"]), 6)
+        return td_val, "TwelveData", None
 
+    # Finnhub seulement si TwelveData a échoué
     data = _get(f"{FH_BASE}/forex/rates", {"base": "USD", "token": FINNHUB_KEY})
     if data and data.get("quote", {}).get("EUR"):
-        fh_val = float(data["quote"]["EUR"])
+        return float(data["quote"]["EUR"]), "Finnhub", None
 
-    if td_val and fh_val:
-        final, note = cross_validate(td_val, "TwelveData", fh_val, "Finnhub")
-        src = "TwelveData ✓ Finnhub" if not note else "Médiane TwelveData/Finnhub"
-        return final, src, note
-
-    if td_val: return td_val, "TwelveData", None
-    if fh_val: return fh_val, "Finnhub", None
-
+    # EODHD en dernier recours
     data = _get(f"{EOD_BASE}/real-time/EURUSD.FOREX",
                 {"api_token": EODHD_KEY, "fmt": "json"})
     if data and data.get("close"):
         return round(1 / float(data["close"]), 6), "EODHD", None
 
+    # Fallback cache session du matin
+    if session_cache.get("eur_usd"):
+        return session_cache["eur_usd"], "⚠️ Cache session", None
+
     return 0.92, "⚠️ Valeur par défaut", None
 
+# ══════════════════════════════════════════════════════════════════════════════
+# COURS PAR ACTIF
+# ══════════════════════════════════════════════════════════════════════════════
 
-def get_price_eur(asset: dict, eur_usd: float, td_prices: dict) -> tuple:
+def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
+                  session_cache: dict) -> tuple:
     """Retourne (prix_eur, chg_pct, source, note_divergence).
-    US  : TwelveData (batch) → EODHD → Finnhub
-    EUR : EODHD → Finnhub"""
-    td_val, eod_val = None, None
-    note = None
-    chg  = 0.0
+    Fallback cache session si toutes les APIs échouent."""
+    td_val = eod_val = None
+    note   = None
+    chg    = 0.0
 
     if asset["marche"] == "us":
         td_raw = td_prices.get(asset.get("ticker_td"))
@@ -222,14 +248,14 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict) -> tuple:
         if data:
             raw = data.get("close") or data.get("previousClose")
             if raw and float(raw) > 0:
-                chg = float(data.get("change_p", 0.0))
+                chg    = float(data.get("change_p", 0.0))
                 eod_val = round(float(raw) * eur_usd, 4)
 
         if td_val and eod_val:
             final, note = cross_validate(td_val, "TwelveData", eod_val, "EODHD")
             src = "TwelveData ✓ EODHD" if not note else "Médiane TwelveData/EODHD"
             return final, chg, src, note
-        if td_val:  return td_val, 0.0, "TwelveData", None
+        if td_val:  return td_val,  0.0, "TwelveData", None
         if eod_val: return eod_val, chg, "EODHD", None
 
         data = _get(f"{FH_BASE}/quote",
@@ -238,13 +264,13 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict) -> tuple:
             raw = float(data["c"])
             return round(raw * eur_usd, 4), float(data.get("dp", 0.0)), "Finnhub", None
 
-    else:
+    else:  # Euronext
         data = _get(f"{EOD_BASE}/real-time/{asset['ticker_eod']}",
                     {"api_token": EODHD_KEY, "fmt": "json"})
         if data:
             raw = data.get("close") or data.get("previousClose")
             if raw and float(raw) > 0:
-                chg = float(data.get("change_p", 0.0))
+                chg    = float(data.get("change_p", 0.0))
                 eod_val = round(float(raw), 4)
 
         data_fh = _get(f"{FH_BASE}/quote",
@@ -256,14 +282,20 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict) -> tuple:
                 src = "EODHD ✓ Finnhub" if not note else "Médiane EODHD/Finnhub"
                 return final, chg, src, note
             return fh_val, float(data_fh.get("dp", 0.0)), "Finnhub", None
-
         if eod_val: return eod_val, chg, "EODHD", None
+
+    # Fallback cache session
+    cache_key = f"price_{asset['ticker_eod']}"
+    if session_cache.get(cache_key):
+        return session_cache[cache_key], 0.0, "⚠️ Cache session (10h)", None
 
     return None, 0.0, "N/D", None
 
+# ══════════════════════════════════════════════════════════════════════════════
+# INDICES
+# ══════════════════════════════════════════════════════════════════════════════
 
 def get_index(symbols: dict) -> dict:
-    """EODHD → Finnhub. TwelveData non disponible plan gratuit pour indices."""
     data = _get(f"{EOD_BASE}/real-time/{symbols['eod']}",
                 {"api_token": EODHD_KEY, "fmt": "json"})
     if data and (data.get("close") or data.get("previousClose")):
@@ -279,6 +311,43 @@ def get_index(symbols: dict) -> dict:
                 "change_pct": float(data.get("dp", 0.0)), "source": "Finnhub"}
     return {"price": 0.0, "change_pct": 0.0, "source": "N/D"}
 
+# ══════════════════════════════════════════════════════════════════════════════
+# NEWS — cache partagé entre analyse et sentiment (v3.3 : no double appel)
+# ══════════════════════════════════════════════════════════════════════════════
+
+_news_cache: dict[str, list] = {}
+
+def get_company_news(asset: dict, n: int = 2) -> list:
+    """Cache en mémoire : une seule requête news par ticker par exécution."""
+    key = asset["ticker_eod"]
+    if key in _news_cache:
+        return _news_cache[key][:n]
+
+    from_d = str(date.today() - timedelta(days=7))
+    to_d   = str(date.today())
+
+    data = _get(f"{EOD_BASE}/news",
+                {"s": asset["ticker_eod"], "limit": max(n, 10), "from": from_d,
+                 "api_token": EODHD_KEY, "fmt": "json"})
+    if isinstance(data, list) and data:
+        titles = [i.get("title", "") for i in data if i.get("title")]
+        _news_cache[key] = titles
+        return titles[:n]
+
+    data = _get(f"{FH_BASE}/company-news",
+                {"symbol": asset["ticker_fh"], "from": from_d,
+                 "to": to_d, "token": FINNHUB_KEY})
+    if isinstance(data, list) and data:
+        titles = [i.get("headline", "") for i in data if i.get("headline")]
+        _news_cache[key] = titles
+        return titles[:n]
+
+    _news_cache[key] = []
+    return []
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SENTIMENT — utilise le cache news (pas de double appel)
+# ══════════════════════════════════════════════════════════════════════════════
 
 def get_sentiment(asset: dict) -> tuple:
     data = _get(f"{FH_BASE}/news-sentiment",
@@ -288,7 +357,8 @@ def get_sentiment(asset: dict) -> tuple:
         bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
         return round(bull, 1), round(bear, 1), "Finnhub"
 
-    news = get_company_news(asset, n=10)
+    # Fallback lexical sur cache news (zéro appel supplémentaire)
+    news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
     if news:
         bull_w = {"growth", "buy", "bullish", "surge", "record", "beat", "strong",
                   "gain", "up", "rise", "soar", "profit", "positive", "upgrade"}
@@ -299,8 +369,12 @@ def get_sentiment(asset: dict) -> tuple:
         s = sum(1 for w in words if w in bear_w)
         t = b + s or 1
         return round(b/t*100, 1), round(s/t*100, 1), "EODHD (lexical)"
+
     return 50.0, 50.0, "⚠️ Indisponible"
 
+# ══════════════════════════════════════════════════════════════════════════════
+# CONSENSUS ANALYSTES
+# ══════════════════════════════════════════════════════════════════════════════
 
 def get_consensus(asset: dict) -> tuple:
     data = _get(f"{FH_BASE}/stock/recommendation",
@@ -326,25 +400,6 @@ def get_consensus(asset: dict) -> tuple:
 
     return 5.0, "N/D", "⚠️ Indisponible"
 
-
-def get_company_news(asset: dict, n: int = 2) -> list:
-    from_d = str(date.today() - timedelta(days=7))
-    to_d   = str(date.today())
-
-    data = _get(f"{EOD_BASE}/news",
-                {"s": asset["ticker_eod"], "limit": n, "from": from_d,
-                 "api_token": EODHD_KEY, "fmt": "json"})
-    if isinstance(data, list) and data:
-        return [i.get("title", "") for i in data if i.get("title")]
-
-    data = _get(f"{FH_BASE}/company-news",
-                {"symbol": asset["ticker_fh"], "from": from_d,
-                 "to": to_d, "token": FINNHUB_KEY})
-    if isinstance(data, list) and data:
-        return [i.get("headline", "") for i in data[:n] if i.get("headline")]
-    return []
-
-
 def get_macro_news(n: int = 5) -> list:
     data = _get(f"{EOD_BASE}/news",
                 {"t": "general", "limit": n, "api_token": EODHD_KEY, "fmt": "json"})
@@ -354,7 +409,6 @@ def get_macro_news(n: int = 5) -> list:
     if isinstance(data, list) and data:
         return [i.get("headline", "") for i in data[:n] if i.get("headline")]
     return []
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SCORING
@@ -390,27 +444,28 @@ def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
           else "Contexte macro **neutre**.")
     return f"{p1} {p2} {p3}"
 
-
 # ══════════════════════════════════════════════════════════════════════════════
-# RAPPORT
+# RAPPORT PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_report() -> str:
-    now = datetime.now(PARIS_TZ)
-    lines = []
+    now           = datetime.now(PARIS_TZ)
+    lines         = []
     divergence_log = []
+    session_cache  = load_session_cache()
+    new_cache      = {}
 
-    print("[INFO] Chargement batch TwelveData (cours US)...")
+    print("[INFO] Batch TwelveData (cours US portefeuille + watchlist)...")
     us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
     watch_td   = [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
-    all_td     = list(set(us_tickers + watch_td))
-    td_prices  = td_fetch_batch(all_td)
-    print(f"[INFO] TwelveData batch : {td_prices}")
+    td_prices  = td_fetch_batch(list(set(us_tickers + watch_td)))
+    print(f"[INFO] TwelveData : {td_prices}")
 
     print("[INFO] EUR/USD...")
-    eur_usd, eurusd_src, eurusd_note = get_eur_usd()
+    eur_usd, eurusd_src, eurusd_note = get_eur_usd(session_cache)
     if eurusd_note:
         divergence_log.append(f"EUR/USD : {eurusd_note}")
+    new_cache["eur_usd"] = eur_usd
 
     print("[INFO] Indices macro...")
     indices_data = {n: get_index(s) for n, s in INDICES.items()}
@@ -446,7 +501,8 @@ def build_report() -> str:
 
     for asset in PORTFOLIO:
         print(f"[INFO] {asset['name']}...")
-        price_eur, chg, price_src, div_note = get_price_eur(asset, eur_usd, td_prices)
+        price_eur, chg, price_src, div_note = get_price_eur(
+            asset, eur_usd, td_prices, session_cache)
 
         if div_note:
             divergence_log.append(f"{asset['name']} : {div_note}")
@@ -454,9 +510,11 @@ def build_report() -> str:
         if price_eur is None:
             lines += [
                 f"### ⚠️ {asset['name']} `{asset['ticker_eod']}`",
-                "> Cours indisponible sur TwelveData + EODHD + Finnhub.", "", "---", "",
+                "> Cours indisponible — TwelveData + EODHD + Finnhub + cache.", "", "---", "",
             ]
             continue
+
+        new_cache[f"price_{asset['ticker_eod']}"] = price_eur
 
         qty, cost, marche = asset["qty"], asset["cost_eur"], asset["marche"]
         vm         = round(price_eur * qty, 2)
@@ -469,19 +527,21 @@ def build_report() -> str:
         pnl_net    = round(vm - cout_reel - fee_v, 2)
         pnl_net_p  = round(pnl_net / cout_reel * 100, 2)
 
-        ps = score_price(price_eur, cost)
+        # Scoring — news récupérées ici, réutilisées par get_sentiment via cache
+        news     = get_company_news(asset, 2)
+        ps       = score_price(price_eur, cost)
         bull, bear, sent_src = get_sentiment(asset)
         cs, cons_str, cons_src = get_consensus(asset)
-        sc = round((bull / 10 + cs) / 2, 2)
+        # Correction v3.3 : bull est en %, cs en 0–10 → normalisation cohérente
+        sc          = round((bull / 100 * 10 + cs) / 2, 2)
         total_score = round(ps * 0.40 + sc * 0.35 + macro_score * 0.25, 2)
-        rec = recommend(total_score)
-        news = get_company_news(asset, 2)
-        news_str = news[0] if news else "Aucune actualité récente."
-        justif = justification(asset["name"], pnl_net, pnl_net_p,
-                               sc, bull, bear, cons_str, macro_score, total_score)
+        rec         = recommend(total_score)
+        news_str    = news[0] if news else "Aucune actualité récente."
+        justif      = justification(asset["name"], pnl_net, pnl_net_p,
+                                    sc, bull, bear, cons_str, macro_score, total_score)
 
-        total_cout += cout
-        total_vm   += vm
+        total_cout     += cout
+        total_vm       += vm
         total_pnl_brut += pnl_brut
         total_pnl_net  += pnl_net
         summaries.append({"name": asset["name"], "score": total_score,
@@ -533,7 +593,7 @@ def build_report() -> str:
         lines += [
             "## ⚠️ Journal de Validation Croisée",
             "",
-            "_Divergences détectées entre sources (> 2%) — médiane utilisée automatiquement :_",
+            "_Divergences > 2% détectées — médiane utilisée automatiquement :_",
             "",
         ]
         for d in divergence_log:
@@ -543,7 +603,7 @@ def build_report() -> str:
         lines += [
             "## ✅ Validation Croisée",
             "",
-            "_Aucune divergence détectée entre les sources ce jour. Données cohérentes._",
+            "_Aucune divergence détectée. Données cohérentes entre les sources._",
             "", "---", "",
         ]
 
@@ -563,40 +623,47 @@ def build_report() -> str:
             "",
         ]
 
-    # Watchlist — header sans backtick parasite (correction v3.2.1)
+    # ── Watchlist ── (sans get_consensus pour économiser les appels)
     lines += [
         "### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille",
         "",
-        "| Valeur | Secteur | Cours | Var. | Score | Sentiment |",
-        "|--------|---------|-------|------|-------|-----------|",
+        "| Valeur | Secteur | Cours | Var. | Score |",
+        "|--------|---------|-------|------|-------|",
     ]
     watch_res = []
     for w in WATCHLIST:
-        pe, chg, src, _ = get_price_eur(w, eur_usd, td_prices)
+        pe, chg, src, _ = get_price_eur(w, eur_usd, td_prices, session_cache)
         if not pe:
             continue
+        # News chargées via cache si déjà appelées, sinon 1 seul appel
+        get_company_news(w, n=10)
         bull, bear, _ = get_sentiment(w)
-        cs, cons_str, _ = get_consensus(w)
-        sc = round((bull / 10 + cs) / 2, 2)
+        # Score watchlist corrigé v3.3 : bull/100*10 pour rester en 0–10
+        sc = round(bull / 100 * 10, 2)
         watch_res.append({"name": w["name"], "sector": w["sector"],
                           "price": pe, "chg": chg, "sc": sc, "bull": bull})
+
     watch_res.sort(key=lambda x: x["sc"], reverse=True)
     for w in watch_res[:3]:
         arr = "▲" if w["chg"] > 0 else "▼"
         lines.append(
             f"| **{w['name']}** | {w['sector']} | {w['price']:.2f} € "
-            f"| {arr} {w['chg']:+.2f}% | {w['sc']:.1f}/10 | Bull {w['bull']:.0f}% |"
+            f"| {arr} {w['chg']:+.2f}% | {w['sc']:.1f}/10 |"
         )
 
     lines += [
         "",
         "---",
         "",
-        f"_Rapport v3.2 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
+        f"_Rapport v3.3 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
         "_Sources : TwelveData (cours US) + EODHD (Euronext/indices) + Finnhub (sentiment/consensus)_",
         f"_EUR/USD : 1 EUR = {1/eur_usd:.4f} USD — {eurusd_src}_",
         "_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_",
     ]
+
+    # Sauvegarde cache session pour le run suivant de la journée
+    save_session_cache(new_cache)
+    print("[INFO] Cache session sauvegardé.")
 
     return "\n".join(lines)
 
@@ -606,4 +673,4 @@ if __name__ == "__main__":
     os.makedirs("reports", exist_ok=True)
     with open("reports/daily_report.md", "w", encoding="utf-8") as f:
         f.write(report)
-    print("✅ Rapport v3.2 généré : reports/daily_report.md")
+    print("✅ Rapport v3.3 généré : reports/daily_report.md")
