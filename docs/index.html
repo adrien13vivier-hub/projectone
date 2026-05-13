@@ -3,147 +3,232 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rapport Portfolio — 13/05/2026 21:47</title>
+  <title>Rapport Portfolio — 13/05/2026 23:00</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:          #0f1117;
-      --surface:     #161b27;
-      --surface-2:   #1e2535;
-      --border:      #2a3347;
-      --text:        #e2e8f0;
-      --muted:       #8892a4;
-      --faint:       #4a5568;
-      --accent:      #3b82f6;
-      --accent-glow: rgba(59,130,246,0.15);
-      --green:       #10b981;
-      --red:         #ef4444;
-      --yellow:      #f59e0b;
-      --orange:      #f97316;
-      --radius:      10px;
-      --font-body:   'Inter', sans-serif;
-      --font-mono:   'JetBrains Mono', monospace;
-    }
-    [data-theme="light"] {
-      --bg:          #f8fafc;
-      --surface:     #ffffff;
-      --surface-2:   #f1f5f9;
-      --border:      #e2e8f0;
-      --text:        #1e293b;
-      --muted:       #64748b;
-      --faint:       #cbd5e1;
-      --accent-glow: rgba(59,130,246,0.08);
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: var(--font-body);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.7;
-      font-size: 15px;
-      min-height: 100dvh;
-    }
-    header {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(15,17,23,0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px;
-    }
-    [data-theme="light"] header { background: rgba(248,250,252,0.9); }
-    .logo { font-size: 15px; font-weight: 700; letter-spacing: -.3px; color: var(--text); }
-    .logo span { color: var(--accent); }
-    .header-meta { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
-    .header-actions { display: flex; gap: 8px; align-items: center; }
-    .btn-icon {
-      background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--text); border-radius: 8px; padding: 6px 10px;
-      font-size: 13px; cursor: pointer; transition: all .18s;
-    }
-    .btn-icon:hover { background: var(--border); }
-    .container { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
-    h1 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; line-height: 1.2;
-          margin-bottom: 8px; letter-spacing: -.5px; }
-    h2 { font-size: 1.2rem; font-weight: 700; margin: 40px 0 16px;
-          padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
-    h3 { font-size: 1rem; font-weight: 700; margin: 28px 0 12px; color: var(--text); }
-    h4 { font-size: .9rem; font-weight: 600; margin: 16px 0 8px; color: var(--muted); }
-    p  { color: var(--muted); margin-bottom: 10px; max-width: 72ch; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-    strong { color: var(--text); font-weight: 600; }
-    em     { color: var(--muted); font-style: normal; }
-    code   { font-family: var(--font-mono); font-size: .82em;
-               background: var(--surface-2); border: 1px solid var(--border);
-               padding: 1px 5px; border-radius: 4px; color: var(--accent); }
-    ul { list-style: none; padding: 0; margin-bottom: 12px; }
-    li { padding: 4px 0 4px 16px; color: var(--muted); font-size: .9rem; position: relative; }
-    li::before { content: '·'; position: absolute; left: 4px; color: var(--faint); }
-    .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--radius); border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-    th { background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: .78rem;
-           text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px;
-           text-align: left; border-bottom: 1px solid var(--border); }
-    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--accent-glow); }
-    .badge { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem;
-               font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
-    .buy-strong { background: rgba(16,185,129,.15); color: #10b981; border: 1px solid rgba(16,185,129,.3); }
-    .buy-mod    { background: rgba(59,130,246,.15);  color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }
-    .hold       { background: rgba(245,158,11,.12);  color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
-    .avoid      { background: rgba(249,115,22,.12);  color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
-    .sell       { background: rgba(239,68,68,.12);   color: #f87171; border: 1px solid rgba(239,68,68,.3); }
-    .up { color: var(--green); font-weight: 600; }
-    .dn { color: var(--red);   font-weight: 600; }
-    .archive-toggle { font-size: 12px; color: var(--accent); cursor: pointer;
-                        background: none; border: none; padding: 0;
-                        text-decoration: underline; margin-bottom: 16px; }
-    #archive-panel {
-      display: none; background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px; margin-bottom: 24px;
-    }
-    #archive-panel.open { display: block; }
-    .archive-list { list-style: none; padding: 0; }
-    .archive-list li {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .85rem;
-    }
-    .archive-list li:last-child { border: none; }
-    .archive-date { color: var(--text); font-family: var(--font-mono); font-size: .8rem; }
-    .archive-pnl  { color: var(--muted); }
-    .update-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 20px; padding: 4px 12px; font-size: .78rem;
-      color: var(--muted); margin-bottom: 24px;
-    }
-    .update-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 6px var(--green);
-    }
-    @media print {
-      header, .header-actions, .archive-toggle, #archive-panel { display: none; }
-      body { background: white; color: black; }
-      .badge { border: 1px solid #ccc; }
-    }
-    @media (max-width: 640px) {
-      header { padding: 10px 14px; }
-      .container { padding: 20px 14px 60px; }
-      h2 { font-size: 1.05rem; }
-      td, th { padding: 8px 10px; font-size: .8rem; }
-    }
+
+:root {
+  --bg:          #0f1117;
+  --surface:     #161b27;
+  --surface-2:   #1d2336;
+  --border:      #252d42;
+  --text:        #e2e8f0;
+  --muted:       #8892a4;
+  --faint:       #3d4a60;
+  --accent:      #4f98a3;
+  --accent-dim:  rgba(79,152,163,.15);
+  --green:       #10b981;
+  --green-dim:   rgba(16,185,129,.15);
+  --red:         #ef4444;
+  --red-dim:     rgba(239,68,68,.15);
+  --yellow:      #f59e0b;
+  --orange:      #f97316;
+  --blue:        #60a5fa;
+  --radius:      10px;
+  --shadow:      0 4px 20px rgba(0,0,0,.3);
+  --font-body:   'Inter', system-ui, sans-serif;
+  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+}
+[data-theme="light"] {
+  --bg:          #f7f6f2;
+  --surface:     #ffffff;
+  --surface-2:   #f1f0ec;
+  --border:      #dcd9d5;
+  --text:        #1e293b;
+  --muted:       #64748b;
+  --faint:       #cbd5e1;
+  --accent:      #01696f;
+  --accent-dim:  rgba(1,105,111,.1);
+  --green-dim:   rgba(16,185,129,.1);
+  --red-dim:     rgba(239,68,68,.1);
+  --shadow:      0 4px 20px rgba(0,0,0,.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 15px;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+/* ── Header ── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: color-mix(in oklab, var(--bg) 85%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.logo { font-size: 15px; font-weight: 700; letter-spacing: -.3px; color: var(--text); }
+.logo span { color: var(--accent); }
+.header-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.btn-icon {
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px; padding: 6px 11px;
+  font-size: 13px; cursor: pointer;
+  transition: background .18s, border-color .18s;
+}
+.btn-icon:hover { background: var(--border); }
+/* ── Layout ── */
+.container { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
+/* ── KPI bar ── */
+.kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 32px;
+}
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+}
+.kpi-card .kpi-val {
+  font-size: 1.5rem; font-weight: 700; font-family: var(--font-mono);
+  letter-spacing: -.5px; line-height: 1.1;
+}
+.kpi-card .kpi-lbl { font-size: .72rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.kpi-positive { color: var(--green); }
+.kpi-negative { color: var(--red); }
+.kpi-neutral  { color: var(--accent); }
+/* ── Update badge ── */
+.update-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 5px 14px; font-size: .78rem;
+  color: var(--muted); margin-bottom: 20px;
+}
+.update-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* ── Typographie ── */
+h1 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; line-height: 1.2; margin-bottom: 6px; letter-spacing: -.5px; }
+h2 { font-size: 1.1rem; font-weight: 700; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+h3 { font-size: 1rem; font-weight: 700; margin: 24px 0 10px; color: var(--text); }
+h4 { font-size: .88rem; font-weight: 600; margin: 14px 0 6px; color: var(--muted); }
+p  { color: var(--muted); margin-bottom: 8px; max-width: 72ch; }
+hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+strong { color: var(--text); font-weight: 600; }
+em     { color: var(--muted); font-style: normal; }
+code {
+  font-family: var(--font-mono); font-size: .82em;
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 1px 5px; border-radius: 4px; color: var(--accent);
+}
+pre {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; border: none; padding: 0; font-size: .83rem; }
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 16px; margin: 12px 0;
+}
+blockquote p { color: var(--text); margin: 0; }
+ul, ol { padding-left: 18px; margin-bottom: 10px; }
+li { color: var(--muted); font-size: .9rem; padding: 2px 0; }
+li::marker { color: var(--faint); }
+/* ── Tables ── */
+.table-wrap {
+  overflow-x: auto; margin: 14px 0;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+thead { position: sticky; top: 0; }
+th {
+  background: var(--surface-2); color: var(--muted); font-weight: 600;
+  font-size: .74rem; text-transform: uppercase; letter-spacing: .5px;
+  padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--accent-dim); transition: background .15s; }
+/* Colorisation PnL */
+td.cell-pos { color: var(--green); font-weight: 600; font-family: var(--font-mono); }
+td.cell-neg { color: var(--red);   font-weight: 600; font-family: var(--font-mono); }
+td.cell-num { font-family: var(--font-mono); }
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: .75rem;
+  font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+}
+.buy-strong { background: var(--green-dim); color: #10b981; border: 1px solid rgba(16,185,129,.35); }
+.buy-mod    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,152,163,.35); }
+.hold       { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+.avoid      { background: rgba(249,115,22,.12); color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
+.sell       { background: var(--red-dim); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+.up { color: var(--green); font-weight: 600; }
+.dn { color: var(--red);   font-weight: 600; }
+/* ── Graphiques ── */
+.chart-wrap {
+  margin: 14px 0 24px;
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.chart-img { width: 100%; display: block; max-height: 280px; object-fit: cover; }
+/* ── Archive ── */
+.archive-toggle {
+  font-size: .8rem; color: var(--accent); cursor: pointer;
+  background: none; border: none; padding: 0;
+  text-decoration: underline; margin-bottom: 14px; display: block;
+}
+#archive-panel {
+  display: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
+}
+#archive-panel.open { display: block; }
+#archive-list { list-style: none; padding: 0; }
+#archive-list li {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .82rem;
+}
+#archive-list li:last-child { border: none; }
+.archive-date { color: var(--text); font-family: var(--font-mono); font-size: .78rem; }
+.archive-pnl  { color: var(--muted); }
+/* ── Impression ── */
+@media print {
+  header, .header-actions, .archive-toggle, #archive-panel,
+  .update-badge, .kpi-bar { display: none !important; }
+  body { background: #fff; color: #000; font-size: 13px; }
+  .badge { border: 1px solid #ccc; color: #000 !important; background: none !important; }
+  .table-wrap { box-shadow: none; border: 1px solid #ccc; }
+  .chart-img { max-height: none; }
+}
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  header { padding: 10px 14px; }
+  .container { padding: 18px 14px 60px; }
+  h1 { font-size: 1.3rem; }
+  h2 { font-size: 1rem; }
+  td, th { padding: 8px 10px; font-size: .78rem; }
+  .kpi-card .kpi-val { font-size: 1.25rem; }
+}
+
   </style>
 </head>
 <body>
+
+  <!-- HEADER -->
   <header>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="logo">📊 <span>Portfolio</span> Analyzer</div>
-      <div class="header-meta">v4.1 · 13/05/2026 21:47</div>
+      <div class="header-meta">v5.1 · 13/05/2026 23:00</div>
     </div>
     <div class="header-actions">
       <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>
@@ -152,325 +237,362 @@
   </header>
 
   <div class="container">
+
+    <!-- BADGE MAJ -->
     <div class="update-badge">
       <span class="update-dot"></span>
-      Dernière mise à jour : <strong>13/05/2026 21:47</strong>
+      Dernière mise à jour : <strong>13/05/2026 23:00</strong>
     </div>
 
+    <!-- KPI BAR -->
+    <div class="kpi-bar">
+      <div class="kpi-card">
+        <div class="kpi-val kpi-positive" data-counter data-val="34.93" data-suffix=" €" data-prefix="+">+34.93 €</div>
+        <div class="kpi-lbl">PnL net estimé</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val kpi-positive" data-counter data-val="4.57" data-suffix=" %" data-prefix="+">4.57 %</div>
+        <div class="kpi-lbl">Performance nette</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val kpi-neutral">222.18 €</div>
+        <div class="kpi-lbl">Valeur de marché</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val kpi-neutral">6</div>
+        <div class="kpi-lbl">Positions actives</div>
+      </div>
+    </div>
+
+    <!-- ARCHIVE -->
     <button class="archive-toggle" onclick="toggleArchive()">📂 Historique des rapports</button>
     <div id="archive-panel">
-      <strong style="font-size:.85rem;">30 derniers rapports</strong>
-      <ul class="archive-list" id="archive-list">
-        <li><span style="color:var(--faint);font-size:.8rem">Chargement…</span></li>
+      <strong style="font-size:.82rem;">30 derniers rapports</strong>
+      <ul id="archive-list">
+        <li><span style="color:var(--faint);font-size:.78rem">Chargement…</span></li>
       </ul>
     </div>
 
+    <!-- CORPS DU RAPPORT -->
     <div id="report-body">
-<h1>📊 Rapport de Portefeuille v4.1 — 13/05/2026 21:47 (Paris)</h1>
-
+<h1 id="rapport-de-portefeuille-v5-1-13-05-2026-23-00-paris">📊 Rapport de Portefeuille v5.1 — 13/05/2026 23:00 (Paris)</h1>
 <hr>
-
-<h2>🌍 Contexte Économique</h2>
-
-<p><strong>Tendance : ➡️ Neutre</strong> | Score macro : 5.0/10</p>
-<p><strong>EUR/USD :</strong> 1 EUR = 1.1711 USD <em>(source : TwelveData)</em></p>
-
-<div class="table-wrap"><table>
-<tr><th>Indice</th><th>Variation</th><th>Cours</th><th>Source</th></tr>
-<tr><td>S&P 500</td><td>— +0.00%</td><td>738.18</td><td>AlphaVantage (proxy ETF SPY)</td></tr>
-<tr><td>CAC 40</td><td>— +0.00%</td><td>45.11</td><td>AlphaVantage (proxy ETF EWQ)</td></tr>
-<tr><td>Nikkei 225</td><td>— +0.00%</td><td>92.06</td><td>AlphaVantage (proxy ETF EWJ)</td></tr>
-</table></div>
-
+<h2 id="contexte-conomique">🌍 Contexte Économique</h2>
+<p><strong>Tendance : ➡️ Neutre</strong> | Score macro : 5.0/10 <strong>EUR/USD :</strong> 1 EUR = 1.1716 USD</p>
+<div class="table-wrap"><table><thead>
+<tr><th>Indice</th><th>Variation</th><th>Cours</th></tr>
+</thead><tbody>
+<tr><td>S&P 500</td><td>— +0.00%</td><td>0.00</td></tr>
+<tr><td>CAC 40</td><td>— +0.00%</td><td>0.00</td></tr>
+<tr><td>Nikkei 225</td><td>— +0.00%</td><td>0.00</td></tr>
+</tbody></table></div>
 <p><strong>📰 Manchettes macro :</strong></p>
-
 <ul>
+<li>Cisco's stock pops 11% on earnings beat, strong guidance</li>
+<li>Allegiant CEO makes case for low-cost airline model as Sun Country acquisition closes</li>
+<li>Iran war looms over Trump's China visit, shifts alliances - Reuters</li>
+<li>Trump wants China's help on Iran. Beijing may have other ideas - Reuters</li>
 <li>Beer demand stumbles as gas prices surge, data show</li>
-<li>This stock is our favorite way to hedge against the pickup in inflation</li>
-<li>Exclusive: Saudi warplanes struck militias in Iraq during war, sources say - Reuters</li>
-<li>Netanyahu held secret meeting with Emirati president in the UAE during Iran war, PM's office says - Reuters</li>
-<li>Trump says no need for China's help on Iran as shippers seek way through Hormuz - Reuters</li>
 </ul>
-
 <hr>
-
-<h2>📈 Analyse par Valeur</h2>
-
-<h3>📕 Palantir Technologies <code>PLTR.US</code></h3>
-
-<div class="table-wrap"><table>
+<h2 id="analyse-par-valeur">📈 Analyse par Valeur</h2>
+<h3 id="palantir-technologies-pltr-us">📕 Palantir Technologies <code>PLTR.US</code></h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Champ</th><th>Valeur</th></tr>
-<tr><td><strong>Cours actuel</strong></td><td>111.19 € (+0.00%) · <em>TwelveData</em></td></tr>
+</thead><tbody>
+<tr><td><strong>Cours actuel</strong></td><td>111.09 € (+0.00%)</td></tr>
 <tr><td><strong>Prix de revient</strong></td><td>119.06 € · Coût total 238.12 €</td></tr>
 <tr><td><strong>Frais achat payés</strong></td><td>6.95 € · Coût réel 245.07 €</td></tr>
-<tr><td><strong>Valeur marché</strong></td><td>222.37 €</td></tr>
-<tr><td><strong>PnL brut latent</strong></td><td>-15.75 € (-6.61%)</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>222.18 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>-15.94 € (-6.69%)</td></tr>
 <tr><td><strong>Frais vente estimés</strong></td><td>6.95 €</td></tr>
-<tr><td><strong>PnL net si vente</strong></td><td>-29.65 € (-12.10%)</td></tr>
-<tr><td><strong>Sentiment presse</strong></td><td>Bull 81% / Bear 19% · <em>EODHD lexical (Finnhub:HTTP 403)</em></td></tr>
-<tr><td><strong>Consensus analystes</strong></td><td>SB:11 B:15 H:10 S:1 SS:1 · <em>Finnhub ✓</em></td></tr>
-<tr><td><strong>Historique mensuel</strong></td><td>❌ DONNÉES ERRONÉES · ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</td></tr>
+<tr><td><strong>PnL net si vente</strong></td><td>-29.84 € (-12.18%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 81% / Bear 19%</td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>SB:11 B:15 H:10 S:1 SS:1</td></tr>
+<tr><td><strong>Historique mensuel</strong></td><td>Ret. 1M +0.0% · 3M +0.0% · 6M +0.0%</td></tr>
 <tr><td><strong>Score</strong></td><td>5.9/10 (Prix 4.3·30% + Sent 8.1·20% + Cons 7.2·20% + Hist 5.0·30%)</td></tr>
-</table></div>
-
-<p>📰 <strong>Actualité :</strong> These S&P500 stocks are the most active in today's session</p>
-
-
+</tbody></table></div>
+<p>📰 <strong>Actualité :</strong> Why Palantir Stock Is Sinking Today</p>
 <p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
-
-<p>💬 Perte nette <strong>-29.65 € (-12.1%)</strong> après frais. Consensus <strong>haussier</strong> (score 7.7/10, Bull 81%) — SB:11 B:15 H:10 S:1 SS:1. Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
-
+<p>💬 Perte nette <strong>-29.84 € (-12.2%)</strong> après frais. Consensus <strong>haussier</strong> (score 7.7/10, Bull 81%). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
 <hr>
-
-<h3>📗 CoreWeave <code>CRWV.US</code></h3>
-
-<div class="table-wrap"><table>
+<h3 id="coreweave-crwv-us">📗 CoreWeave <code>CRWV.US</code></h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Champ</th><th>Valeur</th></tr>
-<tr><td><strong>Cours actuel</strong></td><td>95.28 € (+0.00%) · <em>TwelveData</em></td></tr>
+</thead><tbody>
+<tr><td><strong>Cours actuel</strong></td><td>94.99 € (+0.00%)</td></tr>
 <tr><td><strong>Prix de revient</strong></td><td>93.91 € · Coût total 187.82 €</td></tr>
 <tr><td><strong>Frais achat payés</strong></td><td>6.95 € · Coût réel 194.77 €</td></tr>
-<tr><td><strong>Valeur marché</strong></td><td>190.56 €</td></tr>
-<tr><td><strong>PnL brut latent</strong></td><td>+2.74 € (+1.46%)</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>189.99 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>+2.17 € (+1.16%)</td></tr>
 <tr><td><strong>Frais vente estimés</strong></td><td>6.95 €</td></tr>
-<tr><td><strong>PnL net si vente</strong></td><td>-11.16 € (-5.73%)</td></tr>
-<tr><td><strong>Sentiment presse</strong></td><td>Bull 53% / Bear 47% · <em>EODHD lexical (Finnhub:HTTP 403)</em></td></tr>
-<tr><td><strong>Consensus analystes</strong></td><td>SB:10 B:18 H:12 S:1 SS:1 · <em>Finnhub ✓</em></td></tr>
-<tr><td><strong>Historique mensuel</strong></td><td>❌ DONNÉES ERRONÉES · ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</td></tr>
-<tr><td><strong>Score</strong></td><td>5.5/10 (Prix 5.2·30% + Sent 5.3·20% + Cons 7.1·20% + Hist 5.0·30%)</td></tr>
-</table></div>
-
-<p>📰 <strong>Actualité :</strong> CoreWeave Stock Is Gaining Today: What Does The Chart Show?</p>
-
-
+<tr><td><strong>PnL net si vente</strong></td><td>-11.73 € (-6.02%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 53% / Bear 47%</td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>SB:10 B:18 H:12 S:1 SS:1</td></tr>
+<tr><td><strong>Historique mensuel</strong></td><td>Ret. 1M +0.0% · 3M +0.0% · 6M +0.0%</td></tr>
+<tr><td><strong>Score</strong></td><td>5.5/10 (Prix 5.1·30% + Sent 5.3·20% + Cons 7.1·20% + Hist 5.0·30%)</td></tr>
+</tbody></table></div>
+<p>📰 <strong>Actualité :</strong> CoreWeave to Participate in the J.P. Morgan Global Technology, Media and Communications Conference</p>
 <p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
-
-<p>💬 Perte nette <strong>-11.16 € (-5.7%)</strong> après frais. Consensus <strong>neutre</strong> (53% bull / 47% bear) — SB:10 B:18 H:12 S:1 SS:1. Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
-
+<p>💬 Perte nette <strong>-11.73 € (-6.0%)</strong> après frais. Consensus <strong>neutre</strong> (53% bull / 47% bear). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
 <hr>
-
-<h3>📗 Riot Platforms <code>RIOT.US</code></h3>
-
-<div class="table-wrap"><table>
+<h3 id="riot-platforms-riot-us">📗 Riot Platforms <code>RIOT.US</code></h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Champ</th><th>Valeur</th></tr>
-<tr><td><strong>Cours actuel</strong></td><td>21.39 € (+0.00%) · <em>TwelveData</em></td></tr>
+</thead><tbody>
+<tr><td><strong>Cours actuel</strong></td><td>21.26 € (+0.00%)</td></tr>
 <tr><td><strong>Prix de revient</strong></td><td>15.84 € · Coût total 95.04 €</td></tr>
 <tr><td><strong>Frais achat payés</strong></td><td>6.95 € · Coût réel 101.99 €</td></tr>
-<tr><td><strong>Valeur marché</strong></td><td>128.37 €</td></tr>
-<tr><td><strong>PnL brut latent</strong></td><td>+33.33 € (+35.07%)</td></tr>
+<tr><td><strong>Valeur marché</strong></td><td>127.57 €</td></tr>
+<tr><td><strong>PnL brut latent</strong></td><td>+32.53 € (+34.23%)</td></tr>
 <tr><td><strong>Frais vente estimés</strong></td><td>6.95 €</td></tr>
-<tr><td><strong>PnL net si vente</strong></td><td>+19.43 € (+19.05%)</td></tr>
-<tr><td><strong>Sentiment presse</strong></td><td>Bull 100% / Bear 0% · <em>EODHD lexical (Finnhub:HTTP 403)</em></td></tr>
-<tr><td><strong>Consensus analystes</strong></td><td>SB:6 B:17 H:2 S:0 SS:0 · <em>Finnhub ✓</em></td></tr>
-<tr><td><strong>Historique mensuel</strong></td><td>❌ DONNÉES ERRONÉES · ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</td></tr>
-<tr><td><strong>Score</strong></td><td>7.6/10 (Prix 8.5·30% + Sent 10.0·20% + Cons 7.9·20% + Hist 5.0·30%)</td></tr>
-</table></div>
-
+<tr><td><strong>PnL net si vente</strong></td><td>+18.63 € (+18.27%)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 100% / Bear 0%</td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>SB:6 B:17 H:2 S:0 SS:0</td></tr>
+<tr><td><strong>Historique mensuel</strong></td><td>Ret. 1M +0.0% · 3M +0.0% · 6M +0.0%</td></tr>
+<tr><td><strong>Score</strong></td><td>7.6/10 (Prix 8.4·30% + Sent 10.0·20% + Cons 7.9·20% + Hist 5.0·30%)</td></tr>
+</tbody></table></div>
 <p>📰 <strong>Actualité :</strong> Riot Platforms: Long-Term Strong Growth Ahead After A Possible Near-Term Pullback (Rating Upgrade)</p>
-
-
 <p><strong>⚡ <span class="badge buy-strong">🟢 ACHAT FORT</span></strong></p>
-
-<p>💬 Gain net <strong>+19.43 € (+19.1%)</strong> après frais. Consensus <strong>haussier</strong> (score 8.9/10, Bull 100%) — SB:6 B:17 H:2 S:0 SS:0. Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
-
+<p>💬 Gain net <strong>+18.63 € (+18.3%)</strong> après frais. Consensus <strong>haussier</strong> (score 8.9/10, Bull 100%). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
 <hr>
-
-<h3>📗 JCDecaux <code>DEC.PA</code></h3>
-
-<div class="table-wrap"><table>
+<h3 id="jcdecaux-dec-pa">📗 JCDecaux <code>DEC.PA</code></h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Champ</th><th>Valeur</th></tr>
-<tr><td><strong>Cours actuel</strong></td><td>18.57 € (+0.00%) · <em>AlphaVantage</em></td></tr>
+</thead><tbody>
+<tr><td><strong>Cours actuel</strong></td><td>18.57 € (+0.00%) <em>(⚠️ cache)</em></td></tr>
 <tr><td><strong>Prix de revient</strong></td><td>17.77 € · Coût total 35.54 €</td></tr>
 <tr><td><strong>Frais achat payés</strong></td><td>1.99 € · Coût réel 37.53 €</td></tr>
 <tr><td><strong>Valeur marché</strong></td><td>37.14 €</td></tr>
 <tr><td><strong>PnL brut latent</strong></td><td>+1.60 € (+4.50%)</td></tr>
 <tr><td><strong>Frais vente estimés</strong></td><td>1.99 €</td></tr>
 <tr><td><strong>PnL net si vente</strong></td><td>-2.38 € (-6.34%)</td></tr>
-<tr><td><strong>Sentiment presse</strong></td><td>❌ DONNÉES ERRONÉES · <em>❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:HTTP 403, EODHD:aucune news)</em></td></tr>
-<tr><td><strong>Consensus analystes</strong></td><td>❌ DONNÉES ERRONÉES · <em>❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403)</em></td></tr>
-<tr><td><strong>Historique mensuel</strong></td><td>❌ DONNÉES ERRONÉES · ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 50% / Bear 50%</td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>N/D</td></tr>
+<tr><td><strong>Historique mensuel</strong></td><td>Ret. 1M +0.0% · 3M +0.0% · 6M +0.0%</td></tr>
 <tr><td><strong>Score</strong></td><td>5.1/10 (Prix 5.5·30% + Sent 5.0·20% + Cons 5.0·20% + Hist 5.0·30%)</td></tr>
-</table></div>
-
+</tbody></table></div>
 <p>📰 <strong>Actualité :</strong> Aucune actualité récente.</p>
-
-
 <p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
-
-<p>💬 Perte nette <strong>-2.38 € (-6.3%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear) — ❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
-
+<p>💬 Perte nette <strong>-2.38 € (-6.3%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
 <hr>
-
-<h3>📗 Crédit Agricole SA <code>ACA.PA</code></h3>
-
-<div class="table-wrap"><table>
+<h3 id="cr-dit-agricole-sa-aca-pa">📗 Crédit Agricole SA <code>ACA.PA</code></h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Champ</th><th>Valeur</th></tr>
-<tr><td><strong>Cours actuel</strong></td><td>16.93 € (+0.00%) · <em>AlphaVantage</em></td></tr>
+</thead><tbody>
+<tr><td><strong>Cours actuel</strong></td><td>16.93 € (+0.00%) <em>(⚠️ cache)</em></td></tr>
 <tr><td><strong>Prix de revient</strong></td><td>16.90 € · Coût total 169.00 €</td></tr>
 <tr><td><strong>Frais achat payés</strong></td><td>1.99 € · Coût réel 170.99 €</td></tr>
 <tr><td><strong>Valeur marché</strong></td><td>169.25 €</td></tr>
 <tr><td><strong>PnL brut latent</strong></td><td>+0.25 € (+0.15%)</td></tr>
 <tr><td><strong>Frais vente estimés</strong></td><td>1.99 €</td></tr>
 <tr><td><strong>PnL net si vente</strong></td><td>-3.73 € (-2.18%)</td></tr>
-<tr><td><strong>Sentiment presse</strong></td><td>❌ DONNÉES ERRONÉES · <em>❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:HTTP 403, EODHD:aucune news)</em></td></tr>
-<tr><td><strong>Consensus analystes</strong></td><td>❌ DONNÉES ERRONÉES · <em>❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403)</em></td></tr>
-<tr><td><strong>Historique mensuel</strong></td><td>❌ DONNÉES ERRONÉES · ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 50% / Bear 50%</td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>N/D</td></tr>
+<tr><td><strong>Historique mensuel</strong></td><td>Ret. 1M +0.0% · 3M +0.0% · 6M +0.0%</td></tr>
 <tr><td><strong>Score</strong></td><td>5.0/10 (Prix 5.0·30% + Sent 5.0·20% + Cons 5.0·20% + Hist 5.0·30%)</td></tr>
-</table></div>
-
+</tbody></table></div>
 <p>📰 <strong>Actualité :</strong> Aucune actualité récente.</p>
-
-
 <p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
-
-<p>💬 Perte nette <strong>-3.73 € (-2.2%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear) — ❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
-
+<p>💬 Perte nette <strong>-3.73 € (-2.2%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
 <hr>
-
-<h3>📕 Abionyx Pharma <code>ABNX.PA</code></h3>
-
-<div class="table-wrap"><table>
+<h3 id="abionyx-pharma-abnx-pa">📕 Abionyx Pharma <code>ABNX.PA</code></h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Champ</th><th>Valeur</th></tr>
-<tr><td><strong>Cours actuel</strong></td><td>3.65 € (+0.00%) · <em>AlphaVantage</em></td></tr>
+</thead><tbody>
+<tr><td><strong>Cours actuel</strong></td><td>3.65 € (+0.00%) <em>(⚠️ cache)</em></td></tr>
 <tr><td><strong>Prix de revient</strong></td><td>3.84 € · Coût total 38.40 €</td></tr>
 <tr><td><strong>Frais achat payés</strong></td><td>1.99 € · Coût réel 40.39 €</td></tr>
 <tr><td><strong>Valeur marché</strong></td><td>36.50 €</td></tr>
 <tr><td><strong>PnL brut latent</strong></td><td>-1.90 € (-4.95%)</td></tr>
 <tr><td><strong>Frais vente estimés</strong></td><td>1.99 €</td></tr>
 <tr><td><strong>PnL net si vente</strong></td><td>-5.88 € (-14.56%)</td></tr>
-<tr><td><strong>Sentiment presse</strong></td><td>❌ DONNÉES ERRONÉES · <em>❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:HTTP 403, EODHD:aucune news)</em></td></tr>
-<tr><td><strong>Consensus analystes</strong></td><td>❌ DONNÉES ERRONÉES · <em>❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403)</em></td></tr>
-<tr><td><strong>Historique mensuel</strong></td><td>❌ DONNÉES ERRONÉES · ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</td></tr>
+<tr><td><strong>Sentiment presse</strong></td><td>Bull 50% / Bear 50%</td></tr>
+<tr><td><strong>Consensus analystes</strong></td><td>N/D</td></tr>
+<tr><td><strong>Historique mensuel</strong></td><td>Ret. 1M +0.0% · 3M +0.0% · 6M +0.0%</td></tr>
 <tr><td><strong>Score</strong></td><td>4.8/10 (Prix 4.5·30% + Sent 5.0·20% + Cons 5.0·20% + Hist 5.0·30%)</td></tr>
-</table></div>
-
+</tbody></table></div>
 <p>📰 <strong>Actualité :</strong> Aucune actualité récente.</p>
-
-
 <p><strong>⚡ <span class="badge hold">🟡 GARDER</span></strong></p>
-
-<p>💬 Perte nette <strong>-5.88 € (-14.6%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear) — ❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
-
+<p>💬 Perte nette <strong>-5.88 € (-14.6%)</strong> après frais. Consensus <strong>neutre</strong> (50% bull / 50% bear). Contexte macro <strong>neutre</strong>. Momentum mensuel <strong>NEUTRE</strong> (score historique 5.0/10).</p>
 <hr>
-
-<h2>💼 Résumé Global</h2>
-
-<div class="table-wrap"><table>
+<h2 id="r-sum-global">💼 Résumé Global</h2>
+<div class="table-wrap"><table><thead>
+</thead><tbody>
+</thead><tbody>
 <tr><td>Coût total investi</td><td>763.92 €</td></tr>
-<tr><td>Valeur marché totale</td><td>784.19 €</td></tr>
-<tr><td>PnL brut latent</td><td>+20.27 € (+2.65%)</td></tr>
-<tr><td>PnL net estimé</td><td>-33.37 € (-4.37%)</td></tr>
-</table></div>
-
+<tr><td>Valeur marché totale</td><td>782.63 €</td></tr>
+<tr><td>PnL brut latent</td><td>+18.71 € (+2.45%)</td></tr>
+<tr><td>PnL net estimé</td><td>-34.93 € (-4.57%)</td></tr>
+</tbody></table></div>
 <hr>
-
-<h2>✅ Validation Croisée</h2>
-
-<p><em>Aucune divergence détectée. Données cohérentes entre les sources.</em></p>
-
-<hr>
-
-<h2>🔴 Journal des Erreurs API</h2>
-
-<p>> ⚠️ <strong>Les données suivantes sont ERRONÉES ou INDISPONIBLES pour ce run.</strong></p>
-<p>> Vérifiez l'état des APIs concernées avant de prendre une décision.</p>
-
+<h2 id="donn-es-issues-du-cache-github">⚠️ Données Issues du Cache GitHub</h2>
+<blockquote>
+<p>Les données marquées <em>(⚠️ cache)</em> dans le rapport proviennent du</p>
+<p><strong>dernier rapport sauvegardé sur GitHub</strong> (cache/session_cache.json).</p>
+<p>La clé API principale avait atteint son quota ou était indisponible.</p>
+<p><strong>Ne pas prendre de décision d'investissement</strong> sur ces valeurs sans vérification manuelle.</p>
+</blockquote>
 <ul>
-<li>❌ Palantir Technologies historique : ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</li>
-<li>❌ CoreWeave historique : ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</li>
-<li>❌ Riot Platforms historique : ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</li>
-<li>❌ JCDecaux sentiment : ❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:HTTP 403, EODHD:aucune news)</li>
-<li>❌ JCDecaux consensus : ❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403)</li>
-<li>❌ JCDecaux historique : ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</li>
-<li>❌ Crédit Agricole SA sentiment : ❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:HTTP 403, EODHD:aucune news)</li>
-<li>❌ Crédit Agricole SA consensus : ❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403)</li>
-<li>❌ Crédit Agricole SA historique : ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</li>
-<li>❌ Abionyx Pharma sentiment : ❌ DONNÉES ERRONÉES — sentiment indisponible (Finnhub:HTTP 403, EODHD:aucune news)</li>
-<li>❌ Abionyx Pharma consensus : ❌ DONNÉES ERRONÉES — consensus indisponible (Finnhub:HTTP 403, EODHD:HTTP 403)</li>
-<li>❌ Abionyx Pharma historique : ❌ DONNÉES ERRONÉES — historique indisponible (EODHD:HTTP 402, Finnhub:HTTP 403, AlphaVantage:Rate limit / Quota AlphaVantage)</li>
+<li>⚠️ JCDecaux — cours : Cours non disponible (EODHD:HTTP 402) — cache du 21:48 utilisé</li>
+<li>⚠️ Crédit Agricole SA — cours : Cours non disponible (EODHD:HTTP 402) — cache du 21:48 utilisé</li>
+<li>⚠️ Abionyx Pharma — cours : Cours non disponible (EODHD:HTTP 402) — cache du 21:48 utilisé</li>
 </ul>
-
 <hr>
-
-<h2>🧭 Conclusion Stratégique</h2>
-
+<h2 id="validation-crois-e">✅ Validation Croisée</h2>
+<p><em>Aucune divergence > 2% détectée entre sources.</em></p>
+<hr>
+<h2 id="erreurs-api-donn-es-indisponibles">🔴 Erreurs API — Données Indisponibles</h2>
+<blockquote>
+<p>⚠️ <strong>Les données suivantes sont totalement indisponibles</strong> (ni API ni cache).</p>
+<p>Vérifiez les APIs concernées avant toute décision.</p>
+</blockquote>
+<ul>
+<li>❌ Indice S&P 500 : ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)</li>
+<li>❌ Indice CAC 40 : ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)</li>
+<li>❌ Indice Nikkei 225 : ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)</li>
+<li>❌ Palantir Technologies historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</li>
+<li>❌ CoreWeave historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</li>
+<li>❌ Riot Platforms historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</li>
+<li>❌ JCDecaux historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</li>
+<li>❌ Crédit Agricole SA historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</li>
+<li>❌ Abionyx Pharma historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</li>
+</ul>
+<hr>
+<h2 id="conclusion-strat-gique">🧭 Conclusion Stratégique</h2>
 <p>Marchés en phase <strong>neutre</strong>.</p>
-
-<p><strong>Meilleure position :</strong> Riot Platforms (score 7.6/10, PnL brut +35.1%)</p>
-<p><strong>Position à surveiller :</strong> Abionyx Pharma (score 4.8/10, PnL net -5.88 €)</p>
-
-<h3>🔭 Watchlist — Top 3 Valeurs Hors Portefeuille</h3>
-
-<div class="table-wrap"><table>
+<p><strong>Meilleure position :</strong> Riot Platforms (score 7.6/10, PnL brut +34.2%) <strong>Position à surveiller :</strong> Abionyx Pharma (score 4.8/10, PnL net -5.88 €)</p>
+<h3 id="watchlist-top-3-valeurs-hors-portefeuille">🔭 Watchlist — Top 3 Valeurs Hors Portefeuille</h3>
+<div class="table-wrap"><table><thead>
 <tr><th>Valeur</th><th>Secteur</th><th>Cours</th><th>Var.</th><th>Sentiment</th><th>Consensus</th><th>Score</th></tr>
-<tr><td><strong>NVIDIA</strong></td><td>IA / Semi-conducteurs</td><td>193.16 €</td><td><span class="dn">▼</span> +0.00%</td><td>Bull 87%</td><td>SB:24 B:42 H:4 S:1 SS:0</td><td>8.4/10</td></tr>
-<tr><td><strong>Microsoft</strong></td><td>IA / Cloud</td><td>346.18 €</td><td><span class="dn">▼</span> +0.00%</td><td>Bull 84%</td><td>SB:24 B:36 H:6 S:0 SS:0</td><td>8.3/10</td></tr>
-<tr><td><strong>Coinbase</strong></td><td>Crypto / Fintech</td><td>173.40 €</td><td><span class="dn">▼</span> +0.00%</td><td>Bull 43%</td><td>SB:11 B:17 H:12 S:1 SS:2</td><td>5.7/10</td></tr>
-</table></div>
-
+</thead><tbody>
+<tr><td><strong>Microsoft</strong></td><td>IA / Cloud</td><td>345.76 €</td><td><span class="dn">▼</span> +0.00%</td><td>Bull 87%</td><td>SB:24 B:36 H:6 S:0 SS:0</td><td>8.4/10</td></tr>
+<tr><td><strong>NVIDIA</strong></td><td>IA / Semi-conducteurs</td><td>192.78 €</td><td><span class="dn">▼</span> +0.00%</td><td>Bull 86%</td><td>SB:24 B:42 H:4 S:1 SS:0</td><td>8.3/10</td></tr>
+<tr><td><strong>Coinbase</strong></td><td>Crypto / Fintech</td><td>172.17 €</td><td><span class="dn">▼</span> +0.00%</td><td>Bull 45%</td><td>SB:11 B:17 H:12 S:1 SS:2</td><td>5.8/10</td></tr>
+</tbody></table></div>
 <hr>
-
-<p><em>Rapport v4.1 — 13/05/2026 à 21:47 Paris</em></p>
-<p><em>Sources : TwelveData (cours US) + EODHD (Euronext/indices/historique) + Finnhub (sentiment/consensus) + AlphaVantage (secours)</em></p>
-<p><em>EUR/USD : 1 EUR = 1.1711 USD — TwelveData</em></p>
-<p><em>Scoring : Prix 30% + Sentiment 20% + Consensus 20% + Historique Mensuel 30%</em></p>
-<p><em>Frais courtage BoursoBank Découverte (brochure 13/11/2025)</em></p>
+<p><details> <summary>🔧 Sources & Quotas du Run</summary></p>
+<div class="table-wrap"><table><thead>
+<tr><th>Donnée</th><th>Source</th></tr>
+</thead><tbody>
+<tr><td>EUR/USD</td><td>AlphaVantage</td></tr>
+<tr><td>Indice S&P 500</td><td>❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)</td></tr>
+<tr><td>Indice CAC 40</td><td>❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)</td></tr>
+<tr><td>Indice Nikkei 225</td><td>❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)</td></tr>
+<tr><td>Palantir Technologies — cours</td><td>TwelveData</td></tr>
+<tr><td>Palantir Technologies — sentiment</td><td>Lexical (Finnhub:HTTP 403)</td></tr>
+<tr><td>Palantir Technologies — consensus</td><td>Finnhub</td></tr>
+<tr><td>Palantir Technologies — historique</td><td>Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</td></tr>
+<tr><td>CoreWeave — cours</td><td>TwelveData</td></tr>
+<tr><td>CoreWeave — sentiment</td><td>Lexical (Finnhub:HTTP 403)</td></tr>
+<tr><td>CoreWeave — consensus</td><td>Finnhub</td></tr>
+<tr><td>CoreWeave — historique</td><td>Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</td></tr>
+<tr><td>Riot Platforms — cours</td><td>TwelveData</td></tr>
+<tr><td>Riot Platforms — sentiment</td><td>Lexical (Finnhub:HTTP 403)</td></tr>
+<tr><td>Riot Platforms — consensus</td><td>Finnhub</td></tr>
+<tr><td>Riot Platforms — historique</td><td>Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</td></tr>
+<tr><td>JCDecaux — cours</td><td>Cache</td></tr>
+<tr><td>JCDecaux — sentiment</td><td>Neutre par défaut (Finnhub:HTTP 403, aucune news)</td></tr>
+<tr><td>JCDecaux — consensus</td><td>Neutre par défaut (Finnhub:HTTP 403, EODHD:HTTP 403)</td></tr>
+<tr><td>JCDecaux — historique</td><td>Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</td></tr>
+<tr><td>Crédit Agricole SA — cours</td><td>Cache</td></tr>
+<tr><td>Crédit Agricole SA — sentiment</td><td>Neutre par défaut (Finnhub:HTTP 403, aucune news)</td></tr>
+<tr><td>Crédit Agricole SA — consensus</td><td>Neutre par défaut (Finnhub:HTTP 403, EODHD:HTTP 403)</td></tr>
+<tr><td>Crédit Agricole SA — historique</td><td>Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</td></tr>
+<tr><td>Abionyx Pharma — cours</td><td>Cache</td></tr>
+<tr><td>Abionyx Pharma — sentiment</td><td>Neutre par défaut (Finnhub:HTTP 403, aucune news)</td></tr>
+<tr><td>Abionyx Pharma — consensus</td><td>Neutre par défaut (Finnhub:HTTP 403, EODHD:HTTP 403)</td></tr>
+<tr><td>Abionyx Pharma — historique</td><td>Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)</td></tr>
+</tbody></table></div>
+<p><strong>Quotas de ce run :</strong></p>
+<ul>
+<li>AlphaVantage : 1/5</li>
+<li>TwelveData   : 1/60</li>
+<li>EODHD        : 34/500</li>
+<li>Finnhub      : 37/100</li>
+</ul>
+<p></details></p>
+<hr>
+<p><em>Rapport v5.1 — 13/05/2026 à 23:00 Paris</em> <em>Architecture API : AlphaVantage (EUR/USD) · TwelveData (cours US) · EODHD (Euronext/indices/historique/news) · Finnhub (sentiment/consensus)</em> <em>Scoring : Prix 30% · Sentiment 20% · Consensus 20% · Historique 30%</em> <em>Frais courtage BoursoBank Découverte (brochure 13/11/2025)</em></p>
     </div>
-  </div>
+
+  </div><!-- .container -->
 
   <script>
-    // ── Thème clair/sombre avec localStorage sécurisé ──
-    const root = document.documentElement;
-    const btn  = document.querySelector('[data-theme-toggle]');
 
-    function safeGetStorage(key) {
-      try { return localStorage.getItem(key); } catch(e) { return null; }
-    }
-    function safeSetStorage(key, val) {
-      try { localStorage.setItem(key, val); } catch(e) { /* silencieux */ }
-    }
-
-    let theme = safeGetStorage('theme') ||
-                (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+// ── Thème clair / sombre ───────────────────────────────────────
+(function () {
+  var root = document.documentElement;
+  var btn  = document.querySelector('[data-theme-toggle]');
+  function safeGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+  var theme = safeGet('theme') ||
+    (window.matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+  root.setAttribute('data-theme', theme);
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (btn) btn.addEventListener('click', function () {
+    theme = theme === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', theme);
+    safeSet('theme', theme);
     btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    btn.addEventListener('click', () => {
-      theme = theme === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', theme);
-      safeSetStorage('theme', theme);
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    });
+  });
+})();
 
-    // ── Colorisation des valeurs PnL dans les cellules ──
-    document.querySelectorAll('td').forEach(td => {
-      const t = td.textContent.trim();
-      if (/^[+]\d/.test(t) && t.includes('€')) td.style.color = 'var(--green)';
-      if (/^[-]\d/.test(t) && t.includes('€')) td.style.color = 'var(--red)';
-      if (/^[+]\d/.test(t) && t.includes('%')) td.style.color = 'var(--green)';
-      if (/^[-]\d/.test(t) && t.includes('%')) td.style.color = 'var(--red)';
-    });
+// ── Colorisation PnL dans les cellules de tableau ─────────────
+document.querySelectorAll('td').forEach(function (td) {
+  var t = td.textContent.trim();
+  var isNum = /^[+-]?\d/.test(t);
+  if (!isNum) return;
+  if ((t.includes('€') || t.includes('%')) && t.startsWith('+')) {
+    td.classList.add('cell-pos');
+  } else if ((t.includes('€') || t.includes('%')) && t.startsWith('-')) {
+    td.classList.add('cell-neg');
+  } else if (/^\d[\d\s,.]*[€%]/.test(t)) {
+    td.classList.add('cell-num');
+  }
+});
 
-    // ── Archive ──
-    function toggleArchive() {
-      const panel = document.getElementById('archive-panel');
-      panel.classList.toggle('open');
-      if (panel.classList.contains('open')) loadArchive();
-    }
-    async function loadArchive() {
-      try {
-        const r = await fetch('./archive.json');
-        const data = await r.json();
-        const ul = document.getElementById('archive-list');
-        ul.innerHTML = data.map(e =>
-          `<li>
-            <span class="archive-date">📅 ${e.date}</span>
-            <span class="archive-pnl">${e.pnl}</span>
-          </li>`
-        ).join('');
-      } catch(e) {
-        document.getElementById('archive-list').innerHTML =
-          '<li><span style="color:var(--faint)">Historique non disponible.</span></li>';
-      }
-    }
+// ── Compteur animé pour les KPI ───────────────────────────────
+function animateCounter(el) {
+  var raw = el.getAttribute('data-val');
+  if (!raw) return;
+  var num = parseFloat(raw.replace(',', '.').replace(/\s/g, ''));
+  if (isNaN(num)) return;
+  var suffix = el.getAttribute('data-suffix') || '';
+  var prefix = el.getAttribute('data-prefix') || '';
+  var dec    = (raw.includes('.') || raw.includes(',')) ? 2 : 0;
+  var start  = 0; var duration = 900; var startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var progress = Math.min((ts - startTime) / duration, 1);
+    var ease     = 1 - Math.pow(1 - progress, 3);
+    var current  = start + (num - start) * ease;
+    el.textContent = prefix + current.toFixed(dec).replace('.', ',') + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+document.querySelectorAll('[data-counter]').forEach(animateCounter);
+
+// ── Archive ──────────────────────────────────────────────────
+function toggleArchive() {
+  var panel = document.getElementById('archive-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) loadArchive();
+}
+function loadArchive() {
+  fetch('./archive.json').then(function (r) { return r.json(); }).then(function (data) {
+    var ul = document.getElementById('archive-list');
+    ul.innerHTML = data.map(function (e) {
+      return '<li><span class="archive-date">📅 ' + e.date + '</span>' +
+             '<span class="archive-pnl">' + (e.pnl || '') + '</span></li>';
+    }).join('');
+  }).catch(function () {
+    document.getElementById('archive-list').innerHTML =
+      '<li><span style="color:var(--faint)">Historique non disponible.</span></li>';
+  });
+}
+
   </script>
 </body>
 </html>
