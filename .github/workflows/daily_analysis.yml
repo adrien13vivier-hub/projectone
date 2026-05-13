@@ -1,4 +1,4 @@
-name: Daily Portfolio Report v4.0
+name: Daily Portfolio Report v4.1
 
 on:
   schedule:
@@ -46,16 +46,30 @@ jobs:
           EODHD_API_KEY:      ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
         run: |
-          mkdir -p reports/charts cache
+          mkdir -p reports/charts cache docs
           python portfolio_analyzer.py
-          echo "Script terminé avec code $?"
+          echo "Script portfolio_analyzer.py terminé avec code $?"
 
-      # ── 4. Commit rapport + graphiques ────────────────────────────────────
-      - name: Commit report & charts to repository
+      # ── 4. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
+      - name: Generate HTML report for Cloudflare Pages
+        id: generate_html
+        env:
+          FINNHUB_API_KEY:    ${{ secrets.FINNHUB_API_KEY }}
+          EODHD_API_KEY:      ${{ secrets.EODHD_API_KEY }}
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+        run: |
+          mkdir -p docs
+          python generate_html.py
+          echo "Script generate_html.py terminé avec code $?"
+          ls -lh docs/index.html || echo "AVERTISSEMENT : docs/index.html non trouvé"
+
+      # ── 5. Commit rapport + graphiques + page HTML ────────────────────────
+      - name: Commit report, charts & HTML page
         run: |
           git config user.name  "Portfolio Bot"
           git config user.email "bot@portfolio-analyzer"
           git add reports/
+          git add docs/
           git add cache/ || true
           if git diff --cached --quiet; then
             echo "Aucun changement à committer."
@@ -64,7 +78,7 @@ jobs:
             git push
           fi
 
-      # ── 5. Upload artifact (rapport + graphiques) ─────────────────────────
+      # ── 6. Upload artifact (rapport + graphiques) ─────────────────────────
       - name: Upload report artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -74,9 +88,10 @@ jobs:
             reports/daily_report.md
             reports/charts/*.png
             reports/history.csv
+            docs/index.html
           retention-days: 30
 
-      # ── 6. Préparer le corps du mail ──────────────────────────────────────
+      # ── 7. Préparer le corps du mail ──────────────────────────────────────
       - name: Prepare email body
         if: always()
         id: mail_body
@@ -121,16 +136,16 @@ jobs:
           <div class="container">
             <div class="header">
               <h1>📊 Rapport Portefeuille — $DATE</h1>
-              <p>Analyse quotidienne automatisée · v4.0</p>
+              <p>Analyse quotidienne automatisée · v4.1</p>
             </div>
             <div class="body">
               <div class="kpi">
                 <div class="kpi-box">
-                  <div class="val $([ $(echo "$PNL >= 0" | bc -l 2>/dev/null || echo 1) -eq 1 ] && echo positive || echo negative)">${PNL} €</div>
+                  <div class="val">${PNL} €</div>
                   <div class="lbl">PnL Net estimé</div>
                 </div>
                 <div class="kpi-box">
-                  <div class="val $([ $(echo "$PCT >= 0" | bc -l 2>/dev/null || echo 1) -eq 1 ] && echo positive || echo negative)">${PCT}%</div>
+                  <div class="val">${PCT}%</div>
                   <div class="lbl">Performance nette</div>
                 </div>
                 <div class="kpi-box">
@@ -151,14 +166,14 @@ jobs:
               <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
               <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
             </div>
-            <div class="footer">Portfolio Analyzer v4.0 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
+            <div class="footer">Portfolio Analyzer v4.1 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
           </div>
           </body></html>
           EOF
 
           echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
 
-      # ── 7. Envoi mail (toujours, sauf si aucune clé SMTP configurée) ───────
+      # ── 8. Envoi mail (toujours, sauf si aucune clé SMTP configurée) ───────
       - name: Send daily report email
         if: always() && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
@@ -179,7 +194,7 @@ jobs:
           convert_markdown: false
           priority:       normal
 
-      # ── 8. Notification si erreurs API critiques (canal séparé) ───────────
+      # ── 9. Notification si erreurs API critiques ───────────────────────────
       - name: Send ALERT email on critical API errors
         if: always() && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
@@ -195,7 +210,7 @@ jobs:
           to:             ${{ secrets.MAIL_TO }}
           from:           ${{ secrets.MAIL_FROM }}
           body: |
-            ⚠️ ALERTE PORTFOLIO ANALYZER v4.0
+            ⚠️ ALERTE PORTFOLIO ANALYZER v4.1
 
             Des données sont erronées ou indisponibles dans le rapport du jour.
             Ne prenez pas de décision d'investissement sans vérifier manuellement les cours.
@@ -206,5 +221,5 @@ jobs:
             Run GitHub Actions : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             ---
-            Portfolio Analyzer v4.0 — Alerte automatique
+            Portfolio Analyzer v4.1 — Alerte automatique
           priority:       high
