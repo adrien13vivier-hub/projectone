@@ -1,4 +1,4 @@
-name: Daily Portfolio Report v4.1
+name: Daily Portfolio Report v5.1
 
 on:
   schedule:
@@ -138,7 +138,7 @@ jobs:
           <div class="container">
             <div class="header">
               <h1>📊 Rapport Portefeuille — $DATE</h1>
-              <p>Analyse quotidienne automatisée · v4.1</p>
+              <p>Analyse quotidienne automatisée · v5.1</p>
             </div>
             <div class="body">
               <div class="kpi">
@@ -168,7 +168,7 @@ jobs:
               <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
               <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
             </div>
-            <div class="footer">Portfolio Analyzer v4.1 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
+            <div class="footer">Portfolio Analyzer v5.1 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
           </div>
           </body></html>
           EOF
@@ -212,7 +212,7 @@ jobs:
           to:             ${{ secrets.MAIL_TO }}
           from:           ${{ secrets.MAIL_FROM }}
           body: |
-            ⚠️ ALERTE PORTFOLIO ANALYZER v4.1
+            ⚠️ ALERTE PORTFOLIO ANALYZER v5.1
 
             Des données sont erronées ou indisponibles dans le rapport du jour.
             Ne prenez pas de décision d'investissement sans vérifier manuellement les cours.
@@ -223,5 +223,5 @@ jobs:
             Run GitHub Actions : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             ---
-            Portfolio Analyzer v4.1 — Alerte automatique
+            Portfolio Analyzer v5.1 — Alerte automatique
           priority:       high
