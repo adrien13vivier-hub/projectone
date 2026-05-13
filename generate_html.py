@@ -5,6 +5,7 @@ Convertit reports/daily_report.md → docs/index.html (page Cloudflare Pages).
 Met aussi à jour docs/archive.json pour l'historique des rapports.
 """
 import os
+import sys
 import json
 import re
 from datetime import datetime, timezone
@@ -119,6 +120,8 @@ date_match = re.search(r'(\d{2}/\d{2}/\d{4} \d{2}:\d{2})', md_content)
 report_date = date_match.group(1) if date_match else datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')
 
 # ── Mise à jour de l'archive JSON ─────────────────────────────────────────────
+# IMPORTANT : new_entry est construit HORS du f-string pour éviter
+# la confusion entre {{ }} du f-string et { } du dict Python.
 docs_dir = Path("docs")
 docs_dir.mkdir(exist_ok=True)
 
@@ -130,14 +133,18 @@ if ARCHIVE_PATH.exists():
         archive = []
 
 # Extrait PnL global depuis le markdown pour l'archive
-pnl_match = re.search(r'PnL net estimé.*?([+-]\d+[.,]\d+)\s*€.*?([+-]\d+[.,]\d+)%', md_content)
+pnl_match = re.search(r'PnL net estim[ée].*?([+-]\d+[.,]\d+)\s*€.*?([+-]\d+[.,]\d+)%', md_content)
 pnl_str = f"{pnl_match.group(1)} € ({pnl_match.group(2)}%)" if pnl_match else "N/D"
 
-new_entry = {{
+safe_date = report_date.replace('/', '-').replace(' ', '_').replace(':', 'h')
+
+# Dictionnaire construit normalement (pas dans un f-string)
+new_entry = {
     "date":     report_date,
-    "filename": f"archive/report_{{report_date.replace('/', '-').replace(' ', '_').replace(':', 'h')}}.md",
+    "filename": f"archive/report_{safe_date}.md",
     "pnl":      pnl_str,
-}}
+}
+
 # Évite les doublons sur la même date
 archive = [e for e in archive if e["date"] != report_date]
 archive.insert(0, new_entry)
@@ -145,12 +152,11 @@ archive = archive[:30]  # Garde les 30 derniers
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # ── Template HTML complet ──────────────────────────────────────────────────────
-JS_THEME = """
+JS_THEME = r"""
     // ── Thème clair/sombre avec localStorage sécurisé ──
     const root = document.documentElement;
     const btn  = document.querySelector('[data-theme-toggle]');
 
-    // localStorage peut être bloqué en navigation privée ou sur certains navigateurs
     function safeGetStorage(key) {
       try { return localStorage.getItem(key); } catch(e) { return null; }
     }
@@ -161,27 +167,27 @@ JS_THEME = """
     let theme = safeGetStorage('theme') ||
                 (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
     root.setAttribute('data-theme', theme);
-    btn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\U0001f319';
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
     btn.addEventListener('click', () => {
       theme = theme === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', theme);
       safeSetStorage('theme', theme);
-      btn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\U0001f319';
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
     });
 """
 
-JS_COLORIZE = """
+JS_COLORIZE = r"""
     // ── Colorisation des valeurs PnL dans les cellules ──
     document.querySelectorAll('td').forEach(td => {
       const t = td.textContent.trim();
-      if (/^[+]\\d/.test(t) && t.includes('\u20ac')) td.style.color = 'var(--green)';
-      if (/^[-]\\d/.test(t) && t.includes('\u20ac')) td.style.color = 'var(--red)';
-      if (/^[+]\\d/.test(t) && t.includes('%')) td.style.color = 'var(--green)';
-      if (/^[-]\\d/.test(t) && t.includes('%')) td.style.color = 'var(--red)';
+      if (/^[+]\d/.test(t) && t.includes('€')) td.style.color = 'var(--green)';
+      if (/^[-]\d/.test(t) && t.includes('€')) td.style.color = 'var(--red)';
+      if (/^[+]\d/.test(t) && t.includes('%')) td.style.color = 'var(--green)';
+      if (/^[-]\d/.test(t) && t.includes('%')) td.style.color = 'var(--red)';
     });
 """
 
-JS_ARCHIVE = """
+JS_ARCHIVE = r"""
     // ── Archive ──
     function toggleArchive() {
       const panel = document.getElementById('archive-panel');
@@ -195,7 +201,7 @@ JS_ARCHIVE = """
         const ul = document.getElementById('archive-list');
         ul.innerHTML = data.map(e =>
           `<li>
-            <span class="archive-date">\U0001f4c5 ${e.date}</span>
+            <span class="archive-date">📅 ${e.date}</span>
             <span class="archive-pnl">${e.pnl}</span>
           </li>`
         ).join('');
@@ -206,7 +212,7 @@ JS_ARCHIVE = """
     }
 """
 
-html_template = f"""<!DOCTYPE html>
+html_out = f"""<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -351,7 +357,7 @@ html_template = f"""<!DOCTYPE html>
   <header>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="logo">\U0001f4ca <span>Portfolio</span> Analyzer</div>
-      <div class="header-meta">v3.2 \u00b7 {report_date}</div>
+      <div class="header-meta">v4.1 \u00b7 {report_date}</div>
     </div>
     <div class="header-actions">
       <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">\U0001f5a8\ufe0f</button>
@@ -383,6 +389,7 @@ html_template = f"""<!DOCTYPE html>
 </html>
 """
 
-HTML_PATH.write_text(html_template, encoding="utf-8")
+HTML_PATH.write_text(html_out, encoding="utf-8")
 print(f"\u2705 docs/index.html g\u00e9n\u00e9r\u00e9 ({HTML_PATH.stat().st_size // 1024} Ko)")
 print(f"\u2705 docs/archive.json mis \u00e0 jour ({len(archive)} entr\u00e9es)")
+sys.exit(0)
