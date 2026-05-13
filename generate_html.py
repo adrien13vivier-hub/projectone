@@ -105,7 +105,7 @@ def inline(text: str) -> str:
     # Code inline
     text = re.sub(r'`([^`]+)`',         r'<code>\1</code>',              text)
     # Liens Markdown
-    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank">\1</a>', text)
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>', text)
     # Flèches unicode → spans
     text = text.replace('▲', '<span class="up">▲</span>')
     text = text.replace('▼', '<span class="dn">▼</span>')
@@ -133,11 +133,11 @@ if ARCHIVE_PATH.exists():
 pnl_match = re.search(r'PnL net estimé.*?([+-]\d+[.,]\d+)\s*€.*?([+-]\d+[.,]\d+)%', md_content)
 pnl_str = f"{pnl_match.group(1)} € ({pnl_match.group(2)}%)" if pnl_match else "N/D"
 
-new_entry = {
+new_entry = {{
     "date":     report_date,
-    "filename": f"archive/report_{report_date.replace('/', '-').replace(' ', '_').replace(':', 'h')}.md",
+    "filename": f"archive/report_{{report_date.replace('/', '-').replace(' ', '_').replace(':', 'h')}}.md",
     "pnl":      pnl_str,
-}
+}}
 # Évite les doublons sur la même date
 archive = [e for e in archive if e["date"] != report_date]
 archive.insert(0, new_entry)
@@ -145,12 +145,73 @@ archive = archive[:30]  # Garde les 30 derniers
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # ── Template HTML complet ──────────────────────────────────────────────────────
+JS_THEME = """
+    // ── Thème clair/sombre avec localStorage sécurisé ──
+    const root = document.documentElement;
+    const btn  = document.querySelector('[data-theme-toggle]');
+
+    // localStorage peut être bloqué en navigation privée ou sur certains navigateurs
+    function safeGetStorage(key) {
+      try { return localStorage.getItem(key); } catch(e) { return null; }
+    }
+    function safeSetStorage(key, val) {
+      try { localStorage.setItem(key, val); } catch(e) { /* silencieux */ }
+    }
+
+    let theme = safeGetStorage('theme') ||
+                (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+    root.setAttribute('data-theme', theme);
+    btn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\U0001f319';
+    btn.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', theme);
+      safeSetStorage('theme', theme);
+      btn.textContent = theme === 'dark' ? '\u2600\ufe0f' : '\U0001f319';
+    });
+"""
+
+JS_COLORIZE = """
+    // ── Colorisation des valeurs PnL dans les cellules ──
+    document.querySelectorAll('td').forEach(td => {
+      const t = td.textContent.trim();
+      if (/^[+]\\d/.test(t) && t.includes('\u20ac')) td.style.color = 'var(--green)';
+      if (/^[-]\\d/.test(t) && t.includes('\u20ac')) td.style.color = 'var(--red)';
+      if (/^[+]\\d/.test(t) && t.includes('%')) td.style.color = 'var(--green)';
+      if (/^[-]\\d/.test(t) && t.includes('%')) td.style.color = 'var(--red)';
+    });
+"""
+
+JS_ARCHIVE = """
+    // ── Archive ──
+    function toggleArchive() {
+      const panel = document.getElementById('archive-panel');
+      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) loadArchive();
+    }
+    async function loadArchive() {
+      try {
+        const r = await fetch('./archive.json');
+        const data = await r.json();
+        const ul = document.getElementById('archive-list');
+        ul.innerHTML = data.map(e =>
+          `<li>
+            <span class="archive-date">\U0001f4c5 ${e.date}</span>
+            <span class="archive-pnl">${e.pnl}</span>
+          </li>`
+        ).join('');
+      } catch(e) {
+        document.getElementById('archive-list').innerHTML =
+          '<li><span style="color:var(--faint)">Historique non disponible.</span></li>';
+      }
+    }
+"""
+
 html_template = f"""<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rapport Portfolio — {report_date}</title>
+  <title>Rapport Portfolio \u2014 {report_date}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -193,7 +254,6 @@ html_template = f"""<!DOCTYPE html>
       font-size: 15px;
       min-height: 100dvh;
     }}
-    /* ── HEADER ── */
     header {{
       position: sticky; top: 0; z-index: 100;
       background: rgba(15,17,23,0.85);
@@ -214,14 +274,11 @@ html_template = f"""<!DOCTYPE html>
       font-size: 13px; cursor: pointer; transition: all .18s;
     }}
     .btn-icon:hover {{ background: var(--border); }}
-    /* ── LAYOUT ── */
     .container {{ max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }}
-    /* ── TYPOGRAPHY ── */
     h1 {{ font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; line-height: 1.2;
           margin-bottom: 8px; letter-spacing: -.5px; }}
     h2 {{ font-size: 1.2rem; font-weight: 700; margin: 40px 0 16px;
-          padding-bottom: 8px; border-bottom: 1px solid var(--border);
-          color: var(--text); }}
+          padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
     h3 {{ font-size: 1rem; font-weight: 700; margin: 28px 0 12px; color: var(--text); }}
     h4 {{ font-size: .9rem; font-weight: 600; margin: 16px 0 8px; color: var(--muted); }}
     p  {{ color: var(--muted); margin-bottom: 10px; max-width: 72ch; }}
@@ -232,39 +289,25 @@ html_template = f"""<!DOCTYPE html>
                background: var(--surface-2); border: 1px solid var(--border);
                padding: 1px 5px; border-radius: 4px; color: var(--accent); }}
     ul {{ list-style: none; padding: 0; margin-bottom: 12px; }}
-    li {{ padding: 4px 0 4px 16px; color: var(--muted); font-size: .9rem;
-           position: relative; }}
-    li::before {{ content: '·'; position: absolute; left: 4px; color: var(--faint); }}
-    /* ── TABLES ── */
-    .table-wrap {{ overflow-x: auto; margin: 16px 0; border-radius: var(--radius);
-                   border: 1px solid var(--border); }}
+    li {{ padding: 4px 0 4px 16px; color: var(--muted); font-size: .9rem; position: relative; }}
+    li::before {{ content: '\u00b7'; position: absolute; left: 4px; color: var(--faint); }}
+    .table-wrap {{ overflow-x: auto; margin: 16px 0; border-radius: var(--radius); border: 1px solid var(--border); }}
     table {{ width: 100%; border-collapse: collapse; font-size: .88rem; }}
-    th {{ background: var(--surface-2); color: var(--muted);
-           font-weight: 600; font-size: .78rem; text-transform: uppercase;
-           letter-spacing: .5px; padding: 10px 14px; text-align: left;
-           border-bottom: 1px solid var(--border); }}
-    td {{ padding: 10px 14px; border-bottom: 1px solid var(--border);
-           vertical-align: middle; }}
+    th {{ background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: .78rem;
+           text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px;
+           text-align: left; border-bottom: 1px solid var(--border); }}
+    td {{ padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }}
     tr:last-child td {{ border-bottom: none; }}
     tr:hover td {{ background: var(--accent-glow); }}
-    /* ── BADGES ── */
-    .badge {{ display: inline-flex; align-items: center; gap: 4px;
-               font-size: .78rem; font-weight: 700; padding: 3px 10px;
-               border-radius: 20px; white-space: nowrap; }}
-    .buy-strong {{ background: rgba(16,185,129,.15); color: #10b981;
-                   border: 1px solid rgba(16,185,129,.3); }}
-    .buy-mod    {{ background: rgba(59,130,246,.15); color: #60a5fa;
-                   border: 1px solid rgba(59,130,246,.3); }}
-    .hold       {{ background: rgba(245,158,11,.12); color: #f59e0b;
-                   border: 1px solid rgba(245,158,11,.3); }}
-    .avoid      {{ background: rgba(249,115,22,.12); color: #fb923c;
-                   border: 1px solid rgba(249,115,22,.3); }}
-    .sell       {{ background: rgba(239,68,68,.12); color: #f87171;
-                   border: 1px solid rgba(239,68,68,.3); }}
-    /* ── PnL COLORS ── */
+    .badge {{ display: inline-flex; align-items: center; gap: 4px; font-size: .78rem;
+               font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }}
+    .buy-strong {{ background: rgba(16,185,129,.15); color: #10b981; border: 1px solid rgba(16,185,129,.3); }}
+    .buy-mod    {{ background: rgba(59,130,246,.15);  color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }}
+    .hold       {{ background: rgba(245,158,11,.12);  color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }}
+    .avoid      {{ background: rgba(249,115,22,.12);  color: #fb923c; border: 1px solid rgba(249,115,22,.3); }}
+    .sell       {{ background: rgba(239,68,68,.12);   color: #f87171; border: 1px solid rgba(239,68,68,.3); }}
     .up {{ color: var(--green); font-weight: 600; }}
     .dn {{ color: var(--red);   font-weight: 600; }}
-    /* ── ARCHIVE PANEL ── */
     .archive-toggle {{ font-size: 12px; color: var(--accent); cursor: pointer;
                         background: none; border: none; padding: 0;
                         text-decoration: underline; margin-bottom: 16px; }}
@@ -276,13 +319,11 @@ html_template = f"""<!DOCTYPE html>
     .archive-list {{ list-style: none; padding: 0; }}
     .archive-list li {{
       display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid var(--border);
-      font-size: .85rem;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .85rem;
     }}
     .archive-list li:last-child {{ border: none; }}
     .archive-date {{ color: var(--text); font-family: var(--font-mono); font-size: .8rem; }}
     .archive-pnl  {{ color: var(--muted); }}
-    /* ── LAST UPDATE BADGE ── */
     .update-badge {{
       display: inline-flex; align-items: center; gap: 6px;
       background: var(--surface); border: 1px solid var(--border);
@@ -291,16 +332,13 @@ html_template = f"""<!DOCTYPE html>
     }}
     .update-dot {{
       width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
+      background: var(--green); box-shadow: 0 0 6px var(--green);
     }}
-    /* ── PRINT ── */
     @media print {{
       header, .header-actions, .archive-toggle, #archive-panel {{ display: none; }}
       body {{ background: white; color: black; }}
       .badge {{ border: 1px solid #ccc; }}
     }}
-    /* ── MOBILE ── */
     @media (max-width: 640px) {{
       header {{ padding: 10px 14px; }}
       .container {{ padding: 20px 14px 60px; }}
@@ -312,26 +350,26 @@ html_template = f"""<!DOCTYPE html>
 <body>
   <header>
     <div style="display:flex;align-items:center;gap:12px">
-      <div class="logo">📊 <span>Portfolio</span> Analyzer</div>
-      <div class="header-meta">v3.2 · {report_date}</div>
+      <div class="logo">\U0001f4ca <span>Portfolio</span> Analyzer</div>
+      <div class="header-meta">v3.2 \u00b7 {report_date}</div>
     </div>
     <div class="header-actions">
-      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>
-      <button class="btn-icon" data-theme-toggle aria-label="Changer de thème">☀️</button>
+      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">\U0001f5a8\ufe0f</button>
+      <button class="btn-icon" data-theme-toggle aria-label="Changer de th\u00e8me">\u2600\ufe0f</button>
     </div>
   </header>
 
   <div class="container">
     <div class="update-badge">
       <span class="update-dot"></span>
-      Dernière mise à jour : <strong>{report_date}</strong>
+      Derni\u00e8re mise \u00e0 jour : <strong>{report_date}</strong>
     </div>
 
-    <button class="archive-toggle" onclick="toggleArchive()">📂 Historique des rapports</button>
+    <button class="archive-toggle" onclick="toggleArchive()">\U0001f4c2 Historique des rapports</button>
     <div id="archive-panel">
       <strong style="font-size:.85rem;">30 derniers rapports</strong>
       <ul class="archive-list" id="archive-list">
-        <li><span style="color:var(--faint);font-size:.8rem">Chargement…</span></li>
+        <li><span style="color:var(--faint);font-size:.8rem">Chargement\u2026</span></li>
       </ul>
     </div>
 
@@ -340,57 +378,11 @@ html_template = f"""<!DOCTYPE html>
     </div>
   </div>
 
-  <script>
-    // ── Thème clair/sombre ──
-    const root = document.documentElement;
-    const btn  = document.querySelector('[data-theme-toggle]');
-    let theme  = localStorage.getItem('theme') ||
-                 (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
-    root.setAttribute('data-theme', theme);
-    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    btn.addEventListener('click', () => {{
-      theme = theme === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    }});
-
-    // ── Colorisation des valeurs PnL dans les cellules ──
-    document.querySelectorAll('td').forEach(td => {{
-      const t = td.textContent.trim();
-      if (/^[+]\d/.test(t) && t.includes('€')) td.style.color = 'var(--green)';
-      if (/^[-]\d/.test(t) && t.includes('€')) td.style.color = 'var(--red)';
-      if (/^[+]\d/.test(t) && t.includes('%')) td.style.color = 'var(--green)';
-      if (/^[-]\d/.test(t) && t.includes('%')) td.style.color = 'var(--red)';
-    }});
-
-    // ── Archive ──
-    function toggleArchive() {{
-      const panel = document.getElementById('archive-panel');
-      panel.classList.toggle('open');
-      if (panel.classList.contains('open')) loadArchive();
-    }}
-    async function loadArchive() {{
-      try {{
-        const r = await fetch('./archive.json');
-        const data = await r.json();
-        const ul = document.getElementById('archive-list');
-        ul.innerHTML = data.map(e =>
-          `<li>
-            <span class="archive-date">📅 ${{e.date}}</span>
-            <span class="archive-pnl">${{e.pnl}}</span>
-          </li>`
-        ).join('');
-      }} catch(e) {{
-        document.getElementById('archive-list').innerHTML =
-          '<li><span style="color:var(--faint)">Historique non disponible.</span></li>';
-      }}
-    }}
-  </script>
+  <script>{JS_THEME}{JS_COLORIZE}{JS_ARCHIVE}  </script>
 </body>
 </html>
 """
 
 HTML_PATH.write_text(html_template, encoding="utf-8")
-print(f"✅ docs/index.html généré ({HTML_PATH.stat().st_size // 1024} Ko)")
-print(f"✅ docs/archive.json mis à jour ({len(archive)} entrées)")
+print(f"\u2705 docs/index.html g\u00e9n\u00e9r\u00e9 ({HTML_PATH.stat().st_size // 1024} Ko)")
+print(f"\u2705 docs/archive.json mis \u00e0 jour ({len(archive)} entr\u00e9es)")
