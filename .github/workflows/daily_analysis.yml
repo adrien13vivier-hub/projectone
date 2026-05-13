@@ -1,19 +1,16 @@
 name: Daily Portfolio Report v3.2
 
 on:
+  # IMPORTANT : schedule doit être déclaré AVANT workflow_dispatch
+  # pour garantir la reconnaissance par GitHub Actions
   schedule:
     # ──────────────────────────────────────────────
-    # Heure été CEST (UTC+2) — fin mars → fin octobre
-    #   10h Paris = 08h UTC
-    #   16h Paris = 14h UTC
+    # Été CEST (UTC+2) : fin mars → fin octobre
+    #   10h00 Paris = 08h00 UTC
+    #   16h00 Paris = 14h00 UTC
     # ──────────────────────────────────────────────
-    - cron: "0 8 * * 1-5"   # 10h00 Paris CEST (UTC+2) — ⚠️ hiver CET : changer en "0 9"
-    - cron: "0 14 * * 1-5"  # 16h00 Paris CEST (UTC+2) — ⚠️ hiver CET : changer en "0 15"
-    # ──────────────────────────────────────────────
-    # Hiver CET (UTC+1) — fin octobre → fin mars
-    #   10h Paris = 09h UTC  → remplacer "0 8" par "0 9"
-    #   16h Paris = 15h UTC  → remplacer "0 14" par "0 15"
-    # ──────────────────────────────────────────────
+    - cron: "0 8 * * 1-5"   # 10h00 Paris CEST — hiver CET : changer en 0 9
+    - cron: "0 14 * * 1-5"  # 16h00 Paris CEST — hiver CET : changer en 0 15
   workflow_dispatch:
 
 jobs:
