@@ -1,0 +1,24 @@
+name: Keep-Alive
+# GitHub désactive les crons après 60 jours d'inactivité.
+# Ce workflow se lance chaque lundi pour maintenir le repo actif.
+on:
+  schedule:
+    - cron: "0 7 * * 1"  # Chaque lundi à 07h00 UTC
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    name: Maintien activité repo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ping keep-alive
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "$(date -u '+%Y-%m-%d %H:%M UTC')" >> .keepalive
+          git add .keepalive
+          git commit -m "💓 keep-alive $(date -u '+%Y-%m-%d')"
+          git push
