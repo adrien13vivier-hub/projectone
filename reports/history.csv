@@ -1,0 +1,4 @@
+date,time,ticker,name,price_eur,cost_eur,qty,vm,pnl_brut,pnl_brut_pct,pnl_net,pnl_net_pct,score,rec
+2026-05-13,21:03,PLTR.US,Palantir Technologies,110.1062,119.06,2,220.21,-17.91,-7.52,-31.81,-12.98,5.85,GARDER
+2026-05-13,21:03,CRWV.US,CoreWeave,95.1185,93.91,2,190.24,2.42,1.29,-11.48,-5.89,5.52,GARDER
+2026-05-13,21:03,RIOT.US,Riot Platforms,21.239,15.84,6,127.43,32.39,34.08,18.49,18.13,7.6,ACHAT FORT
