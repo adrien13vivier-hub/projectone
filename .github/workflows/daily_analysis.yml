@@ -1,21 +1,14 @@
-name: Daily Portfolio Report v3.2
+name: Daily Portfolio Report v3.4
 
 on:
-  # IMPORTANT : schedule doit être déclaré AVANT workflow_dispatch
-  # pour garantir la reconnaissance par GitHub Actions
   schedule:
-    # ──────────────────────────────────────────────
-    # Été CEST (UTC+2) : fin mars → fin octobre
-    #   10h00 Paris = 08h00 UTC
-    #   16h00 Paris = 14h00 UTC
-    # ──────────────────────────────────────────────
-    - cron: "0 8 * * 1-5"   # 10h00 Paris CEST — hiver CET : changer en 0 9
-    - cron: "0 14 * * 1-5"  # 16h00 Paris CEST — hiver CET : changer en 0 15
+    - cron: "0 8 * * 1-5"   # 10h00 Paris CEST (UTC+2) — hiver CET: changer en 0 9
+    - cron: "0 14 * * 1-5"  # 16h00 Paris CEST (UTC+2) — hiver CET: changer en 0 15
   workflow_dispatch:
 
 jobs:
   analyze:
-    name: Génère le rapport quotidien v3.2
+    name: Analyse & Rapport v3.4
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -33,15 +26,20 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run analyzer v3.2
+      - name: Run analyzer v3.4
+        id: analyzer
         env:
           FINNHUB_API_KEY:    ${{ secrets.FINNHUB_API_KEY }}
           EODHD_API_KEY:      ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
         run: python portfolio_analyzer.py
+        # ↑ Le script écrit PORTFOLIO_PNL_NET et PORTFOLIO_PNL_PCT dans $GITHUB_ENV
 
-      - name: Generate HTML for Cloudflare Pages
+      - name: Generate HTML page
         run: python generate_html.py
+
+      - name: Generate history chart
+        run: python generate_chart.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -49,13 +47,109 @@ jobs:
           name: rapport-${{ github.run_number }}
           path: |
             reports/daily_report.md
+            reports/history.csv
             docs/index.html
+            docs/chart.html
           retention-days: 90
 
-      - name: Commit rapport + page HTML
+      - name: Commit rapport + page + historique
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add reports/daily_report.md docs/index.html docs/archive.json
-          git diff --cached --quiet || git commit -m "📊 Rapport v3.2 — $(date +'%Y-%m-%d %H:%M UTC')"
+          git add reports/daily_report.md reports/history.csv \
+                  docs/index.html docs/chart.html \
+                  cache/session_cache.json || true
+          git diff --cached --quiet || \
+            git commit -m "📊 Rapport v3.4 — $(date +'%Y-%m-%d %H:%M UTC')"
           git push
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # ALERTE EMAIL — déclenchée si PnL global < seuil ou erreur API détectée
+  # ──────────────────────────────────────────────────────────────────────────
+  alert:
+    name: Alerte Email
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: always()  # s'exécute même si analyze a échoué
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Vérifier conditions d'alerte
+        id: check
+        env:
+          PORTFOLIO_PNL_NET: ${{ env.PORTFOLIO_PNL_NET }}
+          PORTFOLIO_PNL_PCT: ${{ env.PORTFOLIO_PNL_PCT }}
+        run: |
+          python - <<'EOF'
+          import os, sys
+
+          pnl_net = float(os.environ.get("PORTFOLIO_PNL_NET", "0") or "0")
+          pnl_pct = float(os.environ.get("PORTFOLIO_PNL_PCT", "0") or "0")
+
+          # Seuils d'alerte
+          ALERT_PNL_PCT  = -5.0   # PnL global < -5% → alerte
+          ALERT_PNL_EUR  = -50.0  # PnL net < -50 € → alerte
+
+          reason = []
+          if pnl_pct  < ALERT_PNL_PCT:  reason.append(f"PnL global {pnl_pct:+.2f}% (seuil {ALERT_PNL_PCT}%)")
+          if pnl_net  < ALERT_PNL_EUR:  reason.append(f"PnL net {pnl_net:+.2f} € (seuil {ALERT_PNL_EUR} €)")
+
+          # Erreurs API dans le rapport
+          import glob
+          report_files = glob.glob("reports/daily_report.md")
+          api_errors_found = False
+          if report_files:
+              with open(report_files[0], encoding="utf-8") as f:
+                  content = f.read()
+              if "## 🔴 Journal des Erreurs API" in content:
+                  reason.append("Erreurs API détectées dans le rapport")
+                  api_errors_found = True
+
+          # Échec du job analyze
+          if os.environ.get("ANALYZE_RESULT", "") == "failure":
+              reason.append("Job analyze en échec")
+
+          if reason:
+              print("SEND_ALERT=true")
+              print("ALERT_REASON=" + " | ".join(reason))
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("SEND_ALERT=true\n")
+                  f.write("ALERT_REASON=" + " | ".join(reason) + "\n")
+          else:
+              print("SEND_ALERT=false — Aucune alerte nécessaire")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("SEND_ALERT=false\n")
+          EOF
+        env:
+          ANALYZE_RESULT: ${{ needs.analyze.result }}
+
+      - name: Envoyer alerte email
+        if: steps.check.outputs.SEND_ALERT == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.ALERT_GMAIL_USER }}
+          password: ${{ secrets.ALERT_GMAIL_APP_PASSWORD }}
+          to: ${{ secrets.ALERT_EMAIL_TO }}
+          from: Portfolio Analyzer <${{ secrets.ALERT_GMAIL_USER }}>
+          subject: "🚨 Alerte Portefeuille — ${{ steps.check.outputs.ALERT_REASON }}"
+          body: |
+            Bonjour,
+
+            Une alerte a été déclenchée sur votre portefeuille.
+
+            📋 Motif(s) : ${{ steps.check.outputs.ALERT_REASON }}
+
+            📊 PnL net global : ${{ env.PORTFOLIO_PNL_NET }} €
+            📉 PnL net (%)    : ${{ env.PORTFOLIO_PNL_PCT }} %
+
+            🔗 Rapport complet : https://portfolio-analyzer-v3.pages.dev
+            📈 Historique      : https://portfolio-analyzer-v3.pages.dev/chart.html
+
+            ---
+            Portfolio Analyzer v3.4 — GitHub Actions
+            Ce message est automatique, ne pas répondre.
