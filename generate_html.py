@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.0
+generate_html.py  v3.1
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
+• Graphique combiné normalisé base 100 (section Tendances)
 • Tableaux positions + synthèse extraits du Markdown
-• Graphiques PNG intégrés en base64
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -19,6 +19,7 @@ MD_PATH      = Path("reports/daily_report.md")
 HTML_PATH    = Path("docs/index.html")
 ARCHIVE_PATH = Path("docs/archive.json")
 CHARTS_DIR   = Path("reports/charts")
+COMBINED_PNG = CHARTS_DIR / "portfolio_combined.png"
 
 # ── Lecture Markdown ───────────────────────────────────────────
 if not MD_PATH.exists():
@@ -32,11 +33,10 @@ date_match  = re.search(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2})", md_content)
 report_date = date_match.group(1) if date_match else \
               datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
 
-# ── Graphiques PNG → base64 ────────────────────────────────────
-charts_b64: dict[str, str] = {}
-if CHARTS_DIR.exists():
-    for png in sorted(CHARTS_DIR.glob("*.png")):
-        charts_b64[png.stem] = base64.b64encode(png.read_bytes()).decode()
+# ── Graphique combiné → base64 ─────────────────────────────────
+combined_b64 = ""
+if COMBINED_PNG.exists():
+    combined_b64 = base64.b64encode(COMBINED_PNG.read_bytes()).decode()
 
 # ══════════════════════════════════════════════════════════════
 # EXTRACTION KPI
@@ -83,7 +83,6 @@ brut_class      = "kpi-positive" if brut_positive else "kpi-negative"
 # ══════════════════════════════════════════════════════════════
 def extract_positions(md: str) -> list[dict]:
     positions = []
-    # Chaque bloc commence par ### NomValeur `TICKER`
     blocks = re.split(r"(?=^### .+`)", md, flags=re.MULTILINE)
     for block in blocks:
         m_head = re.match(r"^### (.+?)\s*`([^`]+)`", block)
@@ -91,16 +90,14 @@ def extract_positions(md: str) -> list[dict]:
             continue
         name   = m_head.group(1).strip()
         ticker = m_head.group(2).strip()
-        # Ligne de données principale du tableau position
-        # | prix | variation | VM | PnL Brut | PnL Net | Score | Rec |
         m_row = re.search(
-            r"\|\s*([\d,.]+)\s*EUR\s*\|"        # prix
-            r"\s*([^|]+?)\s*\|"                  # variation
-            r"\s*([\d,.]+)\s*EUR\s*\|"           # VM
-            r"\s*([^|]+?EUR[^|]+?)\s*\|"         # PnL Brut
-            r"\s*([^|]+?EUR[^|]+?)\s*\|"         # PnL Net
-            r"\s*\*?\*?([\d.]+/10)\*?\*?\s*\|"   # Score
-            r"\s*([^|]+?)\s*\|",                 # Recomm
+            r"\|\s*([\d,.]+)\s*EUR\s*\|"
+            r"\s*([^|]+?)\s*\|"
+            r"\s*([\d,.]+)\s*EUR\s*\|"
+            r"\s*([^|]+?EUR[^|]+?)\s*\|"
+            r"\s*([^|]+?EUR[^|]+?)\s*\|"
+            r"\s*\*?\*?([\d.]+/10)\*?\*?\s*\|"
+            r"\s*([^|]+?)\s*\|",
             block)
         if not m_row:
             continue
@@ -111,19 +108,14 @@ def extract_positions(md: str) -> list[dict]:
         pnl_net   = m_row.group(5).strip()
         score     = m_row.group(6).strip()
         rec       = m_row.group(7).strip()
-        # Sentiment
         m_sent = re.search(r"Sentiment[^:]*:\s*Bull\s*([\d.]+)%\s*/\s*Bear\s*([\d.]+)%", block)
         bull = m_sent.group(1) if m_sent else "—"
         bear = m_sent.group(2) if m_sent else "—"
-        # Momentum
         m_mom = re.search(r"Momentum[^:]*:\s*(\w+)\s*\(1M:\s*([^/]+)/\s*3M:\s*([^/]+)/\s*6M:\s*([^)]+)\)", block)
         mom_label = m_mom.group(1) if m_mom else "—"
         ret_1m    = m_mom.group(2).strip() if m_mom else "—"
         ret_3m    = m_mom.group(3).strip() if m_mom else "—"
         ret_6m    = m_mom.group(4).strip() if m_mom else "—"
-        # Chart
-        chart_stem = ticker.replace(".", "_")
-        chart_b64  = charts_b64.get(chart_stem, "")
         positions.append({
             "name": name, "ticker": ticker,
             "prix": prix, "variation": variation, "vm": vm,
@@ -132,7 +124,6 @@ def extract_positions(md: str) -> list[dict]:
             "bull": bull, "bear": bear,
             "mom_label": mom_label,
             "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
-            "chart_b64": chart_b64,
         })
     return positions
 
@@ -271,6 +262,25 @@ def build_indices_html() -> str:
   </div>
 </section>"""
 
+# ── Graphique combiné (Tendances) ──────────────────────────────
+def build_combined_chart_html() -> str:
+    if not combined_b64:
+        return ""
+    return f"""
+<section class="section-block" id="tendances">
+  <h2 class="section-title">📉 Tendances — Performance Normalisée (Base 100)</h2>
+  <div class="combined-chart-wrap">
+    <img src="data:image/png;base64,{combined_b64}"
+         alt="Performance normalisée base 100 de toutes les positions"
+         loading="lazy" class="combined-chart-img"
+         width="900" height="500">
+    <p class="chart-caption">
+      Chaque courbe représente la performance d'une valeur normalisée à 100 au premier jour disponible.
+      La ligne pointillée à 100 est la référence (prix d'entrée).
+    </p>
+  </div>
+</section>"""
+
 # ── Positions détenues ─────────────────────────────────────────
 def build_positions_html() -> str:
     if not positions:
@@ -278,12 +288,6 @@ def build_positions_html() -> str:
 
     cards = ""
     for p in positions:
-        chart_html = ""
-        if p["chart_b64"]:
-            chart_html = (f'<div class="chart-wrap">'
-                          f'<img src="data:image/png;base64,{p["chart_b64"]}" '
-                          f'alt="Historique {p["name"]}" loading="lazy" class="chart-img">'
-                          f'</div>')
         pnl_net_cls  = "kpi-positive" if "+" in p["pnl_net"]  else "kpi-negative"
         pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
         var_html = var_span(p["variation"])
@@ -319,8 +323,6 @@ def build_positions_html() -> str:
       <div class="pos-kpi-lbl">Score global</div>
     </div>
   </div>
-
-  {chart_html}
 
   <div class="pos-details">
     <div class="pos-detail-item">
@@ -538,6 +540,18 @@ header {
   display: flex; align-items: center; gap: 8px;
 }
 
+/* ── Graphique combiné ── */
+.combined-chart-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+}
+.combined-chart-img { width: 100%; display: block; max-height: 520px; object-fit: contain; }
+.chart-caption {
+  font-size: .75rem; color: var(--muted);
+  padding: 10px 16px 14px; border-top: 1px solid var(--border);
+  font-style: italic; line-height: 1.5;
+}
+
 /* ── Positions Grid ── */
 .positions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
 .position-card {
@@ -612,13 +626,6 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .up { color: var(--green); font-weight: 700; }
 .dn { color: var(--red);   font-weight: 700; }
 
-/* ── Charts ── */
-.chart-wrap {
-  margin: 14px 0; border-radius: var(--radius-sm);
-  overflow: hidden; border: 1px solid var(--border);
-}
-.chart-img { width: 100%; display: block; }
-
 /* ── Archive ── */
 .archive-toggle {
   font-size: .8rem; color: var(--accent); cursor: pointer;
@@ -641,7 +648,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   body { background: #fff; color: #000; font-size: 13px; }
   .position-card { break-inside: avoid; border: 1px solid #ccc; }
   .badge { border: 1px solid #ccc !important; color: #000 !important; background: none !important; }
-  .chart-img { max-height: none; }
+  .combined-chart-img { max-height: none; }
 }
 
 /* ── Mobile ── */
@@ -705,7 +712,6 @@ function animateCounter(el) {
     var ease = 1 - Math.pow(1 - p, 4);
     var cur  = num * ease;
     var disp = Math.abs(cur).toFixed(decimals).replace('.',',');
-    // Séparateur milliers
     disp = disp.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     el.textContent = prefix + (num < 0 ? '-' : '') + disp + suffix;
     if (p < 1) requestAnimationFrame(step);
@@ -713,7 +719,6 @@ function animateCounter(el) {
   requestAnimationFrame(step);
 }
 document.querySelectorAll('[data-counter]').forEach(function(el){
-  // Déclenchement via IntersectionObserver pour n'animer qu'au visible
   var obs = new IntersectionObserver(function(entries, o){
     if(entries[0].isIntersecting){ animateCounter(el); o.disconnect(); }
   }, {threshold: 0.3});
@@ -808,6 +813,7 @@ html_out = f"""<!DOCTYPE html>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
+      <a href="#tendances">Tendances</a>
       <a href="#positions">Positions</a>
       <a href="#synthese">Synthèse</a>
       <a href="#historique">Historique</a>
@@ -873,6 +879,7 @@ html_out = f"""<!DOCTYPE html>
     </div>
 
     {build_indices_html()}
+    {build_combined_chart_html()}
     {build_positions_html()}
     {build_synthese_html()}
     {build_archive_html()}
@@ -888,6 +895,6 @@ Path("docs").mkdir(exist_ok=True)
 HTML_PATH.write_text(html_out, encoding="utf-8")
 
 size_kb = HTML_PATH.stat().st_size // 1024
-print(f"✅ docs/index.html généré ({size_kb} Ko, {len(charts_b64)} graphique(s), {len(positions)} positions)")
+print(f"✅ docs/index.html généré ({size_kb} Ko, graphique combiné: {'oui' if combined_b64 else 'non'}, {len(positions)} positions)")
 print(f"✅ docs/archive.json mis à jour ({len(archive)} entrée(s))")
 sys.exit(0)
