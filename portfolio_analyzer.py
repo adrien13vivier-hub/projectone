@@ -820,65 +820,136 @@ def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
 
 
 # =============================================================================
-# GRAPHIQUE MENSUEL
+# GRAPHIQUE COMBINE -- toutes courbes normalisees base 100
 # =============================================================================
 
-def generate_monthly_chart(asset, dates, closes, cost_eur, chart_path) -> bool:
+# Palette de couleurs distinctes pour chaque valeur du portefeuille
+_CHART_COLORS = [
+    "#2563eb",  # bleu
+    "#16a34a",  # vert
+    "#dc2626",  # rouge
+    "#d97706",  # ambre
+    "#7c3aed",  # violet
+    "#0891b2",  # cyan
+    "#db2777",  # rose
+    "#65a30d",  # lime
+]
+
+
+def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
+    """Genere un graphique superpose avec toutes les courbes normalisees en base 100.
+
+    Args:
+        assets_history: dict {name: (dates_list, closes_list)} pour chaque position
+        chart_path: chemin de sauvegarde du PNG
+
+    Returns:
+        True si le graphique a ete genere avec succes, False sinon.
+    """
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
-        if len(dates) < 2:
+
+        # Filtrer les actifs qui ont au moins 2 points de donnees
+        valid = {
+            name: (dates, closes)
+            for name, (dates, closes) in assets_history.items()
+            if len(dates) >= 2 and len(closes) >= 2
+        }
+
+        if not valid:
+            print("[WARN] generate_combined_chart : aucune serie valide (min 2 points requis)")
             return False
+
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
-        dt_dates = []
-        for d in dates:
-            try:
-                dt_dates.append(datetime.strptime(d + "-01" if len(d) == 7 else d, "%Y-%m-%d"))
-            except Exception:
-                pass
-        if len(dt_dates) < 2:
-            return False
-        perf = (closes[-1] - closes[0]) / closes[0] * 100 if closes[0] > 0 else 0
-        line_color = "#16a34a" if perf >= 0 else "#dc2626"
-        fill_color = "#dcfce7" if perf >= 0 else "#fee2e2"
-        fig, ax = plt.subplots(figsize=(10, 4))
+
+        fig, ax = plt.subplots(figsize=(12, 5))
         fig.patch.set_facecolor("#f9f8f5")
         ax.set_facecolor("#f9f8f5")
-        ax.plot(dt_dates, closes, color=line_color, linewidth=2.5,
-                marker="o", markersize=5, zorder=3)
-        ax.fill_between(dt_dates, closes, min(closes) * 0.97,
-                        alpha=0.18, color=fill_color)
-        ax.axhline(y=cost_eur, color="#6b7280", linestyle="--", linewidth=1.2,
-                   alpha=0.8, label=f"PRU : {cost_eur:.2f} EUR")
-        ax.annotate(f"{closes[0]:.2f}EUR", (dt_dates[0], closes[0]),
-                    textcoords="offset points", xytext=(-10, 8),
-                    fontsize=8, color="#374151")
-        ax.annotate(f"{closes[-1]:.2f}EUR\n({perf:+.1f}%)", (dt_dates[-1], closes[-1]),
-                    textcoords="offset points", xytext=(8, 0),
-                    fontsize=9, fontweight="bold", color=line_color)
+
+        for idx, (name, (dates, closes)) in enumerate(valid.items()):
+            # Conversion des dates en objets datetime
+            dt_dates = []
+            for d in dates:
+                try:
+                    dt_dates.append(
+                        datetime.strptime(d + "-01" if len(d) == 7 else d, "%Y-%m-%d")
+                    )
+                except Exception:
+                    pass
+
+            if len(dt_dates) < 2:
+                continue
+
+            # Normalisation base 100 : premiere valeur = 100
+            base = closes[0]
+            if base == 0:
+                continue
+            normalized = [round(c / base * 100, 2) for c in closes]
+
+            color = _CHART_COLORS[idx % len(_CHART_COLORS)]
+            perf_finale = normalized[-1] - 100
+
+            ax.plot(
+                dt_dates, normalized,
+                color=color, linewidth=2.2,
+                marker="o", markersize=4,
+                label=f"{name} ({perf_finale:+.1f}%)",
+                zorder=3,
+            )
+
+            # Annotation de la valeur finale
+            ax.annotate(
+                f"{normalized[-1]:.0f}",
+                (dt_dates[-1], normalized[-1]),
+                textcoords="offset points", xytext=(6, 0),
+                fontsize=7.5, color=color, fontweight="bold",
+            )
+
+        # Ligne de reference a 100
+        ax.axhline(y=100, color="#9ca3af", linestyle="--", linewidth=1.2,
+                   alpha=0.8, label="Base 100 (point d'entree)", zorder=2)
+
+        # Zone verte au-dessus de 100, rouge en dessous
+        y_min, y_max = ax.get_ylim()
+        ax.axhspan(100, max(y_max, 101), alpha=0.04, color="#16a34a", zorder=1)
+        ax.axhspan(min(y_min, 99), 100,  alpha=0.04, color="#dc2626",  zorder=1)
+
+        # Mise en forme des axes
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         ax.xaxis.set_major_locator(mdates.MonthLocator())
         plt.xticks(rotation=30, ha="right", fontsize=8)
-        ax.yaxis.set_major_formatter(plt.FormatStrFormatter("%.2f EUR"))
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}"))
         ax.tick_params(axis="y", labelsize=8)
+        ax.set_ylabel("Performance (base 100)", fontsize=8, color="#6b7280")
+
         ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_color("#e5e7eb")
         ax.spines["bottom"].set_color("#e5e7eb")
-        ax.set_title(f"{asset['name']} - Historique mensuel 6 mois (EUR)",
-                     fontsize=11, fontweight="bold", color="#111827", pad=12)
-        ax.set_ylabel("Cours (EUR)", fontsize=8, color="#6b7280")
-        ax.legend(fontsize=8, framealpha=0.6)
+
+        ax.set_title(
+            "Performance comparee du portefeuille -- base 100 (6 mois, EUR)",
+            fontsize=11, fontweight="bold", color="#111827", pad=14,
+        )
+
+        ax.legend(
+            fontsize=8, framealpha=0.7, loc="upper left",
+            bbox_to_anchor=(0.01, 0.99), ncol=2,
+        )
+
         plt.tight_layout()
         plt.savefig(chart_path, dpi=130, bbox_inches="tight",
                     facecolor=fig.get_facecolor())
         plt.close(fig)
+        print(f"[INFO] Graphique combine genere : {chart_path} ({len(valid)} courbes)")
         return True
+
     except Exception as e:
-        print(f"[WARN] Graphique {asset['name']} non genere : {e}")
+        print(f"[WARN] generate_combined_chart non genere : {e}")
         return False
 
 
@@ -932,7 +1003,6 @@ def build_report() -> tuple:
     session_cache_global = session_cache
     new_cache        = {}
     history_rows     = []
-    charts_generated = []
     sources_log      = {}
 
     print("[INFO] Batch TwelveData (cours US)...")
@@ -1084,12 +1154,6 @@ def build_report() -> tuple:
         )
         rec = recommend(total_score)
 
-        chart_path     = f"{CHARTS_DIR}/{ticker.replace('.', '_')}.png"
-        chart_ok       = generate_monthly_chart(asset, h_dates, h_closes, cost, chart_path)
-        chart_rel_path = f"charts/{ticker.replace('.', '_')}.png"
-        if chart_ok:
-            charts_generated.append(chart_rel_path)
-
         chg_arrow  = "^" if chg > 0 else "v" if chg < 0 else "-"
         pnl_b_icon = "+" if pnl_brut >= 0 else "-"
         pnl_n_icon = "+" if pnl_net  >= 0 else "-"
@@ -1105,9 +1169,6 @@ def build_report() -> tuple:
             f"| **{total_score:.1f}/10** | {rec} |",
             "",
         ]
-
-        if chart_ok:
-            lines += [f"![Historique {asset['name']}]({chart_rel_path})", ""]
 
         lines += [f"**Actualites recentes :**", ""]
         for t in news:
@@ -1151,9 +1212,37 @@ def build_report() -> tuple:
             "score": total_score, "rec": rec,
         })
 
+    # -------------------------------------------------------------------------
+    # Graphique combine -- genere UNE SEULE FOIS apres la boucle
+    # -------------------------------------------------------------------------
+    all_histories = {
+        asset["name"]: (
+            asset_results[asset["ticker_eod"]]["h_dates"],
+            asset_results[asset["ticker_eod"]]["h_closes"],
+        )
+        for asset in PORTFOLIO
+        if asset["ticker_eod"] in asset_results
+    }
+    combined_chart_path = f"{CHARTS_DIR}/portfolio_combined.png"
+    combined_chart_ok   = generate_combined_chart(all_histories, combined_chart_path)
+
+    # -------------------------------------------------------------------------
+    # Synthese portefeuille
+    # -------------------------------------------------------------------------
     total_pnl_b_pct = round(total_pnl_brut / total_cout * 100, 2) if total_cout else 0
     total_pnl_n_pct = round(total_pnl_net  / total_cout * 100, 2) if total_cout else 0
     pf_icon = "+" if total_pnl_net >= 0 else "-"
+
+    # Insertion du graphique combine avant la synthese
+    if combined_chart_ok:
+        lines += [
+            "## Tendances -- Performance Comparee (base 100)",
+            "",
+            "![Portfolio combine](charts/portfolio_combined.png)",
+            "",
+            "---",
+            "",
+        ]
 
     lines += [
         "## Synthese Portefeuille", "",
@@ -1241,7 +1330,7 @@ def build_report() -> tuple:
 
     lines += [
         f"*Rapport genere le {now.strftime('%d/%m/%Y a %H:%M')} (heure de Paris)*",
-        f"*Charts generes : {len(charts_generated)}*",
+        f"*Chart combine genere : {'Oui' if combined_chart_ok else 'Non'}*",
     ]
 
     report_text = "\n".join(lines)
