@@ -1,11 +1,11 @@
 {
-  "eur_usd": 0.85486787,
-  "price_PLTR.US": 112.6972,
-  "price_CRWV.US": 99.7886,
-  "price_RIOT.US": 20.8502,
-  "price_DEC.PA": 18.79,
-  "price_ACA.PA": 17.21,
-  "price_ABNX.PA": 3.695,
+  "eur_usd": 0.85629415,
+  "price_PLTR.US": 113.6559,
+  "price_CRWV.US": 100.2635,
+  "price_RIOT.US": 21.2447,
+  "price_DEC.PA": 18.84,
+  "price_ACA.PA": 17.22,
+  "price_ABNX.PA": 3.685,
   "sources_log": {
     "EUR/USD": "AlphaVantage",
     "S&P 500": "EODHD",
@@ -15,17 +15,17 @@
       "cours": "TwelveData",
       "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
       "consensus": "Finnhub",
-      "historique": "Cache"
+      "historique": "AlphaVantage"
     },
     "CRWV.US": {
       "cours": "TwelveData",
-      "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
+      "sentiment": "AlphaVantage NLP",
       "consensus": "Finnhub",
       "historique": "Cache"
     },
     "RIOT.US": {
       "cours": "TwelveData",
-      "sentiment": "AlphaVantage NLP",
+      "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
       "consensus": "Finnhub",
       "historique": "Cache"
     },
@@ -50,22 +50,22 @@
   },
   "hist_PLTR.US": {
     "dates": [
-      "2025-11-10",
-      "2025-12-01",
-      "2026-01-02",
-      "2026-02-02",
-      "2026-03-02",
-      "2026-04-01",
-      "2026-05-01"
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05"
     ],
     "closes": [
-      143.9,
-      151.84,
-      125.22,
-      117.19,
-      124.96,
-      118.83,
-      111.09
+      144.24,
+      152.21,
+      125.52,
+      117.47,
+      125.26,
+      119.12,
+      111.36
     ]
   },
   "hist_CRWV.US": {
@@ -169,5 +169,5 @@
     ]
   },
   "date": "2026-05-14",
-  "saved_at": "14/05/2026 16:37"
+  "saved_at": "14/05/2026 17:41"
 }
