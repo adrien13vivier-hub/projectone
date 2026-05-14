@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.3
+generate_html.py  v3.4
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
@@ -8,6 +8,8 @@ Convertit reports/daily_report.md  →  docs/index.html
 • Tableaux positions + synthèse extraits du Markdown
 • Synthèse IA par position (bloc > blockquote dans le Markdown)  ← v3.2
   - v3.3 : capture multi-lignes (toutes les lignes ">") concaténées
+  - v3.4 : regex synth_src tolère les parenthèses dans le nom de source
+            (ex: "RSS Yahoo Finance (brut)" capturé correctement)
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -119,15 +121,19 @@ def extract_positions(md: str) -> list[dict]:
         ret_3m    = m_mom.group(3).strip() if m_mom else "—"
         ret_6m    = m_mom.group(4).strip() if m_mom else "—"
 
-        # ── Synthèse IA — v3.3 : capture toutes les lignes ">" et concatène ──
-        synthesis   = ""
-        synth_src   = ""
-        m_synth_src = re.search(r"\*\*Actualite[^*]*\*\*\s*[:\*]*\s*\*?\(source\s*:\s*([^)]+)\)\*?", block)
+        # ── Synthèse IA ─────────────────────────────────────────────────────
+        # v3.4 : regex synth_src avec `.+?` au lieu de `[^)]+` pour tolérer
+        #        les parenthèses dans le nom de la source
+        #        (ex: "RSS Yahoo Finance (brut)" était tronqué en "RSS Yahoo Finance (brut")
+        synthesis = ""
+        synth_src = ""
+        m_synth_src = re.search(
+            r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*(.+?)\)\s*\*?(?:\n|$)",
+            block)
         if m_synth_src:
             synth_src = m_synth_src.group(1).strip()
-        # Toutes les lignes commençant par ">" après la balise "Actualite recente"
-        # On isole la partie du bloc après le marqueur pour éviter de capter
-        # d'autres blockquotes (ex: erreurs de cours) qui précèdent la synthèse.
+
+        # Toutes les lignes ">" après le marqueur Actualite recente
         synth_block = block
         m_actualite_pos = re.search(r"\*\*Actualite[^*]*\*\*", block)
         if m_actualite_pos:
@@ -313,14 +319,16 @@ def build_positions_html() -> str:
         pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
         var_html = var_span(p["variation"])
 
-        # ── Bloc synthèse IA ── v3.3
+        # ── Bloc synthèse IA ──
         synthesis_html = ""
-        if p.get("synthesis"):
+        synth_text = p.get("synthesis", "").strip()
+        # Ne pas afficher si vide ou message générique "Aucune actualite"
+        if synth_text and "Aucune actualite" not in synth_text:
             src_label = f'<span class="synth-src">{p["synth_src"]}</span>' if p.get("synth_src") else ""
             synthesis_html = f"""
     <div class="pos-synthesis">
       <div class="synth-header">💬 Actualité récente {src_label}</div>
-      <p class="synth-text">{p['synthesis']}</p>
+      <p class="synth-text">{synth_text}</p>
     </div>"""
 
         cards += f"""
@@ -614,7 +622,7 @@ header {
 .detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
 .mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
 
-/* ── Synthèse IA par position ── v3.3 */
+/* ── Synthèse IA par position ── v3.4 */
 .pos-synthesis {
   margin-top: 12px;
   background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
@@ -867,7 +875,7 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v5.3 · {report_date}</div>
+      <div class="header-meta">v5.4 · {report_date}</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
