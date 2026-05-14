@@ -1,40 +1,35 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v5.1
+Portfolio Analyzer v5.2
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ARCHITECTURE DES CLÉS API v5.1 — ASSIGNATION STRICTE PAR SPÉCIALITÉ
+ARCHITECTURE DES CLÉS API v5.2 — OPTIMISATION QUOTAS PLANS GRATUITS
 
-  Chaque clé est assignée UNIQUEMENT à sa fonction principale.
-  Elle n'est JAMAIS appelée pour une autre mission (sauf fallback
-  explicite après épuisement du quota de la clé principale).
+  ┌──────────────────┬──────────────────────────────────────────────┬────────────────────────┐
+  │ Clé API          │ Mission v5.2                                 │ Quota gratuit réel     │
+  ├──────────────────┼──────────────────────────────────────────────┼────────────────────────┤
+  │ AlphaVantage     │ EUR/USD · Historique US · Sentiment US (NLP) │ 25 req/jour → ~7/run   │
+  │ TwelveData       │ Cours US temps réel (batch)                  │ 800/jour  → ≤9/run     │
+  │ EODHD            │ Cours EU · Indices · News EU · Historique EU │ 20/jour   → ~12/run ✅  │
+  │ Finnhub          │ Sentiment EU · Consensus · News US watchlist │ 60/min illimité/jour   │
+  └──────────────────┴──────────────────────────────────────────────┴────────────────────────┘
 
-  ┌──────────────────┬────────────────────────────────────────────┬──────────────────────────┐
-  │ Clé API          │ Mission principale                         │ Quota utilisé/jour       │
-  ├──────────────────┼────────────────────────────────────────────┼──────────────────────────┤
-  │ AlphaVantage     │ Taux EUR/USD (forex temps réel)            │ 1 appel / run ✅          │
-  │ TwelveData       │ Cours US en temps réel (batch unique)      │ ≤ 9 crédits / run ✅      │
-  │ EODHD            │ Cours Euronext · Indices · Historique ·    │ ≤ 30 appels / run ✅      │
-  │                  │ News sociétés et macro                     │ (100 000 /jour dispo)    │
-  │ Finnhub          │ Sentiment presse · Consensus analystes     │ ≤ 24 appels / run ✅      │
-  └──────────────────┴────────────────────────────────────────────┴──────────────────────────┘
+  RÈGLES CLÉS v5.2 :
+  • EODHD N'EST JAMAIS appelé pour les cours US si TwelveData a répondu.
+  • AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US
+    (score NLP intégré, plus précis que l'analyse lexicale).
+  • AlphaVantage TIME_SERIES_DAILY remplace EODHD pour l'historique des valeurs US.
+  • News sociétés EU (DEC.PA, ACA.PA, ABNX.PA) → EODHD seul (Finnhub plan free
+    ne couvre pas les small/mid caps européennes).
+  • News sociétés US (watchlist) → Finnhub company-news (libère EODHD).
+  • Finnhub assure le sentiment des valeurs Euronext (.PA).
 
-  RÈGLE DU CACHE GITHUB :
-    Si une clé répond HTTP 429 (quota dépassé) ou si le quota
-    journalier calculé est atteint, le script bascule IMMÉDIATEMENT
-    sur le cache GitHub (cache/session_cache.json) pour cette donnée.
-    Toute donnée issue du cache est signalée dans le rapport :
-      ⚠️ DONNÉE ISSUE DU CACHE [date de sauvegarde]
-    → Section dédiée en fin de rapport, PAS dans les cellules.
+  BUDGET APPELS PAR RUN :
+    AlphaVantage : 1 (EUR/USD) + 3 (hist US) + 3–6 (sentiment US) = ~7–10/run
+    TwelveData   : ≤9 (cours US batch)
+    EODHD        : 3 (cours EU) + 3 (indices) + 3 (news EU) + 3 (hist EU) = ~12/run
+    Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12–15/run
 
-  RAPPORT v5.1 :
-    - Aucune mention de la source API dans les cellules de données.
-    - Un unique bloc « 🔧 Sources du Run » en toute fin de rapport.
-    - Section « ⚠️ Données Issues du Cache » si au moins une donnée
-      provient du cache GitHub.
-    - Section « 🔴 Erreurs API » uniquement si une donnée est
-      totalement indisponible (ni API ni cache).
-
-Scoring v5.1 (inchangé) :
+Scoring v5.2 (inchangé) :
   Prix vs PRU        : 30 %
   Sentiment presse   : 20 %
   Consensus analystes: 20 %
@@ -75,21 +70,17 @@ HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
                 "pnl_net_pct", "score", "rec"]
 
-# ─── QUOTAS JOURNALIERS PAR CLÉ ──────────────────────────────────────────────
-# Compteur d'appels par clé pour ce run.
-# Seuils conservateurs (en dessous des limites officielles).
+# ─── QUOTAS JOURNALIERS PAR CLÉ (limites réelles plans gratuits) ─────────────
 _QUOTA = {
-    "alphavantage": {"used": 0, "limit": 5},      # 5 req/min plan gratuit
-    "twelvedata":   {"used": 0, "limit": 60},     # 800/jour → budget run: 60
-    "eodhd":        {"used": 0, "limit": 500},    # 100 000/jour → budget run: 500
-    "finnhub":      {"used": 0, "limit": 100},    # 60 req/min → budget run: 100
+    "alphavantage": {"used": 0, "limit": 23},   # 25/jour réel → budget run: 23
+    "twelvedata":   {"used": 0, "limit": 60},   # 800/jour → budget run: 60
+    "eodhd":        {"used": 0, "limit": 18},   # 20/jour réel → budget run: 18
+    "finnhub":      {"used": 0, "limit": 55},   # 60 req/min → budget run: 55
 }
 
 def _quota_ok(key: str) -> bool:
     q = _QUOTA.get(key)
-    if not q:
-        return True
-    return q["used"] < q["limit"]
+    return q["used"] < q["limit"] if q else True
 
 def _quota_inc(key: str):
     if key in _QUOTA:
@@ -102,22 +93,22 @@ def _quota_status() -> dict:
 # ─── PORTEFEUILLE ─────────────────────────────────────────────────────────────
 PORTFOLIO = [
     {"name": "Palantir Technologies", "isin": "US69608A1088",
-     "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",
+     "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",  "ticker_av": "PLTR",
      "qty": 2,  "cost_eur": 119.06, "marche": "us"},
     {"name": "CoreWeave",             "isin": "US21873S1087",
-     "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",
+     "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",  "ticker_av": "CRWV",
      "qty": 2,  "cost_eur": 93.91,  "marche": "us"},
     {"name": "Riot Platforms",        "isin": "US7672921050",
-     "ticker_fh": "RIOT",    "ticker_eod": "RIOT.US",  "ticker_td": "RIOT",
+     "ticker_fh": "RIOT",    "ticker_eod": "RIOT.US",  "ticker_td": "RIOT",  "ticker_av": "RIOT",
      "qty": 6,  "cost_eur": 15.84,  "marche": "us"},
     {"name": "JCDecaux",              "isin": "FR0000077919",
-     "ticker_fh": "DEC.PA",  "ticker_eod": "DEC.PA",   "ticker_td": None,
+     "ticker_fh": "DEC.PA",  "ticker_eod": "DEC.PA",   "ticker_td": None,    "ticker_av": None,
      "qty": 2,  "cost_eur": 17.77,  "marche": "euronext"},
     {"name": "Crédit Agricole SA",    "isin": "FR0000045072",
-     "ticker_fh": "ACA.PA",  "ticker_eod": "ACA.PA",   "ticker_td": None,
+     "ticker_fh": "ACA.PA",  "ticker_eod": "ACA.PA",   "ticker_td": None,    "ticker_av": None,
      "qty": 10, "cost_eur": 16.90,  "marche": "euronext"},
     {"name": "Abionyx Pharma",        "isin": "FR0012616852",
-     "ticker_fh": "ABNX.PA", "ticker_eod": "ABNX.PA",  "ticker_td": None,
+     "ticker_fh": "ABNX.PA", "ticker_eod": "ABNX.PA",  "ticker_td": None,    "ticker_av": None,
      "qty": 10, "cost_eur": 3.84,   "marche": "euronext"},
 ]
 
@@ -128,12 +119,12 @@ INDICES = {
 }
 
 WATCHLIST = [
-    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "marche": "us",       "sector": "IA / Semi-conducteurs"},
-    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "marche": "us",       "sector": "IA / Cloud"},
-    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "marche": "us",       "sector": "Crypto / Fintech"},
-    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "marche": "euronext", "sector": "Luxe / Consommation"},
-    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "marche": "euronext", "sector": "Énergie"},
-    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "marche": "euronext", "sector": "Aéronautique / Défense"},
+    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "ticker_av": "NVDA",  "marche": "us",       "sector": "IA / Semi-conducteurs"},
+    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "ticker_av": "MSFT",  "marche": "us",       "sector": "IA / Cloud"},
+    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "ticker_av": "COIN",  "marche": "us",       "sector": "Crypto / Fintech"},
+    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "ticker_av": None,    "marche": "euronext", "sector": "Luxe / Consommation"},
+    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "ticker_av": None,    "marche": "euronext", "sector": "Énergie"},
+    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "ticker_av": None,    "marche": "euronext", "sector": "Aéronautique / Défense"},
 ]
 
 BROKERAGE = {
@@ -170,11 +161,6 @@ def save_session_cache(cache: dict):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _get(url: str, params: dict, api_key_name: str, timeout: int = 12) -> tuple:
-    """
-    Retourne (data, erreur_str|None).
-    Incrémente le compteur de quota pour api_key_name.
-    Retourne (None, 'QUOTA_REACHED') si le budget du run est atteint.
-    """
     if not _quota_ok(api_key_name):
         return None, "QUOTA_REACHED"
     _quota_inc(api_key_name)
@@ -212,17 +198,12 @@ def cross_validate(val1: float, src1: str, val2: float, src2: str) -> tuple:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ① EUR/USD ── Spécialiste : AlphaVantage  (1 appel/run)
-#    Fallback quota/erreur → cache session
+# ① EUR/USD ── AlphaVantage  (1 appel/run)
+#    Fallback → cache session
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_eur_usd(session_cache: dict) -> tuple:
-    """
-    Retourne (eur_usd_ratio, source_str, cache_flag: bool, error_note|None).
-    eur_usd_ratio : combien d'EUR pour 1 USD (ex: 0.9180).
-    """
     errors = []
-
     if ALPHAVANTAGE_KEY:
         data, err = _get(AV_BASE, {
             "function":      "CURRENCY_EXCHANGE_RATE",
@@ -238,7 +219,6 @@ def get_eur_usd(session_cache: dict) -> tuple:
                     return float(rate_str), "AlphaVantage", False, None
                 except ValueError:
                     pass
-            # quota / info message de l'API
             if data.get("Note") or data.get("Information"):
                 errors.append("AlphaVantage:quota")
             else:
@@ -250,7 +230,6 @@ def get_eur_usd(session_cache: dict) -> tuple:
     else:
         errors.append("AlphaVantage:clé absente")
 
-    # Fallback : cache session
     if session_cache.get("eur_usd"):
         saved_at = session_cache.get("saved_at", "date inconnue")
         return (session_cache["eur_usd"], "Cache", True,
@@ -261,9 +240,8 @@ def get_eur_usd(session_cache: dict) -> tuple:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ② COURS US ── Spécialiste : TwelveData  (batch = 1 crédit par ticker)
-#    Plan free : 800 crédits/jour — 9 tickers ≤ 9 crédits ✅
-#    Fallback quota/erreur → EODHD (real-time US) puis cache
+# ② COURS US ── TwelveData  (batch = 1 crédit par ticker)
+#    Plan free : 800 crédits/jour — ≤9 tickers ✅
 # ══════════════════════════════════════════════════════════════════════════════
 
 _td_cache:     dict  = {}
@@ -294,8 +272,8 @@ def td_fetch_batch(tickers: list) -> dict:
                 if isinstance(item, dict) and item.get("price") and item.get("status") != "error":
                     try:
                         val = float(item["price"])
-                        results[ticker]    = val
-                        _td_cache[ticker]  = val
+                        results[ticker]   = val
+                        _td_cache[ticker] = val
                     except Exception:
                         results[ticker]   = None
                         _td_errors[ticker] = "Valeur non numérique"
@@ -319,17 +297,13 @@ def td_fetch_batch(tickers: list) -> dict:
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ③ COURS (tous marchés) ── Orchestrateur
-#    US      → TwelveData (principal) + EODHD (fallback)
-#    Euronext → EODHD (principal)
+#    US      → TwelveData (principal) ; EODHD UNIQUEMENT si TwelveData échoue
+#    Euronext → EODHD (seul)
 #    Fallback final → cache session
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
                   session_cache: dict) -> tuple:
-    """
-    Retourne (price_eur, chg_pct, source_str, cache_flag: bool, div_note|None).
-    source_str utilisé UNIQUEMENT dans le bloc technique en bas de rapport.
-    """
     td_val = eod_val = None
     note   = None
     chg    = 0.0
@@ -337,7 +311,7 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
     cache_key = f"price_{asset['ticker_eod']}"
 
     if asset["marche"] == "us":
-        # ① TwelveData (spécialiste US)
+        # ① TwelveData (spécialiste US) — principal
         if TWELVEDATA_KEY:
             td_ticker = asset.get("ticker_td")
             td_raw    = td_prices.get(td_ticker) if td_ticker else None
@@ -348,8 +322,8 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
         else:
             errors.append("TwelveData:clé absente")
 
-        # Fallback quota TwelveData → EODHD
-        if EODHD_KEY:
+        # ② EODHD US — UNIQUEMENT si TwelveData a échoué (court-circuit)
+        if td_val is None and EODHD_KEY:
             data, err = _get(f"{EOD_BASE}/real-time/{asset['ticker_eod']}",
                              {"api_token": EODHD_KEY, "fmt": "json"},
                              "eodhd")
@@ -398,8 +372,7 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ④ INDICES ── Spécialiste : EODHD
-#    Fallback quota/erreur → Finnhub
+# ④ INDICES ── EODHD principal · Finnhub fallback
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_index(symbols: dict) -> dict:
@@ -417,7 +390,6 @@ def get_index(symbols: dict) -> dict:
     else:
         eod_err = "clé absente"
 
-    # Fallback : Finnhub (seulement si quota EODHD dépassé)
     if FINNHUB_KEY:
         data, err = _get(f"{FH_BASE}/quote",
                          {"symbol": symbols["fh"], "token": FINNHUB_KEY},
@@ -435,8 +407,10 @@ def get_index(symbols: dict) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ⑤ NEWS ── Spécialiste : EODHD  (news sociétés + macro)
-#    Fallback quota/erreur → Finnhub company-news
+# ⑤ NEWS ── Logique différenciée par marché
+#    EU (.PA) → EODHD seul (Finnhub plan free ne couvre pas les EU small/mid caps)
+#    US       → Finnhub company-news (libère quota EODHD)
+#    Macro    → EODHD général · Finnhub fallback
 # ══════════════════════════════════════════════════════════════════════════════
 
 _news_cache: dict = {}
@@ -448,31 +422,45 @@ def get_company_news(asset: dict, n: int = 2) -> list:
     from_d = str(date.today() - timedelta(days=7))
     to_d   = str(date.today())
 
-    if EODHD_KEY:
-        data, err = _get(f"{EOD_BASE}/news",
-                         {"s": asset["ticker_eod"], "limit": max(n, 10),
-                          "from": from_d, "api_token": EODHD_KEY, "fmt": "json"},
-                         "eodhd")
-        if isinstance(data, list) and data and not _is_quota_error(err):
-            titles = [i.get("title", "") for i in data if i.get("title")]
-            _news_cache[key] = titles
-            return titles[:n]
-
-    # Fallback Finnhub si EODHD quota atteint
-    if FINNHUB_KEY:
-        data, err = _get(f"{FH_BASE}/company-news",
-                         {"symbol": asset["ticker_fh"], "from": from_d,
-                          "to": to_d, "token": FINNHUB_KEY},
-                         "finnhub")
-        if isinstance(data, list) and data and not _is_quota_error(err):
-            titles = [i.get("headline", "") for i in data if i.get("headline")]
-            _news_cache[key] = titles
-            return titles[:n]
-
-    _news_cache[key] = []
-    return []
+    if asset.get("marche") == "euronext":
+        # EU → EODHD seul (Finnhub ne couvre pas les small/mid caps EU)
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/news",
+                             {"s": asset["ticker_eod"], "limit": max(n, 10),
+                              "from": from_d, "api_token": EODHD_KEY, "fmt": "json"},
+                             "eodhd")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                titles = [i.get("title", "") for i in data if i.get("title")]
+                _news_cache[key] = titles
+                return titles[:n]
+        _news_cache[key] = []
+        return []
+    else:
+        # US → Finnhub en premier (libère EODHD)
+        if FINNHUB_KEY:
+            data, err = _get(f"{FH_BASE}/company-news",
+                             {"symbol": asset["ticker_fh"], "from": from_d,
+                              "to": to_d, "token": FINNHUB_KEY},
+                             "finnhub")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                titles = [i.get("headline", "") for i in data if i.get("headline")]
+                _news_cache[key] = titles
+                return titles[:n]
+        # Fallback EODHD si Finnhub échoue
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/news",
+                             {"s": asset["ticker_eod"], "limit": max(n, 10),
+                              "from": from_d, "api_token": EODHD_KEY, "fmt": "json"},
+                             "eodhd")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                titles = [i.get("title", "") for i in data if i.get("title")]
+                _news_cache[key] = titles
+                return titles[:n]
+        _news_cache[key] = []
+        return []
 
 def get_macro_news(n: int = 5) -> list:
+    # EODHD général en premier
     if EODHD_KEY:
         data, err = _get(f"{EOD_BASE}/news",
                          {"t": "general", "limit": n,
@@ -491,45 +479,101 @@ def get_macro_news(n: int = 5) -> list:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ⑥ SENTIMENT ── Spécialiste : Finnhub  (/news-sentiment)
-#    Plan free : 60 req/min — 12 tickers = 12 appels ✅
-#    Fallback quota/erreur → analyse lexicale sur cache news EODHD (0 appel)
+# ⑥ SENTIMENT ── Logique différenciée par marché
+#    US  → AlphaVantage NEWS_SENTIMENT (NLP intégré, plus précis)
+#          Fallback : Finnhub news-sentiment → analyse lexicale
+#    EU  → Finnhub news-sentiment (.PA)
+#          Fallback : analyse lexicale sur news EODHD
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_sentiment(asset: dict) -> tuple:
     """Retourne (bull_pct, bear_pct, source_str)."""
-    if FINNHUB_KEY:
-        data, err = _get(f"{FH_BASE}/news-sentiment",
-                         {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
-                         "finnhub")
-        if data and data.get("sentiment") and not _is_quota_error(err):
-            bull = float(data["sentiment"].get("bullishPercent", 0.5)) * 100
-            bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
-            return round(bull, 1), round(bear, 1), "Finnhub"
-        fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+
+    if asset.get("marche") == "us":
+        # ── US : AlphaVantage NEWS_SENTIMENT (NLP) ───────────────────────
+        ticker_av = asset.get("ticker_av")
+        if ALPHAVANTAGE_KEY and ticker_av:
+            data, err = _get(AV_BASE, {
+                "function":    "NEWS_SENTIMENT",
+                "tickers":     ticker_av,
+                "limit":       50,
+                "apikey":      ALPHAVANTAGE_KEY,
+            }, "alphavantage")
+            if isinstance(data, dict) and data.get("feed") and not _is_quota_error(err):
+                scores = []
+                for item in data["feed"]:
+                    for ts in item.get("ticker_sentiment", []):
+                        if ts.get("ticker") == ticker_av:
+                            try:
+                                scores.append(float(ts.get("ticker_sentiment_score", 0)))
+                            except (ValueError, TypeError):
+                                pass
+                if scores:
+                    avg = sum(scores) / len(scores)
+                    # avg ∈ [-1, 1] → bull% = (avg+1)/2*100
+                    bull = round((avg + 1) / 2 * 100, 1)
+                    bear = round(100 - bull, 1)
+                    return bull, bear, "AlphaVantage NLP"
+            # Fallback AV : quota ou pas de données
+            av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            av_err = "clé absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
+
+        # Fallback US : Finnhub news-sentiment
+        if FINNHUB_KEY:
+            data, err = _get(f"{FH_BASE}/news-sentiment",
+                             {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
+                             "finnhub")
+            if data and data.get("sentiment") and not _is_quota_error(err):
+                bull = float(data["sentiment"].get("bullishPercent", 0.5)) * 100
+                bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
+                return round(bull, 1), round(bear, 1), f"Finnhub (fallback AV:{av_err})"
+            fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            fh_err = "clé absente"
+
+        # Fallback US final : lexical sur news
+        news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
+        if news:
+            bull, bear = _lexical_sentiment(news)
+            return bull, bear, f"Lexical (AV:{av_err}, FH:{fh_err})"
+        return 50.0, 50.0, f"Neutre par défaut (AV:{av_err}, FH:{fh_err})"
+
     else:
-        fh_err = "clé absente"
+        # ── EU : Finnhub news-sentiment ────────────────────────────────────
+        if FINNHUB_KEY:
+            data, err = _get(f"{FH_BASE}/news-sentiment",
+                             {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
+                             "finnhub")
+            if data and data.get("sentiment") and not _is_quota_error(err):
+                bull = float(data["sentiment"].get("bullishPercent", 0.5)) * 100
+                bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
+                return round(bull, 1), round(bear, 1), "Finnhub"
+            fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            fh_err = "clé absente"
 
-    # Fallback : analyse lexicale sur news EODHD (0 appel supplémentaire)
-    news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
-    if news:
-        bull_w = {"growth","buy","bullish","surge","record","beat","strong",
-                  "gain","up","rise","soar","profit","positive","upgrade"}
-        bear_w = {"loss","sell","bearish","drop","miss","weak","cut","down",
-                  "fall","decline","risk","negative","downgrade","warn"}
-        words = " ".join(news).lower().split()
-        b = sum(1 for w in words if w in bull_w)
-        s = sum(1 for w in words if w in bear_w)
-        t = b + s or 1
-        return round(b/t*100, 1), round(s/t*100, 1), f"Lexical (Finnhub:{fh_err})"
+        # Fallback EU : lexical sur news EODHD (0 appel supplémentaire)
+        news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
+        if news:
+            bull, bear = _lexical_sentiment(news)
+            return bull, bear, f"Lexical EODHD (Finnhub:{fh_err})"
+        return 50.0, 50.0, f"Neutre par défaut (Finnhub:{fh_err})"
 
-    return 50.0, 50.0, f"Neutre par défaut (Finnhub:{fh_err}, aucune news)"
+def _lexical_sentiment(news: list) -> tuple:
+    bull_w = {"growth","buy","bullish","surge","record","beat","strong",
+              "gain","up","rise","soar","profit","positive","upgrade"}
+    bear_w = {"loss","sell","bearish","drop","miss","weak","cut","down",
+              "fall","decline","risk","negative","downgrade","warn"}
+    words = " ".join(news).lower().split()
+    b = sum(1 for w in words if w in bull_w)
+    s = sum(1 for w in words if w in bear_w)
+    t = b + s or 1
+    return round(b/t*100, 1), round(s/t*100, 1)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ⑦ CONSENSUS ── Spécialiste : Finnhub  (/stock/recommendation)
-#    Plan free : 60 req/min — 6 actifs = 6 appels ✅
-#    Fallback quota/erreur → EODHD fundamentals (AnalystRatings)
+# ⑦ CONSENSUS ── Finnhub principal · EODHD fundamentals fallback
 # ══════════════════════════════════════════════════════════════════════════════
 
 def get_consensus(asset: dict) -> tuple:
@@ -571,10 +615,11 @@ def get_consensus(asset: dict) -> tuple:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ⑧ HISTORIQUE MENSUEL ── Spécialiste : EODHD  (eod mensuel ajusté)
-#    6 actifs × 1 appel = 6 appels/run ✅
-#    Fallback quota/erreur → Finnhub candles hebdo
-#    Fallback 2 → cache session
+# ⑧ HISTORIQUE MENSUEL ── Logique différenciée par marché
+#    US  → AlphaVantage TIME_SERIES_DAILY (agrégé en mensuel, libère EODHD)
+#          Fallback : Finnhub candles hebdo → cache
+#    EU  → EODHD eod mensuel ajusté (principal)
+#          Fallback : Finnhub candles hebdo → cache
 # ══════════════════════════════════════════════════════════════════════════════
 
 session_cache_global: dict = {}
@@ -585,54 +630,110 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
     to_d      = str(date.today())
     cache_key = f"hist_{asset['ticker_eod']}"
 
-    if EODHD_KEY:
-        data, err = _get(f"{EOD_BASE}/eod/{asset['ticker_eod']}",
-                         {"api_token": EODHD_KEY, "fmt": "json",
-                          "period": "m", "from": from_d, "to": to_d},
-                         "eodhd")
-        if isinstance(data, list) and len(data) >= 2 and not _is_quota_error(err):
-            dates  = [d["date"] for d in data if d.get("adjusted_close") or d.get("close")]
-            closes = [float(d.get("adjusted_close") or d.get("close", 0)) for d in data
-                      if d.get("adjusted_close") or d.get("close")]
-            if asset["marche"] == "us":
-                closes = [round(c * eur_usd, 2) for c in closes]
-            return dates, closes, "EODHD", False, None
-        eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    if asset.get("marche") == "us":
+        # ── US : AlphaVantage TIME_SERIES_DAILY → agrégé en mensuel ──────
+        ticker_av = asset.get("ticker_av")
+        if ALPHAVANTAGE_KEY and ticker_av:
+            data, err = _get(AV_BASE, {
+                "function":   "TIME_SERIES_DAILY",
+                "symbol":     ticker_av,
+                "outputsize": "compact",   # 100 derniers jours ≈ 3 mois
+                "apikey":     ALPHAVANTAGE_KEY,
+            }, "alphavantage")
+            if isinstance(data, dict) and data.get("Time Series (Daily)") and not _is_quota_error(err):
+                ts = data["Time Series (Daily)"]
+                # Agréger par mois : garder dernier cours du mois
+                monthly: dict = {}
+                for day_str, vals in sorted(ts.items()):
+                    if day_str < from_d:
+                        continue
+                    month_key = day_str[:7]
+                    try:
+                        monthly[month_key] = float(vals.get("4. close", 0))
+                    except (ValueError, TypeError):
+                        pass
+                if len(monthly) >= 2:
+                    dates  = sorted(monthly.keys())
+                    closes = [round(monthly[k] * eur_usd, 2) for k in dates]
+                    return dates, closes, "AlphaVantage", False, None
+            av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            av_err = "clé absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
+
+        # Fallback US : Finnhub candles hebdo → agrégés en mois
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, months)
+            if dates:
+                return dates, closes, f"Finnhub (fallback AV:{av_err})", cache_flag, err_str
+            fh_err = err_str or "vide"
+        else:
+            fh_err = "clé absente"
+
+        # Fallback final : cache
+        if session_cache_global.get(cache_key):
+            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            cached   = session_cache_global[cache_key]
+            return (cached.get("dates", []), cached.get("closes", []),
+                    "Cache", True,
+                    f"Historique US non disponible (AV:{av_err}, FH:{fh_err}) — cache du {saved_at}")
+        return ([], [], f"Indisponible (AV:{av_err}, FH:{fh_err})", False,
+                "Historique indisponible — graphique non généré")
+
     else:
-        eod_err = "clé absente"
+        # ── EU : EODHD eod mensuel ajusté ────────────────────────────────
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/eod/{asset['ticker_eod']}",
+                             {"api_token": EODHD_KEY, "fmt": "json",
+                              "period": "m", "from": from_d, "to": to_d},
+                             "eodhd")
+            if isinstance(data, list) and len(data) >= 2 and not _is_quota_error(err):
+                dates  = [d["date"] for d in data if d.get("adjusted_close") or d.get("close")]
+                closes = [float(d.get("adjusted_close") or d.get("close", 0)) for d in data
+                          if d.get("adjusted_close") or d.get("close")]
+                return dates, closes, "EODHD", False, None
+            eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            eod_err = "clé absente"
 
-    # Fallback Finnhub candles hebdo → agrégés en mois
-    if FINNHUB_KEY:
-        from_ts = int((datetime.now() - timedelta(days=months * 31)).timestamp())
-        to_ts   = int(datetime.now().timestamp())
-        data, err = _get(f"{FH_BASE}/stock/candle",
-                         {"symbol": asset["ticker_fh"], "resolution": "W",
-                          "from": from_ts, "to": to_ts, "token": FINNHUB_KEY},
-                         "finnhub")
-        if isinstance(data, dict) and data.get("s") == "ok" and data.get("c") and not _is_quota_error(err):
-            monthly: dict = {}
-            for ts, cl in zip(data["t"], data["c"]):
-                month_key = datetime.fromtimestamp(ts).strftime("%Y-%m")
-                monthly[month_key] = cl
-            dates  = sorted(monthly.keys())
-            closes = [round(monthly[k] * eur_usd, 2)
-                      if asset["marche"] == "us" else round(monthly[k], 2)
-                      for k in dates]
-            return dates, closes, "Finnhub (fallback)", False, None
-        fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
-    else:
-        fh_err = "clé absente"
+        # Fallback EU : Finnhub candles hebdo
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, months)
+            if dates:
+                return dates, closes, f"Finnhub (fallback EODHD:{eod_err})", cache_flag, err_str
+            fh_err = err_str or "vide"
+        else:
+            fh_err = "clé absente"
 
-    # Fallback cache session
-    if session_cache_global.get(cache_key):
-        saved_at = session_cache_global.get("saved_at", "date inconnue")
-        cached   = session_cache_global[cache_key]
-        return (cached.get("dates", []), cached.get("closes", []),
-                "Cache", True,
-                f"Historique non disponible (EODHD:{eod_err}, Finnhub:{fh_err}) — cache du {saved_at}")
+        # Fallback cache
+        if session_cache_global.get(cache_key):
+            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            cached   = session_cache_global[cache_key]
+            return (cached.get("dates", []), cached.get("closes", []),
+                    "Cache", True,
+                    f"Historique EU non disponible (EODHD:{eod_err}, FH:{fh_err}) — cache du {saved_at}")
+        return ([], [], f"Indisponible (EODHD:{eod_err}, FH:{fh_err})", False,
+                "Historique indisponible — graphique non généré")
 
-    return ([], [], f"Indisponible (EODHD:{eod_err}, Finnhub:{fh_err})", False,
-            "Historique indisponible — graphique non généré")
+def _finnhub_candles(asset: dict, eur_usd: float, months: int) -> tuple:
+    """Retourne (dates, closes, src, cache_flag, err_str) via Finnhub candles hebdo."""
+    from_ts = int((datetime.now() - timedelta(days=months * 31)).timestamp())
+    to_ts   = int(datetime.now().timestamp())
+    data, err = _get(f"{FH_BASE}/stock/candle",
+                     {"symbol": asset["ticker_fh"], "resolution": "W",
+                      "from": from_ts, "to": to_ts, "token": FINNHUB_KEY},
+                     "finnhub")
+    if isinstance(data, dict) and data.get("s") == "ok" and data.get("c") and not _is_quota_error(err):
+        monthly: dict = {}
+        for ts, cl in zip(data["t"], data["c"]):
+            month_key = datetime.fromtimestamp(ts).strftime("%Y-%m")
+            monthly[month_key] = cl
+        dates  = sorted(monthly.keys())
+        closes = [round(monthly[k] * eur_usd, 2)
+                  if asset.get("marche") == "us" else round(monthly[k], 2)
+                  for k in dates]
+        return dates, closes, "Finnhub", False, None
+    err_str = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    return [], [], "Finnhub", False, err_str
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -787,14 +888,14 @@ def build_report() -> tuple:
     now              = datetime.now(PARIS_TZ)
     lines            = []
     divergence_log   = []
-    api_errors       = []    # données totalement indisponibles
-    cache_warnings   = []    # données issues du cache GitHub
+    api_errors       = []
+    cache_warnings   = []
     session_cache    = load_session_cache()
     session_cache_global = session_cache
     new_cache        = {}
     history_rows     = []
     charts_generated = []
-    sources_log      = {}   # ticker → {cours, sentiment, consensus, historique}
+    sources_log      = {}
 
     # ── Batch TwelveData (cours US + watchlist) ────────────────────────────
     print("[INFO] Batch TwelveData (cours US)...")
@@ -827,7 +928,7 @@ def build_report() -> tuple:
     macro_news  = get_macro_news(5)
 
     lines += [
-        f"# 📊 Rapport de Portefeuille v5.1 — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# 📊 Rapport de Portefeuille v5.2 — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "", "---", "",
         "## 🌍 Contexte Économique", "",
         f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
@@ -891,7 +992,7 @@ def build_report() -> tuple:
         cs, cons_str, cons_src = get_consensus(asset)
         sources_log[asset["ticker_eod"]]["consensus"] = cons_src
 
-        print(f"[INFO] Historique {asset['name']} (EODHD)...")
+        print(f"[INFO] Historique {asset['name']}...")
         h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
         sources_log[asset["ticker_eod"]]["historique"] = h_src
         if h_cache:
@@ -940,8 +1041,6 @@ def build_report() -> tuple:
 
         icon       = "📗" if pnl_brut >= 0 else "📕"
         chart_ref  = f"\n\n![Historique mensuel]({chart_filename})" if chart_ok else ""
-
-        # Aucune mention de source dans les cellules — uniquement un flag cache
         cours_flag = " _(⚠️ cache)_" if price_cache else ""
         hist_flag  = " _(⚠️ cache)_" if h_cache else ""
 
@@ -985,22 +1084,18 @@ def build_report() -> tuple:
         "", "---", "",
     ]
 
-    # ── Avertissements cache ───────────────────────────────────────────────
     if cache_warnings:
         lines += [
             "## ⚠️ Données Issues du Cache GitHub",
             "",
-            "> Les données marquées _(⚠️ cache)_ dans le rapport proviennent du",
-            "> **dernier rapport sauvegardé sur GitHub** (cache/session_cache.json).",
-            "> La clé API principale avait atteint son quota ou était indisponible.",
-            "> **Ne pas prendre de décision d'investissement** sur ces valeurs sans vérification manuelle.",
+            "> Les données marquées _(⚠️ cache)_ proviennent du dernier rapport sauvegardé.",
+            "> **Ne pas prendre de décision d'investissement** sur ces valeurs sans vérification.",
             "",
         ]
         for w in cache_warnings:
             lines.append(f"- ⚠️ {w}")
         lines += ["", "---", ""]
 
-    # ── Validation croisée ─────────────────────────────────────────────────
     real_divs = [d for d in divergence_log if "⚠️ Divergence" in d]
     if real_divs:
         lines += ["## ⚠️ Validation Croisée", "",
@@ -1013,13 +1108,11 @@ def build_report() -> tuple:
                   "_Aucune divergence > 2% détectée entre sources._",
                   "", "---", ""]
 
-    # ── Erreurs API (données totalement indisponibles) ─────────────────────
     if api_errors:
         lines += [
             "## 🔴 Erreurs API — Données Indisponibles",
             "",
             "> ⚠️ **Les données suivantes sont totalement indisponibles** (ni API ni cache).",
-            "> Vérifiez les APIs concernées avant toute décision.",
             "",
         ]
         for e in api_errors:
@@ -1030,7 +1123,6 @@ def build_report() -> tuple:
                   "_Toutes les données ont été obtenues (API ou cache)._",
                   "", "---", ""]
 
-    # ── Conclusion stratégique ─────────────────────────────────────────────
     best  = max(summaries, key=lambda x: x["score"]) if summaries else None
     worst = min(summaries, key=lambda x: x["score"]) if summaries else None
     ctx   = ("Marchés en dynamique **positive**." if macro_score >= 6
@@ -1071,7 +1163,6 @@ def build_report() -> tuple:
             f"| {w['cons']} | {w['sc']:.1f}/10 |"
         )
 
-    # ── Bloc technique sources (discret, en toute fin) ─────────────────────
     quota = _quota_status()
     lines += [
         "", "---", "",
@@ -1094,15 +1185,15 @@ def build_report() -> tuple:
     lines += [
         "",
         "**Quotas de ce run :**",
-        f"- AlphaVantage : {quota['alphavantage']}",
-        f"- TwelveData   : {quota['twelvedata']}",
-        f"- EODHD        : {quota['eodhd']}",
-        f"- Finnhub      : {quota['finnhub']}",
+        f"- AlphaVantage : {quota['alphavantage']} (limite réelle : 25/jour)",
+        f"- TwelveData   : {quota['twelvedata']} (limite réelle : 800/jour)",
+        f"- EODHD        : {quota['eodhd']} (limite réelle : 20/jour)",
+        f"- Finnhub      : {quota['finnhub']} (limite réelle : 60/min)",
         "",
         "</details>",
         "", "---", "",
-        f"_Rapport v5.1 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
-        "_Architecture API : AlphaVantage (EUR/USD) · TwelveData (cours US) · EODHD (Euronext/indices/historique/news) · Finnhub (sentiment/consensus)_",
+        f"_Rapport v5.2 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
+        "_Architecture API v5.2 : AlphaVantage (EUR/USD · hist US · sentiment US NLP) · TwelveData (cours US) · EODHD (Euronext · indices · news EU · hist EU) · Finnhub (sentiment EU · consensus · news US)_",
         "_Scoring : Prix 30% · Sentiment 20% · Consensus 20% · Historique 30%_",
         "_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_",
     ]
@@ -1137,7 +1228,7 @@ if __name__ == "__main__":
             f.write(f"CACHE_WARNINGS={cach_list}\n")
             f.write(f"CHARTS_LIST={chart_list}\n")
 
-    print(f"\n✅ Rapport v5.1 généré — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
+    print(f"\n✅ Rapport v5.2 généré — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
     quota = _quota_status()
     print(f"   Quotas — AV:{quota['alphavantage']} · TD:{quota['twelvedata']} · EOD:{quota['eodhd']} · FH:{quota['finnhub']}")
     if cache_warnings:
