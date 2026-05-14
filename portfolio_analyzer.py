@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v5.3
+Portfolio Analyzer v5.4
 ================================================================================
-ARCHITECTURE DES CLES API v5.3 - OPTIMISATION QUOTAS PLANS GRATUITS
+ARCHITECTURE DES CLES API v5.4 - OPTIMISATION QUOTAS PLANS GRATUITS
 
-  Cle API          | Mission v5.3                                  | Quota gratuit reel
+  Cle API          | Mission v5.4                                  | Quota gratuit reel
   AlphaVantage     | EUR/USD * Historique US * Sentiment US (NLP)  | 25 req/jour -> ~7/run
   TwelveData       | Cours US temps reel (batch)                   | 800/jour  -> <=9/run
   EODHD            | Cours EU * Indices * News EU * Historique EU  | 20/jour   -> ~12/run
@@ -12,7 +12,7 @@ ARCHITECTURE DES CLES API v5.3 - OPTIMISATION QUOTAS PLANS GRATUITS
   OpenRouter       | Synthese RSS Yahoo Finance (DeepSeek v3 free) | illimite (free tier)
                    | Fallback donnees si EODHD/autres echouent     |
 
-  REGLES CLES v5.3 :
+  REGLES CLES v5.4 :
   - EODHD N'EST JAMAIS appele pour les cours US si TwelveData a repondu.
   - AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US.
   - AlphaVantage TIME_SERIES_MONTHLY pour l'historique US.
@@ -21,6 +21,7 @@ ARCHITECTURE DES CLES API v5.3 - OPTIMISATION QUOTAS PLANS GRATUITS
   - Finnhub assure le sentiment des valeurs Euronext (.PA).
   - OpenRouter/DeepSeek v3 flash :
       * Flux RSS Yahoo Finance -> titres bruts -> synthese 2-3 phrases FR par asset
+      * La synthese est nettoyee (\n internes supprimes) -> blockquote Markdown mono-ligne
       * Fallback si une source de donnees principale echoue completement
 
   BUDGET APPELS PAR RUN :
@@ -30,7 +31,7 @@ ARCHITECTURE DES CLES API v5.3 - OPTIMISATION QUOTAS PLANS GRATUITS
     Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12-15/run
     OpenRouter   : 1 appel par asset (RSS + synthese) = ~12/run (portfolio + watchlist)
 
-Scoring v5.3 (inchange) :
+Scoring v5.4 (inchange) :
   Prix vs PRU        : 30 %
   Sentiment presse   : 20 %
   Consensus analystes: 20 %
@@ -230,7 +231,9 @@ def _openrouter_chat(prompt: str, timeout: int = 30) -> tuple:
                     "content": (
                         "Tu es un assistant financier specialise. "
                         "Reponds toujours en francais. "
-                        "Sois factuel, concis et neutre."
+                        "Sois factuel, concis et neutre. "
+                        "Ne retourne JAMAIS de sauts de ligne dans ta reponse : "
+                        "ecris tout sur une seule ligne continue."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -275,7 +278,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 8) -> list:
     )
     try:
         r = requests.get(url, timeout=10,
-                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/5.3"})
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/5.4"})
         if r.status_code != 200:
             _rss_cache[ticker_yf] = []
             return []
@@ -302,11 +305,22 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 8) -> list:
 _synthesis_cache: dict = {}
 
 
+def _clean_synthesis(text: str) -> str:
+    """Supprime les sauts de ligne internes pour garantir un blockquote Markdown valide.
+
+    DeepSeek peut retourner un texte multi-lignes meme si on lui demande de ne
+    pas le faire. On joint toutes les lignes non-vides avec un espace.
+    """
+    lines = [l.strip() for l in text.replace("\r", "").split("\n") if l.strip()]
+    return " ".join(lines)
+
+
 def get_news_synthesis(asset: dict) -> tuple:
     """Recupere les titres RSS Yahoo Finance et les fait synthetiser par DeepSeek.
 
     Retourne (synthese_str, source_str).
-    - synthese_str : resume 2-3 phrases en francais, ou liste de titres bruts si OR indispo.
+    - synthese_str : resume 2-3 phrases en francais sur UNE SEULE LIGNE,
+                     ou liste de titres bruts si OR indispo.
     - source_str   : "DeepSeek/RSS" | "RSS brut" | "Aucune actualite"
     """
     ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
@@ -330,11 +344,14 @@ def get_news_synthesis(asset: dict) -> tuple:
             f"{titres_str}\n\n"
             "Redige un resume factuel de 2 a 3 phrases en francais qui synthetise "
             "les points cles de l'actualite recente de cette entreprise. "
-            "Ne repete pas les titres mot pour mot. Reste neutre et precis."
+            "Ne repete pas les titres mot pour mot. Reste neutre et precis. "
+            "IMPORTANT : ecris tout sur une seule ligne, sans saut de ligne."
         )
         text, err = _openrouter_chat(prompt)
         if text:
-            result = (text, "DeepSeek v3 / RSS Yahoo Finance")
+            # Nettoyage defensif : supprime tout \n residuel meme si le modele n'a pas obei
+            text_clean = _clean_synthesis(text)
+            result = (text_clean, "DeepSeek v3 / RSS Yahoo Finance")
             _synthesis_cache[key] = result
             return result
         print(f"[WARN] OpenRouter synthese ({name}) : {err}")
@@ -717,7 +734,7 @@ def get_sentiment(asset: dict) -> tuple:
         return 50.0, 50.0, f"Neutre par defaut (Finnhub:{fh_err})"
 
 
-# --- Analyse lexicale v5.3 : fenetre de negation ------------------------------
+# --- Analyse lexicale v5.4 : fenetre de negation ------------------------------
 _NEGATORS  = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
 _NEG_WINDOW = 3
 
@@ -1184,7 +1201,7 @@ def build_report() -> tuple:
     macro_news  = get_macro_news(5)
 
     lines += [
-        f"# Rapport de Portefeuille v5.3 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# Rapport de Portefeuille v5.4 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "", "---", "",
         "## Contexte Economique", "",
         f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
@@ -1326,6 +1343,7 @@ def build_report() -> tuple:
         ]
 
         # --- Synthese actualite DeepSeek (RSS Yahoo Finance) ---
+        # synthesis est garanti mono-ligne grace a _clean_synthesis()
         lines += [
             f"**Actualite recente :** *(source : {synth_src})*",
             "",
@@ -1438,7 +1456,7 @@ def build_report() -> tuple:
                     w_price = round(float(raw) * factor, 2)
                     w_src   = "EODHD"
 
-        # Synthese actualite watchlist via DeepSeek/RSS
+        # Synthese actualite watchlist via DeepSeek/RSS (garanti mono-ligne)
         w_synthesis, w_synth_src = get_news_synthesis(w)
 
         price_str = f"{w_price:.2f} EUR" if w_price else "N/D"
