@@ -1,31 +1,36 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v5.2
+Portfolio Analyzer v5.3
 ================================================================================
-ARCHITECTURE DES CLES API v5.2 - OPTIMISATION QUOTAS PLANS GRATUITS
+ARCHITECTURE DES CLES API v5.3 - OPTIMISATION QUOTAS PLANS GRATUITS
 
-  Cle API          | Mission v5.2                                  | Quota gratuit reel
+  Cle API          | Mission v5.3                                  | Quota gratuit reel
   AlphaVantage     | EUR/USD * Historique US * Sentiment US (NLP)  | 25 req/jour -> ~7/run
   TwelveData       | Cours US temps reel (batch)                   | 800/jour  -> <=9/run
   EODHD            | Cours EU * Indices * News EU * Historique EU  | 20/jour   -> ~12/run
   Finnhub          | Sentiment EU * Consensus * News US watchlist  | 60/min illimite/jour
+  OpenRouter       | Synthese RSS Yahoo Finance (DeepSeek v3 free) | illimite (free tier)
+                   | Fallback donnees si EODHD/autres echouent     |
 
-  REGLES CLES v5.2 :
+  REGLES CLES v5.3 :
   - EODHD N'EST JAMAIS appele pour les cours US si TwelveData a repondu.
-  - AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US
-    (score NLP integre, plus precis que l'analyse lexicale).
-  - AlphaVantage TIME_SERIES_MONTHLY remplace TIME_SERIES_DAILY pour l'historique US.
+  - AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US.
+  - AlphaVantage TIME_SERIES_MONTHLY pour l'historique US.
   - News societes EU (DEC.PA, ACA.PA, ABNX.PA) -> EODHD seul.
   - News societes US (watchlist) -> Finnhub company-news (libere EODHD).
   - Finnhub assure le sentiment des valeurs Euronext (.PA).
+  - OpenRouter/DeepSeek v3 flash :
+      * Flux RSS Yahoo Finance -> titres bruts -> synthese 2-3 phrases FR par asset
+      * Fallback si une source de donnees principale echoue completement
 
   BUDGET APPELS PAR RUN :
     AlphaVantage : 1 (EUR/USD) + 3 (hist US) + 3-6 (sentiment US) = ~7-10/run
     TwelveData   : <=9 (cours US batch)
     EODHD        : 3 (cours EU) + 3 (indices) + 3 (news EU) + 3 (hist EU) = ~12/run
     Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12-15/run
+    OpenRouter   : 1 appel par asset (RSS + synthese) = ~12/run (portfolio + watchlist)
 
-Scoring v5.2 (inchange) :
+Scoring v5.3 (inchange) :
   Prix vs PRU        : 30 %
   Sentiment presse   : 20 %
   Consensus analystes: 20 %
@@ -39,6 +44,7 @@ import json
 import time
 import threading
 import requests
+import xml.etree.ElementTree as ET
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 
@@ -47,9 +53,11 @@ FINNHUB_KEY      = os.environ.get("FINNHUB_API_KEY", "")
 EODHD_KEY        = os.environ.get("EODHD_API_KEY", "")
 TWELVEDATA_KEY   = os.environ.get("TWELVEDATA_API_KEY", "")
 ALPHAVANTAGE_KEY = os.environ.get("ALPHAVANTAGE_API_KEY", "")
+OPENROUTER_KEY   = os.environ.get("OPENROUTER_API_KEY", "")
 
 for k, v in [("FINNHUB_API_KEY", FINNHUB_KEY), ("EODHD_API_KEY", EODHD_KEY),
-             ("TWELVEDATA_API_KEY", TWELVEDATA_KEY), ("ALPHAVANTAGE_API_KEY", ALPHAVANTAGE_KEY)]:
+             ("TWELVEDATA_API_KEY", TWELVEDATA_KEY), ("ALPHAVANTAGE_API_KEY", ALPHAVANTAGE_KEY),
+             ("OPENROUTER_API_KEY", OPENROUTER_KEY)]:
     if not v:
         print(f"[WARN] Cle absente : {k} -- fallback cache active pour cette source")
 
@@ -57,6 +65,8 @@ FH_BASE  = "https://finnhub.io/api/v1"
 EOD_BASE = "https://eodhd.com/api"
 TD_BASE  = "https://api.twelvedata.com"
 AV_BASE  = "https://www.alphavantage.co/query"
+OR_BASE  = "https://openrouter.ai/api/v1/chat/completions"
+OR_MODEL = "deepseek/deepseek-chat-v3-0324:free"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
 DIVERGENCE_THRESHOLD_PCT = 2.0
@@ -73,6 +83,7 @@ _QUOTA = {
     "twelvedata":   {"used": 0, "limit": 60},
     "eodhd":        {"used": 0, "limit": 18},
     "finnhub":      {"used": 0, "limit": 55},
+    "openrouter":   {"used": 0, "limit": 200},
 }
 
 _quota_lock = threading.Lock()
@@ -97,22 +108,22 @@ def _quota_status() -> dict:
 # --- PORTEFEUILLE ------------------------------------------------------------
 PORTFOLIO = [
     {"name": "Palantir Technologies", "isin": "US69608A1088",
-     "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",  "ticker_av": "PLTR",
+     "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",  "ticker_av": "PLTR",  "ticker_yf": "PLTR",
      "qty": 2,  "cost_eur": 119.06, "marche": "us"},
     {"name": "CoreWeave",             "isin": "US21873S1087",
-     "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",  "ticker_av": "CRWV",
+     "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",  "ticker_av": "CRWV",  "ticker_yf": "CRWV",
      "qty": 2,  "cost_eur": 93.91,  "marche": "us"},
     {"name": "Riot Platforms",        "isin": "US7672921050",
-     "ticker_fh": "RIOT",    "ticker_eod": "RIOT.US",  "ticker_td": "RIOT",  "ticker_av": "RIOT",
+     "ticker_fh": "RIOT",    "ticker_eod": "RIOT.US",  "ticker_td": "RIOT",  "ticker_av": "RIOT",  "ticker_yf": "RIOT",
      "qty": 6,  "cost_eur": 15.84,  "marche": "us"},
     {"name": "JCDecaux",              "isin": "FR0000077919",
-     "ticker_fh": "DEC.PA",  "ticker_eod": "DEC.PA",   "ticker_td": None,    "ticker_av": None,
+     "ticker_fh": "DEC.PA",  "ticker_eod": "DEC.PA",   "ticker_td": None,    "ticker_av": None,    "ticker_yf": "DEC.PA",
      "qty": 2,  "cost_eur": 17.77,  "marche": "euronext"},
     {"name": "Credit Agricole SA",    "isin": "FR0000045072",
-     "ticker_fh": "ACA.PA",  "ticker_eod": "ACA.PA",   "ticker_td": None,    "ticker_av": None,
+     "ticker_fh": "ACA.PA",  "ticker_eod": "ACA.PA",   "ticker_td": None,    "ticker_av": None,    "ticker_yf": "ACA.PA",
      "qty": 10, "cost_eur": 16.90,  "marche": "euronext"},
     {"name": "Abionyx Pharma",        "isin": "FR0012616852",
-     "ticker_fh": "ABNX.PA", "ticker_eod": "ABNX.PA",  "ticker_td": None,    "ticker_av": None,
+     "ticker_fh": "ABNX.PA", "ticker_eod": "ABNX.PA",  "ticker_td": None,    "ticker_av": None,    "ticker_yf": "ABNX.PA",
      "qty": 10, "cost_eur": 3.84,   "marche": "euronext"},
 ]
 
@@ -123,12 +134,12 @@ INDICES = {
 }
 
 WATCHLIST = [
-    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "ticker_av": "NVDA",  "marche": "us",       "sector": "IA / Semi-conducteurs"},
-    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "ticker_av": "MSFT",  "marche": "us",       "sector": "IA / Cloud"},
-    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "ticker_av": "COIN",  "marche": "us",       "sector": "Crypto / Fintech"},
-    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "ticker_av": None,    "marche": "euronext", "sector": "Luxe / Consommation"},
-    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "ticker_av": None,    "marche": "euronext", "sector": "Energie"},
-    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "ticker_av": None,    "marche": "euronext", "sector": "Aeronautique / Defense"},
+    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "ticker_av": "NVDA",  "ticker_yf": "NVDA",  "marche": "us",       "sector": "IA / Semi-conducteurs"},
+    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "ticker_av": "MSFT",  "ticker_yf": "MSFT",  "marche": "us",       "sector": "IA / Cloud"},
+    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "ticker_av": "COIN",  "ticker_yf": "COIN",  "marche": "us",       "sector": "Crypto / Fintech"},
+    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "ticker_av": None,    "ticker_yf": "MC.PA", "marche": "euronext", "sector": "Luxe / Consommation"},
+    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "ticker_av": None,    "ticker_yf": "TTE.PA","marche": "euronext", "sector": "Energie"},
+    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "ticker_av": None,    "ticker_yf": "AIR.PA","marche": "euronext", "sector": "Aeronautique / Defense"},
 ]
 
 BROKERAGE = {
@@ -190,6 +201,152 @@ def _is_quota_error(err: str) -> bool:
 
 
 # =============================================================================
+# OPENROUTER / DEEPSEEK V3 FLASH
+# =============================================================================
+
+def _openrouter_chat(prompt: str, timeout: int = 30) -> tuple:
+    """Appel DeepSeek v3 flash via OpenRouter.
+
+    Retourne (texte_reponse, erreur_str|None).
+    Le modele est toujours deepseek/deepseek-chat-v3-0324:free.
+    """
+    if not OPENROUTER_KEY:
+        return None, "OPENROUTER_KEY absente"
+    if not _quota_ok("openrouter"):
+        return None, "QUOTA_REACHED"
+    _quota_inc("openrouter")
+    try:
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_KEY}",
+            "Content-Type":  "application/json",
+            "HTTP-Referer":  "https://github.com/adrien13vivier-hub/portfolio-analyzer",
+            "X-Title":       "Portfolio Analyzer",
+        }
+        payload = {
+            "model": OR_MODEL,
+            "messages": [
+                {
+                    "role":    "system",
+                    "content": (
+                        "Tu es un assistant financier specialise. "
+                        "Reponds toujours en francais. "
+                        "Sois factuel, concis et neutre."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens":   300,
+            "temperature":  0.3,
+        }
+        r = requests.post(OR_BASE, headers=headers, json=payload, timeout=timeout)
+        if r.status_code == 200:
+            data = r.json()
+            text = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            return text if text else None, None
+        if r.status_code == 429:
+            return None, "HTTP_429_QUOTA"
+        return None, f"HTTP {r.status_code}"
+    except requests.exceptions.Timeout:
+        return None, "Timeout"
+    except requests.exceptions.ConnectionError:
+        return None, "Connexion impossible"
+    except Exception as e:
+        return None, str(e)[:60]
+
+
+# =============================================================================
+# FLUX RSS YAHOO FINANCE
+# =============================================================================
+
+_rss_cache: dict = {}
+
+
+def _fetch_yahoo_rss(ticker_yf: str, n: int = 8) -> list:
+    """Recupere les n derniers titres d'actualite depuis le flux RSS Yahoo Finance.
+
+    Retourne une liste de chaines (titres bruts).
+    """
+    if ticker_yf in _rss_cache:
+        return _rss_cache[ticker_yf][:n]
+
+    url = (
+        f"https://feeds.finance.yahoo.com/rss/2.0/headline"
+        f"?s={ticker_yf}&region=US&lang=en-US"
+    )
+    try:
+        r = requests.get(url, timeout=10,
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/5.3"})
+        if r.status_code != 200:
+            _rss_cache[ticker_yf] = []
+            return []
+        root = ET.fromstring(r.content)
+        titles = []
+        for item in root.iter("item"):
+            title_el = item.find("title")
+            if title_el is not None and title_el.text:
+                titles.append(title_el.text.strip())
+            if len(titles) >= n:
+                break
+        _rss_cache[ticker_yf] = titles
+        return titles
+    except Exception as e:
+        print(f"[WARN] RSS Yahoo Finance ({ticker_yf}) : {e}")
+        _rss_cache[ticker_yf] = []
+        return []
+
+
+# =============================================================================
+# SYNTHESE ACTUALITE VIA DEEPSEEK (RSS + OpenRouter)
+# =============================================================================
+
+_synthesis_cache: dict = {}
+
+
+def get_news_synthesis(asset: dict) -> tuple:
+    """Recupere les titres RSS Yahoo Finance et les fait synthetiser par DeepSeek.
+
+    Retourne (synthese_str, source_str).
+    - synthese_str : resume 2-3 phrases en francais, ou liste de titres bruts si OR indispo.
+    - source_str   : "DeepSeek/RSS" | "RSS brut" | "Aucune actualite"
+    """
+    ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
+    name      = asset["name"]
+    key       = ticker_yf
+
+    if key in _synthesis_cache:
+        return _synthesis_cache[key]
+
+    titles = _fetch_yahoo_rss(ticker_yf, n=8)
+
+    if not titles:
+        _synthesis_cache[key] = ("Aucune actualite disponible via RSS.", "RSS Yahoo vide")
+        return _synthesis_cache[key]
+
+    if OPENROUTER_KEY and _quota_ok("openrouter"):
+        titres_str = "\n".join(f"- {t}" for t in titles)
+        prompt = (
+            f"Voici les {len(titles)} dernieres manchettes d'actualite financiere "
+            f"concernant {name} (source : Yahoo Finance RSS) :\n\n"
+            f"{titres_str}\n\n"
+            "Redige un resume factuel de 2 a 3 phrases en francais qui synthetise "
+            "les points cles de l'actualite recente de cette entreprise. "
+            "Ne repete pas les titres mot pour mot. Reste neutre et precis."
+        )
+        text, err = _openrouter_chat(prompt)
+        if text:
+            result = (text, "DeepSeek v3 / RSS Yahoo Finance")
+            _synthesis_cache[key] = result
+            return result
+        print(f"[WARN] OpenRouter synthese ({name}) : {err}")
+
+    # Fallback : retourne les titres bruts si DeepSeek indispo
+    brut = " | ".join(titles[:3])
+    result = (brut, "RSS Yahoo Finance (brut)")
+    _synthesis_cache[key] = result
+    return result
+
+
+# =============================================================================
 # VALIDATION CROISEE
 # =============================================================================
 
@@ -235,6 +392,21 @@ def get_eur_usd(session_cache: dict) -> tuple:
             errors.append(f"AlphaVantage:{err or 'vide'}")
     else:
         errors.append("AlphaVantage:cle absente")
+
+    # Fallback OpenRouter : demande le taux EUR/USD a DeepSeek
+    if OPENROUTER_KEY and _quota_ok("openrouter"):
+        text, or_err = _openrouter_chat(
+            "Quel est le taux de change EUR/USD actuel approximatif ? "
+            "Reponds uniquement avec un nombre decimal (ex: 0.9234), sans texte supplementaire."
+        )
+        if text:
+            try:
+                rate = float(text.strip().replace(",", "."))
+                if 0.5 < rate < 2.0:
+                    return rate, "OpenRouter/DeepSeek (fallback AV)", False, \
+                        f"EUR/USD via DeepSeek ({', '.join(errors)})"
+            except ValueError:
+                pass
 
     if session_cache.get("eur_usd"):
         saved_at = session_cache.get("saved_at", "date inconnue")
@@ -407,7 +579,7 @@ def get_index(symbols: dict) -> dict:
 
 
 # =============================================================================
-# NEWS
+# NEWS (titres bruts Finnhub/EODHD -- conserves pour le scoring sentiment)
 # =============================================================================
 
 _news_cache: dict = {}
@@ -545,19 +717,13 @@ def get_sentiment(asset: dict) -> tuple:
         return 50.0, 50.0, f"Neutre par defaut (Finnhub:{fh_err})"
 
 
-# --- Analyse lexicale v5.2 : fenetre de negation ------------------------------
+# --- Analyse lexicale v5.3 : fenetre de negation ------------------------------
 _NEGATORS  = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
 _NEG_WINDOW = 3
 
 
 def _lexical_sentiment(news: list) -> tuple:
-    """Analyse lexicale avec gestion des negations (fenetre de 3 tokens).
-
-    - Un negateur (not/no/never/without/hardly/barely/scarcely) inverse la
-      polarite des _NEG_WINDOW mots suivants.
-    - Un mot de sentiment consomme immediatement la negation active.
-    - Retourne (bull_pct, bear_pct) avec bull_pct + bear_pct == 100.
-    """
+    """Analyse lexicale avec gestion des negations (fenetre de 3 tokens)."""
     import re
 
     bull_w = {
@@ -823,7 +989,6 @@ def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
 # GRAPHIQUE COMBINE -- toutes courbes normalisees base 100
 # =============================================================================
 
-# Palette de couleurs distinctes pour chaque valeur du portefeuille
 _CHART_COLORS = [
     "#2563eb",  # bleu
     "#16a34a",  # vert
@@ -837,22 +1002,12 @@ _CHART_COLORS = [
 
 
 def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
-    """Genere un graphique superpose avec toutes les courbes normalisees en base 100.
-
-    Args:
-        assets_history: dict {name: (dates_list, closes_list)} pour chaque position
-        chart_path: chemin de sauvegarde du PNG
-
-    Returns:
-        True si le graphique a ete genere avec succes, False sinon.
-    """
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
 
-        # Filtrer les actifs qui ont au moins 2 points de donnees
         valid = {
             name: (dates, closes)
             for name, (dates, closes) in assets_history.items()
@@ -870,7 +1025,6 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         ax.set_facecolor("#f9f8f5")
 
         for idx, (name, (dates, closes)) in enumerate(valid.items()):
-            # Conversion des dates en objets datetime
             dt_dates = []
             for d in dates:
                 try:
@@ -883,7 +1037,6 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
             if len(dt_dates) < 2:
                 continue
 
-            # Normalisation base 100 : premiere valeur = 100
             base = closes[0]
             if base == 0:
                 continue
@@ -900,7 +1053,6 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
                 zorder=3,
             )
 
-            # Annotation de la valeur finale
             ax.annotate(
                 f"{normalized[-1]:.0f}",
                 (dt_dates[-1], normalized[-1]),
@@ -908,16 +1060,13 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
                 fontsize=7.5, color=color, fontweight="bold",
             )
 
-        # Ligne de reference a 100
         ax.axhline(y=100, color="#9ca3af", linestyle="--", linewidth=1.2,
                    alpha=0.8, label="Base 100 (point d'entree)", zorder=2)
 
-        # Zone verte au-dessus de 100, rouge en dessous
         y_min, y_max = ax.get_ylim()
         ax.axhspan(100, max(y_max, 101), alpha=0.04, color="#16a34a", zorder=1)
         ax.axhspan(min(y_min, 99), 100,  alpha=0.04, color="#dc2626",  zorder=1)
 
-        # Mise en forme des axes
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         ax.xaxis.set_major_locator(mdates.MonthLocator())
         plt.xticks(rotation=30, ha="right", fontsize=8)
@@ -975,16 +1124,18 @@ def append_history(now: datetime, rows: list):
 
 def _fetch_asset_data(asset: dict, eur_usd: float,
                       td_prices: dict, session_cache: dict) -> dict:
-    """Regroupe les 4 appels par asset pour ThreadPoolExecutor."""
+    """Regroupe les appels par asset pour ThreadPoolExecutor."""
     news = get_company_news(asset, 2)
     bull, bear, sent_src = get_sentiment(asset)
     cs, cons_str, cons_src = get_consensus(asset)
     h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
+    synthesis, synth_src = get_news_synthesis(asset)
     return {
         "news": news, "bull": bull, "bear": bear, "sent_src": sent_src,
         "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
         "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
         "h_cache": h_cache, "h_err": h_err,
+        "synthesis": synthesis, "synth_src": synth_src,
     }
 
 
@@ -1033,7 +1184,7 @@ def build_report() -> tuple:
     macro_news  = get_macro_news(5)
 
     lines += [
-        f"# Rapport de Portefeuille v5.2 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# Rapport de Portefeuille v5.3 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "", "---", "",
         "## Contexte Economique", "",
         f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
@@ -1082,6 +1233,7 @@ def build_report() -> tuple:
                 "cs": 5.0, "cons_str": "N/D", "cons_src": "Erreur",
                 "h_dates": [], "h_closes": [], "h_src": "Erreur",
                 "h_cache": False, "h_err": str(exc),
+                "synthesis": "Erreur lors de la recuperation.", "synth_src": "Erreur",
             }
 
     for asset in PORTFOLIO:
@@ -1118,23 +1270,26 @@ def build_report() -> tuple:
         pnl_net    = round(vm - cout_reel - fee_v, 2)
         pnl_net_p  = round(pnl_net / cout_reel * 100, 2)
 
-        r        = asset_results[ticker]
-        news     = r["news"]
-        bull     = r["bull"]
-        bear     = r["bear"]
-        sent_src = r["sent_src"]
-        cs       = r["cs"]
-        cons_str = r["cons_str"]
-        cons_src = r["cons_src"]
-        h_dates  = r["h_dates"]
-        h_closes = r["h_closes"]
-        h_src    = r["h_src"]
-        h_cache  = r["h_cache"]
-        h_err    = r["h_err"]
+        r         = asset_results[ticker]
+        news      = r["news"]
+        bull      = r["bull"]
+        bear      = r["bear"]
+        sent_src  = r["sent_src"]
+        cs        = r["cs"]
+        cons_str  = r["cons_str"]
+        cons_src  = r["cons_src"]
+        h_dates   = r["h_dates"]
+        h_closes  = r["h_closes"]
+        h_src     = r["h_src"]
+        h_cache   = r["h_cache"]
+        h_err     = r["h_err"]
+        synthesis = r["synthesis"]
+        synth_src = r["synth_src"]
 
         sources_log[ticker]["sentiment"]  = sent_src
         sources_log[ticker]["consensus"]  = cons_src
         sources_log[ticker]["historique"] = h_src
+        sources_log[ticker]["synthese"]   = synth_src
 
         if h_cache:
             cache_warnings.append(f"{asset['name']} -- historique : {h_err or h_src}")
@@ -1170,14 +1325,15 @@ def build_report() -> tuple:
             "",
         ]
 
-        lines += [f"**Actualites recentes :**", ""]
-        for t in news:
-            if t: lines.append(f"- {t}")
-        if not news:
-            lines.append("- Aucune actualite disponible")
+        # --- Synthese actualite DeepSeek (RSS Yahoo Finance) ---
+        lines += [
+            f"**Actualite recente :** *(source : {synth_src})*",
+            "",
+            f"> {synthesis}",
+            "",
+        ]
 
         lines += [
-            "",
             f"**Sentiment :** Bull {bull:.0f}% / Bear {bear:.0f}% *(source : {sent_src})*",
             f"**Consensus :** {cons_str} *(source : {cons_src})*",
             "",
@@ -1213,7 +1369,7 @@ def build_report() -> tuple:
         })
 
     # -------------------------------------------------------------------------
-    # Graphique combine -- genere UNE SEULE FOIS apres la boucle
+    # Graphique combine
     # -------------------------------------------------------------------------
     all_histories = {
         asset["name"]: (
@@ -1233,7 +1389,6 @@ def build_report() -> tuple:
     total_pnl_n_pct = round(total_pnl_net  / total_cout * 100, 2) if total_cout else 0
     pf_icon = "+" if total_pnl_net >= 0 else "-"
 
-    # Insertion du graphique combine avant la synthese
     if combined_chart_ok:
         lines += [
             "## Tendances -- Performance Comparee (base 100)",
@@ -1282,24 +1437,17 @@ def build_report() -> tuple:
                     factor  = eur_usd if w.get("marche") == "us" else 1.0
                     w_price = round(float(raw) * factor, 2)
                     w_src   = "EODHD"
-        w_news = []
-        if w.get("marche") == "us" and FINNHUB_KEY:
-            from_d = str(date.today() - timedelta(days=7))
-            to_d   = str(date.today())
-            data, err = _get(f"{FH_BASE}/company-news",
-                             {"symbol": w["ticker_fh"], "from": from_d,
-                              "to": to_d, "token": FINNHUB_KEY}, "finnhub")
-            if isinstance(data, list) and data and not _is_quota_error(err):
-                w_news = [i.get("headline", "") for i in data[:2] if i.get("headline")]
+
+        # Synthese actualite watchlist via DeepSeek/RSS
+        w_synthesis, w_synth_src = get_news_synthesis(w)
+
         price_str = f"{w_price:.2f} EUR" if w_price else "N/D"
         lines += [
             f"**{w['name']}** `{w['ticker_fh']}` -- {w['sector']} | Cours : {price_str} *(source : {w_src})*",
             "",
+            f"> {w_synthesis} *(source : {w_synth_src})*",
+            "",
         ]
-        for t in w_news:
-            if t: lines.append(f"- {t}")
-        if w_news:
-            lines.append("")
 
     quota_str = " | ".join(f"{k}: {v}" for k, v in _quota_status().items())
     lines += [
