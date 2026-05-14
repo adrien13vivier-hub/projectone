@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.2
+generate_html.py  v3.3
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
 • Graphique combiné normalisé base 100 (section Tendances)
 • Tableaux positions + synthèse extraits du Markdown
 • Synthèse IA par position (bloc > blockquote dans le Markdown)  ← v3.2
+  - v3.3 : capture multi-lignes (toutes les lignes ">") concaténées
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -118,15 +119,22 @@ def extract_positions(md: str) -> list[dict]:
         ret_3m    = m_mom.group(3).strip() if m_mom else "—"
         ret_6m    = m_mom.group(4).strip() if m_mom else "—"
 
-        # ── Synthèse IA (ligne "> texte" après "Actualite recente") ── v3.2
-        synthesis     = ""
-        synth_src     = ""
-        m_synth_src   = re.search(r"\*\*Actualite[^*]*\*\*\s*[:\*]*\s*\*?\(source\s*:\s*([^)]+)\)\*?", block)
+        # ── Synthèse IA — v3.3 : capture toutes les lignes ">" et concatène ──
+        synthesis   = ""
+        synth_src   = ""
+        m_synth_src = re.search(r"\*\*Actualite[^*]*\*\*\s*[:\*]*\s*\*?\(source\s*:\s*([^)]+)\)\*?", block)
         if m_synth_src:
             synth_src = m_synth_src.group(1).strip()
-        m_synth_text  = re.search(r"^>\s*(.+)", block, flags=re.MULTILINE)
-        if m_synth_text:
-            synthesis = m_synth_text.group(1).strip()
+        # Toutes les lignes commençant par ">" après la balise "Actualite recente"
+        # On isole la partie du bloc après le marqueur pour éviter de capter
+        # d'autres blockquotes (ex: erreurs de cours) qui précèdent la synthèse.
+        synth_block = block
+        m_actualite_pos = re.search(r"\*\*Actualite[^*]*\*\*", block)
+        if m_actualite_pos:
+            synth_block = block[m_actualite_pos.start():]
+        synth_lines = re.findall(r"^>\s*(.+)", synth_block, flags=re.MULTILINE)
+        if synth_lines:
+            synthesis = " ".join(line.strip() for line in synth_lines).strip()
 
         positions.append({
             "name": name, "ticker": ticker,
@@ -305,7 +313,7 @@ def build_positions_html() -> str:
         pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
         var_html = var_span(p["variation"])
 
-        # ── Bloc synthèse IA ── v3.2
+        # ── Bloc synthèse IA ── v3.3
         synthesis_html = ""
         if p.get("synthesis"):
             src_label = f'<span class="synth-src">{p["synth_src"]}</span>' if p.get("synth_src") else ""
@@ -606,7 +614,7 @@ header {
 .detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
 .mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
 
-/* ── Synthèse IA par position ── v3.2 */
+/* ── Synthèse IA par position ── v3.3 */
 .pos-synthesis {
   margin-top: 12px;
   background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
