@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.1
+generate_html.py  v3.2
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
 • Graphique combiné normalisé base 100 (section Tendances)
 • Tableaux positions + synthèse extraits du Markdown
+• Synthèse IA par position (bloc > blockquote dans le Markdown)  ← v3.2
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -116,6 +117,17 @@ def extract_positions(md: str) -> list[dict]:
         ret_1m    = m_mom.group(2).strip() if m_mom else "—"
         ret_3m    = m_mom.group(3).strip() if m_mom else "—"
         ret_6m    = m_mom.group(4).strip() if m_mom else "—"
+
+        # ── Synthèse IA (ligne "> texte" après "Actualite recente") ── v3.2
+        synthesis     = ""
+        synth_src     = ""
+        m_synth_src   = re.search(r"\*\*Actualite[^*]*\*\*\s*[:\*]*\s*\*?\(source\s*:\s*([^)]+)\)\*?", block)
+        if m_synth_src:
+            synth_src = m_synth_src.group(1).strip()
+        m_synth_text  = re.search(r"^>\s*(.+)", block, flags=re.MULTILINE)
+        if m_synth_text:
+            synthesis = m_synth_text.group(1).strip()
+
         positions.append({
             "name": name, "ticker": ticker,
             "prix": prix, "variation": variation, "vm": vm,
@@ -124,6 +136,7 @@ def extract_positions(md: str) -> list[dict]:
             "bull": bull, "bear": bear,
             "mom_label": mom_label,
             "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
+            "synthesis": synthesis, "synth_src": synth_src,
         })
     return positions
 
@@ -291,6 +304,17 @@ def build_positions_html() -> str:
         pnl_net_cls  = "kpi-positive" if "+" in p["pnl_net"]  else "kpi-negative"
         pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
         var_html = var_span(p["variation"])
+
+        # ── Bloc synthèse IA ── v3.2
+        synthesis_html = ""
+        if p.get("synthesis"):
+            src_label = f'<span class="synth-src">{p["synth_src"]}</span>' if p.get("synth_src") else ""
+            synthesis_html = f"""
+    <div class="pos-synthesis">
+      <div class="synth-header">💬 Actualité récente {src_label}</div>
+      <p class="synth-text">{p['synthesis']}</p>
+    </div>"""
+
         cards += f"""
 <div class="position-card" id="pos-{p['ticker'].replace('.','_')}">
   <div class="pos-header">
@@ -336,6 +360,7 @@ def build_positions_html() -> str:
       </span>
     </div>
   </div>
+  {synthesis_html}
 </div>"""
     return f"""
 <section class="section-block" id="positions">
@@ -581,6 +606,30 @@ header {
 .detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
 .mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
 
+/* ── Synthèse IA par position ── v3.2 */
+.pos-synthesis {
+  margin-top: 12px;
+  background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
+  border: 1px solid color-mix(in oklab, var(--accent) 20%, var(--border));
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.synth-header {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--accent); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.synth-src {
+  font-size: .68rem; font-weight: 400; color: var(--muted);
+  text-transform: none; letter-spacing: 0;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 6px;
+}
+.synth-text {
+  font-size: .8rem; color: var(--text); line-height: 1.6;
+  font-style: italic; max-width: none;
+}
+
 /* ── Score Bar ── */
 .score-wrap { display: flex; flex-direction: column; gap: 4px; }
 .score-num  { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
@@ -649,6 +698,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   .position-card { break-inside: avoid; border: 1px solid #ccc; }
   .badge { border: 1px solid #ccc !important; color: #000 !important; background: none !important; }
   .combined-chart-img { max-height: none; }
+  .pos-synthesis { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
 }
 
 /* ── Mobile ── */
@@ -809,7 +859,7 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v5.2 · {report_date}</div>
+      <div class="header-meta">v5.3 · {report_date}</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
