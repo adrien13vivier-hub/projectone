@@ -568,19 +568,73 @@ def get_sentiment(asset: dict) -> tuple:
             return bull, bear, f"Lexical EODHD (Finnhub:{fh_err})"
         return 50.0, 50.0, f"Neutre par défaut (Finnhub:{fh_err})"
 
+
+# ── Mots négateurs : inversent la polarité du mot suivant ────────────────────
+_NEGATORS = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
+# Fenêtre de portée de la négation : le négatuer couvre les N mots suivants
+_NEG_WINDOW = 3
+
+
 def _lexical_sentiment(news: list) -> tuple:
-    bull_w = {"growth", "buy", "bullish", "surge", "record", "beat", "strong",
-              "gain", "up", "rise", "soar", "profit", "positive", "upgrade"}
-    bear_w = {"loss", "sell", "bearish", "drop", "miss", "weak", "cut", "down",
-              "fall", "decline", "risk", "negative", "downgrade", "warn"}
-    words = " ".join(news).lower().split()
-    b = 0
-    s = 0
-    for w in words:
-        if w in bull_w:
-            b += 1
-        elif w in bear_w:
-            s += 1
+    """Analyse lexicale avec gestion des négations.
+
+    Algorithme :
+    - On parcourt la liste de mots token par token.
+    - Quand on rencontre un négatuer (not, no, never, without, hardly,
+      barely, scarcely), on active un compteur de portée (_NEG_WINDOW = 3).
+    - Tant que ce compteur est > 0, tout mot bull est compté bear et
+      vice-versa (polarité inversée).
+    - Le compteur décroit d'un pas à chaque token non-négatuer.
+
+    Exemples :
+      "not good"     → bear  (au lieu de bull)
+      "no risk"      → bull  (au lieu de bear)
+      "strong gain"  → bull  (pas de négation à portée)
+      "never bullish"→ bear
+    """
+    bull_w = {
+        "growth", "buy", "bullish", "surge", "record", "beat", "strong",
+        "gain", "up", "rise", "soar", "profit", "positive", "upgrade",
+        "recovery", "rally", "outperform", "momentum", "boost",
+    }
+    bear_w = {
+        "loss", "sell", "bearish", "drop", "miss", "weak", "cut", "down",
+        "fall", "decline", "risk", "negative", "downgrade", "warn",
+        "crash", "default", "layoff", "slowdown", "recession",
+    }
+
+    import re
+    # Tokenisation : on retire la ponctuation, on passe en minuscules
+    raw_tokens = re.findall(r"[a-z']+", " ".join(news).lower())
+
+    b = 0      # compteur bull
+    s = 0      # compteur bear
+    neg_ttl = 0  # tokens restants sous portée de négation
+
+    for token in raw_tokens:
+        if token in _NEGATORS:
+            neg_ttl = _NEG_WINDOW   # active la fenêtre de négation
+            continue                 # le négatuer lui-même ne compte pas
+
+        is_bull = token in bull_w
+        is_bear = token in bear_w
+
+        if is_bull or is_bear:
+            if neg_ttl > 0:
+                # Polarité inversée par la négation
+                if is_bull:
+                    s += 1
+                else:
+                    b += 1
+            else:
+                if is_bull:
+                    b += 1
+                else:
+                    s += 1
+            neg_ttl = 0   # un mot de sentiment consomme la négation
+        elif neg_ttl > 0:
+            neg_ttl -= 1  # la portée s'érode mot par mot
+
     t = b + s or 1
     return round(b / t * 100, 1), round(s / t * 100, 1)
 
