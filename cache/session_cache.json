@@ -1,6 +1,53 @@
 {
-  "eur_usd": 0.85424819,
-  "price_PLTR.US": 111.0992,
+  "eur_usd": 0.85486787,
+  "price_PLTR.US": 112.6972,
+  "price_CRWV.US": 99.7886,
+  "price_RIOT.US": 20.8502,
+  "price_DEC.PA": 18.79,
+  "price_ACA.PA": 17.21,
+  "price_ABNX.PA": 3.695,
+  "sources_log": {
+    "EUR/USD": "AlphaVantage",
+    "S&P 500": "EODHD",
+    "CAC 40": "EODHD",
+    "Nikkei 225": "EODHD",
+    "PLTR.US": {
+      "cours": "TwelveData",
+      "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
+      "consensus": "Finnhub",
+      "historique": "Cache"
+    },
+    "CRWV.US": {
+      "cours": "TwelveData",
+      "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
+      "consensus": "Finnhub",
+      "historique": "Cache"
+    },
+    "RIOT.US": {
+      "cours": "TwelveData",
+      "sentiment": "AlphaVantage NLP",
+      "consensus": "Finnhub",
+      "historique": "Cache"
+    },
+    "DEC.PA": {
+      "cours": "EODHD",
+      "sentiment": "Lexical EODHD (Finnhub:HTTP 403)",
+      "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)",
+      "historique": "EODHD"
+    },
+    "ACA.PA": {
+      "cours": "EODHD",
+      "sentiment": "Lexical EODHD (Finnhub:HTTP 403)",
+      "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)",
+      "historique": "EODHD"
+    },
+    "ABNX.PA": {
+      "cours": "EODHD",
+      "sentiment": "Neutre par defaut (Finnhub:HTTP 403)",
+      "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)",
+      "historique": "EODHD"
+    }
+  },
   "hist_PLTR.US": {
     "dates": [
       "2025-11-10",
@@ -21,7 +68,6 @@
       111.09
     ]
   },
-  "price_CRWV.US": 95.0736,
   "hist_CRWV.US": {
     "dates": [
       "2025-11-10",
@@ -42,7 +88,6 @@
       95.09
     ]
   },
-  "price_RIOT.US": 21.2793,
   "hist_RIOT.US": {
     "dates": [
       "2025-11-10",
@@ -63,7 +108,6 @@
       21.29
     ]
   },
-  "price_DEC.PA": 18.65,
   "hist_DEC.PA": {
     "dates": [
       "2025-11-10",
@@ -84,7 +128,6 @@
       18.38
     ]
   },
-  "price_ACA.PA": 17.195,
   "hist_ACA.PA": {
     "dates": [
       "2025-11-10",
@@ -105,7 +148,6 @@
       17.025
     ]
   },
-  "price_ABNX.PA": 3.735,
   "hist_ABNX.PA": {
     "dates": [
       "2025-11-10",
@@ -127,5 +169,5 @@
     ]
   },
   "date": "2026-05-14",
-  "saved_at": "14/05/2026 11:43"
+  "saved_at": "14/05/2026 16:37"
 }
