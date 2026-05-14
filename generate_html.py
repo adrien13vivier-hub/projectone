@@ -1,279 +1,185 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v2.0
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Convertit reports/daily_report.md → docs/index.html
-Intègre les graphiques PNG en base64 (aucune dépendance réseau)
-Met à jour docs/archive.json (30 derniers rapports)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+generate_html.py  v3.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Convertit reports/daily_report.md  →  docs/index.html
+• KPIs animés (compteurs au chargement)
+• Tableaux positions + synthèse extraits du Markdown
+• Graphiques PNG intégrés en base64
+• Historique des 30 derniers rapports (archive.json)
+• Mode sombre / clair
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
-import base64
-import json
-import os
-import re
-import sys
+import base64, json, os, re, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# ── Chemins ────────────────────────────────────────────────────────────────────
+# ── Chemins ────────────────────────────────────────────────────
 MD_PATH      = Path("reports/daily_report.md")
 HTML_PATH    = Path("docs/index.html")
 ARCHIVE_PATH = Path("docs/archive.json")
 CHARTS_DIR   = Path("reports/charts")
 
-# ── Lecture du Markdown ────────────────────────────────────────────────────────
+# ── Lecture Markdown ───────────────────────────────────────────
 if not MD_PATH.exists():
     print("[WARN] reports/daily_report.md introuvable — page vide générée.")
     md_content = "# Rapport indisponible\n\nAucun rapport généré ce jour."
 else:
     md_content = MD_PATH.read_text(encoding="utf-8")
 
-# ── Extraction date ────────────────────────────────────────────────────────────
+# ── Date du rapport ────────────────────────────────────────────
 date_match  = re.search(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2})", md_content)
 report_date = date_match.group(1) if date_match else \
               datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
 
-# ── Graphiques PNG → base64 ────────────────────────────────────────────────────
+# ── Graphiques PNG → base64 ────────────────────────────────────
 charts_b64: dict[str, str] = {}
 if CHARTS_DIR.exists():
     for png in sorted(CHARTS_DIR.glob("*.png")):
-        raw = png.read_bytes()
-        charts_b64[png.stem] = base64.b64encode(raw).decode()
+        charts_b64[png.stem] = base64.b64encode(png.read_bytes()).decode()
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PARSER MARKDOWN → HTML
-# ══════════════════════════════════════════════════════════════════════════════
-
-def inline(text: str) -> str:
-    """Formatage inline : badges, gras, italique, code, liens, flèches."""
-    badges = [
-        (r"🟢 ACHAT FORT",   "buy-strong", "🟢 ACHAT FORT"),
-        (r"🔵 ACHAT MODÉRÉ", "buy-mod",    "🔵 ACHAT MODÉRÉ"),
-        (r"🟡 GARDER",       "hold",       "🟡 GARDER"),
-        (r"🟠 À ÉVITER",     "avoid",      "🟠 À ÉVITER"),
-        (r"🔴 VENDRE",       "sell",       "🔴 VENDRE"),
-    ]
-    for pattern, cls, label in badges:
-        text = text.replace(pattern, f'<span class="badge {cls}">{label}</span>')
-
-    text = re.sub(r"\*\*\*(.+?)\*\*\*", r"<strong><em>\1</em></strong>", text)
-    text = re.sub(r"\*\*(.+?)\*\*",     r"<strong>\1</strong>",          text)
-    text = re.sub(r"\*(.+?)\*",         r"<em>\1</em>",                  text)
-    text = re.sub(r"_(.+?)_",           r"<em>\1</em>",                  text)
-    text = re.sub(r"`([^`]+)`",         r"<code>\1</code>",              text)
-    text = re.sub(
-        r"\[([^\]]+)\]\(([^)]+)\)",
-        r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
-        text,
-    )
-    text = text.replace("▲", '<span class="up">▲</span>')
-    text = text.replace("▼", '<span class="dn">▼</span>')
-    return text
-
-
-def md_to_html(md: str) -> str:
-    """Convertit un texte Markdown en HTML structuré."""
-    lines       = md.split("\n")
-    html        = []
-    in_table    = False
-    in_ul       = False
-    in_ol       = False
-    in_blockq   = False
-    in_code     = False
-    code_buf    = []
-    th_done     = False
-    para_buf    = []
-
-    def flush_para():
-        if para_buf:
-            joined = " ".join(para_buf)
-            html.append(f'<p>{inline(joined)}</p>')
-            para_buf.clear()
-
-    def close_list():
-        nonlocal in_ul, in_ol
-        if in_ul:
-            html.append("</ul>")
-            in_ul = False
-        if in_ol:
-            html.append("</ol>")
-            in_ol = False
-
-    def close_blockq():
-        nonlocal in_blockq
-        if in_blockq:
-            html.append("</blockquote>")
-            in_blockq = False
-
-    def close_table():
-        nonlocal in_table, th_done
-        if in_table:
-            html.append("</tbody></table></div>")
-            in_table = False
-            th_done  = False
-
-    for raw in lines:
-        line = raw
-
-        # ── Blocs de code ```
-        if line.strip().startswith("```"):
-            flush_para(); close_list(); close_blockq(); close_table()
-            if not in_code:
-                in_code  = True
-                code_buf = []
-            else:
-                in_code = False
-                code_text = "\n".join(code_buf)
-                html.append(f'<pre><code>{code_text}</code></pre>')
-                code_buf = []
-            continue
-        if in_code:
-            code_buf.append(raw.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
-            continue
-
-        # ── Tableau Markdown
-        if re.match(r"^\|", line):
-            flush_para(); close_list(); close_blockq()
-            if not in_table:
-                html.append('<div class="table-wrap"><table><thead>')
-                in_table = True
-                th_done  = False
-            if re.match(r"^\|[-| :]+\|", line):
-                html.append("</thead><tbody>")
-                th_done = True
-                continue
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            tag   = "td" if th_done else "th"
-            row   = "".join(f"<{tag}>{inline(c)}</{tag}>" for c in cells)
-            html.append(f"<tr>{row}</tr>")
-            continue
-        else:
-            close_table()
-
-        # ── Blockquote
-        if line.startswith("> "):
-            flush_para(); close_list()
-            if not in_blockq:
-                html.append('<blockquote>')
-                in_blockq = True
-            html.append(f'<p>{inline(line[2:])}</p>')
-            continue
-        else:
-            close_blockq()
-
-        # ── Listes ordonnées
-        m_ol = re.match(r"^(\d+)\. (.+)", line)
-        if m_ol:
-            flush_para()
-            if not in_ol:
-                if in_ul:
-                    html.append("</ul>"); in_ul = False
-                html.append("<ol>"); in_ol = True
-            html.append(f"<li>{inline(m_ol.group(2))}</li>")
-            continue
-
-        # ── Listes non-ordonnées
-        if re.match(r"^[-*] ", line):
-            flush_para()
-            if not in_ul:
-                if in_ol:
-                    html.append("</ol>"); in_ol = False
-                html.append("<ul>"); in_ul = True
-            html.append(f"<li>{inline(line[2:])}</li>")
-            continue
-        else:
-            close_list()
-
-        # ── Titres
-        m_h = re.match(r"^(#{1,4}) (.+)", line)
-        if m_h:
-            flush_para()
-            lvl  = len(m_h.group(1))
-            text = m_h.group(2)
-            # Ancre ID basée sur le texte
-            anchor = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
-            html.append(f'<h{lvl} id="{anchor}">{inline(text)}</h{lvl}>')
-            continue
-
-        # ── Séparateurs
-        if re.match(r"^---+$", line.strip()):
-            flush_para()
-            html.append("<hr>")
-            continue
-
-        # ── Lignes vides → flush paragraphe
-        if not line.strip():
-            flush_para()
-            continue
-
-        # ── Accumulation paragraphe
-        para_buf.append(line)
-
-    # Flush final
-    flush_para()
-    close_list()
-    close_blockq()
-    close_table()
-
-    return "\n".join(html)
-
-
-body_html = md_to_html(md_content)
-
-# ── Injection des graphiques sous chaque section de valeur ─────────────────────
-# Les graphiques sont nommés d'après le ticker EOD (ex: PLTR_US.png → stem = PLTR_US)
-# On insère l'image après le h3 correspondant
-def inject_charts(html_str: str) -> str:
-    if not charts_b64:
-        return html_str
-    for stem, b64 in charts_b64.items():
-        ticker_raw = stem.replace("_", ".").upper()
-        # Cherche un <h3> contenant le nom ou ticker
-        pattern = re.compile(
-            rf'(<h3[^>]*>[^<]*{re.escape(stem.split("_")[0])}[^<]*</h3>)',
-            re.IGNORECASE,
-        )
-        img_tag = (
-            f'<div class="chart-wrap">'
-            f'<img src="data:image/png;base64,{b64}" '
-            f'alt="Graphique {ticker_raw}" loading="lazy" '
-            f'class="chart-img">'
-            f'</div>'
-        )
-        html_str, n = pattern.subn(rf"\1\n{img_tag}", html_str, count=1)
-        if n == 0 and b64:
-            # Ajout en fin de body si non trouvé
-            html_str += f"\n{img_tag}"
-    return html_str
-
-
-body_html = inject_charts(body_html)
-
-# ── Extraction KPI globaux ──────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════
+# EXTRACTION KPI
+# ══════════════════════════════════════════════════════════════
 def extract_kpi(md: str) -> dict:
-    kpi = {"pnl_net": "N/D", "pnl_pct": "N/D", "valeur_marche": "N/D", "nb_actifs": "6"}
-    # PnL net estimé
-    m = re.search(r"PnL net estim[ée][^\d]*([+-]?\d[\d\s,.]+)\s*€[^\d]*([+-]?\d[\d,.]+)\s*%", md)
+    kpi = {"pnl_net": "0", "pnl_pct": "0", "valeur_marche": "0",
+           "cout_total": "0", "pnl_brut": "0", "pnl_brut_pct": "0"}
+    # Ligne synthèse: | cout | VM | PnL Brut | PnL Net |
+    m = re.search(
+        r"\|\s*([\d\s,.]+)\s*EUR\s*\|\s*([\d\s,.]+)\s*EUR\s*"
+        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([+-][\d,.]+)%[^|]*"
+        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([+-][\d,.]+)%",
+        md)
     if m:
-        kpi["pnl_net"] = m.group(1).strip().replace(" ", "")
-        kpi["pnl_pct"] = m.group(2).strip()
-    # Valeur de marché totale
-    m2 = re.search(r"Valeur[^\d]*march[ée][^\d]*([\d\s,.]+)\s*€", md, re.IGNORECASE)
-    if m2:
-        kpi["valeur_marche"] = m2.group(1).strip().replace(" ", "")
+        kpi["cout_total"]    = m.group(1).strip().replace(" ", "")
+        kpi["valeur_marche"] = m.group(2).strip().replace(" ", "")
+        kpi["pnl_brut"]      = m.group(3).strip().replace(" ", "")
+        kpi["pnl_brut_pct"]  = m.group(4).strip()
+        kpi["pnl_net"]       = m.group(5).strip().replace(" ", "")
+        kpi["pnl_pct"]       = m.group(6).strip()
     return kpi
 
-
 kpi = extract_kpi(md_content)
-pnl_sign_class = "kpi-positive" if not kpi["pnl_net"].startswith("-") else "kpi-negative"
-pnl_display    = (
-    f"+{kpi['pnl_net']} €" if kpi["pnl_net"] not in ("N/D", "")
-    and not kpi["pnl_net"].startswith("-")
-    else f"{kpi['pnl_net']} €"
-)
 
-# ── Archive JSON ────────────────────────────────────────────────────────────────
+def fmt_num(s: str, decimals: int = 2) -> str:
+    try:
+        v = float(s.replace(",", ".").replace(" ", ""))
+        if v >= 0:
+            return f"+{v:,.{decimals}f}".replace(",", " ").replace(".", ",")
+        return f"{v:,.{decimals}f}".replace(",", " ").replace(".", ",")
+    except Exception:
+        return s
+
+def raw_abs(s: str) -> str:
+    return s.lstrip("+-").replace(",", ".").replace(" ", "")
+
+pnl_positive    = not kpi["pnl_net"].startswith("-")
+pnl_class       = "kpi-positive" if pnl_positive else "kpi-negative"
+brut_positive   = not kpi["pnl_brut"].startswith("-")
+brut_class      = "kpi-positive" if brut_positive else "kpi-negative"
+
+# ══════════════════════════════════════════════════════════════
+# EXTRACTION POSITIONS (blocs ### Valeur)
+# ══════════════════════════════════════════════════════════════
+def extract_positions(md: str) -> list[dict]:
+    positions = []
+    # Chaque bloc commence par ### NomValeur `TICKER`
+    blocks = re.split(r"(?=^### .+`)", md, flags=re.MULTILINE)
+    for block in blocks:
+        m_head = re.match(r"^### (.+?)\s*`([^`]+)`", block)
+        if not m_head:
+            continue
+        name   = m_head.group(1).strip()
+        ticker = m_head.group(2).strip()
+        # Ligne de données principale du tableau position
+        # | prix | variation | VM | PnL Brut | PnL Net | Score | Rec |
+        m_row = re.search(
+            r"\|\s*([\d,.]+)\s*EUR\s*\|"        # prix
+            r"\s*([^|]+?)\s*\|"                  # variation
+            r"\s*([\d,.]+)\s*EUR\s*\|"           # VM
+            r"\s*([^|]+?EUR[^|]+?)\s*\|"         # PnL Brut
+            r"\s*([^|]+?EUR[^|]+?)\s*\|"         # PnL Net
+            r"\s*\*?\*?([\d.]+/10)\*?\*?\s*\|"   # Score
+            r"\s*([^|]+?)\s*\|",                 # Recomm
+            block)
+        if not m_row:
+            continue
+        prix      = m_row.group(1).strip()
+        variation = m_row.group(2).strip()
+        vm        = m_row.group(3).strip()
+        pnl_brut  = m_row.group(4).strip()
+        pnl_net   = m_row.group(5).strip()
+        score     = m_row.group(6).strip()
+        rec       = m_row.group(7).strip()
+        # Sentiment
+        m_sent = re.search(r"Sentiment[^:]*:\s*Bull\s*([\d.]+)%\s*/\s*Bear\s*([\d.]+)%", block)
+        bull = m_sent.group(1) if m_sent else "—"
+        bear = m_sent.group(2) if m_sent else "—"
+        # Momentum
+        m_mom = re.search(r"Momentum[^:]*:\s*(\w+)\s*\(1M:\s*([^/]+)/\s*3M:\s*([^/]+)/\s*6M:\s*([^)]+)\)", block)
+        mom_label = m_mom.group(1) if m_mom else "—"
+        ret_1m    = m_mom.group(2).strip() if m_mom else "—"
+        ret_3m    = m_mom.group(3).strip() if m_mom else "—"
+        ret_6m    = m_mom.group(4).strip() if m_mom else "—"
+        # Chart
+        chart_stem = ticker.replace(".", "_")
+        chart_b64  = charts_b64.get(chart_stem, "")
+        positions.append({
+            "name": name, "ticker": ticker,
+            "prix": prix, "variation": variation, "vm": vm,
+            "pnl_brut": pnl_brut, "pnl_net": pnl_net,
+            "score": score, "rec": rec,
+            "bull": bull, "bear": bear,
+            "mom_label": mom_label,
+            "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
+            "chart_b64": chart_b64,
+        })
+    return positions
+
+positions = extract_positions(md_content)
+
+# ══════════════════════════════════════════════════════════════
+# EXTRACTION SYNTHÈSE / CLASSEMENT
+# ══════════════════════════════════════════════════════════════
+def extract_synthese(md: str) -> list[dict]:
+    rows = []
+    in_class = False
+    for line in md.split("\n"):
+        if "Classement par Score" in line or "Synthese Portefeuille" in line:
+            in_class = True
+        if in_class and re.match(r"^\|", line) and not re.match(r"^\|[-| :]+\|", line):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 5 and cells[0] and cells[0] not in ("Valeur", "Cout total"):
+                rows.append(cells)
+    return rows
+
+synthese_rows = extract_synthese(md_content)
+
+# ══════════════════════════════════════════════════════════════
+# EXTRACTION INDICES MACRO
+# ══════════════════════════════════════════════════════════════
+def extract_indices(md: str) -> list[dict]:
+    indices = []
+    in_idx = False
+    for line in md.split("\n"):
+        if "Indice" in line and "Variation" in line:
+            in_idx = True
+            continue
+        if in_idx and re.match(r"^\|[-| :]+\|", line):
+            continue
+        if in_idx and re.match(r"^\|", line):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 3 and cells[0]:
+                indices.append({"name": cells[0], "variation": cells[1], "cours": cells[2]})
+        elif in_idx and line.strip() == "":
+            in_idx = False
+    return indices
+
+indices = extract_indices(md_content)
+
+# ══════════════════════════════════════════════════════════════
+# ARCHIVE JSON
+# ══════════════════════════════════════════════════════════════
 Path("docs").mkdir(exist_ok=True)
 archive = []
 if ARCHIVE_PATH.exists():
@@ -282,406 +188,706 @@ if ARCHIVE_PATH.exists():
     except Exception:
         archive = []
 
-pnl_for_archive = f"{kpi['pnl_net']} € ({kpi['pnl_pct']}%)"
-safe_date       = report_date.replace("/", "-").replace(" ", "_").replace(":", "h")
-
+pnl_archive = f"{fmt_num(kpi['pnl_net'])} € ({fmt_num(kpi['pnl_pct'], 1)}%)"
 archive = [e for e in archive if e.get("date") != report_date]
-archive.insert(0, {"date": report_date, "pnl": pnl_for_archive})
+archive.insert(0, {
+    "date":    report_date,
+    "pnl":     pnl_archive,
+    "vm":      kpi["valeur_marche"],
+    "nb_pos":  str(len(positions)),
+})
 archive = archive[:30]
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
+# ══════════════════════════════════════════════════════════════
+# HELPERS HTML
+# ══════════════════════════════════════════════════════════════
+def rec_badge(rec: str) -> str:
+    rec_u = rec.upper()
+    if "ACHAT FORT"   in rec_u: cls, ico = "buy-strong", "🟢"
+    elif "ACHAT"      in rec_u: cls, ico = "buy-mod",    "🔵"
+    elif "GARDER"     in rec_u: cls, ico = "hold",       "🟡"
+    elif "EVITER" in rec_u or "ÉVITER" in rec_u: cls, ico = "avoid", "🟠"
+    elif "VENDRE"     in rec_u: cls, ico = "sell",       "🔴"
+    else:                       cls, ico = "hold",       "⚪"
+    label = rec.replace("ACHAT FORT", "ACHAT FORT").replace("ACHAT MODERE", "ACHAT MODÉRÉ") \
+               .replace("A EVITER", "À ÉVITER")
+    return f'<span class="badge {cls}">{ico} {label}</span>'
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CSS  (hors f-string → accolades normales)
-# ══════════════════════════════════════════════════════════════════════════════
+def score_bar(score_str: str) -> str:
+    try:
+        val = float(score_str.split("/")[0])
+        pct = val / 10 * 100
+        cls = "bar-green" if val >= 6.5 else "bar-red" if val <= 3.5 else "bar-yellow"
+        return (f'<div class="score-wrap">'
+                f'<span class="score-num">{score_str}</span>'
+                f'<div class="score-bar"><div class="score-fill {cls}" style="width:{pct:.0f}%"></div></div>'
+                f'</div>')
+    except Exception:
+        return score_str
 
+def pnl_cell(txt: str) -> str:
+    t = txt.strip()
+    cls = ""
+    if "+" in t: cls = "cell-pos"
+    elif "-" in t and any(c.isdigit() for c in t): cls = "cell-neg"
+    return f'<td class="{cls}">{t}</td>' if cls else f'<td class="cell-num">{t}</td>'
+
+def mom_badge(label: str) -> str:
+    l = label.upper()
+    if "HAUSSE" in l or "HAUSSIER" in l: return f'<span class="badge buy-strong">↗ {label}</span>'
+    if "BAISSE" in l or "BAISSIER" in l: return f'<span class="badge sell">↘ {label}</span>'
+    return f'<span class="badge hold">→ {label}</span>'
+
+def var_span(txt: str) -> str:
+    t = txt.strip()
+    if t.startswith(("^", "+")) or ("+" in t and "%" in t):
+        return f'<span class="up">▲ {t.lstrip("^")}</span>'
+    if t.startswith(("v", "-")) or ("-" in t and "%" in t):
+        return f'<span class="dn">▼ {t.lstrip("v")}</span>'
+    return t
+
+# ══════════════════════════════════════════════════════════════
+# BLOCS HTML
+# ══════════════════════════════════════════════════════════════
+
+# ── Indices macro ──────────────────────────────────────────────
+def build_indices_html() -> str:
+    if not indices:
+        return ""
+    rows = ""
+    for idx in indices:
+        rows += (f"<tr><td><strong>{idx['name']}</strong></td>"
+                 f"<td>{var_span(idx['variation'])}</td>"
+                 f"<td class='cell-num'>{idx['cours']}</td></tr>\n")
+    return f"""
+<section class="section-block" id="macro">
+  <h2 class="section-title">🌍 Contexte Économique</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Indice</th><th>Variation</th><th>Cours</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>
+  </div>
+</section>"""
+
+# ── Positions détenues ─────────────────────────────────────────
+def build_positions_html() -> str:
+    if not positions:
+        return "<p style='color:var(--muted)'>Aucune position disponible.</p>"
+
+    cards = ""
+    for p in positions:
+        chart_html = ""
+        if p["chart_b64"]:
+            chart_html = (f'<div class="chart-wrap">'
+                          f'<img src="data:image/png;base64,{p["chart_b64"]}" '
+                          f'alt="Historique {p["name"]}" loading="lazy" class="chart-img">'
+                          f'</div>')
+        pnl_net_cls  = "kpi-positive" if "+" in p["pnl_net"]  else "kpi-negative"
+        pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
+        var_html = var_span(p["variation"])
+        cards += f"""
+<div class="position-card" id="pos-{p['ticker'].replace('.','_')}">
+  <div class="pos-header">
+    <div class="pos-title">
+      <span class="pos-name">{p['name']}</span>
+      <code class="pos-ticker">{p['ticker']}</code>
+    </div>
+    <div class="pos-rec">{rec_badge(p['rec'])}</div>
+  </div>
+
+  <div class="pos-kpis">
+    <div class="pos-kpi">
+      <div class="pos-kpi-val cell-num">{p['prix']} EUR</div>
+      <div class="pos-kpi-lbl">Cours {var_html}</div>
+    </div>
+    <div class="pos-kpi">
+      <div class="pos-kpi-val cell-num">{p['vm']} EUR</div>
+      <div class="pos-kpi-lbl">Valeur marché</div>
+    </div>
+    <div class="pos-kpi">
+      <div class="pos-kpi-val {pnl_brut_cls}">{p['pnl_brut']}</div>
+      <div class="pos-kpi-lbl">P&amp;L Brut</div>
+    </div>
+    <div class="pos-kpi">
+      <div class="pos-kpi-val {pnl_net_cls}">{p['pnl_net']}</div>
+      <div class="pos-kpi-lbl">P&amp;L Net</div>
+    </div>
+    <div class="pos-kpi">
+      <div>{score_bar(p['score'])}</div>
+      <div class="pos-kpi-lbl">Score global</div>
+    </div>
+  </div>
+
+  {chart_html}
+
+  <div class="pos-details">
+    <div class="pos-detail-item">
+      <span class="detail-lbl">Sentiment</span>
+      <span>🐂 Bull <strong>{p['bull']}%</strong> / 🐻 Bear <strong>{p['bear']}%</strong></span>
+    </div>
+    <div class="pos-detail-item">
+      <span class="detail-lbl">Momentum</span>
+      <span>{mom_badge(p['mom_label'])}
+        <span class="mom-rets">1M: {p['ret_1m']} · 3M: {p['ret_3m']} · 6M: {p['ret_6m']}</span>
+      </span>
+    </div>
+  </div>
+</div>"""
+    return f"""
+<section class="section-block" id="positions">
+  <h2 class="section-title">📈 Positions Détenues</h2>
+  <div class="positions-grid">{cards}</div>
+</section>"""
+
+# ── Synthèse & Recommandations ─────────────────────────────────
+def build_synthese_html() -> str:
+    if not synthese_rows:
+        return ""
+    rows_html = ""
+    for cells in synthese_rows:
+        if len(cells) < 5:
+            continue
+        name_cell = f"<td><strong>{cells[0]}</strong></td>"
+        vm_cell   = f"<td class='cell-num'>{cells[1]}</td>"
+        pnl_cell_h = pnl_cell(cells[2])
+        score_cell = f"<td>{score_bar(cells[3])}</td>" if "/" in cells[3] else f"<td class='cell-num'>{cells[3]}</td>"
+        rec_cell  = f"<td>{rec_badge(cells[4])}</td>"
+        rows_html += f"<tr>{name_cell}{vm_cell}{pnl_cell_h}{score_cell}{rec_cell}</tr>\n"
+
+    return f"""
+<section class="section-block" id="synthese">
+  <h2 class="section-title">🏆 Synthèse &amp; Recommandations</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Valeur</th><th>Valeur Marché</th>
+          <th>P&amp;L Net</th><th>Score</th><th>Recommandation</th>
+        </tr>
+      </thead>
+      <tbody>{rows_html}</tbody>
+    </table>
+  </div>
+</section>"""
+
+# ── Archive historique ─────────────────────────────────────────
+def build_archive_html() -> str:
+    return """
+<section class="section-block" id="historique">
+  <h2 class="section-title">📂 Historique des Rapports</h2>
+  <button class="archive-toggle" onclick="toggleArchive()" id="archive-btn">
+    ▼ Afficher les 30 derniers rapports
+  </button>
+  <div id="archive-panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>P&L Net</th><th>VM</th><th>Positions</th></tr></thead>
+        <tbody id="archive-tbody">
+          <tr><td colspan="4" style="text-align:center;color:var(--muted)">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>"""
+
+# ══════════════════════════════════════════════════════════════
+# CSS
+# ══════════════════════════════════════════════════════════════
 CSS = """
 :root {
-  --bg:          #0f1117;
-  --surface:     #161b27;
-  --surface-2:   #1d2336;
-  --border:      #252d42;
-  --text:        #e2e8f0;
-  --muted:       #8892a4;
-  --faint:       #3d4a60;
+  --bg:          #0d1117;
+  --surface:     #161b22;
+  --surface-2:   #1c2130;
+  --border:      #21262d;
+  --text:        #e6edf3;
+  --muted:       #7d8590;
+  --faint:       #2d333b;
   --accent:      #4f98a3;
-  --accent-dim:  rgba(79,152,163,.15);
-  --green:       #10b981;
-  --green-dim:   rgba(16,185,129,.15);
-  --red:         #ef4444;
-  --red-dim:     rgba(239,68,68,.15);
-  --yellow:      #f59e0b;
-  --orange:      #f97316;
-  --blue:        #60a5fa;
-  --radius:      10px;
-  --shadow:      0 4px 20px rgba(0,0,0,.3);
+  --accent-dim:  rgba(79,152,163,.12);
+  --green:       #3fb950;
+  --green-dim:   rgba(63,185,80,.12);
+  --red:         #f85149;
+  --red-dim:     rgba(248,81,73,.12);
+  --yellow:      #d29922;
+  --yellow-dim:  rgba(210,153,34,.12);
+  --radius:      12px;
+  --radius-sm:   8px;
+  --shadow:      0 4px 24px rgba(0,0,0,.4);
   --font-body:   'Inter', system-ui, sans-serif;
   --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
 }
 [data-theme="light"] {
-  --bg:          #f7f6f2;
+  --bg:          #f6f8fa;
   --surface:     #ffffff;
-  --surface-2:   #f1f0ec;
-  --border:      #dcd9d5;
-  --text:        #1e293b;
-  --muted:       #64748b;
-  --faint:       #cbd5e1;
-  --accent:      #01696f;
-  --accent-dim:  rgba(1,105,111,.1);
-  --green-dim:   rgba(16,185,129,.1);
-  --red-dim:     rgba(239,68,68,.1);
-  --shadow:      0 4px 20px rgba(0,0,0,.08);
+  --surface-2:   #f0f2f5;
+  --border:      #d0d7de;
+  --text:        #1f2328;
+  --muted:       #57606a;
+  --faint:       #d8dee4;
+  --accent:      #0969da;
+  --accent-dim:  rgba(9,105,218,.08);
+  --green:       #1a7f37;
+  --green-dim:   rgba(26,127,55,.08);
+  --red:         #cf222e;
+  --red-dim:     rgba(207,34,46,.08);
+  --yellow:      #9a6700;
+  --shadow:      0 4px 24px rgba(0,0,0,.08);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+html { scroll-behavior: smooth; scroll-padding-top: 68px; }
 body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
-  line-height: 1.7;
-  font-size: 15px;
+  line-height: 1.65;
+  font-size: 14px;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
+
 /* ── Header ── */
 header {
-  position: sticky; top: 0; z-index: 100;
-  background: color-mix(in oklab, var(--bg) 85%, transparent);
-  backdrop-filter: blur(14px);
+  position: sticky; top: 0; z-index: 200;
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
-  padding: 13px 24px;
+  padding: 0 24px;
+  height: 56px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.logo { font-size: 15px; font-weight: 700; letter-spacing: -.3px; color: var(--text); }
-.logo span { color: var(--accent); }
+.logo { font-size: 14px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 18px; }
+.logo-name { color: var(--text); }
+.logo-name span { color: var(--accent); }
 .header-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
-.header-actions { display: flex; gap: 8px; align-items: center; }
+.header-nav  { display: flex; gap: 2px; }
+.header-nav a {
+  font-size: 12px; color: var(--muted); text-decoration: none;
+  padding: 5px 10px; border-radius: var(--radius-sm);
+  transition: color .15s, background .15s;
+}
+.header-nav a:hover { color: var(--text); background: var(--surface-2); }
+.header-actions { display: flex; gap: 6px; align-items: center; }
 .btn-icon {
   background: var(--surface-2); border: 1px solid var(--border);
-  color: var(--text); border-radius: 8px; padding: 6px 11px;
-  font-size: 13px; cursor: pointer;
-  transition: background .18s, border-color .18s;
+  color: var(--muted); border-radius: var(--radius-sm);
+  padding: 5px 10px; font-size: 13px; cursor: pointer;
+  transition: color .15s, background .15s;
 }
-.btn-icon:hover { background: var(--border); }
+.btn-icon:hover { color: var(--text); background: var(--faint); }
+
 /* ── Layout ── */
-.container { max-width: 960px; margin: 0 auto; padding: 28px 20px 80px; }
-/* ── KPI bar ── */
-.kpi-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px; margin-bottom: 32px;
-}
-.kpi-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px 18px;
-}
-.kpi-card .kpi-val {
-  font-size: 1.5rem; font-weight: 700; font-family: var(--font-mono);
-  letter-spacing: -.5px; line-height: 1.1;
-}
-.kpi-card .kpi-lbl { font-size: .72rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
-.kpi-positive { color: var(--green); }
-.kpi-negative { color: var(--red); }
-.kpi-neutral  { color: var(--accent); }
+.container { max-width: 1040px; margin: 0 auto; padding: 28px 20px 100px; }
+
 /* ── Update badge ── */
 .update-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 5px 14px; font-size: .78rem;
-  color: var(--muted); margin-bottom: 20px;
+  border-radius: 20px; padding: 5px 14px; font-size: .76rem;
+  color: var(--muted); margin-bottom: 24px;
 }
 .update-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 6px var(--green);
-  animation: pulse 2s infinite;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  flex-shrink: 0;
+  animation: pulse 2.4s ease-in-out infinite;
 }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-/* ── Typographie ── */
-h1 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; line-height: 1.2; margin-bottom: 6px; letter-spacing: -.5px; }
-h2 { font-size: 1.1rem; font-weight: 700; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
-h3 { font-size: 1rem; font-weight: 700; margin: 24px 0 10px; color: var(--text); }
-h4 { font-size: .88rem; font-weight: 600; margin: 14px 0 6px; color: var(--muted); }
-p  { color: var(--muted); margin-bottom: 8px; max-width: 72ch; }
-hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
-strong { color: var(--text); font-weight: 600; }
-em     { color: var(--muted); font-style: normal; }
-code {
-  font-family: var(--font-mono); font-size: .82em;
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
+
+/* ── KPI Bar ── */
+.kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 36px;
+}
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  transition: border-color .2s, box-shadow .2s;
+  position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--accent-dim), transparent 60%);
+  opacity: 0; transition: opacity .3s;
+}
+.kpi-card:hover::before { opacity: 1; }
+.kpi-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+.kpi-val {
+  font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono);
+  letter-spacing: -.5px; line-height: 1.1; position: relative; z-index: 1;
+}
+.kpi-lbl {
+  font-size: .7rem; color: var(--muted); margin-top: 6px;
+  text-transform: uppercase; letter-spacing: .6px; position: relative; z-index: 1;
+}
+.kpi-positive { color: var(--green); }
+.kpi-negative { color: var(--red); }
+.kpi-neutral  { color: var(--accent); }
+.kpi-card.main-card { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 6%, var(--surface)); }
+
+/* ── Sections ── */
+.section-block { margin-bottom: 48px; }
+.section-title {
+  font-size: .88rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--muted); margin-bottom: 16px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Positions Grid ── */
+.positions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
+.position-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.position-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+.pos-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 8px; }
+.pos-title  { display: flex; flex-direction: column; gap: 4px; }
+.pos-name   { font-size: .95rem; font-weight: 700; color: var(--text); }
+.pos-ticker {
+  font-family: var(--font-mono); font-size: .75rem;
   background: var(--surface-2); border: 1px solid var(--border);
-  padding: 1px 5px; border-radius: 4px; color: var(--accent);
+  border-radius: 4px; padding: 1px 6px; color: var(--accent);
+  display: inline-block; width: fit-content;
 }
-pre {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px; overflow-x: auto;
-  margin: 12px 0;
+.pos-kpis {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px; margin-bottom: 14px;
 }
-pre code { background: none; border: none; padding: 0; font-size: .83rem; }
-blockquote {
-  border-left: 3px solid var(--accent);
-  background: var(--accent-dim);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding: 10px 16px; margin: 12px 0;
-}
-blockquote p { color: var(--text); margin: 0; }
-ul, ol { padding-left: 18px; margin-bottom: 10px; }
-li { color: var(--muted); font-size: .9rem; padding: 2px 0; }
-li::marker { color: var(--faint); }
+.pos-kpi { background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.pos-kpi-val { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); }
+.pos-kpi-lbl { font-size: .68rem; color: var(--muted); margin-top: 3px; }
+.pos-details { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.pos-detail-item { display: flex; gap: 10px; align-items: baseline; font-size: .82rem; }
+.detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
+.mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
+
+/* ── Score Bar ── */
+.score-wrap { display: flex; flex-direction: column; gap: 4px; }
+.score-num  { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
+.score-bar  { height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(.16,1,.3,1); }
+.bar-green  { background: var(--green); }
+.bar-yellow { background: var(--yellow); }
+.bar-red    { background: var(--red); }
+
 /* ── Tables ── */
 .table-wrap {
-  overflow-x: auto; margin: 14px 0;
-  border-radius: var(--radius); border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  overflow-x: auto; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow); margin: 0;
 }
-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
-thead { position: sticky; top: 0; }
+table { width: 100%; border-collapse: collapse; font-size: .83rem; }
 th {
   background: var(--surface-2); color: var(--muted); font-weight: 600;
-  font-size: .74rem; text-transform: uppercase; letter-spacing: .5px;
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .5px;
   padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 td {
   padding: 10px 14px; border-bottom: 1px solid var(--border);
-  vertical-align: middle;
+  vertical-align: middle; color: var(--text);
 }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--accent-dim); transition: background .15s; }
-/* Colorisation PnL */
-td.cell-pos { color: var(--green); font-weight: 600; font-family: var(--font-mono); }
-td.cell-neg { color: var(--red);   font-weight: 600; font-family: var(--font-mono); }
-td.cell-num { font-family: var(--font-mono); }
+tr:hover td { background: var(--accent-dim); transition: background .12s; }
+.cell-pos { color: var(--green) !important; font-weight: 600; font-family: var(--font-mono); }
+.cell-neg { color: var(--red)   !important; font-weight: 600; font-family: var(--font-mono); }
+.cell-num { font-family: var(--font-mono); }
+
 /* ── Badges ── */
 .badge {
-  display: inline-flex; align-items: center; gap: 4px; font-size: .75rem;
-  font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .73rem; font-weight: 700; padding: 3px 10px;
+  border-radius: 20px; white-space: nowrap;
 }
-.buy-strong { background: var(--green-dim); color: #10b981; border: 1px solid rgba(16,185,129,.35); }
-.buy-mod    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,152,163,.35); }
-.hold       { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
-.avoid      { background: rgba(249,115,22,.12); color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
-.sell       { background: var(--red-dim); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
-.up { color: var(--green); font-weight: 600; }
-.dn { color: var(--red);   font-weight: 600; }
-/* ── Graphiques ── */
+.buy-strong { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
+.buy-mod    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,152,163,.3); }
+.hold       { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+.avoid      { background: rgba(249,115,22,.1); color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
+.sell       { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
+.up { color: var(--green); font-weight: 700; }
+.dn { color: var(--red);   font-weight: 700; }
+
+/* ── Charts ── */
 .chart-wrap {
-  margin: 14px 0 24px;
-  border-radius: var(--radius); overflow: hidden;
-  border: 1px solid var(--border); box-shadow: var(--shadow);
+  margin: 14px 0; border-radius: var(--radius-sm);
+  overflow: hidden; border: 1px solid var(--border);
 }
-.chart-img { width: 100%; display: block; max-height: 280px; object-fit: cover; }
+.chart-img { width: 100%; display: block; }
+
 /* ── Archive ── */
 .archive-toggle {
   font-size: .8rem; color: var(--accent); cursor: pointer;
-  background: none; border: none; padding: 0;
-  text-decoration: underline; margin-bottom: 14px; display: block;
+  background: none; border: none; padding: 4px 0;
+  transition: color .15s; margin-bottom: 12px; display: block;
 }
+.archive-toggle:hover { color: var(--text); }
 #archive-panel {
-  display: none; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
+  display: none; margin-bottom: 8px;
 }
 #archive-panel.open { display: block; }
-#archive-list { list-style: none; padding: 0; }
-#archive-list li {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .82rem;
-}
-#archive-list li:last-child { border: none; }
-.archive-date { color: var(--text); font-family: var(--font-mono); font-size: .78rem; }
-.archive-pnl  { color: var(--muted); }
+
+/* ── Divider ── */
+hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
 /* ── Impression ── */
 @media print {
   header, .header-actions, .archive-toggle, #archive-panel,
-  .update-badge, .kpi-bar { display: none !important; }
+  .update-badge { display: none !important; }
   body { background: #fff; color: #000; font-size: 13px; }
-  .badge { border: 1px solid #ccc; color: #000 !important; background: none !important; }
-  .table-wrap { box-shadow: none; border: 1px solid #ccc; }
+  .position-card { break-inside: avoid; border: 1px solid #ccc; }
+  .badge { border: 1px solid #ccc !important; color: #000 !important; background: none !important; }
   .chart-img { max-height: none; }
 }
+
 /* ── Mobile ── */
-@media (max-width: 640px) {
-  header { padding: 10px 14px; }
-  .container { padding: 18px 14px 60px; }
-  h1 { font-size: 1.3rem; }
-  h2 { font-size: 1rem; }
-  td, th { padding: 8px 10px; font-size: .78rem; }
-  .kpi-card .kpi-val { font-size: 1.25rem; }
+@media (max-width: 700px) {
+  header { padding: 0 14px; }
+  .header-nav { display: none; }
+  .container { padding: 16px 12px 80px; }
+  .kpi-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .kpi-val { font-size: 1.25rem; }
+  .positions-grid { grid-template-columns: 1fr; }
+  .pos-kpis { grid-template-columns: repeat(3, 1fr); }
+  td, th { padding: 8px 10px; font-size: .76rem; }
 }
+
+/* ── Animations entrée ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.kpi-card       { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
+.kpi-card:nth-child(1) { animation-delay: .05s; }
+.kpi-card:nth-child(2) { animation-delay: .1s;  }
+.kpi-card:nth-child(3) { animation-delay: .15s; }
+.kpi-card:nth-child(4) { animation-delay: .2s;  }
+.kpi-card:nth-child(5) { animation-delay: .25s; }
+.position-card  { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
 """
 
-# ══════════════════════════════════════════════════════════════════════════════
-# JAVASCRIPT  (hors f-string)
-# ══════════════════════════════════════════════════════════════════════════════
-
+# ══════════════════════════════════════════════════════════════
+# JS
+# ══════════════════════════════════════════════════════════════
 JS = r"""
-// ── Thème clair / sombre ───────────────────────────────────────
-(function () {
+// ── Thème ─────────────────────────────────────────────────────
+(function(){
   var root = document.documentElement;
   var btn  = document.querySelector('[data-theme-toggle]');
-  function safeGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
-  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
-  var theme = safeGet('theme') ||
-    (window.matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+  function sg(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  function ss(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  var theme = sg('theme') || (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
   root.setAttribute('data-theme', theme);
-  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-  if (btn) btn.addEventListener('click', function () {
-    theme = theme === 'dark' ? 'light' : 'dark';
+  if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
+  if(btn) btn.addEventListener('click', function(){
+    theme = theme==='dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', theme);
-    safeSet('theme', theme);
-    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    ss('theme', theme);
+    btn.textContent = theme==='dark' ? '☀️' : '🌙';
   });
 })();
 
-// ── Colorisation PnL dans les cellules de tableau ─────────────
-document.querySelectorAll('td').forEach(function (td) {
-  var t = td.textContent.trim();
-  var isNum = /^[+-]?\d/.test(t);
-  if (!isNum) return;
-  if ((t.includes('€') || t.includes('%')) && t.startsWith('+')) {
-    td.classList.add('cell-pos');
-  } else if ((t.includes('€') || t.includes('%')) && t.startsWith('-')) {
-    td.classList.add('cell-neg');
-  } else if (/^\d[\d\s,.]*[€%]/.test(t)) {
-    td.classList.add('cell-num');
-  }
-});
-
-// ── Compteur animé pour les KPI ───────────────────────────────
+// ── Compteurs animés ──────────────────────────────────────────
 function animateCounter(el) {
   var raw = el.getAttribute('data-val');
   if (!raw) return;
-  var num = parseFloat(raw.replace(',', '.').replace(/\s/g, ''));
+  var num = parseFloat(raw.replace(',','.').replace(/\s/g,''));
   if (isNaN(num)) return;
-  var suffix = el.getAttribute('data-suffix') || '';
-  var prefix = el.getAttribute('data-prefix') || '';
-  var dec    = (raw.includes('.') || raw.includes(',')) ? 2 : 0;
-  var start  = 0; var duration = 900; var startTime = null;
+  var suffix   = el.getAttribute('data-suffix') || '';
+  var prefix   = el.getAttribute('data-prefix') || '';
+  var decimals = (raw.includes('.') || raw.includes(',')) ? 2 : 0;
+  var duration = 1200;
+  var startTime = null;
   function step(ts) {
     if (!startTime) startTime = ts;
-    var progress = Math.min((ts - startTime) / duration, 1);
-    var ease     = 1 - Math.pow(1 - progress, 3);
-    var current  = start + (num - start) * ease;
-    el.textContent = prefix + current.toFixed(dec).replace('.', ',') + suffix;
-    if (progress < 1) requestAnimationFrame(step);
+    var p    = Math.min((ts - startTime) / duration, 1);
+    var ease = 1 - Math.pow(1 - p, 4);
+    var cur  = num * ease;
+    var disp = Math.abs(cur).toFixed(decimals).replace('.',',');
+    // Séparateur milliers
+    disp = disp.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    el.textContent = prefix + (num < 0 ? '-' : '') + disp + suffix;
+    if (p < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
-document.querySelectorAll('[data-counter]').forEach(animateCounter);
+document.querySelectorAll('[data-counter]').forEach(function(el){
+  // Déclenchement via IntersectionObserver pour n'animer qu'au visible
+  var obs = new IntersectionObserver(function(entries, o){
+    if(entries[0].isIntersecting){ animateCounter(el); o.disconnect(); }
+  }, {threshold: 0.3});
+  obs.observe(el);
+});
+
+// ── Colorisation PnL tables ───────────────────────────────────
+document.querySelectorAll('td').forEach(function(td){
+  var t = td.textContent.trim();
+  if (/^[+][\d\s].*[€%]/.test(t)) td.classList.add('cell-pos');
+  else if (/^[-][\d\s].*[€%]/.test(t)) td.classList.add('cell-neg');
+});
+
+// ── Score bars (animation décalée) ───────────────────────────
+document.querySelectorAll('.score-fill').forEach(function(bar){
+  var w = bar.style.width;
+  bar.style.width = '0%';
+  setTimeout(function(){
+    bar.style.width = w;
+  }, 400);
+});
 
 // ── Archive ──────────────────────────────────────────────────
 function toggleArchive() {
   var panel = document.getElementById('archive-panel');
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) loadArchive();
+  var btn   = document.getElementById('archive-btn');
+  var open  = panel.classList.toggle('open');
+  btn.textContent = open ? '▲ Masquer l\'historique' : '▼ Afficher les 30 derniers rapports';
+  if (open) loadArchive();
 }
+var _archiveLoaded = false;
 function loadArchive() {
-  fetch('./archive.json').then(function (r) { return r.json(); }).then(function (data) {
-    var ul = document.getElementById('archive-list');
-    ul.innerHTML = data.map(function (e) {
-      return '<li><span class="archive-date">📅 ' + e.date + '</span>' +
-             '<span class="archive-pnl">' + (e.pnl || '') + '</span></li>';
-    }).join('');
-  }).catch(function () {
-    document.getElementById('archive-list').innerHTML =
-      '<li><span style="color:var(--faint)">Historique non disponible.</span></li>';
-  });
+  if (_archiveLoaded) return;
+  _archiveLoaded = true;
+  fetch('./archive.json')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var tbody = document.getElementById('archive-tbody');
+      tbody.innerHTML = data.map(function(e, i){
+        var cls = i === 0 ? 'style="background:var(--accent-dim)"' : '';
+        var pnl = e.pnl || '—';
+        var pnlCls = pnl.includes('+') ? 'cell-pos' : pnl.includes('-') ? 'cell-neg' : '';
+        return '<tr ' + cls + '>'
+          + '<td class="cell-num" style="white-space:nowrap">📅 ' + e.date + '</td>'
+          + '<td class="' + pnlCls + '">' + pnl + '</td>'
+          + '<td class="cell-num">' + (e.vm ? e.vm + ' €' : '—') + '</td>'
+          + '<td class="cell-num">' + (e.nb_pos || '—') + '</td>'
+          + '</tr>';
+      }).join('');
+    })
+    .catch(function(){
+      document.getElementById('archive-tbody').innerHTML =
+        '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Historique non disponible.</td></tr>';
+    });
 }
 """
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ASSEMBLAGE HTML  (f-string minimal : seulement les valeurs dynamiques)
-# ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
+# ASSEMBLAGE HTML FINAL
+# ══════════════════════════════════════════════════════════════
+pnl_prefix  = "+" if pnl_positive    else "-"
+brut_prefix = "+" if brut_positive   else "-"
+pnl_abs     = raw_abs(kpi["pnl_net"])
+pct_abs     = raw_abs(kpi["pnl_pct"])
+brut_abs    = raw_abs(kpi["pnl_brut"])
+brut_pct_abs= raw_abs(kpi["pnl_brut_pct"])
+vm_val      = kpi["valeur_marche"]
+cout_val    = kpi["cout_total"]
+nb_pos      = str(len(positions))
 
-pnl_class   = pnl_sign_class
-vm_display  = f"{kpi['valeur_marche']} €" if kpi["valeur_marche"] != "N/D" else "N/D"
-pct_display = f"{kpi['pnl_pct']} %" if kpi["pnl_pct"] != "N/D" else "N/D"
-pnl_raw_val = kpi["pnl_net"].replace("+", "").replace("-", "").replace("€", "").replace(" ", "")
-pct_raw_val = kpi["pnl_pct"].replace("+", "").replace("-", "").replace("%", "").replace(" ", "")
+html_out = f"""<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Analyzer — {report_date}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>{CSS}</style>
+</head>
+<body>
 
-html_out = (
-    "<!DOCTYPE html>\n"
-    '<html lang="fr" data-theme="dark">\n'
-    "<head>\n"
-    '  <meta charset="UTF-8">\n'
-    '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-    f'  <title>Rapport Portfolio — {report_date}</title>\n'
-    '  <link rel="preconnect" href="https://fonts.googleapis.com">\n'
-    '  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-    '  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700'
-    '&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">\n'
-    f"  <style>\n{CSS}\n  </style>\n"
-    "</head>\n"
-    "<body>\n"
-    "\n"
-    "  <!-- HEADER -->\n"
-    "  <header>\n"
-    '    <div style="display:flex;align-items:center;gap:12px">\n'
-    '      <div class="logo">📊 <span>Portfolio</span> Analyzer</div>\n'
-    f'      <div class="header-meta">v5.1 · {report_date}</div>\n'
-    "    </div>\n"
-    '    <div class="header-actions">\n'
-    '      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>\n'
-    '      <button class="btn-icon" data-theme-toggle aria-label="Changer de thème">☀️</button>\n'
-    "    </div>\n"
-    "  </header>\n"
-    "\n"
-    '  <div class="container">\n'
-    "\n"
-    "    <!-- BADGE MAJ -->\n"
-    '    <div class="update-badge">\n'
-    '      <span class="update-dot"></span>\n'
-    f"      Dernière mise à jour : <strong>{report_date}</strong>\n"
-    "    </div>\n"
-    "\n"
-    "    <!-- KPI BAR -->\n"
-    '    <div class="kpi-bar">\n'
-    '      <div class="kpi-card">\n'
-    f'        <div class="kpi-val {pnl_class}" data-counter data-val="{pnl_raw_val}" '
-    f'data-suffix=" €" data-prefix="{"+" if pnl_class == "kpi-positive" else "-"}">'
-    f'{pnl_display}</div>\n'
-    '        <div class="kpi-lbl">PnL net estimé</div>\n'
-    "      </div>\n"
-    '      <div class="kpi-card">\n'
-    f'        <div class="kpi-val {pnl_class}" data-counter data-val="{pct_raw_val}" '
-    f'data-suffix=" %" data-prefix="{"+" if pnl_class == "kpi-positive" else "-"}">'
-    f'{pct_display}</div>\n'
-    '        <div class="kpi-lbl">Performance nette</div>\n'
-    "      </div>\n"
-    '      <div class="kpi-card">\n'
-    f'        <div class="kpi-val kpi-neutral">{vm_display}</div>\n'
-    '        <div class="kpi-lbl">Valeur de marché</div>\n'
-    "      </div>\n"
-    '      <div class="kpi-card">\n'
-    '        <div class="kpi-val kpi-neutral">6</div>\n'
-    '        <div class="kpi-lbl">Positions actives</div>\n'
-    "      </div>\n"
-    "    </div>\n"
-    "\n"
-    "    <!-- ARCHIVE -->\n"
-    '    <button class="archive-toggle" onclick="toggleArchive()">📂 Historique des rapports</button>\n'
-    '    <div id="archive-panel">\n'
-    '      <strong style="font-size:.82rem;">30 derniers rapports</strong>\n'
-    '      <ul id="archive-list">\n'
-    '        <li><span style="color:var(--faint);font-size:.78rem">Chargement…</span></li>\n'
-    "      </ul>\n"
-    "    </div>\n"
-    "\n"
-    "    <!-- CORPS DU RAPPORT -->\n"
-    '    <div id="report-body">\n'
-    f"{body_html}\n"
-    "    </div>\n"
-    "\n"
-    "  </div><!-- .container -->\n"
-    "\n"
-    f"  <script>\n{JS}\n  </script>\n"
-    "</body>\n"
-    "</html>\n"
-)
+  <!-- HEADER -->
+  <header>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-name"><span>Portfolio</span> Analyzer</span>
+      </div>
+      <div class="header-meta">v5.2 · {report_date}</div>
+    </div>
+    <nav class="header-nav">
+      <a href="#macro">Macro</a>
+      <a href="#positions">Positions</a>
+      <a href="#synthese">Synthèse</a>
+      <a href="#historique">Historique</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>
+      <button class="btn-icon" data-theme-toggle aria-label="Changer de thème">☀️</button>
+    </div>
+  </header>
 
-# ── Écriture ───────────────────────────────────────────────────────────────────
+  <div class="container">
+
+    <!-- BADGE MAJ -->
+    <div class="update-badge">
+      <span class="update-dot"></span>
+      Dernière mise à jour :&nbsp;<strong>{report_date}</strong>
+    </div>
+
+    <!-- KPI BAR -->
+    <div class="kpi-bar">
+      <div class="kpi-card main-card">
+        <div class="kpi-val {pnl_class}"
+             data-counter data-val="{pnl_abs}"
+             data-suffix=" €" data-prefix="{pnl_prefix}">
+          {pnl_prefix}{pnl_abs} €
+        </div>
+        <div class="kpi-lbl">PnL Net estimé</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val {pnl_class}"
+             data-counter data-val="{pct_abs}"
+             data-suffix=" %" data-prefix="{pnl_prefix}">
+          {pnl_prefix}{pct_abs} %
+        </div>
+        <div class="kpi-lbl">Performance nette</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val {brut_class}"
+             data-counter data-val="{brut_abs}"
+             data-suffix=" €" data-prefix="{brut_prefix}">
+          {brut_prefix}{brut_abs} €
+        </div>
+        <div class="kpi-lbl">P&amp;L Brut</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val kpi-neutral"
+             data-counter data-val="{vm_val}">
+          {vm_val} €
+        </div>
+        <div class="kpi-lbl">Valeur de Marché</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val kpi-neutral"
+             data-counter data-val="{cout_val}">
+          {cout_val} €
+        </div>
+        <div class="kpi-lbl">Coût Total Investi</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val kpi-neutral">{nb_pos}</div>
+        <div class="kpi-lbl">Positions actives</div>
+      </div>
+    </div>
+
+    {build_indices_html()}
+    {build_positions_html()}
+    {build_synthese_html()}
+    {build_archive_html()}
+
+  </div><!-- .container -->
+
+  <script>{JS}</script>
+</body>
+</html>
+"""
+
 Path("docs").mkdir(exist_ok=True)
 HTML_PATH.write_text(html_out, encoding="utf-8")
 
 size_kb = HTML_PATH.stat().st_size // 1024
-print(f"✅ docs/index.html généré ({size_kb} Ko, {len(charts_b64)} graphique(s) intégré(s))")
+print(f"✅ docs/index.html généré ({size_kb} Ko, {len(charts_b64)} graphique(s), {len(positions)} positions)")
 print(f"✅ docs/archive.json mis à jour ({len(archive)} entrée(s))")
 sys.exit(0)
