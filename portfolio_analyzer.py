@@ -569,15 +569,20 @@ def get_sentiment(asset: dict) -> tuple:
         return 50.0, 50.0, f"Neutre par défaut (Finnhub:{fh_err})"
 
 def _lexical_sentiment(news: list) -> tuple:
-    bull_w = {"growth","buy","bullish","surge","record","beat","strong",
-              "gain","up","rise","soar","profit","positive","upgrade"}
-    bear_w = {"loss","sell","bearish","drop","miss","weak","cut","down",
-              "fall","decline","risk","negative","downgrade","warn"}
+    bull_w = {"growth", "buy", "bullish", "surge", "record", "beat", "strong",
+              "gain", "up", "rise", "soar", "profit", "positive", "upgrade"}
+    bear_w = {"loss", "sell", "bearish", "drop", "miss", "weak", "cut", "down",
+              "fall", "decline", "risk", "negative", "downgrade", "warn"}
     words = " ".join(news).lower().split()
-    b = sum(1 for w in words if w in bull_w)
-    s = sum(1 for w in words if w in bear_w)
+    b = 0
+    s = 0
+    for w in words:
+        if w in bull_w:
+            b += 1
+        elif w in bear_w:
+            s += 1
     t = b + s or 1
-    return round(b/t*100, 1), round(s/t*100, 1)
+    return round(b / t * 100, 1), round(s / t * 100, 1)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1071,4 +1076,219 @@ def build_report() -> tuple:
         h_err    = r["h_err"]      # PATCH :
 
         sources_log[ticker]["sentiment"]  = sent_src  # PATCH :
-        sources_log[ticker]["consensus"]  = 
+        sources_log[ticker]["consensus"]  = cons_src  # PATCH :
+        sources_log[ticker]["historique"] = h_src     # PATCH :
+
+        if h_cache:
+            cache_warnings.append(f"{asset['name']} — historique : {h_err or h_src}")
+        if h_err and not h_cache:
+            api_errors.append(f"{asset['name']} historique : {h_err}")
+
+        h_score, h_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
+        sc_price = score_price(price_eur, cost)
+
+        sentiment_score = round(bull / 10, 2)
+        total_score = round(
+            sc_price * 0.30 +
+            sentiment_score * 0.20 +
+            cs * 0.20 +
+            h_score * 0.30,
+            2
+        )
+        rec = recommend(total_score)
+
+        chart_path     = f"{CHARTS_DIR}/{ticker.replace('.', '_')}.png"
+        chart_ok       = generate_monthly_chart(asset, h_dates, h_closes, cost, chart_path)
+        chart_rel_path = f"charts/{ticker.replace('.', '_')}.png"
+        if chart_ok:
+            charts_generated.append(chart_rel_path)
+
+        chg_arrow  = "▲" if chg > 0 else "▼" if chg < 0 else "—"
+        pnl_b_icon = "🟢" if pnl_brut >= 0 else "🔴"
+        pnl_n_icon = "🟢" if pnl_net  >= 0 else "🔴"
+
+        lines += [
+            f"### {asset['name']} `{ticker}`",
+            "",
+            f"| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |",
+            f"|-------|-----------|-----|----------|---------|-------|---------|",
+            f"| {price_eur:.2f} € | {chg_arrow} {chg:+.2f}% | {vm:.2f} € "
+            f"| {pnl_b_icon} {pnl_brut:+.2f} € ({pnl_brut_p:+.1f}%) "
+            f"| {pnl_n_icon} {pnl_net:+.2f} € ({pnl_net_p:+.1f}%) "
+            f"| **{total_score:.1f}/10** | {rec} |",
+            "",
+        ]
+
+        if chart_ok:
+            lines += [f"![Historique {asset['name']}]({chart_rel_path})", ""]
+
+        lines += [
+            f"**📰 Actualités récentes :**",
+            "",
+        ]
+        for t in news:
+            if t: lines.append(f"- {t}")
+        if not news:
+            lines.append("- *Aucune actualité disponible*")
+
+        lines += [
+            "",
+            f"**🧠 Sentiment :** Bull {bull:.0f}% / Bear {bear:.0f}% *(source : {sent_src})*",
+            f"**📊 Consensus :** {cons_str} *(source : {cons_src})*",
+            "",
+            f"**📈 Momentum mensuel :** {h_label} "
+            f"(1M: {ret_1m:+.1f}% / 3M: {ret_3m:+.1f}% / 6M: {ret_6m:+.1f}%) "
+            f"*(source : {h_src})*",
+            "",
+            f"**💡 Justification :** "
+            f"{justification(asset['name'], pnl_net, pnl_net_p, cs, bull, bear, cons_str, macro_score, h_score, h_label, total_score)}",
+            "",
+            "---",
+            "",
+        ]
+
+        total_cout    += cout
+        total_vm      += vm
+        total_pnl_brut += pnl_brut
+        total_pnl_net  += pnl_net
+
+        history_rows.append({
+            "date": now.strftime("%Y-%m-%d"), "time": now.strftime("%H:%M"),
+            "ticker": ticker, "name": asset["name"],
+            "price_eur": price_eur, "cost_eur": cost,
+            "qty": qty, "vm": vm,
+            "pnl_brut": pnl_brut, "pnl_brut_pct": pnl_brut_p,
+            "pnl_net": pnl_net, "pnl_net_pct": pnl_net_p,
+            "score": total_score, "rec": rec,
+        })
+        summaries.append({
+            "name": asset["name"], "ticker": ticker,
+            "vm": vm, "pnl_net": pnl_net, "pnl_net_p": pnl_net_p,
+            "score": total_score, "rec": rec,
+        })
+
+    # ── Synthèse portefeuille ──────────────────────────────────────────────
+    total_pnl_b_pct = round(total_pnl_brut / total_cout * 100, 2) if total_cout else 0
+    total_pnl_n_pct = round(total_pnl_net  / total_cout * 100, 2) if total_cout else 0
+    pf_icon = "🟢" if total_pnl_net >= 0 else "🔴"
+
+    lines += [
+        "## 💼 Synthèse Portefeuille", "",
+        f"| Coût total | Valeur marché | P&L Brut | P&L Net |",
+        f"|------------|---------------|----------|---------|",
+        f"| {total_cout:.2f} € | {total_vm:.2f} € "
+        f"| {pf_icon} {total_pnl_brut:+.2f} € ({total_pnl_b_pct:+.1f}%) "
+        f"| {pf_icon} {total_pnl_net:+.2f} € ({total_pnl_n_pct:+.1f}%) |",
+        "", "---", "",
+        "### 🏆 Classement par Score", "",
+        "| Valeur | VM | P&L Net | Score | Recomm. |",
+        "|--------|----|---------|-------|---------|",
+    ]
+    for s in sorted(summaries, key=lambda x: x["score"], reverse=True):
+        icon = "🟢" if s["pnl_net"] >= 0 else "🔴"
+        lines.append(
+            f"| {s['name']} | {s['vm']:.2f} € "
+            f"| {icon} {s['pnl_net']:+.2f} € ({s['pnl_net_p']:+.1f}%) "
+            f"| **{s['score']:.1f}/10** | {s['rec']} |"
+        )
+
+    # ── Watchlist ──────────────────────────────────────────────────────────
+    lines += ["", "---", "", "## 👁️ Watchlist", ""]
+    for w in WATCHLIST:
+        w_price = None
+        w_src   = "N/D"
+        if w.get("marche") == "us" and w.get("ticker_td"):
+            raw = td_prices.get(w["ticker_td"])
+            if raw and raw > 0:
+                w_price = round(raw * eur_usd, 2)
+                w_src   = "TwelveData"
+        if w_price is None and EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/real-time/{w['ticker_eod']}",
+                             {"api_token": EODHD_KEY, "fmt": "json"}, "eodhd")
+            if data and not _is_quota_error(err):
+                raw = data.get("close") or data.get("previousClose")
+                if raw and float(raw) > 0:
+                    factor  = eur_usd if w.get("marche") == "us" else 1.0
+                    w_price = round(float(raw) * factor, 2)
+                    w_src   = "EODHD"
+        # News watchlist US → Finnhub
+        w_news = []
+        if w.get("marche") == "us" and FINNHUB_KEY:
+            from_d = str(date.today() - timedelta(days=7))
+            to_d   = str(date.today())
+            data, err = _get(f"{FH_BASE}/company-news",
+                             {"symbol": w["ticker_fh"], "from": from_d,
+                              "to": to_d, "token": FINNHUB_KEY}, "finnhub")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                w_news = [i.get("headline", "") for i in data[:2] if i.get("headline")]
+        price_str = f"{w_price:.2f} €" if w_price else "N/D"
+        lines += [
+            f"**{w['name']}** `{w['ticker_fh']}` — {w['sector']} | Cours : {price_str} *(source : {w_src})*",
+            "",
+        ]
+        for t in w_news:
+            if t: lines.append(f"- {t}")
+        if w_news:
+            lines.append("")
+
+    # ── Footer technique ───────────────────────────────────────────────────
+    quota_str = " | ".join(f"{k}: {v}" for k, v in _quota_status().items())
+    lines += [
+        "", "---", "",
+        "## ⚙️ Informations Techniques", "",
+        f"**Quotas API :** {quota_str}",
+        f"**Sources utilisées :** {json.dumps(sources_log, ensure_ascii=False)}",
+        "",
+    ]
+
+    if divergence_log:
+        lines += ["**⚠️ Journal des divergences :**", ""]
+        for d in divergence_log:
+            lines.append(f"- {d}")
+        lines.append("")
+
+    if cache_warnings:
+        lines += ["**🗄️ Avertissements cache :**", ""]
+        for w in cache_warnings:
+            lines.append(f"- {w}")
+        lines.append("")
+
+    if api_errors:
+        lines += ["**❌ Erreurs API :**", ""]
+        for e in api_errors:
+            lines.append(f"- {e}")
+        lines.append("")
+
+    lines += [
+        f"*Rapport généré le {now.strftime('%d/%m/%Y à %H:%M')} (heure de Paris)*",
+        f"*Charts générés : {len(charts_generated)}*",
+    ]
+
+    report_text = "\n".join(lines)
+    os.makedirs("reports", exist_ok=True)
+    with open("reports/daily_report.md", "w", encoding="utf-8") as f:
+        f.write(report_text)
+    print(f"[INFO] Rapport écrit : reports/daily_report.md")
+
+    new_cache["sources_log"] = sources_log
+    for row in history_rows:
+        ticker = row["ticker"]
+        h_data = asset_results.get(ticker, {})
+        if h_data.get("h_dates") and h_data.get("h_closes"):
+            new_cache[f"hist_{ticker}"] = {
+                "dates":  h_data["h_dates"],
+                "closes": h_data["h_closes"],
+            }
+    save_session_cache(new_cache)
+    append_history(now, history_rows)
+
+    return report_text, api_errors, cache_warnings
+
+
+if __name__ == "__main__":
+    report, errors, warnings = build_report()
+    if errors:
+        print(f"\n[WARN] {len(errors)} erreur(s) API détectée(s).")
+    if warnings:
+        print(f"[INFO] {len(warnings)} avertissement(s) cache.")
+    print("[INFO] Terminé.")
