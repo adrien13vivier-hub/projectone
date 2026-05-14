@@ -1,8 +1,8 @@
 {
-  "eur_usd": 0.85612125,
-  "price_PLTR.US": 114.472,
-  "price_CRWV.US": 99.8751,
-  "price_RIOT.US": 21.3003,
+  "eur_usd": 0.85622817,
+  "price_PLTR.US": 114.0838,
+  "price_CRWV.US": 101.0349,
+  "price_RIOT.US": 21.2559,
   "price_DEC.PA": 18.78,
   "price_ACA.PA": 17.17,
   "price_ABNX.PA": 3.71,
@@ -15,37 +15,43 @@
       "cours": "TwelveData",
       "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
       "consensus": "Finnhub",
-      "historique": "Cache"
+      "historique": "AlphaVantage",
+      "synthese": "RSS Yahoo Finance (brut)"
     },
     "CRWV.US": {
       "cours": "TwelveData",
-      "sentiment": "AlphaVantage NLP",
+      "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
       "consensus": "Finnhub",
-      "historique": "Cache"
+      "historique": "Cache",
+      "synthese": "RSS Yahoo Finance (brut)"
     },
     "RIOT.US": {
       "cours": "TwelveData",
-      "sentiment": "Lexical (AV:vide, FH:HTTP 403)",
+      "sentiment": "AlphaVantage NLP",
       "consensus": "Finnhub",
-      "historique": "Cache"
+      "historique": "Cache",
+      "synthese": "RSS Yahoo Finance (brut)"
     },
     "DEC.PA": {
       "cours": "EODHD",
       "sentiment": "Lexical EODHD (Finnhub:HTTP 403)",
       "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)",
-      "historique": "EODHD"
+      "historique": "EODHD",
+      "synthese": "RSS Yahoo Finance (brut)"
     },
     "ACA.PA": {
       "cours": "EODHD",
       "sentiment": "Lexical EODHD (Finnhub:HTTP 403)",
       "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)",
-      "historique": "EODHD"
+      "historique": "EODHD",
+      "synthese": "RSS Yahoo Finance (brut)"
     },
     "ABNX.PA": {
       "cours": "EODHD",
       "sentiment": "Neutre par defaut (Finnhub:HTTP 403)",
       "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)",
-      "historique": "EODHD"
+      "historique": "EODHD",
+      "synthese": "RSS Yahoo Finance (brut)"
     }
   },
   "hist_PLTR.US": {
@@ -59,13 +65,13 @@
       "2026-05"
     ],
     "closes": [
-      144.24,
-      152.21,
-      125.52,
+      144.23,
+      152.19,
+      125.51,
       117.47,
-      125.26,
-      119.12,
-      111.36
+      125.25,
+      119.11,
+      111.35
     ]
   },
   "hist_CRWV.US": {
@@ -169,5 +175,5 @@
     ]
   },
   "date": "2026-05-14",
-  "saved_at": "14/05/2026 18:03"
+  "saved_at": "14/05/2026 19:02"
 }
