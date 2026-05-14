@@ -17,7 +17,7 @@ ARCHITECTURE DES CLÉS API v5.2 — OPTIMISATION QUOTAS PLANS GRATUITS
   • EODHD N'EST JAMAIS appelé pour les cours US si TwelveData a répondu.
   • AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US
     (score NLP intégré, plus précis que l'analyse lexicale).
-  • AlphaVantage TIME_SERIES_DAILY remplace EODHD pour l'historique des valeurs US.
+  • AlphaVantage TIME_SERIES_MONTHLY remplace TIME_SERIES_DAILY pour l'historique US.
   • News sociétés EU (DEC.PA, ACA.PA, ABNX.PA) → EODHD seul (Finnhub plan free
     ne couvre pas les small/mid caps européennes).
   • News sociétés US (watchlist) → Finnhub company-news (libère EODHD).
@@ -263,8 +263,8 @@ def td_fetch_batch(tickers: list) -> dict:
         return {t: _td_cache.get(t) for t in tickers if t}
 
     elapsed = time.time() - _td_last_call
-    if elapsed < 10 and _td_last_call > 0:
-        time.sleep(10 - elapsed)
+    if elapsed < 3 and _td_last_call > 0:  # PATCH 2 : seuil anti-spam 10s → 3s
+        time.sleep(3 - elapsed)             # PATCH 2 : sleep réduit à 3s max
 
     results = {}
     for i in range(0, len(to_fetch), 6):
@@ -295,7 +295,7 @@ def td_fetch_batch(tickers: list) -> dict:
                 _td_errors[ticker] = err or "Réponse invalide"
 
         if i + 6 < len(to_fetch):
-            time.sleep(12)
+            time.sleep(3)  # PATCH 2 : sleep inter-batches 12s → 3s
 
     for t in tickers:
         if t and t not in results:
@@ -624,7 +624,7 @@ def get_consensus(asset: dict) -> tuple:
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ⑧ HISTORIQUE MENSUEL ── Logique différenciée par marché
-#    US  → AlphaVantage TIME_SERIES_DAILY (agrégé en mensuel, libère EODHD)
+#    US  → AlphaVantage TIME_SERIES_MONTHLY (données déjà mensuelles)
 #          Fallback : Finnhub candles hebdo → cache
 #    EU  → EODHD eod mensuel ajusté (principal)
 #          Fallback : Finnhub candles hebdo → cache
@@ -639,30 +639,27 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
     cache_key = f"hist_{asset['ticker_eod']}"
 
     if asset.get("marche") == "us":
-        # ── US : AlphaVantage TIME_SERIES_DAILY → agrégé en mensuel ──────
+        # ── US : AlphaVantage TIME_SERIES_MONTHLY ────────────────────────
         ticker_av = asset.get("ticker_av")
         if ALPHAVANTAGE_KEY and ticker_av:
             data, err = _get(AV_BASE, {
-                "function":   "TIME_SERIES_DAILY",
-                "symbol":     ticker_av,
-                "outputsize": "compact",   # 100 derniers jours ≈ 3 mois
-                "apikey":     ALPHAVANTAGE_KEY,
+                "function": "TIME_SERIES_MONTHLY",  # PATCH 1 : TIME_SERIES_DAILY → TIME_SERIES_MONTHLY
+                "symbol":   ticker_av,              # PATCH 1 : suppression de outputsize:compact
+                "apikey":   ALPHAVANTAGE_KEY,
             }, "alphavantage")
-            if isinstance(data, dict) and data.get("Time Series (Daily)") and not _is_quota_error(err):
-                ts = data["Time Series (Daily)"]
-                # Agréger par mois : garder dernier cours du mois
-                monthly: dict = {}
-                for day_str, vals in sorted(ts.items()):
-                    if day_str < from_d:
+            if isinstance(data, dict) and data.get("Monthly Time Series") and not _is_quota_error(err):  # PATCH 1 : clé JSON Monthly Time Series
+                ts = data["Monthly Time Series"]  # PATCH 1 : lecture directe des données mensuelles
+                dates  = []
+                closes = []
+                for month_str, vals in sorted(ts.items()):  # PATCH 1 : plus de boucle d'agrégation
+                    if month_str < from_d:
                         continue
-                    month_key = day_str[:7]
                     try:
-                        monthly[month_key] = float(vals.get("4. close", 0))
-                    except (ValueError, TypeError):
+                        dates.append(month_str[:7])                          # PATCH 1 : clé YYYY-MM
+                        closes.append(round(float(vals["4. close"]) * eur_usd, 2))  # PATCH 1 : close direct
+                    except (ValueError, TypeError, KeyError):
                         pass
-                if len(monthly) >= 2:
-                    dates  = sorted(monthly.keys())
-                    closes = [round(monthly[k] * eur_usd, 2) for k in dates]
+                if len(dates) >= 2:
                     return dates, closes, "AlphaVantage", False, None
             av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
         else:
@@ -1074,246 +1071,4 @@ def build_report() -> tuple:
         h_err    = r["h_err"]      # PATCH :
 
         sources_log[ticker]["sentiment"]  = sent_src  # PATCH :
-        sources_log[ticker]["consensus"]  = cons_src  # PATCH :
-        sources_log[ticker]["historique"] = h_src     # PATCH :
-
-        if h_cache:
-            cache_warnings.append(f"{asset['name']} — historique : {h_err}")
-        elif h_err and not h_cache:
-            api_errors.append(f"{asset['name']} historique : {h_src}")
-        else:
-            new_cache[f"hist_{ticker}"] = {  # PATCH : utilise alias ticker
-                "dates":  h_dates,
-                "closes": h_closes,
-            }
-
-        hist_score, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
-
-        chart_filename = f"{CHARTS_DIR}/{asset['ticker_eod'].replace('.', '_')}_monthly.png"
-        chart_ok = generate_monthly_chart(asset, h_dates, h_closes, cost, chart_filename)
-        if chart_ok:
-            charts_generated.append(chart_filename)
-
-        ps          = score_price(price_eur, cost)
-        sent_score  = bull / 100 * 10
-        total_score = round(ps * 0.30 + sent_score * 0.20 + cs * 0.20 + hist_score * 0.30, 2)
-        rec         = recommend(total_score)
-        news_str    = news[0] if news else "Aucune actualité récente."
-        justif      = justification(asset["name"], pnl_net, pnl_net_p,
-                                    (sent_score + cs) / 2, bull, bear, cons_str,
-                                    macro_score, hist_score, hist_label, total_score)
-
-        total_cout     += cout
-        total_vm       += vm
-        total_pnl_brut += pnl_brut
-        total_pnl_net  += pnl_net
-        summaries.append({"name": asset["name"], "score": total_score,
-                          "pnl_brut_pct": pnl_brut_p, "pnl_net": pnl_net})
-
-        history_rows.append({
-            "date": now.strftime("%Y-%m-%d"), "time": now.strftime("%H:%M"),
-            "ticker": asset["ticker_eod"], "name": asset["name"],
-            "price_eur": price_eur, "cost_eur": cost, "qty": qty,
-            "vm": vm, "pnl_brut": pnl_brut, "pnl_brut_pct": pnl_brut_p,
-            "pnl_net": pnl_net, "pnl_net_pct": pnl_net_p,
-            "score": total_score,
-            "rec": rec.replace("🟢","").replace("🔵","").replace("🟡","")
-                      .replace("🟠","").replace("🔴","").strip(),
-        })
-
-        icon       = "📗" if pnl_brut >= 0 else "📕"
-        chart_ref  = f"\n\n![Historique mensuel]({chart_filename})" if chart_ok else ""
-        cours_flag = " _(⚠️ cache)_" if price_cache else ""
-        hist_flag  = " _(⚠️ cache)_" if h_cache else ""
-
-        lines += [
-            f"### {icon} {asset['name']} `{asset['ticker_eod']}`",
-            "",
-            "| Champ | Valeur |",
-            "|-------|--------|",
-            f"| **Cours actuel** | {price_eur:.2f} € ({chg:+.2f}%){cours_flag} |",
-            f"| **Prix de revient** | {cost:.2f} € · Coût total {cout:.2f} € |",
-            f"| **Frais achat payés** | {fee_a:.2f} € · Coût réel {cout_reel:.2f} € |",
-            f"| **Valeur marché** | {vm:.2f} € |",
-            f"| **PnL brut latent** | {pnl_brut:+.2f} € ({pnl_brut_p:+.2f}%) |",
-            f"| **Frais vente estimés** | {fee_v:.2f} € |",
-            f"| **PnL net si vente** | {pnl_net:+.2f} € ({pnl_net_p:+.2f}%) |",
-            f"| **Sentiment presse** | Bull {bull:.0f}% / Bear {bear:.0f}% |",
-            f"| **Consensus analystes** | {cons_str} |",
-            f"| **Historique mensuel** | Ret. 1M {ret_1m:+.1f}% · 3M {ret_3m:+.1f}% · 6M {ret_6m:+.1f}%{hist_flag} |",
-            f"| **Score** | {total_score:.1f}/10 (Prix {ps:.1f}·30% + Sent {sent_score:.1f}·20% + Cons {cs:.1f}·20% + Hist {hist_score:.1f}·30%) |",
-            "",
-            f"📰 **Actualité :** {news_str}",
-            chart_ref,
-            "",
-            f"**⚡ {rec}**",
-            "",
-            f"💬 {justif}",
-            "", "---", "",
-        ]
-
-    tot_p  = round(total_pnl_brut / total_cout * 100, 2) if total_cout else 0
-    tot_np = round(total_pnl_net  / total_cout * 100, 2) if total_cout else 0
-    lines += [
-        "## 💼 Résumé Global",
-        "",
-        "| | Montant |",
-        "|--|--------|",
-        f"| Coût total investi | {total_cout:.2f} € |",
-        f"| Valeur marché totale | {total_vm:.2f} € |",
-        f"| PnL brut latent | {total_pnl_brut:+.2f} € ({tot_p:+.2f}%) |",
-        f"| PnL net estimé | {total_pnl_net:+.2f} € ({tot_np:+.2f}%) |",
-        "", "---", "",
-    ]
-
-    if cache_warnings:
-        lines += [
-            "## ⚠️ Données Issues du Cache GitHub",
-            "",
-            "> Les données marquées _(⚠️ cache)_ proviennent du dernier rapport sauvegardé.",
-            "> **Ne pas prendre de décision d'investissement** sur ces valeurs sans vérification.",
-            "",
-        ]
-        for w in cache_warnings:
-            lines.append(f"- ⚠️ {w}")
-        lines += ["", "---", ""]
-
-    real_divs = [d for d in divergence_log if "⚠️ Divergence" in d]
-    if real_divs:
-        lines += ["## ⚠️ Validation Croisée", "",
-                  "_Divergences > 2% détectées — médiane utilisée :_", ""]
-        for d in real_divs:
-            lines.append(f"- {d}")
-        lines += ["", "---", ""]
-    else:
-        lines += ["## ✅ Validation Croisée", "",
-                  "_Aucune divergence > 2% détectée entre sources._",
-                  "", "---", ""]
-
-    if api_errors:
-        lines += [
-            "## 🔴 Erreurs API — Données Indisponibles",
-            "",
-            "> ⚠️ **Les données suivantes sont totalement indisponibles** (ni API ni cache).",
-            "",
-        ]
-        for e in api_errors:
-            lines.append(f"- ❌ {e}")
-        lines += ["", "---", ""]
-    else:
-        lines += ["## ✅ Données Complètes", "",
-                  "_Toutes les données ont été obtenues (API ou cache)._",
-                  "", "---", ""]
-
-    best  = max(summaries, key=lambda x: x["score"]) if summaries else None
-    worst = min(summaries, key=lambda x: x["score"]) if summaries else None
-    ctx   = ("Marchés en dynamique **positive**." if macro_score >= 6
-             else "Marchés sous **pression baissière**." if macro_score <= 4
-             else "Marchés en phase **neutre**.")
-    lines += ["## 🧭 Conclusion Stratégique", "", ctx, ""]
-    if best and worst:
-        lines += [
-            f"**Meilleure position :** {best['name']} (score {best['score']:.1f}/10, PnL brut {best['pnl_brut_pct']:+.1f}%)",
-            f"**Position à surveiller :** {worst['name']} (score {worst['score']:.1f}/10, PnL net {worst['pnl_net']:+.2f} €)",
-            "",
-        ]
-
-    lines += [
-        "### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille",
-        "",
-        "| Valeur | Secteur | Cours | Var. | Sentiment | Consensus | Score |",
-        "|--------|---------|-------|------|-----------|-----------|-------|",
-    ]
-    watch_res = []
-    for w in WATCHLIST:
-        pe, chg, src, wcache, _ = get_price_eur(w, eur_usd, td_prices, session_cache)
-        if not pe:
-            continue
-        get_company_news(w, n=10)
-        bull, bear, _   = get_sentiment(w)
-        cs, cons_str, _ = get_consensus(w)
-        sc = round((bull / 100 * 10 + cs) / 2, 2)
-        watch_res.append({"name": w["name"], "sector": w["sector"],
-                          "price": pe, "chg": chg, "sc": sc,
-                          "bull": bull, "cons": cons_str})
-    watch_res.sort(key=lambda x: x["sc"], reverse=True)
-    for w in watch_res[:3]:
-        arr = "▲" if w["chg"] > 0 else "▼"
-        lines.append(
-            f"| **{w['name']}** | {w['sector']} | {w['price']:.2f} € "
-            f"| {arr} {w['chg']:+.2f}% | Bull {w['bull']:.0f}% "
-            f"| {w['cons']} | {w['sc']:.1f}/10 |"
-        )
-
-    quota = _quota_status()
-    lines += [
-        "", "---", "",
-        "<details>",
-        "<summary>🔧 Sources & Quotas du Run</summary>",
-        "",
-        "| Donnée | Source |",
-        "|--------|--------|",
-        f"| EUR/USD | {sources_log.get('EUR/USD', '?')} |",
-    ]
-    for idx_name in INDICES:
-        lines.append(f"| Indice {idx_name} | {sources_log.get(idx_name, '?')} |")
-    for asset in PORTFOLIO:
-        src_info = sources_log.get(asset["ticker_eod"], {})
-        if isinstance(src_info, dict):
-            lines.append(f"| {asset['name']} — cours | {src_info.get('cours', '?')} |")
-            lines.append(f"| {asset['name']} — sentiment | {src_info.get('sentiment', '?')} |")
-            lines.append(f"| {asset['name']} — consensus | {src_info.get('consensus', '?')} |")
-            lines.append(f"| {asset['name']} — historique | {src_info.get('historique', '?')} |")
-    lines += [
-        "",
-        "**Quotas de ce run :**",
-        f"- AlphaVantage : {quota['alphavantage']} (limite réelle : 25/jour)",
-        f"- TwelveData   : {quota['twelvedata']} (limite réelle : 800/jour)",
-        f"- EODHD        : {quota['eodhd']} (limite réelle : 20/jour)",
-        f"- Finnhub      : {quota['finnhub']} (limite réelle : 60/min)",
-        "",
-        "</details>",
-        "", "---", "",
-        f"_Rapport v5.2 — {now.strftime('%d/%m/%Y à %H:%M')} Paris_",
-        "_Architecture API v5.2 : AlphaVantage (EUR/USD · hist US · sentiment US NLP) · TwelveData (cours US) · EODHD (Euronext · indices · news EU · hist EU) · Finnhub (sentiment EU · consensus · news US)_",
-        "_Scoring : Prix 30% · Sentiment 20% · Consensus 20% · Historique 30%_",
-        "_Frais courtage BoursoBank Découverte (brochure 13/11/2025)_",
-    ]
-
-    save_session_cache(new_cache)
-    append_history(now, history_rows)
-
-    return "\n".join(lines), total_pnl_net, tot_np, api_errors, charts_generated, cache_warnings
-
-
-if __name__ == "__main__":
-    result = build_report()
-    report, pnl_net, pnl_pct, api_errors, charts, cache_warnings = result
-
-    os.makedirs("reports", exist_ok=True)
-    with open("reports/daily_report.md", "w", encoding="utf-8") as f:
-        f.write(report)
-
-    env_file = os.environ.get("GITHUB_ENV", "")
-    if env_file:
-        has_errors = "true" if api_errors else "false"
-        has_cache  = "true" if cache_warnings else "false"
-        err_list   = " | ".join(api_errors[:5]) if api_errors else "Aucune"
-        cach_list  = " | ".join(cache_warnings[:3]) if cache_warnings else "Aucune"
-        chart_list = ",".join(charts) if charts else ""
-        with open(env_file, "a") as f:
-            f.write(f"PORTFOLIO_PNL_NET={pnl_net:.2f}\n")
-            f.write(f"PORTFOLIO_PNL_PCT={pnl_pct:.2f}\n")
-            f.write(f"HAS_API_ERRORS={has_errors}\n")
-            f.write(f"HAS_CACHE_DATA={has_cache}\n")
-            f.write(f"API_ERRORS_SUMMARY={err_list}\n")
-            f.write(f"CACHE_WARNINGS={cach_list}\n")
-            f.write(f"CHARTS_LIST={chart_list}\n")
-
-    print(f"\n✅ Rapport v5.2 généré — PnL net : {pnl_net:+.2f} € ({pnl_pct:+.2f}%)")
-    quota = _quota_status()
-    print(f"   Quotas — AV:{quota['alphavantage']} · TD:{quota['twelvedata']} · EOD:{quota['eodhd']} · FH:{quota['finnhub']}")
-    if cache_warnings:
-        print(f"   ⚠️ {len(cache_warnings)} donnée(s) issue(s) du cache GitHub")
-    if api_errors:
-        print(f"   ❌ {len(api_errors)} donnée(s) totalement indisponible(s)")
+        sources_log[ticker]["consensus"]  = 
