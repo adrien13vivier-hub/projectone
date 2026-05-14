@@ -1,25 +1,25 @@
-# 📊 Rapport de Portefeuille v5.1 — 13/05/2026 23:00 (Paris)
+# 📊 Rapport de Portefeuille v5.1 — 14/05/2026 11:26 (Paris)
 
 ---
 
 ## 🌍 Contexte Économique
 
 **Tendance : ➡️ Neutre** | Score macro : 5.0/10
-**EUR/USD :** 1 EUR = 1.1716 USD
+**EUR/USD :** 1 EUR = 1.1713 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | — +0.00% | 0.00 |
-| CAC 40 | — +0.00% | 0.00 |
-| Nikkei 225 | — +0.00% | 0.00 |
+| S&P 500 | ▲ +0.58% | 7,444.25 |
+| CAC 40 | ▲ +0.53% | 8,050.44 |
+| Nikkei 225 | ▼ -0.98% | 62,654.05 |
 
 **📰 Manchettes macro :**
 
-- Cisco's stock pops 11% on earnings beat, strong guidance
-- Allegiant CEO makes case for low-cost airline model as Sun Country acquisition closes
-- Iran war looms over Trump's China visit, shifts alliances - Reuters
-- Trump wants China's help on Iran. Beijing may have other ideas - Reuters
-- Beer demand stumbles as gas prices surge, data show
+- Notice of the Annual General Meeting of Akcinė prekybos bendrovė “APRANGA” shareholders
+- Pranešimas apie Akcinės prekybos bendrovės „APRANGA“ šaukiamą eilinį visuotinį akcininkų susirinkimą
+- BIC discontinues Rocketbook and its Skin Creative activities
+- BIC discontinue les activités de Rocketbook et de Skin Creative
+- BIC annonce la nomination d’un nouveau Directeur Financier
 
 ---
 
@@ -29,24 +29,26 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 111.09 € (+0.00%) |
+| **Cours actuel** | 111.04 € (-4.38%) |
 | **Prix de revient** | 119.06 € · Coût total 238.12 € |
 | **Frais achat payés** | 6.95 € · Coût réel 245.07 € |
-| **Valeur marché** | 222.18 € |
-| **PnL brut latent** | -15.94 € (-6.69%) |
+| **Valeur marché** | 222.08 € |
+| **PnL brut latent** | -16.04 € (-6.74%) |
 | **Frais vente estimés** | 6.95 € |
-| **PnL net si vente** | -29.84 € (-12.18%) |
-| **Sentiment presse** | Bull 81% / Bear 19% |
+| **PnL net si vente** | -29.94 € (-12.22%) |
+| **Sentiment presse** | Bull 50% / Bear 50% |
 | **Consensus analystes** | SB:11 B:15 H:10 S:1 SS:1 |
-| **Historique mensuel** | Ret. 1M +0.0% · 3M +0.0% · 6M +0.0% |
-| **Score** | 5.9/10 (Prix 4.3·30% + Sent 8.1·20% + Cons 7.2·20% + Hist 5.0·30%) |
+| **Historique mensuel** | Ret. 1M -6.5% · 3M -5.2% · 6M -22.8% |
+| **Score** | 4.0/10 (Prix 4.3·30% + Sent 5.0·20% + Cons 7.2·20% + Hist 1.0·30%) |
 
-📰 **Actualité :** Why Palantir Stock Is Sinking Today
+📰 **Actualité :** What's Going on with Palantir Stock Wednesday
 
 
-**⚡ 🟡 GARDER**
+![Historique mensuel](reports/charts/PLTR_US_monthly.png)
 
-💬 Perte nette **-29.84 € (-12.2%)** après frais. Consensus **haussier** (score 7.7/10, Bull 81%). Contexte macro **neutre**. Momentum mensuel **NEUTRE** (score historique 5.0/10).
+**⚡ 🟠 À ÉVITER**
+
+💬 Perte nette **-29.94 € (-12.2%)** après frais. Consensus **neutre** (50% bull / 50% bear). Contexte macro **neutre**. Momentum mensuel **BAISSIER** (score historique 1.0/10).
 
 ---
 
@@ -54,24 +56,24 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 94.99 € (+0.00%) |
+| **Cours actuel** | 95.02 € (+0.00%) |
 | **Prix de revient** | 93.91 € · Coût total 187.82 € |
 | **Frais achat payés** | 6.95 € · Coût réel 194.77 € |
-| **Valeur marché** | 189.99 € |
-| **PnL brut latent** | +2.17 € (+1.16%) |
+| **Valeur marché** | 190.04 € |
+| **PnL brut latent** | +2.22 € (+1.18%) |
 | **Frais vente estimés** | 6.95 € |
-| **PnL net si vente** | -11.73 € (-6.02%) |
-| **Sentiment presse** | Bull 53% / Bear 47% |
+| **PnL net si vente** | -11.68 € (-6.00%) |
+| **Sentiment presse** | Bull 100% / Bear 0% |
 | **Consensus analystes** | SB:10 B:18 H:12 S:1 SS:1 |
 | **Historique mensuel** | Ret. 1M +0.0% · 3M +0.0% · 6M +0.0% |
-| **Score** | 5.5/10 (Prix 5.1·30% + Sent 5.3·20% + Cons 7.1·20% + Hist 5.0·30%) |
+| **Score** | 6.5/10 (Prix 5.1·30% + Sent 10.0·20% + Cons 7.1·20% + Hist 5.0·30%) |
 
-📰 **Actualité :** CoreWeave to Participate in the J.P. Morgan Global Technology, Media and Communications Conference
+📰 **Actualité :** Nvidia CEO Jensen Huang's Foundation Donates $108 Million In CoreWeave AI Computing Power To Universities
 
 
-**⚡ 🟡 GARDER**
+**⚡ 🔵 ACHAT MODÉRÉ**
 
-💬 Perte nette **-11.73 € (-6.0%)** après frais. Consensus **neutre** (53% bull / 47% bear). Contexte macro **neutre**. Momentum mensuel **NEUTRE** (score historique 5.0/10).
+💬 Perte nette **-11.68 € (-6.0%)** après frais. Consensus **haussier** (score 8.5/10, Bull 100%). Contexte macro **neutre**. Momentum mensuel **NEUTRE** (score historique 5.0/10).
 
 ---
 
@@ -79,13 +81,13 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Cours actuel** | 21.26 € (+0.00%) |
+| **Cours actuel** | 21.27 € (+0.00%) |
 | **Prix de revient** | 15.84 € · Coût total 95.04 € |
 | **Frais achat payés** | 6.95 € · Coût réel 101.99 € |
-| **Valeur marché** | 127.57 € |
-| **PnL brut latent** | +32.53 € (+34.23%) |
+| **Valeur marché** | 127.61 € |
+| **PnL brut latent** | +32.57 € (+34.27%) |
 | **Frais vente estimés** | 6.95 € |
-| **PnL net si vente** | +18.63 € (+18.27%) |
+| **PnL net si vente** | +18.67 € (+18.31%) |
 | **Sentiment presse** | Bull 100% / Bear 0% |
 | **Consensus analystes** | SB:6 B:17 H:2 S:0 SS:0 |
 | **Historique mensuel** | Ret. 1M +0.0% · 3M +0.0% · 6M +0.0% |
@@ -96,7 +98,7 @@
 
 **⚡ 🟢 ACHAT FORT**
 
-💬 Gain net **+18.63 € (+18.3%)** après frais. Consensus **haussier** (score 8.9/10, Bull 100%). Contexte macro **neutre**. Momentum mensuel **NEUTRE** (score historique 5.0/10).
+💬 Gain net **+18.67 € (+18.3%)** après frais. Consensus **haussier** (score 8.9/10, Bull 100%). Contexte macro **neutre**. Momentum mensuel **NEUTRE** (score historique 5.0/10).
 
 ---
 
@@ -180,9 +182,9 @@
 | | Montant |
 |--|--------|
 | Coût total investi | 763.92 € |
-| Valeur marché totale | 782.63 € |
-| PnL brut latent | +18.71 € (+2.45%) |
-| PnL net estimé | -34.93 € (-4.57%) |
+| Valeur marché totale | 782.62 € |
+| PnL brut latent | +18.70 € (+2.45%) |
+| PnL net estimé | -34.94 € (-4.57%) |
 
 ---
 
@@ -193,9 +195,9 @@
 > La clé API principale avait atteint son quota ou était indisponible.
 > **Ne pas prendre de décision d'investissement** sur ces valeurs sans vérification manuelle.
 
-- ⚠️ JCDecaux — cours : Cours non disponible (EODHD:HTTP 402) — cache du 21:48 utilisé
-- ⚠️ Crédit Agricole SA — cours : Cours non disponible (EODHD:HTTP 402) — cache du 21:48 utilisé
-- ⚠️ Abionyx Pharma — cours : Cours non disponible (EODHD:HTTP 402) — cache du 21:48 utilisé
+- ⚠️ JCDecaux — cours : Cours non disponible (EODHD:HTTP 402) — cache du 13/05/2026 23:00 utilisé
+- ⚠️ Crédit Agricole SA — cours : Cours non disponible (EODHD:HTTP 402) — cache du 13/05/2026 23:00 utilisé
+- ⚠️ Abionyx Pharma — cours : Cours non disponible (EODHD:HTTP 402) — cache du 13/05/2026 23:00 utilisé
 
 ---
 
@@ -210,10 +212,6 @@ _Aucune divergence > 2% détectée entre sources._
 > ⚠️ **Les données suivantes sont totalement indisponibles** (ni API ni cache).
 > Vérifiez les APIs concernées avant toute décision.
 
-- ❌ Indice S&P 500 : ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)
-- ❌ Indice CAC 40 : ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)
-- ❌ Indice Nikkei 225 : ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide)
-- ❌ Palantir Technologies historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)
 - ❌ CoreWeave historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)
 - ❌ Riot Platforms historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)
 - ❌ JCDecaux historique : Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403)
@@ -226,16 +224,16 @@ _Aucune divergence > 2% détectée entre sources._
 
 Marchés en phase **neutre**.
 
-**Meilleure position :** Riot Platforms (score 7.6/10, PnL brut +34.2%)
-**Position à surveiller :** Abionyx Pharma (score 4.8/10, PnL net -5.88 €)
+**Meilleure position :** Riot Platforms (score 7.6/10, PnL brut +34.3%)
+**Position à surveiller :** Palantir Technologies (score 4.0/10, PnL net -29.94 €)
 
 ### 🔭 Watchlist — Top 3 Valeurs Hors Portefeuille
 
 | Valeur | Secteur | Cours | Var. | Sentiment | Consensus | Score |
 |--------|---------|-------|------|-----------|-----------|-------|
-| **Microsoft** | IA / Cloud | 345.76 € | ▼ +0.00% | Bull 87% | SB:24 B:36 H:6 S:0 SS:0 | 8.4/10 |
-| **NVIDIA** | IA / Semi-conducteurs | 192.78 € | ▼ +0.00% | Bull 86% | SB:24 B:42 H:4 S:1 SS:0 | 8.3/10 |
-| **Coinbase** | Crypto / Fintech | 172.17 € | ▼ +0.00% | Bull 45% | SB:11 B:17 H:12 S:1 SS:2 | 5.8/10 |
+| **NVIDIA** | IA / Semi-conducteurs | 192.84 € | ▼ +0.00% | Bull 89% | SB:24 B:42 H:4 S:1 SS:0 | 8.5/10 |
+| **Microsoft** | IA / Cloud | 345.88 € | ▼ +0.00% | Bull 87% | SB:24 B:36 H:6 S:0 SS:0 | 8.4/10 |
+| **Coinbase** | Crypto / Fintech | 172.30 € | ▼ +0.00% | Bull 45% | SB:11 B:17 H:12 S:1 SS:2 | 5.7/10 |
 
 ---
 
@@ -245,13 +243,13 @@ Marchés en phase **neutre**.
 | Donnée | Source |
 |--------|--------|
 | EUR/USD | AlphaVantage |
-| Indice S&P 500 | ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide) |
-| Indice CAC 40 | ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide) |
-| Indice Nikkei 225 | ❌ Indisponible (EODHD:HTTP 402, Finnhub:vide) |
-| Palantir Technologies — cours | TwelveData |
+| Indice S&P 500 | EODHD |
+| Indice CAC 40 | EODHD |
+| Indice Nikkei 225 | EODHD |
+| Palantir Technologies — cours | TwelveData+EODHD |
 | Palantir Technologies — sentiment | Lexical (Finnhub:HTTP 403) |
 | Palantir Technologies — consensus | Finnhub |
-| Palantir Technologies — historique | Indisponible (EODHD:HTTP 402, Finnhub:HTTP 403) |
+| Palantir Technologies — historique | EODHD |
 | CoreWeave — cours | TwelveData |
 | CoreWeave — sentiment | Lexical (Finnhub:HTTP 403) |
 | CoreWeave — consensus | Finnhub |
@@ -277,13 +275,13 @@ Marchés en phase **neutre**.
 - AlphaVantage : 1/5
 - TwelveData   : 1/60
 - EODHD        : 34/500
-- Finnhub      : 37/100
+- Finnhub      : 30/100
 
 </details>
 
 ---
 
-_Rapport v5.1 — 13/05/2026 à 23:00 Paris_
+_Rapport v5.1 — 14/05/2026 à 11:26 Paris_
 _Architecture API : AlphaVantage (EUR/USD) · TwelveData (cours US) · EODHD (Euronext/indices/historique/news) · Finnhub (sentiment/consensus)_
 _Scoring : Prix 30% · Sentiment 20% · Consensus 20% · Historique 30%_
 _Frais courtage BoursoBank Découverte (brochure 13/11/2025)_
