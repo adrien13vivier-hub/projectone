@@ -1,4 +1,4 @@
-# Réactivé le 2026-05-14 — cron schedule forcé actif
+# Réactivé le 2026-05-15 — cron forcé actif (commit de réactivation)
 name: Daily Portfolio Report v5.1
 
 on:
