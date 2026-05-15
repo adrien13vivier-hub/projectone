@@ -206,11 +206,12 @@ def _is_quota_error(err: str) -> bool:
 # OPENROUTER / DEEPSEEK V3 FLASH
 # =============================================================================
 
-def _openrouter_chat(prompt: str, timeout: int = 30) -> tuple:
+def _openrouter_chat(prompt: str, timeout: int = 30, max_tokens: int = 300) -> tuple:
     """Appel DeepSeek v3 flash via OpenRouter.
 
     Retourne (texte_reponse, erreur_str|None).
     Le modele est toujours deepseek/deepseek-chat-v3-0324:free.
+    max_tokens est parametrable pour limiter la longueur de la reponse.
     """
     if not OPENROUTER_KEY:
         return None, "OPENROUTER_KEY absente"
@@ -239,7 +240,7 @@ def _openrouter_chat(prompt: str, timeout: int = 30) -> tuple:
                 },
                 {"role": "user", "content": prompt},
             ],
-            "max_tokens":   300,
+            "max_tokens":   max_tokens,
             "temperature":  0.3,
         }
         r = requests.post(OR_BASE, headers=headers, json=payload, timeout=timeout)
@@ -265,10 +266,12 @@ def _openrouter_chat(prompt: str, timeout: int = 30) -> tuple:
 _rss_cache: dict = {}
 
 
-def _fetch_yahoo_rss(ticker_yf: str, n: int = 8) -> list:
+def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     """Recupere les n derniers titres d'actualite depuis le flux RSS Yahoo Finance.
 
     Retourne une liste de chaines (titres bruts).
+    On limite volontairement a 6 titres pour garder le prompt court et la
+    synthese focalisee sur l'essentiel.
     """
     if ticker_yf in _rss_cache:
         return _rss_cache[ticker_yf][:n]
@@ -305,6 +308,12 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 8) -> list:
 
 _synthesis_cache: dict = {}
 
+# Nombre maximum de tokens alloues a la synthese d'actualite.
+# 120 tokens = environ 2-3 phrases courtes en francais, ce qui est suffisant
+# pour un bloc d'actualite dans le rapport. Cela evite les reponses trop longues
+# et garantit que le blockquote Markdown reste lisible.
+_SYNTHESIS_MAX_TOKENS = 120
+
 
 def _clean_synthesis(text: str) -> str:
     """Supprime les sauts de ligne internes pour garantir un blockquote Markdown valide.
@@ -320,9 +329,15 @@ def get_news_synthesis(asset: dict) -> tuple:
     """Recupere les titres RSS Yahoo Finance et les fait synthetiser par DeepSeek.
 
     Retourne (synthese_str, source_str).
-    - synthese_str : resume 2-3 phrases en francais sur UNE SEULE LIGNE,
+    - synthese_str : resume 2-3 phrases MAX en francais sur UNE SEULE LIGNE,
                      ou liste de titres bruts si OR indispo.
     - source_str   : "DeepSeek/RSS" | "RSS brut" | "Aucune actualite"
+
+    Contraintes de longueur :
+    - On limite le RSS a 6 titres (signal/bruit optimal).
+    - Le prompt impose explicitement 2 phrases maximum (contrainte stricte).
+    - max_tokens=120 coupe la generation au-dela de ~2 phrases.
+    - _clean_synthesis() supprime les \n residuels.
     """
     ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
     name      = asset["name"]
@@ -331,7 +346,7 @@ def get_news_synthesis(asset: dict) -> tuple:
     if key in _synthesis_cache:
         return _synthesis_cache[key]
 
-    titles = _fetch_yahoo_rss(ticker_yf, n=8)
+    titles = _fetch_yahoo_rss(ticker_yf, n=6)
 
     if not titles:
         _synthesis_cache[key] = ("Aucune actualite disponible via RSS.", "RSS Yahoo vide")
@@ -340,15 +355,16 @@ def get_news_synthesis(asset: dict) -> tuple:
     if OPENROUTER_KEY and _quota_ok("openrouter"):
         titres_str = "\n".join(f"- {t}" for t in titles)
         prompt = (
-            f"Voici les {len(titles)} dernieres manchettes d'actualite financiere "
+            f"Voici les dernieres manchettes d'actualite financiere "
             f"concernant {name} (source : Yahoo Finance RSS) :\n\n"
             f"{titres_str}\n\n"
-            "Redige un resume factuel de 2 a 3 phrases en francais qui synthetise "
-            "les points cles de l'actualite recente de cette entreprise. "
-            "Ne repete pas les titres mot pour mot. Reste neutre et precis. "
-            "IMPORTANT : ecris tout sur une seule ligne, sans saut de ligne."
+            "Redige EXACTEMENT 2 phrases en francais (pas plus) qui resument "
+            "les points cles de cette actualite. "
+            "Sois factuel et neutre. "
+            "N'utilise PAS de puces, de listes, ni de sauts de ligne. "
+            "Ecris les 2 phrases a la suite sur une seule ligne."
         )
-        text, err = _openrouter_chat(prompt)
+        text, err = _openrouter_chat(prompt, max_tokens=_SYNTHESIS_MAX_TOKENS)
         if text:
             # Nettoyage defensif : supprime tout \n residuel meme si le modele n'a pas obei
             text_clean = _clean_synthesis(text)
@@ -1329,201 +1345,3 @@ def build_report() -> tuple:
         chg_arrow  = "^" if chg > 0 else "v" if chg < 0 else "-"
         pnl_b_icon = "+" if pnl_brut >= 0 else "-"
         pnl_n_icon = "+" if pnl_net  >= 0 else "-"
-
-        lines += [
-            f"### {asset['name']} `{ticker}`",
-            "",
-            f"| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |",
-            f"|-------|-----------|-----|----------|---------|-------|---------|",
-            f"| {price_eur:.2f} EUR | {chg_arrow} {chg:+.2f}% | {vm:.2f} EUR "
-            f"| {pnl_b_icon} {pnl_brut:+.2f} EUR ({pnl_brut_p:+.1f}%) "
-            f"| {pnl_n_icon} {pnl_net:+.2f} EUR ({pnl_net_p:+.1f}%) "
-            f"| **{total_score:.1f}/10** | {rec} |",
-            "",
-        ]
-
-        # --- Synthese actualite DeepSeek (RSS Yahoo Finance) ---
-        # synthesis est garanti mono-ligne grace a _clean_synthesis()
-        lines += [
-            f"**Actualite recente :** *(source : {synth_src})*",
-            "",
-            f"> {synthesis}",
-            "",
-        ]
-
-        lines += [
-            f"**Sentiment :** Bull {bull:.0f}% / Bear {bear:.0f}% *(source : {sent_src})*",
-            f"**Consensus :** {cons_str} *(source : {cons_src})*",
-            "",
-            f"**Momentum mensuel :** {h_label} "
-            f"(1M: {ret_1m:+.1f}% / 3M: {ret_3m:+.1f}% / 6M: {ret_6m:+.1f}%) "
-            f"*(source : {h_src})*",
-            "",
-            f"**Justification :** "
-            f"{justification(asset['name'], pnl_net, pnl_net_p, cs, bull, bear, cons_str, macro_score, h_score, h_label, total_score)}",
-            "",
-            "---",
-            "",
-        ]
-
-        total_cout     += cout
-        total_vm       += vm
-        total_pnl_brut += pnl_brut
-        total_pnl_net  += pnl_net
-
-        history_rows.append({
-            "date": now.strftime("%Y-%m-%d"), "time": now.strftime("%H:%M"),
-            "ticker": ticker, "name": asset["name"],
-            "price_eur": price_eur, "cost_eur": cost,
-            "qty": qty, "vm": vm,
-            "pnl_brut": pnl_brut, "pnl_brut_pct": pnl_brut_p,
-            "pnl_net": pnl_net, "pnl_net_pct": pnl_net_p,
-            "score": total_score, "rec": rec,
-        })
-        summaries.append({
-            "name": asset["name"], "ticker": ticker,
-            "vm": vm, "pnl_net": pnl_net, "pnl_net_p": pnl_net_p,
-            "score": total_score, "rec": rec,
-        })
-
-    # -------------------------------------------------------------------------
-    # Graphique combine
-    # -------------------------------------------------------------------------
-    all_histories = {
-        asset["name"]: (
-            asset_results[asset["ticker_eod"]]["h_dates"],
-            asset_results[asset["ticker_eod"]]["h_closes"],
-        )
-        for asset in PORTFOLIO
-        if asset["ticker_eod"] in asset_results
-    }
-    combined_chart_path = f"{CHARTS_DIR}/portfolio_combined.png"
-    combined_chart_ok   = generate_combined_chart(all_histories, combined_chart_path)
-
-    # -------------------------------------------------------------------------
-    # Synthese portefeuille
-    # -------------------------------------------------------------------------
-    total_pnl_b_pct = round(total_pnl_brut / total_cout * 100, 2) if total_cout else 0
-    total_pnl_n_pct = round(total_pnl_net  / total_cout * 100, 2) if total_cout else 0
-    pf_icon = "+" if total_pnl_net >= 0 else "-"
-
-    if combined_chart_ok:
-        lines += [
-            "## Tendances -- Performance Comparee (base 100)",
-            "",
-            "![Portfolio combine](charts/portfolio_combined.png)",
-            "",
-            "---",
-            "",
-        ]
-
-    lines += [
-        "## Synthese Portefeuille", "",
-        f"| Cout total | Valeur marche | P&L Brut | P&L Net |",
-        f"|------------|---------------|----------|---------|",
-        f"| {total_cout:.2f} EUR | {total_vm:.2f} EUR "
-        f"| {pf_icon} {total_pnl_brut:+.2f} EUR ({total_pnl_b_pct:+.1f}%) "
-        f"| {pf_icon} {total_pnl_net:+.2f} EUR ({total_pnl_n_pct:+.1f}%) |",
-        "", "---", "",
-        "### Classement par Score", "",
-        "| Valeur | VM | P&L Net | Score | Recomm. |",
-        "|--------|----|---------|-------|---------|",
-    ]
-    for s in sorted(summaries, key=lambda x: x["score"], reverse=True):
-        icon = "+" if s["pnl_net"] >= 0 else "-"
-        lines.append(
-            f"| {s['name']} | {s['vm']:.2f} EUR "
-            f"| {icon} {s['pnl_net']:+.2f} EUR ({s['pnl_net_p']:+.1f}%) "
-            f"| **{s['score']:.1f}/10** | {s['rec']} |"
-        )
-
-    lines += ["", "---", "", "## Watchlist", ""]
-    for w in WATCHLIST:
-        w_price = None
-        w_src   = "N/D"
-        if w.get("marche") == "us" and w.get("ticker_td"):
-            raw = td_prices.get(w["ticker_td"])
-            if raw and raw > 0:
-                w_price = round(raw * eur_usd, 2)
-                w_src   = "TwelveData"
-        if w_price is None and EODHD_KEY:
-            data, err = _get(f"{EOD_BASE}/real-time/{w['ticker_eod']}",
-                             {"api_token": EODHD_KEY, "fmt": "json"}, "eodhd")
-            if data and not _is_quota_error(err):
-                raw = data.get("close") or data.get("previousClose")
-                if raw and float(raw) > 0:
-                    factor  = eur_usd if w.get("marche") == "us" else 1.0
-                    w_price = round(float(raw) * factor, 2)
-                    w_src   = "EODHD"
-
-        # Synthese actualite watchlist via DeepSeek/RSS (garanti mono-ligne)
-        w_synthesis, w_synth_src = get_news_synthesis(w)
-
-        price_str = f"{w_price:.2f} EUR" if w_price else "N/D"
-        lines += [
-            f"**{w['name']}** `{w['ticker_fh']}` -- {w['sector']} | Cours : {price_str} *(source : {w_src})*",
-            "",
-            f"> {w_synthesis} *(source : {w_synth_src})*",
-            "",
-        ]
-
-    quota_str = " | ".join(f"{k}: {v}" for k, v in _quota_status().items())
-    lines += [
-        "", "---", "",
-        "## Informations Techniques", "",
-        f"**Quotas API :** {quota_str}",
-        f"**Sources utilisees :** {json.dumps(sources_log, ensure_ascii=False)}",
-        "",
-    ]
-
-    if divergence_log:
-        lines += ["**Journal des divergences :**", ""]
-        for d in divergence_log:
-            lines.append(f"- {d}")
-        lines.append("")
-
-    if cache_warnings:
-        lines += ["**Avertissements cache :**", ""]
-        for w in cache_warnings:
-            lines.append(f"- {w}")
-        lines.append("")
-
-    if api_errors:
-        lines += ["**Erreurs API :**", ""]
-        for e in api_errors:
-            lines.append(f"- {e}")
-        lines.append("")
-
-    lines += [
-        f"*Rapport genere le {now.strftime('%d/%m/%Y a %H:%M')} (heure de Paris)*",
-        f"*Chart combine genere : {'Oui' if combined_chart_ok else 'Non'}*",
-    ]
-
-    report_text = "\n".join(lines)
-    os.makedirs("reports", exist_ok=True)
-    with open("reports/daily_report.md", "w", encoding="utf-8") as f:
-        f.write(report_text)
-    print(f"[INFO] Rapport ecrit : reports/daily_report.md")
-
-    new_cache["sources_log"] = sources_log
-    for row in history_rows:
-        ticker = row["ticker"]
-        h_data = asset_results.get(ticker, {})
-        if h_data.get("h_dates") and h_data.get("h_closes"):
-            new_cache[f"hist_{ticker}"] = {
-                "dates":  h_data["h_dates"],
-                "closes": h_data["h_closes"],
-            }
-    save_session_cache(new_cache)
-    append_history(now, history_rows)
-
-    return report_text, api_errors, cache_warnings
-
-
-if __name__ == "__main__":
-    report, errors, warnings = build_report()
-    if errors:
-        print(f"\n[WARN] {len(errors)} erreur(s) API detectee(s).")
-    if warnings:
-        print(f"[INFO] {len(warnings)} avertissement(s) cache.")
-    print("[INFO] Termine.")
