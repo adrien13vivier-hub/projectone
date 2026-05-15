@@ -44,6 +44,7 @@ import csv
 import json
 import time
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, date, timedelta
@@ -1231,27 +1232,26 @@ def build_report() -> tuple:
         prices[asset["ticker_eod"]] = (price_eur, chg, price_src, price_cache, div_note)
 
     print("[INFO] Lancement parallele des donnees par asset...")
-    from concurrent.futures import ThreadPoolExecutor
-
-    futures = {}
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        for asset in PORTFOLIO:
-            future = executor.submit(_fetch_asset_data, asset, eur_usd, td_prices, session_cache)
-            futures[future] = asset
 
     asset_results = {}
-    for future, asset in futures.items():
-        try:
-            asset_results[asset["ticker_eod"]] = future.result()
-        except Exception as exc:
-            print(f"[WARN] Erreur thread {asset['name']} : {exc}")
-            asset_results[asset["ticker_eod"]] = {
-                "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "Erreur",
-                "cs": 5.0, "cons_str": "N/D", "cons_src": "Erreur",
-                "h_dates": [], "h_closes": [], "h_src": "Erreur",
-                "h_cache": False, "h_err": str(exc),
-                "synthesis": "Erreur lors de la recuperation.", "synth_src": "Erreur",
-            }
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_asset = {
+            executor.submit(_fetch_asset_data, asset, eur_usd, td_prices, session_cache): asset
+            for asset in PORTFOLIO
+        }
+        for future in as_completed(future_to_asset):
+            asset = future_to_asset[future]
+            try:
+                asset_results[asset["ticker_eod"]] = future.result()
+            except Exception as exc:
+                print(f"[WARN] Erreur thread {asset['name']} : {exc}")
+                asset_results[asset["ticker_eod"]] = {
+                    "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "Erreur",
+                    "cs": 5.0, "cons_str": "N/D", "cons_src": "Erreur",
+                    "h_dates": [], "h_closes": [], "h_src": "Erreur",
+                    "h_cache": False, "h_err": str(exc),
+                    "synthesis": "Erreur lors de la recuperation.", "synth_src": "Erreur",
+                }
 
     for asset in PORTFOLIO:
         print(f"[INFO] Rendu {asset['name']}...")
