@@ -6,7 +6,6 @@ on:
     # Tir principal  : 14:00 UTC = 16:00 Paris (CEST)
     - cron: "0 14 * * 1-5"
     # Tir de rattrapage : 15:00 UTC = 17:00 Paris (CEST)
-    # Si GitHub rate le tir de 14h, celui-ci prend le relais.
     - cron: "0 15 * * 1-5"
   workflow_dispatch:
     inputs:
@@ -38,13 +37,11 @@ jobs:
       - name: Check if report already generated today (schedule only)
         id: check_today
         run: |
-          # workflow_dispatch = run manuel → on laisse toujours passer
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "already_done=false" >> $GITHUB_OUTPUT
             echo "🖐️ Run manuel détecté — guard désactivé, analyse forcée."
             exit 0
           fi
-          # Cron automatique → vérifier si rapport déjà commité aujourd'hui
           TODAY=$(date -u +'%Y-%m-%d')
           LAST_COMMIT=$(git log --oneline --format="%s" -5 | grep "Rapport quotidien $TODAY" || true)
           if [ -n "$LAST_COMMIT" ]; then
@@ -69,7 +66,24 @@ jobs:
           pip install --upgrade pip
           pip install requests matplotlib
 
-      # ── 3. Analyse ─────────────────────────────────────────────────────────
+      # ── 3. Debug : vérifier quelles clés API sont présentes ───────────────
+      - name: Debug API keys presence
+        if: steps.check_today.outputs.already_done == 'false'
+        env:
+          FINNHUB_API_KEY:      ${{ secrets.FINNHUB_API_KEY }}
+          EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
+          TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
+          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          echo "=== Présence des clés API ==="
+          [ -n "$FINNHUB_API_KEY" ]      && echo "✅ FINNHUB_API_KEY      : présente"      || echo "❌ FINNHUB_API_KEY      : ABSENTE"
+          [ -n "$EODHD_API_KEY" ]        && echo "✅ EODHD_API_KEY        : présente"      || echo "❌ EODHD_API_KEY        : ABSENTE"
+          [ -n "$TWELVEDATA_API_KEY" ]   && echo "✅ TWELVEDATA_API_KEY   : présente"      || echo "❌ TWELVEDATA_API_KEY   : ABSENTE"
+          [ -n "$ALPHAVANTAGE_API_KEY" ] && echo "✅ ALPHAVANTAGE_API_KEY : présente"      || echo "❌ ALPHAVANTAGE_API_KEY : ABSENTE"
+          [ -n "$OPENROUTER_API_KEY" ]   && echo "✅ OPENROUTER_API_KEY   : présente"      || echo "❌ OPENROUTER_API_KEY   : ABSENTE"
+
+      # ── 4. Analyse ─────────────────────────────────────────────────────────
       - name: Run portfolio analysis
         if: steps.check_today.outputs.already_done == 'false'
         id: analysis
@@ -78,12 +92,13 @@ jobs:
           EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           mkdir -p reports/charts cache docs
           python portfolio_analyzer.py
           echo "Script portfolio_analyzer.py terminé avec code $?"
 
-      # ── 4. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
+      # ── 5. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
       - name: Generate HTML report for Cloudflare Pages
         if: steps.check_today.outputs.already_done == 'false'
         id: generate_html
@@ -92,18 +107,21 @@ jobs:
           EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           mkdir -p docs
           python generate_html.py
           echo "Script generate_html.py terminé avec code $?"
           ls -lh docs/index.html || echo "AVERTISSEMENT : docs/index.html non trouvé"
 
-      # ── 5. Commit rapport + graphiques + page HTML ────────────────────────
+      # ── 6. Commit rapport + graphiques + page HTML ────────────────────────
       - name: Commit report, charts & HTML page
         if: steps.check_today.outputs.already_done == 'false'
         run: |
           git config user.name  "Portfolio Bot"
           git config user.email "bot@portfolio-analyzer"
+          # Fichier timestamp pour forcer un diff même si le rapport est identique
+          echo "$(date +'%Y-%m-%d %H:%M:%S UTC')" > reports/.last_run
           git add reports/
           git add docs/
           git add cache/ || true
@@ -114,7 +132,7 @@ jobs:
             git push
           fi
 
-      # ── 6. Upload artifact (rapport + graphiques) ─────────────────────────
+      # ── 7. Upload artifact ──────────────────────────────────────────────────
       - name: Upload report artifact
         if: always() && steps.check_today.outputs.already_done == 'false'
         uses: actions/upload-artifact@v4
@@ -127,7 +145,7 @@ jobs:
             docs/index.html
           retention-days: 30
 
-      # ── 7. Préparer le corps du mail ──────────────────────────────────────
+      # ── 8. Préparer le corps du mail ──────────────────────────────────────
       - name: Prepare email body
         if: always() && steps.check_today.outputs.already_done == 'false'
         id: mail_body
@@ -209,7 +227,7 @@ jobs:
 
           echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
 
-      # ── 8. Envoi mail ──────────────────────────────────────────────────────
+      # ── 9. Envoi mail ──────────────────────────────────────────────────────
       - name: Send daily report email
         if: always() && steps.check_today.outputs.already_done == 'false' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
@@ -230,7 +248,7 @@ jobs:
           convert_markdown: false
           priority:       normal
 
-      # ── 9. Alerte erreurs API critiques ───────────────────────────────────
+      # ── 10. Alerte erreurs API critiques ─────────────────────────────────
       - name: Send ALERT email on critical API errors
         if: always() && steps.check_today.outputs.already_done == 'false' && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
