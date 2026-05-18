@@ -28,15 +28,23 @@ jobs:
       contents: write
 
     steps:
-      # ── 0. Vérifier si un rapport a déjà été généré aujourd'hui ────────────
+      # ── 0. Checkout ────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 5
 
-      - name: Check if report already generated today
+      # ── 1. Guard anti-doublon (cron uniquement, jamais sur run manuel) ─────
+      - name: Check if report already generated today (schedule only)
         id: check_today
         run: |
+          # workflow_dispatch = run manuel → on laisse toujours passer
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "already_done=false" >> $GITHUB_OUTPUT
+            echo "🖐️ Run manuel détecté — guard désactivé, analyse forcée."
+            exit 0
+          fi
+          # Cron automatique → vérifier si rapport déjà commité aujourd'hui
           TODAY=$(date -u +'%Y-%m-%d')
           LAST_COMMIT=$(git log --oneline --format="%s" -5 | grep "Rapport quotidien $TODAY" || true)
           if [ -n "$LAST_COMMIT" ]; then
@@ -47,7 +55,7 @@ jobs:
             echo "🚀 Aucun rapport pour $TODAY, démarrage de l'analyse."
           fi
 
-      # ── 1. Python ──────────────────────────────────────────────────────────
+      # ── 2. Python ──────────────────────────────────────────────────────────
       - name: Set up Python 3.11
         if: steps.check_today.outputs.already_done == 'false'
         uses: actions/setup-python@v5
@@ -61,7 +69,7 @@ jobs:
           pip install --upgrade pip
           pip install requests matplotlib
 
-      # ── 2. Analyse ─────────────────────────────────────────────────────────
+      # ── 3. Analyse ─────────────────────────────────────────────────────────
       - name: Run portfolio analysis
         if: steps.check_today.outputs.already_done == 'false'
         id: analysis
@@ -75,7 +83,7 @@ jobs:
           python portfolio_analyzer.py
           echo "Script portfolio_analyzer.py terminé avec code $?"
 
-      # ── 3. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
+      # ── 4. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
       - name: Generate HTML report for Cloudflare Pages
         if: steps.check_today.outputs.already_done == 'false'
         id: generate_html
@@ -90,7 +98,7 @@ jobs:
           echo "Script generate_html.py terminé avec code $?"
           ls -lh docs/index.html || echo "AVERTISSEMENT : docs/index.html non trouvé"
 
-      # ── 4. Commit rapport + graphiques + page HTML ────────────────────────
+      # ── 5. Commit rapport + graphiques + page HTML ────────────────────────
       - name: Commit report, charts & HTML page
         if: steps.check_today.outputs.already_done == 'false'
         run: |
@@ -106,7 +114,7 @@ jobs:
             git push
           fi
 
-      # ── 5. Upload artifact (rapport + graphiques) ─────────────────────────
+      # ── 6. Upload artifact (rapport + graphiques) ─────────────────────────
       - name: Upload report artifact
         if: always() && steps.check_today.outputs.already_done == 'false'
         uses: actions/upload-artifact@v4
@@ -119,7 +127,7 @@ jobs:
             docs/index.html
           retention-days: 30
 
-      # ── 6. Préparer le corps du mail ──────────────────────────────────────
+      # ── 7. Préparer le corps du mail ──────────────────────────────────────
       - name: Prepare email body
         if: always() && steps.check_today.outputs.already_done == 'false'
         id: mail_body
@@ -201,7 +209,7 @@ jobs:
 
           echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
 
-      # ── 7. Envoi mail ──────────────────────────────────────────────────────
+      # ── 8. Envoi mail ──────────────────────────────────────────────────────
       - name: Send daily report email
         if: always() && steps.check_today.outputs.already_done == 'false' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
@@ -222,7 +230,7 @@ jobs:
           convert_markdown: false
           priority:       normal
 
-      # ── 8. Alerte erreurs API critiques ───────────────────────────────────
+      # ── 9. Alerte erreurs API critiques ───────────────────────────────────
       - name: Send ALERT email on critical API errors
         if: always() && steps.check_today.outputs.already_done == 'false' && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
