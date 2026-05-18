@@ -3,15 +3,22 @@ name: Daily Portfolio Report v5.1
 
 on:
   schedule:
-    # 14:00 UTC = 16:00 Paris (CEST, heure d'été)
-    # En hiver CET (oct→mars) : changer en 0 15 * * 1-5
+    # Tir principal  : 14:00 UTC = 16:00 Paris (CEST)
     - cron: "0 14 * * 1-5"
+    # Tir de rattrapage : 15:00 UTC = 17:00 Paris (CEST)
+    # Si GitHub rate le tir de 14h, celui-ci prend le relais.
+    - cron: "0 15 * * 1-5"
   workflow_dispatch:
     inputs:
       force_mail:
         description: "Forcer l'envoi du mail même sans erreur API"
         required: false
         default: "false"
+
+# ── Anti double-run : un seul job actif à la fois par jour ──────────────────
+concurrency:
+  group: daily-report-${{ github.ref }}-${{ github.event.schedule || 'manual' }}
+  cancel-in-progress: false
 
 jobs:
   analyze:
@@ -21,26 +28,42 @@ jobs:
       contents: write
 
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────────────
+      # ── 0. Vérifier si un rapport a déjà été généré aujourd'hui ────────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 5
 
-      # ── 2. Python ──────────────────────────────────────────────────────────
+      - name: Check if report already generated today
+        id: check_today
+        run: |
+          TODAY=$(date -u +'%Y-%m-%d')
+          LAST_COMMIT=$(git log --oneline --format="%s" -5 | grep "Rapport quotidien $TODAY" || true)
+          if [ -n "$LAST_COMMIT" ]; then
+            echo "already_done=true" >> $GITHUB_OUTPUT
+            echo "✅ Rapport déjà généré aujourd'hui ($TODAY), tir de rattrapage ignoré."
+          else
+            echo "already_done=false" >> $GITHUB_OUTPUT
+            echo "🚀 Aucun rapport pour $TODAY, démarrage de l'analyse."
+          fi
+
+      # ── 1. Python ──────────────────────────────────────────────────────────
       - name: Set up Python 3.11
+        if: steps.check_today.outputs.already_done == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
       - name: Install dependencies
+        if: steps.check_today.outputs.already_done == 'false'
         run: |
           pip install --upgrade pip
           pip install requests matplotlib
 
-      # ── 3. Analyse ─────────────────────────────────────────────────────────
+      # ── 2. Analyse ─────────────────────────────────────────────────────────
       - name: Run portfolio analysis
+        if: steps.check_today.outputs.already_done == 'false'
         id: analysis
         env:
           FINNHUB_API_KEY:      ${{ secrets.FINNHUB_API_KEY }}
@@ -52,8 +75,9 @@ jobs:
           python portfolio_analyzer.py
           echo "Script portfolio_analyzer.py terminé avec code $?"
 
-      # ── 4. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
+      # ── 3. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
       - name: Generate HTML report for Cloudflare Pages
+        if: steps.check_today.outputs.already_done == 'false'
         id: generate_html
         env:
           FINNHUB_API_KEY:      ${{ secrets.FINNHUB_API_KEY }}
@@ -66,8 +90,9 @@ jobs:
           echo "Script generate_html.py terminé avec code $?"
           ls -lh docs/index.html || echo "AVERTISSEMENT : docs/index.html non trouvé"
 
-      # ── 5. Commit rapport + graphiques + page HTML ────────────────────────
+      # ── 4. Commit rapport + graphiques + page HTML ────────────────────────
       - name: Commit report, charts & HTML page
+        if: steps.check_today.outputs.already_done == 'false'
         run: |
           git config user.name  "Portfolio Bot"
           git config user.email "bot@portfolio-analyzer"
@@ -81,9 +106,9 @@ jobs:
             git push
           fi
 
-      # ── 6. Upload artifact (rapport + graphiques) ─────────────────────────
+      # ── 5. Upload artifact (rapport + graphiques) ─────────────────────────
       - name: Upload report artifact
-        if: always()
+        if: always() && steps.check_today.outputs.already_done == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: portfolio-report-${{ github.run_number }}
@@ -94,9 +119,9 @@ jobs:
             docs/index.html
           retention-days: 30
 
-      # ── 7. Préparer le corps du mail ──────────────────────────────────────
+      # ── 6. Préparer le corps du mail ──────────────────────────────────────
       - name: Prepare email body
-        if: always()
+        if: always() && steps.check_today.outputs.already_done == 'false'
         id: mail_body
         run: |
           DATE=$(date +'%d/%m/%Y')
@@ -176,9 +201,9 @@ jobs:
 
           echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
 
-      # ── 8. Envoi mail (toujours, sauf si aucune clé SMTP configurée) ───────
+      # ── 7. Envoi mail ──────────────────────────────────────────────────────
       - name: Send daily report email
-        if: always() && env.MAIL_USERNAME != ''
+        if: always() && steps.check_today.outputs.already_done == 'false' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
@@ -197,9 +222,9 @@ jobs:
           convert_markdown: false
           priority:       normal
 
-      # ── 9. Notification si erreurs API critiques ───────────────────────────
+      # ── 8. Alerte erreurs API critiques ───────────────────────────────────
       - name: Send ALERT email on critical API errors
-        if: always() && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
+        if: always() && steps.check_today.outputs.already_done == 'false' && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
