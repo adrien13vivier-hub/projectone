@@ -222,7 +222,7 @@ def _openrouter_chat(prompt: str, timeout: int = 30, max_tokens: int = 300) -> t
         headers = {
             "Authorization": f"Bearer {OPENROUTER_KEY}",
             "Content-Type":  "application/json",
-            "HTTP-Referer":  "https://github.com/adrien13vivier-hub/portfolio-analyzer",
+            "HTTP-Referer":  "https://github.com/adrien13vivier-hub/projectone",
             "X-Title":       "Portfolio Analyzer",
         }
         payload = {
