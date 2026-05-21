@@ -1,5 +1,5 @@
-# Réactivé le 2026-05-15 — cron forcé actif (commit de réactivation)
-name: Daily Portfolio Report v5.1
+# Corrigé le 2026-05-21 — guard anti-doublon basé sur history.csv
+name: Daily Portfolio Report v5.4
 
 on:
   schedule:
@@ -31,9 +31,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 5
+          fetch-depth: 10
 
-      # ── 1. Guard anti-doublon (cron uniquement, jamais sur run manuel) ─────
+      # ── 1. Guard anti-doublon basé sur history.csv (fiable) ───────────────
+      # On vérifie si la DATE du jour apparaît déjà dans reports/history.csv.
+      # Cette approche est immunisée contre le format du message de commit.
       - name: Check if report already generated today (schedule only)
         id: check_today
         run: |
@@ -43,13 +45,12 @@ jobs:
             exit 0
           fi
           TODAY=$(date -u +'%Y-%m-%d')
-          LAST_COMMIT=$(git log --oneline --format="%s" -5 | grep "Rapport quotidien $TODAY" || true)
-          if [ -n "$LAST_COMMIT" ]; then
+          if [ -f "reports/history.csv" ] && grep -q "^$TODAY," reports/history.csv; then
             echo "already_done=true" >> $GITHUB_OUTPUT
-            echo "✅ Rapport déjà généré aujourd'hui ($TODAY), tir de rattrapage ignoré."
+            echo "✅ Rapport déjà dans history.csv pour $TODAY — tir de rattrapage ignoré."
           else
             echo "already_done=false" >> $GITHUB_OUTPUT
-            echo "🚀 Aucun rapport pour $TODAY, démarrage de l'analyse."
+            echo "🚀 Aucune entrée pour $TODAY dans history.csv — démarrage de l'analyse."
           fi
 
       # ── 2. Python ──────────────────────────────────────────────────────────
@@ -190,7 +191,7 @@ jobs:
           <div class="container">
             <div class="header">
               <h1>📊 Rapport Portefeuille — $DATE</h1>
-              <p>Analyse quotidienne automatisée · v5.1</p>
+              <p>Analyse quotidienne automatisée · v5.4</p>
             </div>
             <div class="body">
               <div class="kpi">
@@ -220,7 +221,7 @@ jobs:
               <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
               <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
             </div>
-            <div class="footer">Portfolio Analyzer v5.1 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
+            <div class="footer">Portfolio Analyzer v5.4 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
           </div>
           </body></html>
           EOF
@@ -264,7 +265,7 @@ jobs:
           to:             ${{ secrets.MAIL_TO }}
           from:           ${{ secrets.MAIL_FROM }}
           body: |
-            ⚠️ ALERTE PORTFOLIO ANALYZER v5.1
+            ⚠️ ALERTE PORTFOLIO ANALYZER v5.4
 
             Des données sont erronées ou indisponibles dans le rapport du jour.
             Ne prenez pas de décision d'investissement sans vérifier manuellement les cours.
@@ -275,5 +276,5 @@ jobs:
             Run GitHub Actions : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             ---
-            Portfolio Analyzer v5.1 — Alerte automatique
+            Portfolio Analyzer v5.4 — Alerte automatique
           priority:       high
