@@ -1,5 +1,5 @@
-# Corrigé le 2026-05-21 — guard anti-doublon basé sur history.csv
-name: Daily Portfolio Report v5.4
+# Corrigé le 2026-05-22 — exit 1 si portfolio_analyzer.py ou generate_html.py échouent
+name: Daily Portfolio Report v5.5
 
 on:
   schedule:
@@ -14,7 +14,7 @@ on:
         required: false
         default: "false"
 
-# ── Anti double-run : un seul job actif à la fois par jour ──────────────────
+# ── Anti double-run : un seul job actif à la fois par jour ───────────────
 concurrency:
   group: daily-report-${{ github.ref }}-${{ github.event.schedule || 'manual' }}
   cancel-in-progress: false
@@ -27,15 +27,13 @@ jobs:
       contents: write
 
     steps:
-      # ── 0. Checkout ────────────────────────────────────────────────────────
+      # ── 0. Checkout ────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 10
 
       # ── 1. Guard anti-doublon basé sur history.csv (fiable) ───────────────
-      # On vérifie si la DATE du jour apparaît déjà dans reports/history.csv.
-      # Cette approche est immunisée contre le format du message de commit.
       - name: Check if report already generated today (schedule only)
         id: check_today
         run: |
@@ -53,7 +51,7 @@ jobs:
             echo "🚀 Aucune entrée pour $TODAY dans history.csv — démarrage de l'analyse."
           fi
 
-      # ── 2. Python ──────────────────────────────────────────────────────────
+      # ── 2. Python ──────────────────────────────────────────────────────
       - name: Set up Python 3.11
         if: steps.check_today.outputs.already_done == 'false'
         uses: actions/setup-python@v5
@@ -84,7 +82,7 @@ jobs:
           [ -n "$ALPHAVANTAGE_API_KEY" ] && echo "✅ ALPHAVANTAGE_API_KEY : présente"      || echo "❌ ALPHAVANTAGE_API_KEY : ABSENTE"
           [ -n "$OPENROUTER_API_KEY" ]   && echo "✅ OPENROUTER_API_KEY   : présente"      || echo "❌ OPENROUTER_API_KEY   : ABSENTE"
 
-      # ── 4. Analyse ─────────────────────────────────────────────────────────
+      # ── 4. Analyse ───────────────────────────────────────────────────────
       - name: Run portfolio analysis
         if: steps.check_today.outputs.already_done == 'false'
         id: analysis
@@ -96,32 +94,23 @@ jobs:
           OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           mkdir -p reports/charts cache docs
-          python portfolio_analyzer.py
-          echo "Script portfolio_analyzer.py terminé avec code $?"
+          python portfolio_analyzer.py || { echo "❌ ERREUR portfolio_analyzer.py (code $?)"; exit 1; }
 
-      # ── 5. Génération HTML → docs/index.html (Cloudflare Pages) ──────────
+      # ── 5. Génération HTML → docs/index.html (Cloudflare Pages) ─────────
       - name: Generate HTML report for Cloudflare Pages
         if: steps.check_today.outputs.already_done == 'false'
         id: generate_html
-        env:
-          FINNHUB_API_KEY:      ${{ secrets.FINNHUB_API_KEY }}
-          EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
-          TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
-          ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
-          OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           mkdir -p docs
-          python generate_html.py
-          echo "Script generate_html.py terminé avec code $?"
-          ls -lh docs/index.html || echo "AVERTISSEMENT : docs/index.html non trouvé"
+          python generate_html.py || { echo "❌ ERREUR generate_html.py (code $?)"; exit 1; }
+          ls -lh docs/index.html || { echo "❌ docs/index.html non généré"; exit 1; }
 
-      # ── 6. Commit rapport + graphiques + page HTML ────────────────────────
+      # ── 6. Commit rapport + graphiques + page HTML ──────────────────────
       - name: Commit report, charts & HTML page
         if: steps.check_today.outputs.already_done == 'false'
         run: |
           git config user.name  "Portfolio Bot"
           git config user.email "bot@portfolio-analyzer"
-          # Fichier timestamp pour forcer un diff même si le rapport est identique
           echo "$(date +'%Y-%m-%d %H:%M:%S UTC')" > reports/.last_run
           git add reports/
           git add docs/
@@ -133,7 +122,7 @@ jobs:
             git push
           fi
 
-      # ── 7. Upload artifact ──────────────────────────────────────────────────
+      # ── 7. Upload artifact ────────────────────────────────────────────
       - name: Upload report artifact
         if: always() && steps.check_today.outputs.already_done == 'false'
         uses: actions/upload-artifact@v4
@@ -146,7 +135,7 @@ jobs:
             docs/index.html
           retention-days: 30
 
-      # ── 8. Préparer le corps du mail ──────────────────────────────────────
+      # ── 8. Préparer le corps du mail ─────────────────────────────────
       - name: Prepare email body
         if: always() && steps.check_today.outputs.already_done == 'false'
         id: mail_body
@@ -191,7 +180,7 @@ jobs:
           <div class="container">
             <div class="header">
               <h1>📊 Rapport Portefeuille — $DATE</h1>
-              <p>Analyse quotidienne automatisée · v5.4</p>
+              <p>Analyse quotidienne automatisée · v5.5</p>
             </div>
             <div class="body">
               <div class="kpi">
@@ -221,14 +210,14 @@ jobs:
               <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
               <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
             </div>
-            <div class="footer">Portfolio Analyzer v5.4 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
+            <div class="footer">Portfolio Analyzer v5.5 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
           </div>
           </body></html>
           EOF
 
           echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
 
-      # ── 9. Envoi mail ──────────────────────────────────────────────────────
+      # ── 9. Envoi mail ───────────────────────────────────────────────
       - name: Send daily report email
         if: always() && steps.check_today.outputs.already_done == 'false' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
@@ -249,7 +238,7 @@ jobs:
           convert_markdown: false
           priority:       normal
 
-      # ── 10. Alerte erreurs API critiques ─────────────────────────────────
+      # ── 10. Alerte erreurs API critiques ──────────────────────────────
       - name: Send ALERT email on critical API errors
         if: always() && steps.check_today.outputs.already_done == 'false' && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
         uses: dawidd6/action-send-mail@v6
@@ -265,7 +254,7 @@ jobs:
           to:             ${{ secrets.MAIL_TO }}
           from:           ${{ secrets.MAIL_FROM }}
           body: |
-            ⚠️ ALERTE PORTFOLIO ANALYZER v5.4
+            ⚠️ ALERTE PORTFOLIO ANALYZER v5.5
 
             Des données sont erronées ou indisponibles dans le rapport du jour.
             Ne prenez pas de décision d'investissement sans vérifier manuellement les cours.
@@ -276,5 +265,5 @@ jobs:
             Run GitHub Actions : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             ---
-            Portfolio Analyzer v5.4 — Alerte automatique
+            Portfolio Analyzer v5.5 — Alerte automatique
           priority:       high
