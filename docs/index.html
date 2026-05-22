@@ -58,8 +58,6 @@ body {
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
-
-/* ── Header ── */
 header {
   position: sticky; top: 0; z-index: 200;
   background: color-mix(in oklab, var(--bg) 88%, transparent);
@@ -89,11 +87,7 @@ header {
   transition: color .15s, background .15s;
 }
 .btn-icon:hover { color: var(--text); background: var(--faint); }
-
-/* ── Layout ── */
 .container { max-width: 1040px; margin: 0 auto; padding: 28px 20px 100px; }
-
-/* ── Update badge ── */
 .update-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--surface); border: 1px solid var(--border);
@@ -107,8 +101,6 @@ header {
   animation: pulse 2.4s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
-
-/* ── KPI Bar ── */
 .kpi-bar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -140,8 +132,6 @@ header {
 .kpi-negative { color: var(--red); }
 .kpi-neutral  { color: var(--accent); }
 .kpi-card.main-card { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 6%, var(--surface)); }
-
-/* ── Sections ── */
 .section-block { margin-bottom: 48px; }
 .section-title {
   font-size: .88rem; font-weight: 700; text-transform: uppercase;
@@ -149,8 +139,6 @@ header {
   padding-bottom: 10px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 8px;
 }
-
-/* ── Graphique combiné ── */
 .combined-chart-wrap {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
@@ -161,8 +149,6 @@ header {
   padding: 10px 16px 14px; border-top: 1px solid var(--border);
   font-style: italic; line-height: 1.5;
 }
-
-/* ── Positions Grid ── */
 .positions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
 .position-card {
   background: var(--surface); border: 1px solid var(--border);
@@ -190,8 +176,6 @@ header {
 .pos-detail-item { display: flex; gap: 10px; align-items: baseline; font-size: .82rem; }
 .detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
 .mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
-
-/* ── Synthèse IA par position ── v3.4 */
 .pos-synthesis {
   margin-top: 12px;
   background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
@@ -214,8 +198,6 @@ header {
   font-size: .8rem; color: var(--text); line-height: 1.6;
   font-style: italic; max-width: none;
 }
-
-/* ── Score Bar ── */
 .score-wrap { display: flex; flex-direction: column; gap: 4px; }
 .score-num  { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
 .score-bar  { height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
@@ -223,8 +205,6 @@ header {
 .bar-green  { background: var(--green); }
 .bar-yellow { background: var(--yellow); }
 .bar-red    { background: var(--red); }
-
-/* ── Tables ── */
 .table-wrap {
   overflow-x: auto; border-radius: var(--radius);
   border: 1px solid var(--border); box-shadow: var(--shadow); margin: 0;
@@ -245,8 +225,6 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .cell-pos { color: var(--green) !important; font-weight: 600; font-family: var(--font-mono); }
 .cell-neg { color: var(--red)   !important; font-weight: 600; font-family: var(--font-mono); }
 .cell-num { font-family: var(--font-mono); }
-
-/* ── Badges ── */
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .73rem; font-weight: 700; padding: 3px 10px;
@@ -259,23 +237,15 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .sell       { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
 .up { color: var(--green); font-weight: 700; }
 .dn { color: var(--red);   font-weight: 700; }
-
-/* ── Archive ── */
 .archive-toggle {
   font-size: .8rem; color: var(--accent); cursor: pointer;
   background: none; border: none; padding: 4px 0;
   transition: color .15s; margin-bottom: 12px; display: block;
 }
 .archive-toggle:hover { color: var(--text); }
-#archive-panel {
-  display: none; margin-bottom: 8px;
-}
+#archive-panel { display: none; margin-bottom: 8px; }
 #archive-panel.open { display: block; }
-
-/* ── Divider ── */
 hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-
-/* ── Impression ── */
 @media print {
   header, .header-actions, .archive-toggle, #archive-panel,
   .update-badge { display: none !important; }
@@ -285,8 +255,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   .combined-chart-img { max-height: none; }
   .pos-synthesis { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
 }
-
-/* ── Mobile ── */
 @media (max-width: 700px) {
   header { padding: 0 14px; }
   .header-nav { display: none; }
@@ -297,8 +265,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   .pos-kpis { grid-template-columns: repeat(3, 1fr); }
   td, th { padding: 8px 10px; font-size: .76rem; }
 }
-
-/* ── Animations entrée ── */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .kpi-card       { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
 .kpi-card:nth-child(1) { animation-delay: .05s; }
@@ -318,7 +284,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v5.4 · 15/05/2026 17:53</div>
+      <div class="header-meta">v5.5 · 15/05/2026 17:53</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
@@ -335,13 +301,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 
   <div class="container">
 
-    <!-- BADGE MAJ -->
     <div class="update-badge">
       <span class="update-dot"></span>
       Dernière mise à jour :&nbsp;<strong>15/05/2026 17:53</strong>
     </div>
 
-    <!-- KPI BAR -->
     <div class="kpi-bar">
       <div class="kpi-card main-card">
         <div class="kpi-val kpi-negative"
@@ -758,10 +722,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   </div>
 </section>
 
-  </div><!-- .container -->
+  </div>
 
   <script>
-// ── Thème ─────────────────────────────────────────────────────
 (function(){
   var root = document.documentElement;
   var btn  = document.querySelector('[data-theme-toggle]');
@@ -778,7 +741,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   });
 })();
 
-// ── Compteurs animés ──────────────────────────────────────────
 function animateCounter(el) {
   var raw = el.getAttribute('data-val');
   if (!raw) return;
@@ -808,14 +770,12 @@ document.querySelectorAll('[data-counter]').forEach(function(el){
   obs.observe(el);
 });
 
-// ── Colorisation PnL tables ───────────────────────────────────
 document.querySelectorAll('td').forEach(function(td){
   var t = td.textContent.trim();
   if (/^[+][\d\s].*[€%]/.test(t)) td.classList.add('cell-pos');
   else if (/^[-][\d\s].*[€%]/.test(t)) td.classList.add('cell-neg');
 });
 
-// ── Score bars (animation décalée) ───────────────────────────
 document.querySelectorAll('.score-fill').forEach(function(bar){
   var w = bar.style.width;
   bar.style.width = '0%';
@@ -824,12 +784,11 @@ document.querySelectorAll('.score-fill').forEach(function(bar){
   }, 400);
 });
 
-// ── Archive ──────────────────────────────────────────────────
 function toggleArchive() {
   var panel = document.getElementById('archive-panel');
   var btn   = document.getElementById('archive-btn');
   var open  = panel.classList.toggle('open');
-  btn.textContent = open ? '▲ Masquer l\'historique' : '▼ Afficher les 30 derniers rapports';
+  btn.textContent = open ? '\u25b2 Masquer l\'historique' : '\u25bc Afficher les 30 derniers rapports';
   if (open) loadArchive();
 }
 var _archiveLoaded = false;
@@ -842,13 +801,13 @@ function loadArchive() {
       var tbody = document.getElementById('archive-tbody');
       tbody.innerHTML = data.map(function(e, i){
         var cls = i === 0 ? 'style="background:var(--accent-dim)"' : '';
-        var pnl = e.pnl || '—';
+        var pnl = e.pnl || '\u2014';
         var pnlCls = pnl.includes('+') ? 'cell-pos' : pnl.includes('-') ? 'cell-neg' : '';
         return '<tr ' + cls + '>'
           + '<td class="cell-num" style="white-space:nowrap">📅 ' + e.date + '</td>'
           + '<td class="' + pnlCls + '">' + pnl + '</td>'
-          + '<td class="cell-num">' + (e.vm ? e.vm + ' €' : '—') + '</td>'
-          + '<td class="cell-num">' + (e.nb_pos || '—') + '</td>'
+          + '<td class="cell-num">' + (e.vm ? e.vm + ' \u20ac' : '\u2014') + '</td>'
+          + '<td class="cell-num">' + (e.nb_pos || '\u2014') + '</td>'
           + '</tr>';
       }).join('');
     })
