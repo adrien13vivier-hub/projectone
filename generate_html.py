@@ -47,7 +47,7 @@ if COMBINED_PNG.exists():
     combined_b64 = base64.b64encode(COMBINED_PNG.read_bytes()).decode()
 
 # ══════════════════════════════════════════════════════════
-EXTRACTION KPI
+# EXTRACTION KPI
 # ══════════════════════════════════════════════════════════
 def extract_kpi(md: str) -> dict:
     kpi = {"pnl_net": "0", "pnl_pct": "0", "valeur_marche": "0",
@@ -86,7 +86,7 @@ brut_positive   = not kpi["pnl_brut"].startswith("-")
 brut_class      = "kpi-positive" if brut_positive else "kpi-negative"
 
 # ══════════════════════════════════════════════════════════
-EXTRACTION POSITIONS (blocs ### Valeur)
+# EXTRACTION POSITIONS (blocs ### Valeur)
 # ══════════════════════════════════════════════════════════
 def extract_positions(md: str) -> list[dict]:
     positions = []
@@ -155,7 +155,7 @@ def extract_positions(md: str) -> list[dict]:
 positions = extract_positions(md_content)
 
 # ══════════════════════════════════════════════════════════
-EXTRACTION SYNTHÈSE / CLASSEMENT
+# EXTRACTION SYNTHÈSE / CLASSEMENT
 # ══════════════════════════════════════════════════════════
 def extract_synthese(md: str) -> list[dict]:
     rows = []
@@ -172,7 +172,7 @@ def extract_synthese(md: str) -> list[dict]:
 synthese_rows = extract_synthese(md_content)
 
 # ══════════════════════════════════════════════════════════
-EXTRACTION INDICES MACRO
+# EXTRACTION INDICES MACRO
 # ══════════════════════════════════════════════════════════
 def extract_indices(md: str) -> list[dict]:
     indices = []
@@ -194,7 +194,7 @@ def extract_indices(md: str) -> list[dict]:
 indices = extract_indices(md_content)
 
 # ══════════════════════════════════════════════════════════
-ARCHIVE JSON
+# ARCHIVE JSON
 # ══════════════════════════════════════════════════════════
 Path("docs").mkdir(exist_ok=True)
 archive = []
@@ -216,7 +216,7 @@ archive = archive[:30]
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # ══════════════════════════════════════════════════════════
-HELPERS HTML
+# HELPERS HTML
 # ══════════════════════════════════════════════════════════
 def rec_badge(rec: str) -> str:
     rec_u = rec.upper()
@@ -264,7 +264,7 @@ def var_span(txt: str) -> str:
     return t
 
 # ══════════════════════════════════════════════════════════
-BLOCS HTML
+# BLOCS HTML
 # ══════════════════════════════════════════════════════════
 
 def build_indices_html() -> str:
@@ -427,7 +427,7 @@ def build_archive_html() -> str:
 </section>"""
 
 # ══════════════════════════════════════════════════════════
-CSS
+# CSS
 # ══════════════════════════════════════════════════════════
 CSS = """
 :root {
@@ -698,7 +698,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 """
 
 # ══════════════════════════════════════════════════════════
-JS
+# JS
 # ══════════════════════════════════════════════════════════
 JS = r"""
 (function(){
@@ -795,7 +795,7 @@ function loadArchive() {
 """
 
 # ══════════════════════════════════════════════════════════
-ASSEMBLAGE HTML FINAL
+# ASSEMBLAGE HTML FINAL
 # ══════════════════════════════════════════════════════════
 pnl_prefix  = "+" if pnl_positive    else "-"
 brut_prefix = "+" if brut_positive   else "-"
