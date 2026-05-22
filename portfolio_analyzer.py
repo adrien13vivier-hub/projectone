@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v5.4
+Portfolio Analyzer v5.5
 ================================================================================
-ARCHITECTURE DES CLES API v5.4 - OPTIMISATION QUOTAS PLANS GRATUITS
+ARCHITECTURE DES CLES API v5.5 - OPTIMISATION QUOTAS PLANS GRATUITS
 
-  Cle API          | Mission v5.4                                  | Quota gratuit reel
+  Cle API          | Mission v5.5                                  | Quota gratuit reel
   AlphaVantage     | EUR/USD * Historique US * Sentiment US (NLP)  | 25 req/jour -> ~7/run
   TwelveData       | Cours US temps reel (batch)                   | 800/jour  -> <=9/run
   EODHD            | Cours EU * Indices * News EU * Historique EU  | 20/jour   -> ~12/run
@@ -12,7 +12,7 @@ ARCHITECTURE DES CLES API v5.4 - OPTIMISATION QUOTAS PLANS GRATUITS
   OpenRouter       | Synthese RSS Yahoo Finance (DeepSeek v3 free) | illimite (free tier)
                    | Fallback donnees si EODHD/autres echouent     |
 
-  REGLES CLES v5.4 :
+  REGLES CLES v5.5 :
   - EODHD N'EST JAMAIS appele pour les cours US si TwelveData a repondu.
   - AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US.
   - AlphaVantage TIME_SERIES_MONTHLY pour l'historique US.
@@ -23,6 +23,7 @@ ARCHITECTURE DES CLES API v5.4 - OPTIMISATION QUOTAS PLANS GRATUITS
       * Flux RSS Yahoo Finance -> titres bruts -> synthese 2-3 phrases FR par asset
       * La synthese est nettoyee (\n internes supprimes) -> blockquote Markdown mono-ligne
       * Fallback si une source de donnees principale echoue completement
+  - Logs : niveau WARNING uniquement (compatible cron / stdout silencieux).
 
   BUDGET APPELS PAR RUN :
     AlphaVantage : 1 (EUR/USD) + 3 (hist US) + 3-6 (sentiment US) = ~7-10/run
@@ -31,7 +32,7 @@ ARCHITECTURE DES CLES API v5.4 - OPTIMISATION QUOTAS PLANS GRATUITS
     Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12-15/run
     OpenRouter   : 1 appel par asset (RSS + synthese) = ~12/run (portfolio + watchlist)
 
-Scoring v5.4 (inchange) :
+Scoring v5.5 (inchange) :
   Prix vs PRU        : 30 %
   Sentiment presse   : 20 %
   Consensus analystes: 20 %
@@ -42,6 +43,7 @@ Scoring v5.4 (inchange) :
 import os
 import csv
 import json
+import logging
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -49,6 +51,13 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
+
+# --- LOGGING (cron-friendly : WARNING uniquement, pas de stdout INFO) --------
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(levelname)s %(message)s",
+)
+_log = logging.getLogger("portfolio_analyzer")
 
 # --- CLES API ----------------------------------------------------------------
 FINNHUB_KEY      = os.environ.get("FINNHUB_API_KEY", "")
@@ -61,7 +70,7 @@ for k, v in [("FINNHUB_API_KEY", FINNHUB_KEY), ("EODHD_API_KEY", EODHD_KEY),
              ("TWELVEDATA_API_KEY", TWELVEDATA_KEY), ("ALPHAVANTAGE_API_KEY", ALPHAVANTAGE_KEY),
              ("OPENROUTER_API_KEY", OPENROUTER_KEY)]:
     if not v:
-        print(f"[WARN] Cle absente : {k} -- fallback cache active pour cette source")
+        _log.warning("Cle absente : %s -- fallback cache active pour cette source", k)
 
 FH_BASE  = "https://finnhub.io/api/v1"
 EOD_BASE = "https://eodhd.com/api"
@@ -282,7 +291,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     )
     try:
         r = requests.get(url, timeout=10,
-                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/5.4"})
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/5.5"})
         if r.status_code != 200:
             _rss_cache[ticker_yf] = []
             return []
@@ -297,7 +306,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
         _rss_cache[ticker_yf] = titles
         return titles
     except Exception as e:
-        print(f"[WARN] RSS Yahoo Finance ({ticker_yf}) : {e}")
+        _log.warning("RSS Yahoo Finance (%s) : %s", ticker_yf, e)
         _rss_cache[ticker_yf] = []
         return []
 
@@ -366,12 +375,11 @@ def get_news_synthesis(asset: dict) -> tuple:
         )
         text, err = _openrouter_chat(prompt, max_tokens=_SYNTHESIS_MAX_TOKENS)
         if text:
-            # Nettoyage defensif : supprime tout \n residuel meme si le modele n'a pas obei
             text_clean = _clean_synthesis(text)
             result = (text_clean, "DeepSeek v3 / RSS Yahoo Finance")
             _synthesis_cache[key] = result
             return result
-        print(f"[WARN] OpenRouter synthese ({name}) : {err}")
+        _log.warning("OpenRouter synthese (%s) : %s", name, err)
 
     # Fallback : retourne les titres bruts si DeepSeek indispo
     brut = " | ".join(titles[:3])
@@ -751,7 +759,7 @@ def get_sentiment(asset: dict) -> tuple:
         return 50.0, 50.0, f"Neutre par defaut (Finnhub:{fh_err})"
 
 
-# --- Analyse lexicale v5.4 : fenetre de negation ------------------------------
+# --- Analyse lexicale v5.5 : fenetre de negation ------------------------------
 _NEGATORS  = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
 _NEG_WINDOW = 3
 
@@ -1049,7 +1057,7 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         }
 
         if not valid:
-            print("[WARN] generate_combined_chart : aucune serie valide (min 2 points requis)")
+            _log.warning("generate_combined_chart : aucune serie valide (min 2 points requis)")
             return False
 
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
@@ -1128,11 +1136,10 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         plt.savefig(chart_path, dpi=130, bbox_inches="tight",
                     facecolor=fig.get_facecolor())
         plt.close(fig)
-        print(f"[INFO] Graphique combine genere : {chart_path} ({len(valid)} courbes)")
         return True
 
     except Exception as e:
-        print(f"[WARN] generate_combined_chart non genere : {e}")
+        _log.warning("generate_combined_chart non genere : %s", e)
         return False
 
 
@@ -1149,7 +1156,6 @@ def append_history(now: datetime, rows: list):
             writer.writeheader()
         for row in rows:
             writer.writerow(row)
-    print(f"[INFO] Historique CSV mis a jour : {len(rows)} lignes.")
 
 
 # =============================================================================
@@ -1190,12 +1196,10 @@ def build_report() -> tuple:
     history_rows     = []
     sources_log      = {}
 
-    print("[INFO] Batch TwelveData (cours US)...")
     us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
     watch_td   = [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
     td_prices  = td_fetch_batch(list(set(us_tickers + watch_td))) if TWELVEDATA_KEY else {}
 
-    print("[INFO] EUR/USD (AlphaVantage)...")
     eur_usd, eurusd_src, eurusd_cache, eurusd_note = get_eur_usd(session_cache)
     new_cache["eur_usd"] = eur_usd
     sources_log["EUR/USD"] = eurusd_src
@@ -1206,7 +1210,6 @@ def build_report() -> tuple:
     if eurusd_note:
         divergence_log.append(f"EUR/USD : {eurusd_note}")
 
-    print("[INFO] Indices macro (EODHD)...")
     indices_data = {n: get_index(s) for n, s in INDICES.items()}
     for idx_name, d in indices_data.items():
         sources_log[idx_name] = d["source"]
@@ -1218,7 +1221,7 @@ def build_report() -> tuple:
     macro_news  = get_macro_news(5)
 
     lines += [
-        f"# Rapport de Portefeuille v5.4 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# Rapport de Portefeuille v5.5 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "", "---", "",
         "## Contexte Economique", "",
         f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
@@ -1247,8 +1250,6 @@ def build_report() -> tuple:
             asset, eur_usd, td_prices, session_cache)
         prices[asset["ticker_eod"]] = (price_eur, chg, price_src, price_cache, div_note)
 
-    print("[INFO] Lancement parallele des donnees par asset...")
-
     asset_results = {}
     with ThreadPoolExecutor(max_workers=4) as executor:
         future_to_asset = {
@@ -1260,7 +1261,7 @@ def build_report() -> tuple:
             try:
                 asset_results[asset["ticker_eod"]] = future.result()
             except Exception as exc:
-                print(f"[WARN] Erreur thread {asset['name']} : {exc}")
+                _log.warning("Erreur thread %s : %s", asset["name"], exc)
                 asset_results[asset["ticker_eod"]] = {
                     "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "Erreur",
                     "cs": 5.0, "cons_str": "N/D", "cons_src": "Erreur",
@@ -1270,7 +1271,6 @@ def build_report() -> tuple:
                 }
 
     for asset in PORTFOLIO:
-        print(f"[INFO] Rendu {asset['name']}...")
         ticker = asset["ticker_eod"]
 
         price_eur, chg, price_src, price_cache, div_note = prices[ticker]
