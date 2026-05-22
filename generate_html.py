@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.4
+generate_html.py  v3.5
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
@@ -10,45 +10,48 @@ Convertit reports/daily_report.md  →  docs/index.html
   - v3.3 : capture multi-lignes (toutes les lignes ">") concaténées
   - v3.4 : regex synth_src tolère les parenthèses dans le nom de source
             (ex: "RSS Yahoo Finance (brut)" capturé correctement)
+  - v3.5 : suppression des print() finaux (cron-silent) + version v5.5
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
-import base64, json, os, re, sys
+import base64, json, logging, os, re, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# ── Chemins ────────────────────────────────────────────────────
+_log = logging.getLogger("generate_html")
+logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
+
+# ── Chemins ──────────────────────────────────────────────
 MD_PATH      = Path("reports/daily_report.md")
 HTML_PATH    = Path("docs/index.html")
 ARCHIVE_PATH = Path("docs/archive.json")
 CHARTS_DIR   = Path("reports/charts")
 COMBINED_PNG = CHARTS_DIR / "portfolio_combined.png"
 
-# ── Lecture Markdown ───────────────────────────────────────────
+# ── Lecture Markdown ───────────────────────────────────────
 if not MD_PATH.exists():
-    print("[WARN] reports/daily_report.md introuvable — page vide générée.")
+    _log.warning("reports/daily_report.md introuvable — page vide générée.")
     md_content = "# Rapport indisponible\n\nAucun rapport généré ce jour."
 else:
     md_content = MD_PATH.read_text(encoding="utf-8")
 
-# ── Date du rapport ────────────────────────────────────────────
+# ── Date du rapport ───────────────────────────────────────
 date_match  = re.search(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2})", md_content)
 report_date = date_match.group(1) if date_match else \
               datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
 
-# ── Graphique combiné → base64 ─────────────────────────────────
+# ── Graphique combiné → base64 ─────────────────────────────
 combined_b64 = ""
 if COMBINED_PNG.exists():
     combined_b64 = base64.b64encode(COMBINED_PNG.read_bytes()).decode()
 
-# ══════════════════════════════════════════════════════════════
-# EXTRACTION KPI
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+EXTRACTION KPI
+# ══════════════════════════════════════════════════════════
 def extract_kpi(md: str) -> dict:
     kpi = {"pnl_net": "0", "pnl_pct": "0", "valeur_marche": "0",
            "cout_total": "0", "pnl_brut": "0", "pnl_brut_pct": "0"}
-    # Ligne synthèse: | cout | VM | PnL Brut | PnL Net |
     m = re.search(
         r"\|\s*([\d\s,.]+)\s*EUR\s*\|\s*([\d\s,.]+)\s*EUR\s*"
         r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([+-][\d,.]+)%[^|]*"
@@ -82,9 +85,9 @@ pnl_class       = "kpi-positive" if pnl_positive else "kpi-negative"
 brut_positive   = not kpi["pnl_brut"].startswith("-")
 brut_class      = "kpi-positive" if brut_positive else "kpi-negative"
 
-# ══════════════════════════════════════════════════════════════
-# EXTRACTION POSITIONS (blocs ### Valeur)
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+EXTRACTION POSITIONS (blocs ### Valeur)
+# ══════════════════════════════════════════════════════════
 def extract_positions(md: str) -> list[dict]:
     positions = []
     blocks = re.split(r"(?=^### .+`)", md, flags=re.MULTILINE)
@@ -121,10 +124,6 @@ def extract_positions(md: str) -> list[dict]:
         ret_3m    = m_mom.group(3).strip() if m_mom else "—"
         ret_6m    = m_mom.group(4).strip() if m_mom else "—"
 
-        # ── Synthèse IA ─────────────────────────────────────────────────────
-        # v3.4 : regex synth_src avec `.+?` au lieu de `[^)]+` pour tolérer
-        #        les parenthèses dans le nom de la source
-        #        (ex: "RSS Yahoo Finance (brut)" était tronqué en "RSS Yahoo Finance (brut")
         synthesis = ""
         synth_src = ""
         m_synth_src = re.search(
@@ -133,7 +132,6 @@ def extract_positions(md: str) -> list[dict]:
         if m_synth_src:
             synth_src = m_synth_src.group(1).strip()
 
-        # Toutes les lignes ">" après le marqueur Actualite recente
         synth_block = block
         m_actualite_pos = re.search(r"\*\*Actualite[^*]*\*\*", block)
         if m_actualite_pos:
@@ -156,9 +154,9 @@ def extract_positions(md: str) -> list[dict]:
 
 positions = extract_positions(md_content)
 
-# ══════════════════════════════════════════════════════════════
-# EXTRACTION SYNTHÈSE / CLASSEMENT
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+EXTRACTION SYNTHÈSE / CLASSEMENT
+# ══════════════════════════════════════════════════════════
 def extract_synthese(md: str) -> list[dict]:
     rows = []
     in_class = False
@@ -173,9 +171,9 @@ def extract_synthese(md: str) -> list[dict]:
 
 synthese_rows = extract_synthese(md_content)
 
-# ══════════════════════════════════════════════════════════════
-# EXTRACTION INDICES MACRO
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+EXTRACTION INDICES MACRO
+# ══════════════════════════════════════════════════════════
 def extract_indices(md: str) -> list[dict]:
     indices = []
     in_idx = False
@@ -195,9 +193,9 @@ def extract_indices(md: str) -> list[dict]:
 
 indices = extract_indices(md_content)
 
-# ══════════════════════════════════════════════════════════════
-# ARCHIVE JSON
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+ARCHIVE JSON
+# ══════════════════════════════════════════════════════════
 Path("docs").mkdir(exist_ok=True)
 archive = []
 if ARCHIVE_PATH.exists():
@@ -217,9 +215,9 @@ archive.insert(0, {
 archive = archive[:30]
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
-# ══════════════════════════════════════════════════════════════
-# HELPERS HTML
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+HELPERS HTML
+# ══════════════════════════════════════════════════════════
 def rec_badge(rec: str) -> str:
     rec_u = rec.upper()
     if "ACHAT FORT"   in rec_u: cls, ico = "buy-strong", "🟢"
@@ -265,11 +263,10 @@ def var_span(txt: str) -> str:
         return f'<span class="dn">▼ {t.lstrip("v")}</span>'
     return t
 
-# ══════════════════════════════════════════════════════════════
-# BLOCS HTML
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+BLOCS HTML
+# ══════════════════════════════════════════════════════════
 
-# ── Indices macro ──────────────────────────────────────────────
 def build_indices_html() -> str:
     if not indices:
         return ""
@@ -289,7 +286,6 @@ def build_indices_html() -> str:
   </div>
 </section>"""
 
-# ── Graphique combiné (Tendances) ──────────────────────────────
 def build_combined_chart_html() -> str:
     if not combined_b64:
         return ""
@@ -308,7 +304,6 @@ def build_combined_chart_html() -> str:
   </div>
 </section>"""
 
-# ── Positions détenues ─────────────────────────────────────────
 def build_positions_html() -> str:
     if not positions:
         return "<p style='color:var(--muted)'>Aucune position disponible.</p>"
@@ -319,10 +314,8 @@ def build_positions_html() -> str:
         pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
         var_html = var_span(p["variation"])
 
-        # ── Bloc synthèse IA ──
         synthesis_html = ""
         synth_text = p.get("synthesis", "").strip()
-        # Ne pas afficher si vide ou message générique "Aucune actualite"
         if synth_text and "Aucune actualite" not in synth_text:
             src_label = f'<span class="synth-src">{p["synth_src"]}</span>' if p.get("synth_src") else ""
             synthesis_html = f"""
@@ -384,7 +377,6 @@ def build_positions_html() -> str:
   <div class="positions-grid">{cards}</div>
 </section>"""
 
-# ── Synthèse & Recommandations ─────────────────────────────────
 def build_synthese_html() -> str:
     if not synthese_rows:
         return ""
@@ -415,7 +407,6 @@ def build_synthese_html() -> str:
   </div>
 </section>"""
 
-# ── Archive historique ─────────────────────────────────────────
 def build_archive_html() -> str:
     return """
 <section class="section-block" id="historique">
@@ -435,9 +426,9 @@ def build_archive_html() -> str:
   </div>
 </section>"""
 
-# ══════════════════════════════════════════════════════════════
-# CSS
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+CSS
+# ══════════════════════════════════════════════════════════
 CSS = """
 :root {
   --bg:          #0d1117;
@@ -489,8 +480,6 @@ body {
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
-
-/* ── Header ── */
 header {
   position: sticky; top: 0; z-index: 200;
   background: color-mix(in oklab, var(--bg) 88%, transparent);
@@ -520,11 +509,7 @@ header {
   transition: color .15s, background .15s;
 }
 .btn-icon:hover { color: var(--text); background: var(--faint); }
-
-/* ── Layout ── */
 .container { max-width: 1040px; margin: 0 auto; padding: 28px 20px 100px; }
-
-/* ── Update badge ── */
 .update-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--surface); border: 1px solid var(--border);
@@ -538,8 +523,6 @@ header {
   animation: pulse 2.4s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
-
-/* ── KPI Bar ── */
 .kpi-bar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -571,8 +554,6 @@ header {
 .kpi-negative { color: var(--red); }
 .kpi-neutral  { color: var(--accent); }
 .kpi-card.main-card { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 6%, var(--surface)); }
-
-/* ── Sections ── */
 .section-block { margin-bottom: 48px; }
 .section-title {
   font-size: .88rem; font-weight: 700; text-transform: uppercase;
@@ -580,8 +561,6 @@ header {
   padding-bottom: 10px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 8px;
 }
-
-/* ── Graphique combiné ── */
 .combined-chart-wrap {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
@@ -592,8 +571,6 @@ header {
   padding: 10px 16px 14px; border-top: 1px solid var(--border);
   font-style: italic; line-height: 1.5;
 }
-
-/* ── Positions Grid ── */
 .positions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
 .position-card {
   background: var(--surface); border: 1px solid var(--border);
@@ -621,8 +598,6 @@ header {
 .pos-detail-item { display: flex; gap: 10px; align-items: baseline; font-size: .82rem; }
 .detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
 .mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
-
-/* ── Synthèse IA par position ── v3.4 */
 .pos-synthesis {
   margin-top: 12px;
   background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
@@ -645,8 +620,6 @@ header {
   font-size: .8rem; color: var(--text); line-height: 1.6;
   font-style: italic; max-width: none;
 }
-
-/* ── Score Bar ── */
 .score-wrap { display: flex; flex-direction: column; gap: 4px; }
 .score-num  { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
 .score-bar  { height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
@@ -654,8 +627,6 @@ header {
 .bar-green  { background: var(--green); }
 .bar-yellow { background: var(--yellow); }
 .bar-red    { background: var(--red); }
-
-/* ── Tables ── */
 .table-wrap {
   overflow-x: auto; border-radius: var(--radius);
   border: 1px solid var(--border); box-shadow: var(--shadow); margin: 0;
@@ -676,8 +647,6 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .cell-pos { color: var(--green) !important; font-weight: 600; font-family: var(--font-mono); }
 .cell-neg { color: var(--red)   !important; font-weight: 600; font-family: var(--font-mono); }
 .cell-num { font-family: var(--font-mono); }
-
-/* ── Badges ── */
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .73rem; font-weight: 700; padding: 3px 10px;
@@ -690,23 +659,15 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .sell       { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
 .up { color: var(--green); font-weight: 700; }
 .dn { color: var(--red);   font-weight: 700; }
-
-/* ── Archive ── */
 .archive-toggle {
   font-size: .8rem; color: var(--accent); cursor: pointer;
   background: none; border: none; padding: 4px 0;
   transition: color .15s; margin-bottom: 12px; display: block;
 }
 .archive-toggle:hover { color: var(--text); }
-#archive-panel {
-  display: none; margin-bottom: 8px;
-}
+#archive-panel { display: none; margin-bottom: 8px; }
 #archive-panel.open { display: block; }
-
-/* ── Divider ── */
 hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-
-/* ── Impression ── */
 @media print {
   header, .header-actions, .archive-toggle, #archive-panel,
   .update-badge { display: none !important; }
@@ -716,8 +677,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   .combined-chart-img { max-height: none; }
   .pos-synthesis { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
 }
-
-/* ── Mobile ── */
 @media (max-width: 700px) {
   header { padding: 0 14px; }
   .header-nav { display: none; }
@@ -728,8 +687,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
   .pos-kpis { grid-template-columns: repeat(3, 1fr); }
   td, th { padding: 8px 10px; font-size: .76rem; }
 }
-
-/* ── Animations entrée ── */
 @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 .kpi-card       { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
 .kpi-card:nth-child(1) { animation-delay: .05s; }
@@ -740,11 +697,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 .position-card  { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
 """
 
-# ══════════════════════════════════════════════════════════════
-# JS
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+JS
+# ══════════════════════════════════════════════════════════
 JS = r"""
-// ── Thème ─────────────────────────────────────────────────────
 (function(){
   var root = document.documentElement;
   var btn  = document.querySelector('[data-theme-toggle]');
@@ -761,7 +717,6 @@ JS = r"""
   });
 })();
 
-// ── Compteurs animés ──────────────────────────────────────────
 function animateCounter(el) {
   var raw = el.getAttribute('data-val');
   if (!raw) return;
@@ -791,14 +746,12 @@ document.querySelectorAll('[data-counter]').forEach(function(el){
   obs.observe(el);
 });
 
-// ── Colorisation PnL tables ───────────────────────────────────
 document.querySelectorAll('td').forEach(function(td){
   var t = td.textContent.trim();
   if (/^[+][\d\s].*[€%]/.test(t)) td.classList.add('cell-pos');
   else if (/^[-][\d\s].*[€%]/.test(t)) td.classList.add('cell-neg');
 });
 
-// ── Score bars (animation décalée) ───────────────────────────
 document.querySelectorAll('.score-fill').forEach(function(bar){
   var w = bar.style.width;
   bar.style.width = '0%';
@@ -807,12 +760,11 @@ document.querySelectorAll('.score-fill').forEach(function(bar){
   }, 400);
 });
 
-// ── Archive ──────────────────────────────────────────────────
 function toggleArchive() {
   var panel = document.getElementById('archive-panel');
   var btn   = document.getElementById('archive-btn');
   var open  = panel.classList.toggle('open');
-  btn.textContent = open ? '▲ Masquer l\'historique' : '▼ Afficher les 30 derniers rapports';
+  btn.textContent = open ? '\u25b2 Masquer l\'historique' : '\u25bc Afficher les 30 derniers rapports';
   if (open) loadArchive();
 }
 var _archiveLoaded = false;
@@ -825,13 +777,13 @@ function loadArchive() {
       var tbody = document.getElementById('archive-tbody');
       tbody.innerHTML = data.map(function(e, i){
         var cls = i === 0 ? 'style="background:var(--accent-dim)"' : '';
-        var pnl = e.pnl || '—';
+        var pnl = e.pnl || '\u2014';
         var pnlCls = pnl.includes('+') ? 'cell-pos' : pnl.includes('-') ? 'cell-neg' : '';
         return '<tr ' + cls + '>'
           + '<td class="cell-num" style="white-space:nowrap">📅 ' + e.date + '</td>'
           + '<td class="' + pnlCls + '">' + pnl + '</td>'
-          + '<td class="cell-num">' + (e.vm ? e.vm + ' €' : '—') + '</td>'
-          + '<td class="cell-num">' + (e.nb_pos || '—') + '</td>'
+          + '<td class="cell-num">' + (e.vm ? e.vm + ' \u20ac' : '\u2014') + '</td>'
+          + '<td class="cell-num">' + (e.nb_pos || '\u2014') + '</td>'
           + '</tr>';
       }).join('');
     })
@@ -842,9 +794,9 @@ function loadArchive() {
 }
 """
 
-# ══════════════════════════════════════════════════════════════
-# ASSEMBLAGE HTML FINAL
-# ══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════
+ASSEMBLAGE HTML FINAL
+# ══════════════════════════════════════════════════════════
 pnl_prefix  = "+" if pnl_positive    else "-"
 brut_prefix = "+" if brut_positive   else "-"
 pnl_abs     = raw_abs(kpi["pnl_net"])
@@ -875,7 +827,7 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v5.4 · {report_date}</div>
+      <div class="header-meta">v5.5 · {report_date}</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
@@ -892,13 +844,11 @@ html_out = f"""<!DOCTYPE html>
 
   <div class="container">
 
-    <!-- BADGE MAJ -->
     <div class="update-badge">
       <span class="update-dot"></span>
       Dernière mise à jour :&nbsp;<strong>{report_date}</strong>
     </div>
 
-    <!-- KPI BAR -->
     <div class="kpi-bar">
       <div class="kpi-card main-card">
         <div class="kpi-val {pnl_class}"
@@ -950,7 +900,7 @@ html_out = f"""<!DOCTYPE html>
     {build_synthese_html()}
     {build_archive_html()}
 
-  </div><!-- .container -->
+  </div>
 
   <script>{JS}</script>
 </body>
@@ -959,8 +909,4 @@ html_out = f"""<!DOCTYPE html>
 
 Path("docs").mkdir(exist_ok=True)
 HTML_PATH.write_text(html_out, encoding="utf-8")
-
-size_kb = HTML_PATH.stat().st_size // 1024
-print(f"✅ docs/index.html généré ({size_kb} Ko, graphique combiné: {'oui' if combined_b64 else 'non'}, {len(positions)} positions)")
-print(f"✅ docs/archive.json mis à jour ({len(archive)} entrée(s))")
 sys.exit(0)
