@@ -853,7 +853,7 @@ def get_consensus(asset: dict) -> tuple:
 session_cache_global: dict = {}
 
 
-def get_monthly_history(asset: dict, eur_usd: float, months: int = 6) -> tuple:
+def get_monthly_history(asset: dict, eur_usd: float, months: int = 3) -> tuple:
     """Retourne (dates_list, prices_eur_list, source_str, cache_flag, error_str|None)."""
     from_d    = str(date.today() - timedelta(days=months * 31))
     to_d      = str(date.today())
@@ -1123,7 +1123,7 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         ax.spines["bottom"].set_color("#e5e7eb")
 
         ax.set_title(
-            "Performance comparee du portefeuille -- base 100 (6 mois, EUR)",
+            "Performance comparee du portefeuille -- base 100 (3 mois, EUR)",
             fontsize=11, fontweight="bold", color="#111827", pad=14,
         )
 
@@ -1177,171 +1177,3 @@ def _fetch_asset_data(asset: dict, eur_usd: float,
         "h_cache": h_cache, "h_err": h_err,
         "synthesis": synthesis, "synth_src": synth_src,
     }
-
-
-# =============================================================================
-# RAPPORT PRINCIPAL
-# =============================================================================
-
-def build_report() -> tuple:
-    global session_cache_global
-    now              = datetime.now(PARIS_TZ)
-    lines            = []
-    divergence_log   = []
-    api_errors       = []
-    cache_warnings   = []
-    session_cache    = load_session_cache()
-    session_cache_global = session_cache
-    new_cache        = {}
-    history_rows     = []
-    sources_log      = {}
-
-    us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
-    watch_td   = [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
-    td_prices  = td_fetch_batch(list(set(us_tickers + watch_td))) if TWELVEDATA_KEY else {}
-
-    eur_usd, eurusd_src, eurusd_cache, eurusd_note = get_eur_usd(session_cache)
-    new_cache["eur_usd"] = eur_usd
-    sources_log["EUR/USD"] = eurusd_src
-    if eurusd_cache:
-        cache_warnings.append(eurusd_note)
-    elif eurusd_note and "indisponible" in eurusd_note:
-        api_errors.append(f"EUR/USD : {eurusd_note}")
-    if eurusd_note:
-        divergence_log.append(f"EUR/USD : {eurusd_note}")
-
-    indices_data = {n: get_index(s) for n, s in INDICES.items()}
-    for idx_name, d in indices_data.items():
-        sources_log[idx_name] = d["source"]
-        if "Indisponible" in d["source"]:
-            api_errors.append(f"Indice {idx_name} : {d['source']}")
-    macro_score = score_macro(indices_data)
-    macro_label = ("Haussiere" if macro_score >= 6
-                   else "Baissiere" if macro_score <= 4 else "Neutre")
-    macro_news  = get_macro_news(5)
-
-    lines += [
-        f"# Rapport de Portefeuille v5.5 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
-        "", "---", "",
-        "## Contexte Economique", "",
-        f"**Tendance : {macro_label}** | Score macro : {macro_score:.1f}/10",
-        f"**EUR/USD :** 1 EUR = {1/eur_usd:.4f} USD",
-        "",
-        "| Indice | Variation | Cours |",
-        "|--------|-----------|-------|",
-    ]
-    for name, d in indices_data.items():
-        arr = "^" if d["change_pct"] > 0 else "v" if d["change_pct"] < 0 else "-"
-        lines.append(f"| {name} | {arr} {d['change_pct']:+.2f}% | {d['price']:,.2f} |")
-
-    if macro_news:
-        lines += ["", "**Manchettes macro :**", ""]
-        for t in macro_news:
-            if t: lines.append(f"- {t}")
-
-    lines += ["", "---", "", "## Analyse par Valeur", ""]
-
-    total_cout = total_vm = total_pnl_brut = total_pnl_net = 0.0
-    summaries  = []
-
-    prices = {}
-    for asset in PORTFOLIO:
-        price_eur, chg, price_src, price_cache, div_note = get_price_eur(
-            asset, eur_usd, td_prices, session_cache)
-        prices[asset["ticker_eod"]] = (price_eur, chg, price_src, price_cache, div_note)
-
-    asset_results = {}
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        future_to_asset = {
-            executor.submit(_fetch_asset_data, asset, eur_usd, td_prices, session_cache): asset
-            for asset in PORTFOLIO
-        }
-        for future in as_completed(future_to_asset):
-            asset = future_to_asset[future]
-            try:
-                asset_results[asset["ticker_eod"]] = future.result()
-            except Exception as exc:
-                _log.warning("Erreur thread %s : %s", asset["name"], exc)
-                asset_results[asset["ticker_eod"]] = {
-                    "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "Erreur",
-                    "cs": 5.0, "cons_str": "N/D", "cons_src": "Erreur",
-                    "h_dates": [], "h_closes": [], "h_src": "Erreur",
-                    "h_cache": False, "h_err": str(exc),
-                    "synthesis": "Erreur lors de la recuperation.", "synth_src": "Erreur",
-                }
-
-    for asset in PORTFOLIO:
-        ticker = asset["ticker_eod"]
-
-        price_eur, chg, price_src, price_cache, div_note = prices[ticker]
-        sources_log[ticker] = {"cours": price_src}
-
-        if div_note:
-            divergence_log.append(f"{asset['name']} : {div_note}")
-        if price_cache:
-            cache_warnings.append(f"{asset['name']} -- cours : {div_note or price_src}")
-        if price_eur is None:
-            lines += [
-                f"### {asset['name']} `{ticker}`",
-                "",
-                "> Cours totalement indisponible -- aucune source ni cache",
-                "", "---", "",
-            ]
-            api_errors.append(f"{asset['name']} : cours totalement indisponible")
-            continue
-
-        new_cache[f"price_{ticker}"] = price_eur
-
-        qty, cost, marche = asset["qty"], asset["cost_eur"], asset["marche"]
-        vm         = round(price_eur * qty, 2)
-        cout       = round(cost * qty, 2)
-        fee_a      = calc_fee(cout, marche)
-        fee_v      = calc_fee(vm, marche)
-        cout_reel  = round(cout + fee_a, 2)
-        pnl_brut   = round(vm - cout, 2)
-        pnl_brut_p = round(pnl_brut / cout * 100, 2)
-        pnl_net    = round(vm - cout_reel - fee_v, 2)
-        pnl_net_p  = round(pnl_net / cout_reel * 100, 2)
-
-        r         = asset_results[ticker]
-        news      = r["news"]
-        bull      = r["bull"]
-        bear      = r["bear"]
-        sent_src  = r["sent_src"]
-        cs        = r["cs"]
-        cons_str  = r["cons_str"]
-        cons_src  = r["cons_src"]
-        h_dates   = r["h_dates"]
-        h_closes  = r["h_closes"]
-        h_src     = r["h_src"]
-        h_cache   = r["h_cache"]
-        h_err     = r["h_err"]
-        synthesis = r["synthesis"]
-        synth_src = r["synth_src"]
-
-        sources_log[ticker]["sentiment"]  = sent_src
-        sources_log[ticker]["consensus"]  = cons_src
-        sources_log[ticker]["historique"] = h_src
-        sources_log[ticker]["synthese"]   = synth_src
-
-        if h_cache:
-            cache_warnings.append(f"{asset['name']} -- historique : {h_err or h_src}")
-        if h_err and not h_cache:
-            api_errors.append(f"{asset['name']} historique : {h_err}")
-
-        h_score, h_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
-        sc_price = score_price(price_eur, cost)
-
-        sentiment_score = round(bull / 10, 2)
-        total_score = round(
-            sc_price * 0.30 +
-            sentiment_score * 0.20 +
-            cs * 0.20 +
-            h_score * 0.30,
-            2
-        )
-        rec = recommend(total_score)
-
-        chg_arrow  = "^" if chg > 0 else "v" if chg < 0 else "-"
-        pnl_b_icon = "+" if pnl_brut >= 0 else "-"
-        pnl_n_icon = "+" if pnl_net  >= 0 else "-"
