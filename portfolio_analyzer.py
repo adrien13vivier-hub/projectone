@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v5.5
+Portfolio Analyzer v6.0
 ================================================================================
-ARCHITECTURE DES CLES API v5.5 - OPTIMISATION QUOTAS PLANS GRATUITS
+ARCHITECTURE DES CLES API v6.0
 
-  Cle API          | Mission v5.5                                  | Quota gratuit reel
+  Cle API          | Mission                                       | Quota gratuit reel
   AlphaVantage     | EUR/USD * Historique US * Sentiment US (NLP)  | 25 req/jour -> ~7/run
   TwelveData       | Cours US temps reel (batch)                   | 800/jour  -> <=9/run
   EODHD            | Cours EU * Indices * News EU * Historique EU  | 20/jour   -> ~12/run
   Finnhub          | Sentiment EU * Consensus * News US watchlist  | 60/min illimite/jour
-  OpenRouter       | Synthese RSS Yahoo Finance (DeepSeek v3 free) | illimite (free tier)
-                   | Fallback donnees si EODHD/autres echouent     |
 
-  REGLES CLES v5.5 :
+  REGLES CLES v6.0 :
   - EODHD N'EST JAMAIS appele pour les cours US si TwelveData a repondu.
   - AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US.
   - AlphaVantage TIME_SERIES_MONTHLY pour l'historique US.
   - News societes EU (DEC.PA, ACA.PA, ABNX.PA) -> EODHD seul.
   - News societes US (watchlist) -> Finnhub company-news (libere EODHD).
   - Finnhub assure le sentiment des valeurs Euronext (.PA).
-  - OpenRouter/DeepSeek v3 flash :
-      * Flux RSS Yahoo Finance -> titres bruts -> synthese 2-3 phrases FR par asset
-      * La synthese est nettoyee (\n internes supprimes) -> blockquote Markdown mono-ligne
-      * Fallback si une source de donnees principale echoue completement
   - Logs : niveau WARNING uniquement (compatible cron / stdout silencieux).
 
   BUDGET APPELS PAR RUN :
@@ -30,9 +24,8 @@ ARCHITECTURE DES CLES API v5.5 - OPTIMISATION QUOTAS PLANS GRATUITS
     TwelveData   : <=9 (cours US batch)
     EODHD        : 3 (cours EU) + 3 (indices) + 3 (news EU) + 3 (hist EU) = ~12/run
     Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12-15/run
-    OpenRouter   : 1 appel par asset (RSS + synthese) = ~12/run (portfolio + watchlist)
 
-Scoring v5.5 (inchange) :
+Scoring v6.0 (inchange) :
   Prix vs PRU        : 30 %
   Sentiment presse   : 20 %
   Consensus analystes: 20 %
@@ -64,11 +57,9 @@ FINNHUB_KEY      = os.environ.get("FINNHUB_API_KEY", "")
 EODHD_KEY        = os.environ.get("EODHD_API_KEY", "")
 TWELVEDATA_KEY   = os.environ.get("TWELVEDATA_API_KEY", "")
 ALPHAVANTAGE_KEY = os.environ.get("ALPHAVANTAGE_API_KEY", "")
-OPENROUTER_KEY   = os.environ.get("OPENROUTER_API_KEY", "")
 
 for k, v in [("FINNHUB_API_KEY", FINNHUB_KEY), ("EODHD_API_KEY", EODHD_KEY),
-             ("TWELVEDATA_API_KEY", TWELVEDATA_KEY), ("ALPHAVANTAGE_API_KEY", ALPHAVANTAGE_KEY),
-             ("OPENROUTER_API_KEY", OPENROUTER_KEY)]:
+             ("TWELVEDATA_API_KEY", TWELVEDATA_KEY), ("ALPHAVANTAGE_API_KEY", ALPHAVANTAGE_KEY)]:
     if not v:
         _log.warning("Cle absente : %s -- fallback cache active pour cette source", k)
 
@@ -76,8 +67,6 @@ FH_BASE  = "https://finnhub.io/api/v1"
 EOD_BASE = "https://eodhd.com/api"
 TD_BASE  = "https://api.twelvedata.com"
 AV_BASE  = "https://www.alphavantage.co/query"
-OR_BASE  = "https://openrouter.ai/api/v1/chat/completions"
-OR_MODEL = "deepseek/deepseek-chat-v3-0324:free"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
 DIVERGENCE_THRESHOLD_PCT = 2.0
@@ -94,7 +83,6 @@ _QUOTA = {
     "twelvedata":   {"used": 0, "limit": 60},
     "eodhd":        {"used": 0, "limit": 18},
     "finnhub":      {"used": 0, "limit": 55},
-    "openrouter":   {"used": 0, "limit": 200},
 }
 
 _quota_lock = threading.Lock()
@@ -212,63 +200,6 @@ def _is_quota_error(err: str) -> bool:
 
 
 # =============================================================================
-# OPENROUTER / DEEPSEEK V3 FLASH
-# =============================================================================
-
-def _openrouter_chat(prompt: str, timeout: int = 30, max_tokens: int = 300) -> tuple:
-    """Appel DeepSeek v3 flash via OpenRouter.
-
-    Retourne (texte_reponse, erreur_str|None).
-    Le modele est toujours deepseek/deepseek-chat-v3-0324:free.
-    max_tokens est parametrable pour limiter la longueur de la reponse.
-    """
-    if not OPENROUTER_KEY:
-        return None, "OPENROUTER_KEY absente"
-    if not _quota_ok("openrouter"):
-        return None, "QUOTA_REACHED"
-    _quota_inc("openrouter")
-    try:
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_KEY}",
-            "Content-Type":  "application/json",
-            "HTTP-Referer":  "https://github.com/adrien13vivier-hub/projectone",
-            "X-Title":       "Portfolio Analyzer",
-        }
-        payload = {
-            "model": OR_MODEL,
-            "messages": [
-                {
-                    "role":    "system",
-                    "content": (
-                        "Tu es un assistant financier specialise. "
-                        "Reponds toujours en francais. "
-                        "Sois factuel, concis et neutre. "
-                        "Ne retourne JAMAIS de sauts de ligne dans ta reponse : "
-                        "ecris tout sur une seule ligne continue."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "max_tokens":   max_tokens,
-            "temperature":  0.3,
-        }
-        r = requests.post(OR_BASE, headers=headers, json=payload, timeout=timeout)
-        if r.status_code == 200:
-            data = r.json()
-            text = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-            return text if text else None, None
-        if r.status_code == 429:
-            return None, "HTTP_429_QUOTA"
-        return None, f"HTTP {r.status_code}"
-    except requests.exceptions.Timeout:
-        return None, "Timeout"
-    except requests.exceptions.ConnectionError:
-        return None, "Connexion impossible"
-    except Exception as e:
-        return None, str(e)[:60]
-
-
-# =============================================================================
 # FLUX RSS YAHOO FINANCE
 # =============================================================================
 
@@ -279,8 +210,6 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     """Recupere les n derniers titres d'actualite depuis le flux RSS Yahoo Finance.
 
     Retourne une liste de chaines (titres bruts).
-    On limite volontairement a 6 titres pour garder le prompt court et la
-    synthese focalisee sur l'essentiel.
     """
     if ticker_yf in _rss_cache:
         return _rss_cache[ticker_yf][:n]
@@ -291,7 +220,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     )
     try:
         r = requests.get(url, timeout=10,
-                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/5.5"})
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.0"})
         if r.status_code != 200:
             _rss_cache[ticker_yf] = []
             return []
@@ -312,45 +241,21 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
 
 
 # =============================================================================
-# SYNTHESE ACTUALITE VIA DEEPSEEK (RSS + OpenRouter)
+# SYNTHESE ACTUALITE -- titres RSS bruts (pas d'IA)
 # =============================================================================
 
 _synthesis_cache: dict = {}
 
-# Nombre maximum de tokens alloues a la synthese d'actualite.
-# 120 tokens = environ 2-3 phrases courtes en francais, ce qui est suffisant
-# pour un bloc d'actualite dans le rapport. Cela evite les reponses trop longues
-# et garantit que le blockquote Markdown reste lisible.
-_SYNTHESIS_MAX_TOKENS = 120
-
-
-def _clean_synthesis(text: str) -> str:
-    """Supprime les sauts de ligne internes pour garantir un blockquote Markdown valide.
-
-    DeepSeek peut retourner un texte multi-lignes meme si on lui demande de ne
-    pas le faire. On joint toutes les lignes non-vides avec un espace.
-    """
-    lines = [l.strip() for l in text.replace("\r", "").split("\n") if l.strip()]
-    return " ".join(lines)
-
 
 def get_news_synthesis(asset: dict) -> tuple:
-    """Recupere les titres RSS Yahoo Finance et les fait synthetiser par DeepSeek.
+    """Recupere les titres RSS Yahoo Finance et les retourne bruts (3 max).
 
     Retourne (synthese_str, source_str).
-    - synthese_str : resume 2-3 phrases MAX en francais sur UNE SEULE LIGNE,
-                     ou liste de titres bruts si OR indispo.
-    - source_str   : "DeepSeek/RSS" | "RSS brut" | "Aucune actualite"
-
-    Contraintes de longueur :
-    - On limite le RSS a 6 titres (signal/bruit optimal).
-    - Le prompt impose explicitement 2 phrases maximum (contrainte stricte).
-    - max_tokens=120 coupe la generation au-dela de ~2 phrases.
-    - _clean_synthesis() supprime les \n residuels.
+    - synthese_str : titres separes par " | "
+    - source_str   : "RSS Yahoo Finance" | "Aucune actualite"
     """
     ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
-    name      = asset["name"]
-    key       = ticker_yf
+    key = ticker_yf
 
     if key in _synthesis_cache:
         return _synthesis_cache[key]
@@ -358,32 +263,12 @@ def get_news_synthesis(asset: dict) -> tuple:
     titles = _fetch_yahoo_rss(ticker_yf, n=6)
 
     if not titles:
-        _synthesis_cache[key] = ("Aucune actualite disponible via RSS.", "RSS Yahoo vide")
-        return _synthesis_cache[key]
+        result = ("Aucune actualite disponible via RSS.", "RSS Yahoo vide")
+        _synthesis_cache[key] = result
+        return result
 
-    if OPENROUTER_KEY and _quota_ok("openrouter"):
-        titres_str = "\n".join(f"- {t}" for t in titles)
-        prompt = (
-            f"Voici les dernieres manchettes d'actualite financiere "
-            f"concernant {name} (source : Yahoo Finance RSS) :\n\n"
-            f"{titres_str}\n\n"
-            "Redige EXACTEMENT 2 phrases en francais (pas plus) qui resument "
-            "les points cles de cette actualite. "
-            "Sois factuel et neutre. "
-            "N'utilise PAS de puces, de listes, ni de sauts de ligne. "
-            "Ecris les 2 phrases a la suite sur une seule ligne."
-        )
-        text, err = _openrouter_chat(prompt, max_tokens=_SYNTHESIS_MAX_TOKENS)
-        if text:
-            text_clean = _clean_synthesis(text)
-            result = (text_clean, "DeepSeek v3 / RSS Yahoo Finance")
-            _synthesis_cache[key] = result
-            return result
-        _log.warning("OpenRouter synthese (%s) : %s", name, err)
-
-    # Fallback : retourne les titres bruts si DeepSeek indispo
     brut = " | ".join(titles[:3])
-    result = (brut, "RSS Yahoo Finance (brut)")
+    result = (brut, "RSS Yahoo Finance")
     _synthesis_cache[key] = result
     return result
 
@@ -434,21 +319,6 @@ def get_eur_usd(session_cache: dict) -> tuple:
             errors.append(f"AlphaVantage:{err or 'vide'}")
     else:
         errors.append("AlphaVantage:cle absente")
-
-    # Fallback OpenRouter : demande le taux EUR/USD a DeepSeek
-    if OPENROUTER_KEY and _quota_ok("openrouter"):
-        text, or_err = _openrouter_chat(
-            "Quel est le taux de change EUR/USD actuel approximatif ? "
-            "Reponds uniquement avec un nombre decimal (ex: 0.9234), sans texte supplementaire."
-        )
-        if text:
-            try:
-                rate = float(text.strip().replace(",", "."))
-                if 0.5 < rate < 2.0:
-                    return rate, "OpenRouter/DeepSeek (fallback AV)", False, \
-                        f"EUR/USD via DeepSeek ({', '.join(errors)})"
-            except ValueError:
-                pass
 
     if session_cache.get("eur_usd"):
         saved_at = session_cache.get("saved_at", "date inconnue")
@@ -759,7 +629,7 @@ def get_sentiment(asset: dict) -> tuple:
         return 50.0, 50.0, f"Neutre par defaut (Finnhub:{fh_err})"
 
 
-# --- Analyse lexicale v5.5 : fenetre de negation ------------------------------
+# --- Analyse lexicale v6.0 : fenetre de negation ------------------------------
 _NEGATORS  = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
 _NEG_WINDOW = 3
 

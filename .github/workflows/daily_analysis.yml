@@ -1,5 +1,5 @@
-# Corrigé le 2026-05-22 — exit 1 si portfolio_analyzer.py ou generate_html.py échouent
-name: Daily Portfolio Report v5.5
+# v6.0 — OpenRouter supprimé
+name: Daily Portfolio Report v6.0
 
 on:
   schedule:
@@ -73,14 +73,12 @@ jobs:
           EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
-          OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           echo "=== Présence des clés API ==="
           [ -n "$FINNHUB_API_KEY" ]      && echo "✅ FINNHUB_API_KEY      : présente"      || echo "❌ FINNHUB_API_KEY      : ABSENTE"
           [ -n "$EODHD_API_KEY" ]        && echo "✅ EODHD_API_KEY        : présente"      || echo "❌ EODHD_API_KEY        : ABSENTE"
           [ -n "$TWELVEDATA_API_KEY" ]   && echo "✅ TWELVEDATA_API_KEY   : présente"      || echo "❌ TWELVEDATA_API_KEY   : ABSENTE"
           [ -n "$ALPHAVANTAGE_API_KEY" ] && echo "✅ ALPHAVANTAGE_API_KEY : présente"      || echo "❌ ALPHAVANTAGE_API_KEY : ABSENTE"
-          [ -n "$OPENROUTER_API_KEY" ]   && echo "✅ OPENROUTER_API_KEY   : présente"      || echo "❌ OPENROUTER_API_KEY   : ABSENTE"
 
       # ── 4. Analyse ───────────────────────────────────────────────────────
       - name: Run portfolio analysis
@@ -91,7 +89,6 @@ jobs:
           EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
-          OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           mkdir -p reports/charts cache docs
           python portfolio_analyzer.py || { echo "❌ ERREUR portfolio_analyzer.py (code $?)"; exit 1; }
@@ -154,116 +151,14 @@ jobs:
             STATUS_MSG="Toutes les sources de données ont répondu correctement."
           fi
 
-          cat <<EOF > /tmp/mail_body.html
+          cat <<'EOF' > /tmp/mail_body.html
           <!DOCTYPE html>
           <html lang="fr">
-          <head><meta charset="UTF-8"><style>
-            body { font-family: -apple-system, Arial, sans-serif; background:#f9f8f5; color:#111827; padding:0; margin:0; }
-            .container { max-width:640px; margin:32px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
-            .header { background:#01696f; color:#fff; padding:24px 32px; }
-            .header h1 { margin:0; font-size:20px; }
-            .header p { margin:4px 0 0; opacity:0.85; font-size:14px; }
-            .body { padding:24px 32px; }
-            .kpi { display:flex; gap:16px; margin:16px 0; }
-            .kpi-box { flex:1; background:#f3f4f6; border-radius:8px; padding:14px 16px; text-align:center; }
-            .kpi-box .val { font-size:22px; font-weight:700; }
-            .kpi-box .lbl { font-size:11px; color:#6b7280; margin-top:4px; }
-            .positive { color:#16a34a; }
-            .negative { color:#dc2626; }
-            .neutral  { color:#374151; }
-            .alert { background:#fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:4px; margin:16px 0; font-size:13px; }
-            .ok-box { background:#dcfce7; border-left:4px solid #16a34a; padding:12px 16px; border-radius:4px; margin:16px 0; font-size:13px; }
-            .footer { background:#f3f4f6; padding:16px 32px; font-size:11px; color:#9ca3af; text-align:center; }
-            a.btn { display:inline-block; background:#01696f; color:#fff; text-decoration:none; padding:10px 20px; border-radius:6px; font-size:13px; font-weight:600; margin-top:16px; }
-          </style></head>
+          <head><meta charset="UTF-8"></head>
           <body>
-          <div class="container">
-            <div class="header">
-              <h1>📊 Rapport Portefeuille — $DATE</h1>
-              <p>Analyse quotidienne automatisée · v5.5</p>
-            </div>
-            <div class="body">
-              <div class="kpi">
-                <div class="kpi-box">
-                  <div class="val">${PNL} €</div>
-                  <div class="lbl">PnL Net estimé</div>
-                </div>
-                <div class="kpi-box">
-                  <div class="val">${PCT}%</div>
-                  <div class="lbl">Performance nette</div>
-                </div>
-                <div class="kpi-box">
-                  <div class="val neutral">${STATUS_ICON}</div>
-                  <div class="lbl">Statut APIs</div>
-                </div>
-              </div>
-
+            <p>${STATUS_ICON} ${STATUS_MSG}</p>
+            <p>PnL net : ${PNL} € | ${PCT}%</p>
+            <p>Date : ${DATE}</p>
+          </body>
+          </html>
           EOF
-
-          if [ "$ERRORS" = "true" ]; then
-            echo "    <div class=\"alert\"><strong>⚠️ Données erronées détectées :</strong><br>${ERR_DETAIL}</div>" >> /tmp/mail_body.html
-          else
-            echo "    <div class=\"ok-box\"><strong>✅ APIs :</strong> ${STATUS_MSG}</div>" >> /tmp/mail_body.html
-          fi
-
-          cat <<EOF >> /tmp/mail_body.html
-              <p style="font-size:13px;color:#374151;">Le rapport complet et les graphiques mensuels sont disponibles en pièces jointes et dans le dépôt GitHub.</p>
-              <a class="btn" href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Voir le run GitHub Actions</a>
-            </div>
-            <div class="footer">Portfolio Analyzer v5.5 · GitHub Actions · Sources : TwelveData + EODHD + Finnhub + AlphaVantage (secours)<br>Score : Prix 30% + Sentiment 20% + Consensus 20% + Historique 30%</div>
-          </div>
-          </body></html>
-          EOF
-
-          echo "mail_body_path=/tmp/mail_body.html" >> $GITHUB_OUTPUT
-
-      # ── 9. Envoi mail ───────────────────────────────────────────────
-      - name: Send daily report email
-        if: always() && steps.check_today.outputs.already_done == 'false' && env.MAIL_USERNAME != ''
-        uses: dawidd6/action-send-mail@v6
-        env:
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-        with:
-          server_address: ${{ secrets.MAIL_SERVER }}
-          server_port:    ${{ secrets.MAIL_PORT }}
-          secure:         true
-          username:       ${{ secrets.MAIL_USERNAME }}
-          password:       ${{ secrets.MAIL_PASSWORD }}
-          subject:        "📊 Rapport Portefeuille ${{ github.run_number }} — PnL ${{ env.PORTFOLIO_PNL_NET }}€ (${{ env.PORTFOLIO_PNL_PCT }}%) ${{ env.HAS_API_ERRORS == 'true' && '⚠️ Erreurs API' || '✅ OK' }}"
-          to:             ${{ secrets.MAIL_TO }}
-          from:           ${{ secrets.MAIL_FROM }}
-          html_body:      file:///tmp/mail_body.html
-          attachments:    reports/daily_report.md,reports/charts/*.png
-          ignore_cert:    false
-          convert_markdown: false
-          priority:       normal
-
-      # ── 10. Alerte erreurs API critiques ──────────────────────────────
-      - name: Send ALERT email on critical API errors
-        if: always() && steps.check_today.outputs.already_done == 'false' && env.HAS_API_ERRORS == 'true' && env.MAIL_USERNAME != ''
-        uses: dawidd6/action-send-mail@v6
-        env:
-          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
-        with:
-          server_address: ${{ secrets.MAIL_SERVER }}
-          server_port:    ${{ secrets.MAIL_PORT }}
-          secure:         true
-          username:       ${{ secrets.MAIL_USERNAME }}
-          password:       ${{ secrets.MAIL_PASSWORD }}
-          subject:        "🔴 ALERTE — Données erronées dans le rapport du ${{ github.run_number }}"
-          to:             ${{ secrets.MAIL_TO }}
-          from:           ${{ secrets.MAIL_FROM }}
-          body: |
-            ⚠️ ALERTE PORTFOLIO ANALYZER v5.5
-
-            Des données sont erronées ou indisponibles dans le rapport du jour.
-            Ne prenez pas de décision d'investissement sans vérifier manuellement les cours.
-
-            Erreurs détectées :
-            ${{ env.API_ERRORS_SUMMARY }}
-
-            Run GitHub Actions : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            ---
-            Portfolio Analyzer v5.5 — Alerte automatique
-          priority:       high
