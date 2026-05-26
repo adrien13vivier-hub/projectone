@@ -836,7 +836,7 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v5.5 · {report_date}</div>
+      <div class="header-meta">v6.1 · {report_date}</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
