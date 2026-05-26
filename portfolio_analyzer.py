@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v6.0
+Portfolio Analyzer v6.1
 ================================================================================
 ARCHITECTURE DES CLES API v6.0
 
@@ -24,6 +24,12 @@ ARCHITECTURE DES CLES API v6.0
     TwelveData   : <=9 (cours US batch)
     EODHD        : 3 (cours EU) + 3 (indices) + 3 (news EU) + 3 (hist EU) = ~12/run
     Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12-15/run
+
+  CORRECTIFS v6.1 :
+  - _fetch_yahoo_rss : chaque titre est nettoye (\r\n -> espace) et tronque a
+    120 caracteres pour eviter que les retours a la ligne RSS ne cassent le
+    blockquote Markdown produit par le rapport.
+  - get_news_synthesis : jointure finale en ligne unique garantie (\n -> espace).
 
 Scoring v6.0 (inchange) :
   Prix vs PRU        : 30 %
@@ -205,11 +211,22 @@ def _is_quota_error(err: str) -> bool:
 
 _rss_cache: dict = {}
 
+# Longueur max d'un titre RSS pour eviter les debordements de blockquote Markdown.
+_RSS_TITLE_MAX = 120
+
+
+def _clean_title(raw: str) -> str:
+    """Supprime les retours a la ligne et tronque a _RSS_TITLE_MAX caracteres."""
+    cleaned = " ".join(raw.replace("\r", " ").replace("\n", " ").split()).strip()
+    if len(cleaned) > _RSS_TITLE_MAX:
+        cleaned = cleaned[:_RSS_TITLE_MAX].rstrip() + "…"
+    return cleaned
+
 
 def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     """Recupere les n derniers titres d'actualite depuis le flux RSS Yahoo Finance.
 
-    Retourne une liste de chaines (titres bruts).
+    Retourne une liste de chaines sur UNE seule ligne chacune (sans \\n interne).
     """
     if ticker_yf in _rss_cache:
         return _rss_cache[ticker_yf][:n]
@@ -220,7 +237,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     )
     try:
         r = requests.get(url, timeout=10,
-                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.0"})
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.1"})
         if r.status_code != 200:
             _rss_cache[ticker_yf] = []
             return []
@@ -229,7 +246,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
         for item in root.iter("item"):
             title_el = item.find("title")
             if title_el is not None and title_el.text:
-                titles.append(title_el.text.strip())
+                titles.append(_clean_title(title_el.text))
             if len(titles) >= n:
                 break
         _rss_cache[ticker_yf] = titles
@@ -251,8 +268,8 @@ def get_news_synthesis(asset: dict) -> tuple:
     """Recupere les titres RSS Yahoo Finance et les retourne bruts (3 max).
 
     Retourne (synthese_str, source_str).
-    - synthese_str : titres separes par " | "
-    - source_str   : "RSS Yahoo Finance" | "Aucune actualite"
+    - synthese_str : titres separes par " | ", garantis sur une seule ligne
+    - source_str   : "RSS Yahoo Finance" | "RSS Yahoo vide"
     """
     ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
     key = ticker_yf
@@ -267,7 +284,9 @@ def get_news_synthesis(asset: dict) -> tuple:
         _synthesis_cache[key] = result
         return result
 
+    # Jointure + nettoyage final : on s'assure qu'aucun \n residuel ne subsiste
     brut = " | ".join(titles[:3])
+    brut = " ".join(brut.replace("\r", " ").replace("\n", " ").split())
     result = (brut, "RSS Yahoo Finance")
     _synthesis_cache[key] = result
     return result
