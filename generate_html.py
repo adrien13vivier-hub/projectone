@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.5
+generate_html.py  v3.6
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
@@ -11,6 +11,9 @@ Convertit reports/daily_report.md  →  docs/index.html
   - v3.4 : regex synth_src tolère les parenthèses dans le nom de source
             (ex: "RSS Yahoo Finance (brut)" capturé correctement)
   - v3.5 : suppression des print() finaux (cron-silent) + version v5.5
+  - v3.6 : regex synth_src rendue robuste face au format ")* en fin de
+            ligne produit par portfolio_analyzer (source : RSS Yahoo Finance)*
+            → le \)? final et le \*? sont désormais optionnels et bien ordonnés
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -126,11 +129,17 @@ def extract_positions(md: str) -> list[dict]:
 
         synthesis = ""
         synth_src = ""
+
+        # ── v3.6 : regex robuste pour extraire la source RSS ──────────────
+        # Format produit par portfolio_analyzer :
+        #   **Actualite recente :** *(source : RSS Yahoo Finance)*
+        # Le \)? final capture la ) de fermeture du *(...)* même si elle
+        # est collée au \* de fermeture de l'italique.
         m_synth_src = re.search(
-            r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*(.+?)\)\s*\*?(?:\n|$)",
+            r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*([^)]+?)\s*\)?[\s*]*(?:\n|$)",
             block)
         if m_synth_src:
-            synth_src = m_synth_src.group(1).strip()
+            synth_src = m_synth_src.group(1).strip().rstrip(")*").strip()
 
         synth_block = block
         m_actualite_pos = re.search(r"\*\*Actualite[^*]*\*\*", block)
