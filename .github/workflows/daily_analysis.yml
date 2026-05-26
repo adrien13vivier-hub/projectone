@@ -97,7 +97,14 @@ jobs:
           python generate_html.py || { echo "❌ ERREUR generate_html.py (code $?)"; exit 1; }
           ls -lh docs/index.html || { echo "❌ docs/index.html non généré"; exit 1; }
 
-      # ── 6. Commit rapport + graphiques + page HTML ──────────────────────
+      # ── 6. Génération du graphique PnL historique → docs/chart.html ──────
+      - name: Generate PnL history chart
+        if: steps.check_today.outputs.already_done == 'false'
+        run: |
+          python generate_chart.py || { echo "❌ ERREUR generate_chart.py (code $?)"; exit 1; }
+          ls -lh docs/chart.html || { echo "❌ docs/chart.html non généré"; exit 1; }
+
+      # ── 7. Commit rapport + graphiques + pages HTML ─────────────────────
       - name: Commit report, charts & HTML page
         if: steps.check_today.outputs.already_done == 'false'
         run: |
@@ -114,7 +121,7 @@ jobs:
             git push
           fi
 
-      # ── 7. Upload artifact ────────────────────────────────────────────
+      # ── 8. Upload artifact ────────────────────────────────────────────
       - name: Upload report artifact
         if: always() && steps.check_today.outputs.already_done == 'false'
         uses: actions/upload-artifact@v4
@@ -125,4 +132,5 @@ jobs:
             reports/charts/*.png
             reports/history.csv
             docs/index.html
+            docs/chart.html
           retention-days: 30
