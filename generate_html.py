@@ -10,7 +10,7 @@ Convertit reports/daily_report.md  →  docs/index.html
   - v3.3 : capture multi-lignes (toutes les lignes ">") concaténées
   - v3.4 : regex synth_src tolère les parenthèses dans le nom de source
             (ex: "RSS Yahoo Finance (brut)" capturé correctement)
-  - v3.5 : suppression des print() finaux (cron-silent) + version v5.5
+  - v3.5 : suppression des print() finaux (cron-silent) + version v6.1
   - v3.6 : regex synth_src rendue robuste face au format ")* en fin de
             ligne produit par portfolio_analyzer (source : RSS Yahoo Finance)*
             → le \)? final et le \*? sont désormais optionnels et bien ordonnés
@@ -25,33 +25,33 @@ from pathlib import Path
 _log = logging.getLogger("generate_html")
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
 
-# ── Chemins ──────────────────────────────────────────────
+# ── Chemins ───────────────────────────────────────────────────
 MD_PATH      = Path("reports/daily_report.md")
 HTML_PATH    = Path("docs/index.html")
 ARCHIVE_PATH = Path("docs/archive.json")
 CHARTS_DIR   = Path("reports/charts")
 COMBINED_PNG = CHARTS_DIR / "portfolio_combined.png"
 
-# ── Lecture Markdown ───────────────────────────────────────
+# ── Lecture Markdown ──────────────────────────────────────────
 if not MD_PATH.exists():
     _log.warning("reports/daily_report.md introuvable — page vide générée.")
     md_content = "# Rapport indisponible\n\nAucun rapport généré ce jour."
 else:
     md_content = MD_PATH.read_text(encoding="utf-8")
 
-# ── Date du rapport ───────────────────────────────────────
+# ── Date du rapport ───────────────────────────────────────────
 date_match  = re.search(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2})", md_content)
 report_date = date_match.group(1) if date_match else \
               datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
 
-# ── Graphique combiné → base64 ─────────────────────────────
+# ── Graphique combiné → base64 ──────────────────────────────────
 combined_b64 = ""
 if COMBINED_PNG.exists():
     combined_b64 = base64.b64encode(COMBINED_PNG.read_bytes()).decode()
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # EXTRACTION KPI
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 def extract_kpi(md: str) -> dict:
     kpi = {"pnl_net": "0", "pnl_pct": "0", "valeur_marche": "0",
            "cout_total": "0", "pnl_brut": "0", "pnl_brut_pct": "0"}
@@ -88,9 +88,9 @@ pnl_class       = "kpi-positive" if pnl_positive else "kpi-negative"
 brut_positive   = not kpi["pnl_brut"].startswith("-")
 brut_class      = "kpi-positive" if brut_positive else "kpi-negative"
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # EXTRACTION POSITIONS (blocs ### Valeur)
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 def extract_positions(md: str) -> list[dict]:
     positions = []
     blocks = re.split(r"(?=^### .+`)", md, flags=re.MULTILINE)
@@ -130,10 +130,10 @@ def extract_positions(md: str) -> list[dict]:
         synthesis = ""
         synth_src = ""
 
-        # ── v3.6 : regex robuste pour extraire la source RSS ──────────────
+        # ── v3.6 : regex robuste pour extraire la source RSS ────────────────
         # Format produit par portfolio_analyzer :
         #   **Actualite recente :** *(source : RSS Yahoo Finance)*
-        # Le \)? final capture la ) de fermeture du *(...)* même si elle
+        # Le \)? final capture la ) de fermeture du *(...)*  même si elle
         # est collée au \* de fermeture de l'italique.
         m_synth_src = re.search(
             r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*([^)]+?)\s*\)?[\s*]*(?:\n|$)",
@@ -163,9 +163,9 @@ def extract_positions(md: str) -> list[dict]:
 
 positions = extract_positions(md_content)
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # EXTRACTION SYNTHÈSE / CLASSEMENT
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 def extract_synthese(md: str) -> list[dict]:
     rows = []
     in_class = False
@@ -180,9 +180,9 @@ def extract_synthese(md: str) -> list[dict]:
 
 synthese_rows = extract_synthese(md_content)
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # EXTRACTION INDICES MACRO
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 def extract_indices(md: str) -> list[dict]:
     indices = []
     in_idx = False
@@ -202,9 +202,9 @@ def extract_indices(md: str) -> list[dict]:
 
 indices = extract_indices(md_content)
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # ARCHIVE JSON
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 Path("docs").mkdir(exist_ok=True)
 archive = []
 if ARCHIVE_PATH.exists():
@@ -224,9 +224,9 @@ archive.insert(0, {
 archive = archive[:30]
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # HELPERS HTML
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 def rec_badge(rec: str) -> str:
     rec_u = rec.upper()
     if "ACHAT FORT"   in rec_u: cls, ico = "buy-strong", "🟢"
@@ -272,9 +272,9 @@ def var_span(txt: str) -> str:
         return f'<span class="dn">▼ {t.lstrip("v")}</span>'
     return t
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # BLOCS HTML
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 
 def build_indices_html() -> str:
     if not indices:
@@ -435,9 +435,9 @@ def build_archive_html() -> str:
   </div>
 </section>"""
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # CSS
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 CSS = """
 :root {
   --bg:          #0d1117;
@@ -706,9 +706,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
 .position-card  { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
 """
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # JS
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 JS = r"""
 (function(){
   var root = document.documentElement;
@@ -803,9 +803,9 @@ function loadArchive() {
 }
 """
 
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 # ASSEMBLAGE HTML FINAL
-# ══════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════
 pnl_prefix  = "+" if pnl_positive    else "-"
 brut_prefix = "+" if brut_positive   else "-"
 pnl_abs     = raw_abs(kpi["pnl_net"])
