@@ -8,11 +8,6 @@ on:
     # Tir de rattrapage : 15:00 UTC = 17:00 Paris (CEST)
     - cron: "0 15 * * 1-5"
   workflow_dispatch:
-    inputs:
-      force_mail:
-        description: "Forcer l'envoi du mail même sans erreur API"
-        required: false
-        default: "false"
 
 # ── Anti double-run : un seul job actif à la fois par jour ───────────────
 concurrency:
@@ -131,34 +126,3 @@ jobs:
             reports/history.csv
             docs/index.html
           retention-days: 30
-
-      # ── 8. Préparer le corps du mail ─────────────────────────────────
-      - name: Prepare email body
-        if: always() && steps.check_today.outputs.already_done == 'false'
-        id: mail_body
-        run: |
-          DATE=$(date +'%d/%m/%Y')
-          PNL=${PORTFOLIO_PNL_NET:-"N/D"}
-          PCT=${PORTFOLIO_PNL_PCT:-"N/D"}
-          ERRORS=${HAS_API_ERRORS:-"false"}
-          ERR_DETAIL=${API_ERRORS_SUMMARY:-"Aucune"}
-
-          if [ "$ERRORS" = "true" ]; then
-            STATUS_ICON="⚠️"
-            STATUS_MSG="Des données sont ERRONÉES ce run. Ne pas prendre de décision sans vérification."
-          else
-            STATUS_ICON="✅"
-            STATUS_MSG="Toutes les sources de données ont répondu correctement."
-          fi
-
-          cat <<'EOF' > /tmp/mail_body.html
-          <!DOCTYPE html>
-          <html lang="fr">
-          <head><meta charset="UTF-8"></head>
-          <body>
-            <p>${STATUS_ICON} ${STATUS_MSG}</p>
-            <p>PnL net : ${PNL} € | ${PCT}%</p>
-            <p>Date : ${DATE}</p>
-          </body>
-          </html>
-          EOF
