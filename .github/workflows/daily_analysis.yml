@@ -1,5 +1,5 @@
-# v6.0 — OpenRouter supprimé
-name: Daily Portfolio Report v6.0
+# v6.1 — Correctifs concurrency + workflow propre
+name: Daily Portfolio Report v6.1
 
 on:
   schedule:
@@ -9,9 +9,11 @@ on:
     - cron: "0 15 * * 1-5"
   workflow_dispatch:
 
-# ── Anti double-run : un seul job actif à la fois par jour ───────────────
+# ── Anti double-run : tous les tirs cron du jour partagent LE MÊME groupe ──
+# On normalise l'event.schedule sur la date UTC pour que 14h et 15h
+# tombent dans le même groupe → un seul job actif par jour.
 concurrency:
-  group: daily-report-${{ github.ref }}-${{ github.event.schedule || 'manual' }}
+  group: daily-report-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'scheduled' }}
   cancel-in-progress: false
 
 jobs:
