@@ -1,4 +1,4 @@
-# v6.1 — Correctifs concurrency + workflow propre
+# v6.1 — Corrections guard anti-doublon + robustesse keepalive
 name: Daily Portfolio Report v6.1
 
 on:
@@ -9,9 +9,7 @@ on:
     - cron: "0 15 * * 1-5"
   workflow_dispatch:
 
-# ── Anti double-run : tous les tirs cron du jour partagent LE MÊME groupe ──
-# On normalise l'event.schedule sur la date UTC pour que 14h et 15h
-# tombent dans le même groupe → un seul job actif par jour.
+# ── Anti double-run : un seul job actif à la fois par jour ───────────────
 concurrency:
   group: daily-report-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'scheduled' }}
   cancel-in-progress: false
@@ -30,7 +28,10 @@ jobs:
         with:
           fetch-depth: 10
 
-      # ── 1. Guard anti-doublon basé sur history.csv (fiable) ───────────────
+      # ── 1. Guard anti-doublon CORRIGÉ ────────────────────────────────
+      # CORRECTION : on vérifie history.csv ET .last_run pour éviter le cas
+      # où un run précédent a planté silencieusement (quota API atteint)
+      # sans mettre à jour history.csv → le guard bloquait à tort le run suivant.
       - name: Check if report already generated today (schedule only)
         id: check_today
         run: |
@@ -40,12 +41,28 @@ jobs:
             exit 0
           fi
           TODAY=$(date -u +'%Y-%m-%d')
+          # Vérification dans history.csv (source de vérité principale)
+          HISTORY_OK=false
           if [ -f "reports/history.csv" ] && grep -q "^$TODAY," reports/history.csv; then
+            HISTORY_OK=true
+          fi
+          # Vérification dans .last_run (backup)
+          LASTRUN_OK=false
+          if [ -f "reports/.last_run" ] && grep -q "^$TODAY" reports/.last_run; then
+            LASTRUN_OK=true
+          fi
+          # On considère "déjà fait" SEULEMENT si history.csv ET .last_run sont OK
+          # Cela évite le cas où history.csv a été mis à jour mais .last_run non (ou vice versa)
+          if $HISTORY_OK && $LASTRUN_OK; then
             echo "already_done=true" >> $GITHUB_OUTPUT
-            echo "✅ Rapport déjà dans history.csv pour $TODAY — tir de rattrapage ignoré."
+            echo "✅ Rapport confirmé dans history.csv ET .last_run pour $TODAY — tir de rattrapage ignoré."
           else
             echo "already_done=false" >> $GITHUB_OUTPUT
-            echo "🚀 Aucune entrée pour $TODAY dans history.csv — démarrage de l'analyse."
+            if ! $HISTORY_OK; then
+              echo "🚀 Aucune entrée pour $TODAY dans history.csv — démarrage de l'analyse."
+            else
+              echo "🚀 .last_run absent ou non mis à jour pour $TODAY — démarrage de l'analyse."
+            fi
           fi
 
       # ── 2. Python ──────────────────────────────────────────────────────
@@ -107,6 +124,8 @@ jobs:
           ls -lh docs/chart.html || { echo "❌ docs/chart.html non généré"; exit 1; }
 
       # ── 7. Commit rapport + graphiques + pages HTML ─────────────────────
+      # CORRECTION : le commit est TOUJOURS effectué (même si diff minimal)
+      # pour garantir l'activité du dépôt et éviter la désactivation GitHub.
       - name: Commit report, charts & HTML page
         if: steps.check_today.outputs.already_done == 'false'
         run: |
@@ -117,11 +136,14 @@ jobs:
           git add docs/
           git add cache/ || true
           if git diff --cached --quiet; then
-            echo "Aucun changement à committer."
+            # CORRECTION : même si aucun changement de données, on force un commit
+            # minimal pour maintenir l'activité du dépôt (évite désactivation GitHub).
+            echo "ℹ️ Aucun changement de données, mais commit minimal pour maintenir l'activité."
+            git commit --allow-empty -m "📊 Rapport quotidien $(date +'%Y-%m-%d %H:%M') Paris (cache)"
           else
             git commit -m "📊 Rapport quotidien $(date +'%Y-%m-%d %H:%M') Paris"
-            git push
           fi
+          git push
 
       # ── 8. Upload artifact ────────────────────────────────────────────
       - name: Upload report artifact
