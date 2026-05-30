@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.6
+generate_html.py  v3.7
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
@@ -14,6 +14,7 @@ Convertit reports/daily_report.md  →  docs/index.html
   - v3.6 : regex synth_src rendue robuste face au format ")* en fin de
             ligne produit par portfolio_analyzer (source : RSS Yahoo Finance)*
             → le \)? final et le \*? sont désormais optionnels et bien ordonnés
+  - v3.7 : synchronisation numéro de version affiché → v6.2
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -133,7 +134,7 @@ def extract_positions(md: str) -> list[dict]:
         # ── v3.6 : regex robuste pour extraire la source RSS ────────────────
         # Format produit par portfolio_analyzer :
         #   **Actualite recente :** *(source : RSS Yahoo Finance)*
-        # Le \)? final capture la ) de fermeture du *(...)*  même si elle
+        # Le \)? final capture la ) de fermeture du *(...)* même si elle
         # est collée au \* de fermeture de l'italique.
         m_synth_src = re.search(
             r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*([^)]+?)\s*\)?[\s*]*(?:\n|$)",
@@ -836,7 +837,7 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v6.1 · {report_date}</div>
+      <div class="header-meta">v6.2 · {report_date}</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
