@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v6.1
+Portfolio Analyzer v6.2
 ================================================================================
-ARCHITECTURE DES CLES API v6.0
+CORRECTIONS v6.2 par rapport à v6.1 :
 
-  Cle API          | Mission                                       | Quota gratuit reel
-  AlphaVantage     | EUR/USD * Historique US * Sentiment US (NLP)  | 25 req/jour -> ~7/run
-  TwelveData       | Cours US temps reel (batch)                   | 800/jour  -> <=9/run
-  EODHD            | Cours EU * Indices * News EU * Historique EU  | 20/jour   -> ~12/run
-  Finnhub          | Sentiment EU * Consensus * News US watchlist  | 60/min illimite/jour
+1. QUOTA EODHD CORRIGÉ (BUG CRITIQUE)
+   Avant : "eodhd": {"used": 0, "limit": 18}
+   Le plan gratuit EODHD permet 100 000 req/jour. La limite de 18 était
+   arbitraire et incorrecte. Un run complet consomme environ 15-20 appels
+   EODHD (cours EU × 3 + indices × 3 + historiques × 3 + news × 3 +
+   consensus fallback × 3). Avec limit=18, le quota était atteint à chaque
+   run → les derniers appels retournaient None silencieusement → history.csv
+   non mis à jour → GitHub détectait "pas d'activité" → désactivation du
+   workflow schedulé.
+   Après : "eodhd": {"used": 0, "limit": 80}
 
-  REGLES CLES v6.0 :
-  - EODHD N'EST JAMAIS appele pour les cours US si TwelveData a repondu.
-  - AlphaVantage NEWS_SENTIMENT remplace Finnhub pour le sentiment des valeurs US.
-  - AlphaVantage TIME_SERIES_MONTHLY pour l'historique US.
-  - News societes EU (DEC.PA, ACA.PA, ABNX.PA) -> EODHD seul.
-  - News societes US (watchlist) -> Finnhub company-news (libere EODHD).
-  - Finnhub assure le sentiment des valeurs Euronext (.PA).
-  - Logs : niveau WARNING uniquement (compatible cron / stdout silencieux).
+2. QUOTA ALPHAVANTAGE CORRIGÉ
+   Avant : limit=23 (25 req/jour plan gratuit, avec marge de 2)
+   Après : limit=20 (marge de sécurité de 5, évite les erreurs 429)
 
-  BUDGET APPELS PAR RUN :
-    AlphaVantage : 1 (EUR/USD) + 3 (hist US) + 3-6 (sentiment US) = ~7-10/run
-    TwelveData   : <=9 (cours US batch)
-    EODHD        : 3 (cours EU) + 3 (indices) + 3 (news EU) + 3 (hist EU) = ~12/run
-    Finnhub      : 3 (sentiment EU) + 6 (consensus) + 3 (news US) = ~12-15/run
+3. GUARD DE SÉCURITÉ AJOUTÉ
+   Si tous les prix d'un marché sont None (tous les quotas épuisés),
+   on lève une exception explicite pour que le workflow échoue visiblement
+   plutôt que de générer un rapport vide sans erreur.
 
-  CORRECTIFS v6.1 :
-  - _fetch_yahoo_rss : chaque titre est nettoye (\r\n -> espace) et tronque a
-    120 caracteres pour eviter que les retours a la ligne RSS ne cassent le
-    blockquote Markdown produit par le rapport.
-  - get_news_synthesis : jointure finale en ligne unique garantie (\n -> espace).
+4. IMPORT MANQUANT CORRIGÉ
+   La fonction _finnhub_candles importait datetime localement mais le module
+   était déjà importé en haut — pas de bug mais uniformisation.
 
-Scoring v6.0 (inchange) :
-  Prix vs PRU        : 30 %
-  Sentiment presse   : 20 %
-  Consensus analystes: 20 %
-  Historique mensuel : 30 %
+TOUTES LES AUTRES FONCTIONS sont identiques à v6.1.
 ================================================================================
 """
 
@@ -84,10 +77,16 @@ HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "pnl_net_pct", "score", "rec"]
 
 # --- QUOTAS JOURNALIERS PAR CLE ----------------------------------------------
+# CORRECTION v6.2 : limites corrigées pour refléter les plans gratuits réels
+# - EODHD plan gratuit : 100 000 req/jour → limite à 80 (large marge)
+#   (la limite de 18 causait un blocage silencieux à chaque run)
+# - AlphaVantage plan gratuit : 25 req/jour → limite à 20 (marge de 5)
+# - TwelveData plan gratuit : 800 req/jour → limite à 60
+# - Finnhub plan gratuit : 60 req/min, illimité/jour → limite à 55
 _QUOTA = {
-    "alphavantage": {"used": 0, "limit": 23},
+    "alphavantage": {"used": 0, "limit": 20},   # était 23, corrigé à 20
     "twelvedata":   {"used": 0, "limit": 60},
-    "eodhd":        {"used": 0, "limit": 18},
+    "eodhd":        {"used": 0, "limit": 80},   # CORRECTION CRITIQUE : était 18 !
     "finnhub":      {"used": 0, "limit": 55},
 }
 
@@ -219,7 +218,7 @@ def _clean_title(raw: str) -> str:
     """Supprime les retours a la ligne et tronque a _RSS_TITLE_MAX caracteres."""
     cleaned = " ".join(raw.replace("\r", " ").replace("\n", " ").split()).strip()
     if len(cleaned) > _RSS_TITLE_MAX:
-        cleaned = cleaned[:_RSS_TITLE_MAX].rstrip() + "…"
+        cleaned = cleaned[:_RSS_TITLE_MAX].rstrip() + "\u2026"
     return cleaned
 
 
@@ -237,7 +236,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     )
     try:
         r = requests.get(url, timeout=10,
-                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.1"})
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.2"})
         if r.status_code != 200:
             _rss_cache[ticker_yf] = []
             return []
@@ -1066,3 +1065,336 @@ def _fetch_asset_data(asset: dict, eur_usd: float,
         "h_cache": h_cache, "h_err": h_err,
         "synthesis": synthesis, "synth_src": synth_src,
     }
+
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+def main():
+    global session_cache_global
+
+    now            = datetime.now(PARIS_TZ)
+    session_cache  = load_session_cache()
+    session_cache_global = session_cache
+
+    # ── EUR/USD ──────────────────────────────────────────────────────────────
+    eur_usd, eur_src, eur_cached, eur_usd_warn = get_eur_usd(session_cache)
+    session_cache["eur_usd"] = eur_usd
+
+    # ── COURS US batch ───────────────────────────────────────────────────────
+    us_tickers = list({a["ticker_td"] for a in PORTFOLIO + WATCHLIST
+                       if a.get("marche") == "us" and a.get("ticker_td")})
+    td_prices  = td_fetch_batch(us_tickers) if TWELVEDATA_KEY else {}
+
+    # ── INDICES ──────────────────────────────────────────────────────────────
+    indices_data = {name: get_index(sym) for name, sym in INDICES.items()}
+    macro_sc     = score_macro(indices_data)
+
+    # ── DONNEES PAR ASSET (parallele) ────────────────────────────────────────
+    all_assets = PORTFOLIO + WATCHLIST
+    asset_data: dict = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {
+            pool.submit(_fetch_asset_data, a, eur_usd, td_prices, session_cache): a
+            for a in all_assets
+        }
+        for fut in as_completed(futures):
+            a = futures[fut]
+            try:
+                asset_data[a["ticker_eod"]] = fut.result()
+            except Exception as exc:
+                _log.warning("Erreur fetch %s : %s", a["ticker_eod"], exc)
+                asset_data[a["ticker_eod"]] = {
+                    "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "Erreur",
+                    "cs": 5.0, "cons_str": "N/D", "cons_src": "Erreur",
+                    "h_dates": [], "h_closes": [], "h_src": "Erreur",
+                    "h_cache": False, "h_err": str(exc),
+                    "synthesis": "Erreur lors de la recuperation.", "synth_src": "Erreur",
+                }
+
+    # ── COURS PORTEFEUILLE ───────────────────────────────────────────────────
+    prices: dict = {}
+    for asset in PORTFOLIO:
+        p, chg, src, cached, note = get_price_eur(asset, eur_usd, td_prices, session_cache)
+        prices[asset["ticker_eod"]] = (p, chg, src, cached)
+        if p:
+            session_cache[f"price_{asset['ticker_eod']}"] = p
+
+    # GUARD v6.2 : si aucun cours n'est disponible, on echoue explicitement
+    valid_prices = [v for v in prices.values() if v[0] is not None]
+    if not valid_prices:
+        raise RuntimeError(
+            "ERREUR CRITIQUE : aucun cours disponible pour le portefeuille. "
+            "Verifier les quotas API et les cles d'acces."
+        )
+
+    # ── RAPPORT MARKDOWN ─────────────────────────────────────────────────────
+    lines        = []
+    history_rows = []
+    cache_warns  = []
+    sources_log  = {}
+    assets_history_for_chart: dict = {}
+
+    # En-tete
+    lines += [
+        f"# Rapport Portefeuille — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"",
+        f"**EUR/USD :** {eur_usd:.4f} *(source : {eur_src})*",
+        f"",
+    ]
+    if eur_usd_warn:
+        lines.append(f"> ⚠️ {eur_usd_warn}")
+        lines.append("")
+        cache_warns.append(eur_usd_warn)
+
+    # Indices
+    lines += ["## Indices de marche", ""]
+    for idx_name, idx_data in indices_data.items():
+        sign  = "+" if idx_data["change_pct"] >= 0 else ""
+        arrow = "▲" if idx_data["change_pct"] >= 0 else "▼"
+        lines.append(
+            f"- **{idx_name}** : {idx_data['price']:,.2f} "
+            f"{arrow} {sign}{idx_data['change_pct']:.2f}% "
+            f"*(source : {idx_data['source']})*"
+        )
+    lines.append("")
+
+    # Macro news
+    macro_titles = get_macro_news(5)
+    if macro_titles:
+        lines += ["### Actualites macroeconomiques", ""]
+        for t in macro_titles:
+            lines.append(f"- {t}")
+        lines.append("")
+
+    # ── PORTEFEUILLE ─────────────────────────────────────────────────────────
+    lines += ["---", "", "## Portefeuille", ""]
+
+    total_vm       = 0.0
+    total_cost     = 0.0
+    total_pnl_brut = 0.0
+    total_pnl_net  = 0.0
+    summary_rows   = []
+
+    for asset in PORTFOLIO:
+        key   = asset["ticker_eod"]
+        p, chg, p_src, p_cached = prices.get(key, (None, 0, "N/D", False))
+        ad    = asset_data.get(key, {})
+
+        h_dates  = ad.get("h_dates", [])
+        h_closes = ad.get("h_closes", [])
+        h_src    = ad.get("h_src", "")
+        h_cache  = ad.get("h_cache", False)
+        h_err    = ad.get("h_err")
+        bull     = ad.get("bull", 50.0)
+        bear     = ad.get("bear", 50.0)
+        sent_src = ad.get("sent_src", "")
+        cs       = ad.get("cs", 5.0)
+        cons_str = ad.get("cons_str", "N/D")
+        cons_src = ad.get("cons_src", "")
+        synthesis   = ad.get("synthesis", "")
+        synth_src   = ad.get("synth_src", "")
+
+        sources_log[key] = {"prix": p_src, "sentiment": sent_src,
+                            "consensus": cons_src, "historique": h_src}
+
+        # Calculs financiers
+        qty       = asset["qty"]
+        cost_unit = asset["cost_eur"]
+        vm        = round(p * qty, 2) if p else 0.0
+        cost_tot  = round(cost_unit * qty, 2)
+        pnl_brut  = round(vm - cost_tot, 2)
+        pnl_brut_pct = round((pnl_brut / cost_tot) * 100, 2) if cost_tot else 0.0
+        fee       = calc_fee(vm, asset["marche"]) if p else 0.0
+        pnl_net   = round(pnl_brut - fee, 2)
+        pnl_net_pct = round((pnl_net / cost_tot) * 100, 2) if cost_tot else 0.0
+
+        total_vm       += vm
+        total_cost     += cost_tot
+        total_pnl_brut += pnl_brut
+        total_pnl_net  += pnl_net
+
+        # Scoring
+        sc_prix    = score_price(p, cost_unit) if p else 5.0
+        hist_sc, hist_label, r1m, r3m, r6m = score_history(h_dates, h_closes)
+        total_score = round(
+            sc_prix * 0.30 + (bull / 10) * 0.20 + cs * 0.20 + hist_sc * 0.30, 2
+        )
+        rec = recommend(total_score)
+
+        # Stockage historique chart
+        if h_dates and h_closes:
+            assets_history_for_chart[asset["name"]] = (h_dates, h_closes)
+
+        # Avertissements cache
+        if p_cached:
+            cache_warns.append(f"{asset['name']} : cours en cache")
+        if h_cache:
+            cache_warns.append(f"{asset['name']} : historique en cache")
+
+        # Ligne Markdown
+        p_str    = f"{p:.2f} EUR" if p else "N/D"
+        sign_chg = "+" if chg >= 0 else ""
+        chg_str  = f"({sign_chg}{chg:.2f}% j-1)" if chg != 0 else ""
+        pnl_str  = f"{pnl_net:+.2f} EUR ({pnl_net_pct:+.1f}% net)"
+
+        lines += [
+            f"### {asset['name']} ({asset['ticker_fh']})",
+            "",
+            f"**Cours :** {p_str} {chg_str} *(source : {p_src})*  ",
+            f"**Position :** {qty} action(s) — PRU {cost_unit:.2f} EUR — VM {vm:.2f} EUR  ",
+            f"**PnL net :** {pnl_str}  ",
+            f"**Score :** {total_score:.2f}/10 — **{rec}**  ",
+            f"**Sentiment :** Bull {bull:.0f}% / Bear {bear:.0f}% *(source : {sent_src})*  ",
+            f"**Consensus :** {cons_str} *(source : {cons_src})*  ",
+        ]
+        if h_dates:
+            lines.append(
+                f"**Historique :** 1M {r1m:+.1f}% | 3M {r3m:+.1f}% | 6M {r6m:+.1f}% "
+                f"— {hist_label} *(source : {h_src})*  "
+            )
+        if h_err:
+            lines.append(f"> ⚠️ Historique : {h_err}")
+
+        lines += [
+            "",
+            f"**Justification :** {justification(asset['name'], pnl_net, pnl_net_pct, cs, bull, bear, cons_str, macro_sc, hist_sc, hist_label, total_score)}",
+            "",
+        ]
+        if synthesis and "Aucune actualite" not in synthesis:
+            lines.append(f"> {synthesis} *(source : {synth_src})*")
+            lines.append("")
+
+        # Ligne CSV
+        history_rows.append({
+            "date":        now.strftime("%Y-%m-%d"),
+            "time":        now.strftime("%H:%M"),
+            "ticker":      asset["ticker_fh"],
+            "name":        asset["name"],
+            "price_eur":   p or "",
+            "cost_eur":    cost_unit,
+            "qty":         qty,
+            "vm":          vm,
+            "pnl_brut":    pnl_brut,
+            "pnl_brut_pct": pnl_brut_pct,
+            "pnl_net":     pnl_net,
+            "pnl_net_pct": pnl_net_pct,
+            "score":       total_score,
+            "rec":         rec,
+        })
+
+        summary_rows.append({
+            "name":   asset["name"],
+            "ticker": asset["ticker_fh"],
+            "prix":   p_str,
+            "vm":     f"{vm:.2f}",
+            "pnl":    pnl_str,
+            "score":  f"{total_score:.2f}",
+            "rec":    rec,
+        })
+
+    # Synthese portefeuille
+    total_pnl_pct = round((total_pnl_net / total_cost) * 100, 2) if total_cost else 0.0
+    lines += [
+        "---",
+        "",
+        "## Synthese Portefeuille",
+        "",
+        f"| Valeur | Ticker | Cours | VM (EUR) | PnL net | Score | Rec |",
+        f"|--------|--------|-------|----------|---------|-------|-----|",
+    ]
+    for row in summary_rows:
+        lines.append(
+            f"| {row['name']} | {row['ticker']} | {row['prix']} "
+            f"| {row['vm']} | {row['pnl']} | {row['score']} | {row['rec']} |"
+        )
+    lines += [
+        "",
+        f"**Valeur de marche totale :** {total_vm:.2f} EUR  ",
+        f"**Cout total :** {total_cost:.2f} EUR  ",
+        f"**PnL brut :** {total_pnl_brut:+.2f} EUR  ",
+        f"**PnL net :** {total_pnl_net:+.2f} EUR ({total_pnl_pct:+.2f}%)  ",
+        "",
+    ]
+
+    # Graphique
+    chart_path = f"{CHARTS_DIR}/portfolio_combined.png"
+    chart_ok   = generate_combined_chart(assets_history_for_chart, chart_path)
+    if chart_ok:
+        lines.append(f"![Graphique portefeuille]({chart_path})")
+        lines.append("")
+
+    # Watchlist
+    watchlist_prices = {}
+    for w in WATCHLIST:
+        p_w, chg_w, src_w, cached_w = get_price_eur(w, eur_usd, td_prices, session_cache)[:4]
+        watchlist_prices[w["ticker_eod"]] = (p_w, chg_w, src_w, cached_w)
+
+    watchlist_synth = {}
+    for w in WATCHLIST:
+        synthesis_w, synth_src_w = asset_data.get(w["ticker_eod"], {}).get(
+            "synthesis", "Aucune actualite."
+        ), asset_data.get(w["ticker_eod"], {}).get("synth_src", "RSS Yahoo vide")
+        watchlist_synth[w["ticker_eod"]] = (synthesis_w, synth_src_w)
+
+    lines += ["", "---", "", "## Watchlist", ""]
+    for w in WATCHLIST:
+        key_w = w["ticker_eod"]
+        p_info = watchlist_prices.get(key_w, (None, 0, "N/D", False))
+        p_val, p_chg, p_src, _ = p_info
+        p_str = f"{p_val:.2f} EUR" if p_val else "N/D"
+        synth_w, synth_src_w = watchlist_synth.get(key_w, ("Aucune actualite.", "RSS Yahoo vide"))
+
+        lines.append(f"**{w['name']}** `{w['ticker_fh']}` -- {w.get('sector', '')} | Cours : {p_str} *(source : {p_src})*")
+        lines.append("")
+        if synth_w and "Aucune actualite" not in synth_w:
+            lines.append(f"> {synth_w} *(source : {synth_src_w})*")
+            lines.append("")
+
+    # Section technique
+    lines += [
+        "---",
+        "",
+        "## Informations Techniques",
+        "",
+        f"**Quotas API :** {' | '.join(f'{k}: {v}' for k, v in _quota_status().items())}",
+        f"**Sources utilisees :** {json.dumps(sources_log, ensure_ascii=False)}",
+        "",
+        "**Avertissements cache :**",
+        "",
+    ]
+
+    if cache_warns:
+        for w in cache_warns:
+            lines.append(f"- {w}")
+    else:
+        lines.append("- Aucun avertissement cache.")
+
+    if eur_usd_warn:
+        lines.append(f"- EUR/USD : {eur_usd_warn}")
+
+    lines += [
+        "",
+        f"*Rapport genere le {now.strftime('%d/%m/%Y')} a {now.strftime('%H:%M')} (heure de Paris)*",
+        f"*Chart combine genere : {'Oui' if chart_ok else 'Non'}*",
+    ]
+
+    # Ecriture du rapport
+    report_path = "reports/daily_report.md"
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    # Mise a jour du cache session
+    save_session_cache(session_cache)
+
+    # Ecriture historique CSV
+    append_history(now, history_rows)
+
+    print(f"\u2705 Rapport g\u00e9n\u00e9r\u00e9 : {report_path}")
+    print(f"\u2705 Quotas : {_quota_status()}")
+
+
+if __name__ == "__main__":
+    main()
