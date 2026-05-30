@@ -1,7 +1,7 @@
 name: Keep-Alive
 # GitHub désactive les crons après 60 jours d'inactivité.
 # Ce workflow se lance chaque lundi pour maintenir le repo actif.
-# v2 : on déclenche aussi daily_analysis via workflow_dispatch
+# CORRECTION v2 : on déclenche aussi daily_analysis via workflow_dispatch
 # pour s'assurer qu'il reste activé (les commits seuls ne suffisent pas
 # à réactiver un workflow schedulé désactivé par GitHub).
 on:
@@ -15,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write  # nécessaire pour déclencher workflow_dispatch
-
+      actions: write  # CORRECTION : nécessaire pour déclencher workflow_dispatch
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +28,7 @@ jobs:
           git commit -m "💓 keep-alive $(date -u '+%Y-%m-%d')"
           git push
 
-      # Réactiver daily_analysis s'il a été désactivé par GitHub.
+      # CORRECTION : réactiver daily_analysis s'il a été désactivé par GitHub.
       # GitHub désactive un workflow schedulé si aucun run ne s'est déclenché
       # depuis 60 jours — les commits ne comptent PAS comme activité de workflow.
       # On force un workflow_dispatch pour le "wake up".
@@ -52,8 +51,8 @@ jobs:
             echo "✅ Workflow $WORKFLOW actif ($STATE) — aucune action requise."
           fi
 
-          # Déclencher un run manuel chaque lundi pour s'assurer que tout fonctionne
-          # (le guard anti-doublon dans daily_analysis bloque les doublons le même jour)
+          # Déclencher un run manuel pour s'assurer que tout fonctionne
+          # (uniquement le lundi pour ne pas doubler avec le cron daily)
           DAY_OF_WEEK=$(date -u '+%u')
           if [ "$DAY_OF_WEEK" = "1" ]; then
             echo "📅 Lundi détecté — déclenchement workflow_dispatch sur daily_analysis..."
