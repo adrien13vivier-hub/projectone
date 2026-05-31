@@ -3,7 +3,7 @@ name: Daily Portfolio Report v6.1
 
 on:
   schedule:
-    # Tir principal : 14:00 UTC = 16:00 Paris (CEST)
+    # Tir principal  : 14:00 UTC = 16:00 Paris (CEST)
     - cron: "0 14 * * 1-5"
     # Tir de rattrapage : 15:00 UTC = 17:00 Paris (CEST)
     - cron: "0 15 * * 1-5"
@@ -89,10 +89,10 @@ jobs:
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
         run: |
           echo "=== Présence des clés API ==="
-          [ -n "$FINNHUB_API_KEY" ]      && echo "✅ FINNHUB_API_KEY : présente"      || echo "❌ FINNHUB_API_KEY : ABSENTE"
-          [ -n "$EODHD_API_KEY" ]        && echo "✅ EODHD_API_KEY : présente"        || echo "❌ EODHD_API_KEY : ABSENTE"
-          [ -n "$TWELVEDATA_API_KEY" ]   && echo "✅ TWELVEDATA_API_KEY : présente"   || echo "❌ TWELVEDATA_API_KEY : ABSENTE"
-          [ -n "$ALPHAVANTAGE_API_KEY" ] && echo "✅ ALPHAVANTAGE_API_KEY : présente" || echo "❌ ALPHAVANTAGE_API_KEY : ABSENTE"
+          [ -n "$FINNHUB_API_KEY" ]      && echo "✅ FINNHUB_API_KEY      : présente"      || echo "❌ FINNHUB_API_KEY      : ABSENTE"
+          [ -n "$EODHD_API_KEY" ]        && echo "✅ EODHD_API_KEY        : présente"      || echo "❌ EODHD_API_KEY        : ABSENTE"
+          [ -n "$TWELVEDATA_API_KEY" ]   && echo "✅ TWELVEDATA_API_KEY   : présente"      || echo "❌ TWELVEDATA_API_KEY   : ABSENTE"
+          [ -n "$ALPHAVANTAGE_API_KEY" ] && echo "✅ ALPHAVANTAGE_API_KEY : présente"      || echo "❌ ALPHAVANTAGE_API_KEY : ABSENTE"
 
       # ── 4. Analyse ───────────────────────────────────────────────────────
       - name: Run portfolio analysis
