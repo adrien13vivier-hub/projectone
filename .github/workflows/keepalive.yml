@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write  # CORRECTION : nécessaire pour déclencher workflow_dispatch
+      actions: write   # CORRECTION : nécessaire pour déclencher workflow_dispatch
     steps:
       - uses: actions/checkout@v4
 
@@ -38,11 +38,11 @@ jobs:
         run: |
           REPO="${{ github.repository }}"
           WORKFLOW="daily_analysis.yml"
-
+          
           # Vérifier l'état du workflow
           STATE=$(gh api repos/$REPO/actions/workflows/$WORKFLOW --jq '.state' 2>/dev/null || echo "unknown")
           echo "État du workflow $WORKFLOW : $STATE"
-
+          
           if [ "$STATE" = "disabled_inactivity" ] || [ "$STATE" = "disabled_manually" ]; then
             echo "⚠️ Workflow $WORKFLOW désactivé ($STATE) — réactivation en cours..."
             gh api repos/$REPO/actions/workflows/$WORKFLOW/enable -X PUT
@@ -50,7 +50,7 @@ jobs:
           else
             echo "✅ Workflow $WORKFLOW actif ($STATE) — aucune action requise."
           fi
-
+          
           # Déclencher un run manuel pour s'assurer que tout fonctionne
           # (uniquement le lundi pour ne pas doubler avec le cron daily)
           DAY_OF_WEEK=$(date -u '+%u')
