@@ -84,9 +84,9 @@ HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
 # - TwelveData plan gratuit : 800 req/jour → limite à 60
 # - Finnhub plan gratuit : 60 req/min, illimité/jour → limite à 55
 _QUOTA = {
-    "alphavantage": {"used": 0, "limit": 20},   # était 23, corrigé à 20
+    "alphavantage": {"used": 0, "limit": 20},  # était 23, corrigé à 20
     "twelvedata":   {"used": 0, "limit": 60},
-    "eodhd":        {"used": 0, "limit": 80},   # CORRECTION CRITIQUE : était 18 !
+    "eodhd":        {"used": 0, "limit": 80},  # CORRECTION CRITIQUE : était 18 !
     "finnhub":      {"used": 0, "limit": 55},
 }
 
@@ -209,24 +209,17 @@ def _is_quota_error(err: str) -> bool:
 # =============================================================================
 
 _rss_cache: dict = {}
-
-# Longueur max d'un titre RSS pour eviter les debordements de blockquote Markdown.
 _RSS_TITLE_MAX = 120
 
 
 def _clean_title(raw: str) -> str:
-    """Supprime les retours a la ligne et tronque a _RSS_TITLE_MAX caracteres."""
     cleaned = " ".join(raw.replace("\r", " ").replace("\n", " ").split()).strip()
     if len(cleaned) > _RSS_TITLE_MAX:
-        cleaned = cleaned[:_RSS_TITLE_MAX].rstrip() + "\u2026"
+        cleaned = cleaned[:_RSS_TITLE_MAX].rstrip() + "…"
     return cleaned
 
 
 def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
-    """Recupere les n derniers titres d'actualite depuis le flux RSS Yahoo Finance.
-
-    Retourne une liste de chaines sur UNE seule ligne chacune (sans \\n interne).
-    """
     if ticker_yf in _rss_cache:
         return _rss_cache[ticker_yf][:n]
 
@@ -257,19 +250,13 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
 
 
 # =============================================================================
-# SYNTHESE ACTUALITE -- titres RSS bruts (pas d'IA)
+# SYNTHESE ACTUALITE
 # =============================================================================
 
 _synthesis_cache: dict = {}
 
 
 def get_news_synthesis(asset: dict) -> tuple:
-    """Recupere les titres RSS Yahoo Finance et les retourne bruts (3 max).
-
-    Retourne (synthese_str, source_str).
-    - synthese_str : titres separes par " | ", garantis sur une seule ligne
-    - source_str   : "RSS Yahoo Finance" | "RSS Yahoo vide"
-    """
     ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
     key = ticker_yf
 
@@ -283,7 +270,6 @@ def get_news_synthesis(asset: dict) -> tuple:
         _synthesis_cache[key] = result
         return result
 
-    # Jointure + nettoyage final : on s'assure qu'aucun \n residuel ne subsiste
     brut = " | ".join(titles[:3])
     brut = " ".join(brut.replace("\r", " ").replace("\n", " ").split())
     result = (brut, "RSS Yahoo Finance")
@@ -509,7 +495,7 @@ def get_index(symbols: dict) -> dict:
 
 
 # =============================================================================
-# NEWS (titres bruts Finnhub/EODHD -- conserves pour le scoring sentiment)
+# NEWS
 # =============================================================================
 
 _news_cache: dict = {}
@@ -580,8 +566,6 @@ def get_macro_news(n: int = 5) -> list:
 # =============================================================================
 
 def get_sentiment(asset: dict) -> tuple:
-    """Retourne (bull_pct, bear_pct, source_str)."""
-
     if asset.get("marche") == "us":
         ticker_av = asset.get("ticker_av")
         if ALPHAVANTAGE_KEY and ticker_av:
@@ -647,13 +631,11 @@ def get_sentiment(asset: dict) -> tuple:
         return 50.0, 50.0, f"Neutre par defaut (Finnhub:{fh_err})"
 
 
-# --- Analyse lexicale v6.0 : fenetre de negation ------------------------------
 _NEGATORS  = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
 _NEG_WINDOW = 3
 
 
 def _lexical_sentiment(news: list) -> tuple:
-    """Analyse lexicale avec gestion des negations (fenetre de 3 tokens)."""
     import re
 
     bull_w = {
@@ -694,598 +676,726 @@ def _lexical_sentiment(news: list) -> tuple:
 
 
 # =============================================================================
-# CONSENSUS -- Finnhub principal * EODHD fallback
+# CONSENSUS
 # =============================================================================
 
 def get_consensus(asset: dict) -> tuple:
-    """Retourne (score/10, detail_str, source_str)."""
     if FINNHUB_KEY:
         data, err = _get(f"{FH_BASE}/stock/recommendation",
                          {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
                          "finnhub")
         if isinstance(data, list) and data and not _is_quota_error(err):
-            latest = data[0]
-            strong_buy  = int(latest.get("strongBuy",  0))
-            buy         = int(latest.get("buy",         0))
-            hold        = int(latest.get("hold",        0))
-            sell        = int(latest.get("sell",        0))
-            strong_sell = int(latest.get("strongSell",  0))
-            total = strong_buy + buy + hold + sell + strong_sell
+            r  = data[0]
+            sb = r.get("strongBuy", 0); b = r.get("buy", 0)
+            h  = r.get("hold", 0);      s = r.get("sell", 0); ss = r.get("strongSell", 0)
+            total = sb + b + h + s + ss
             if total > 0:
-                score = (strong_buy * 10 + buy * 7.5 + hold * 5 +
-                         sell * 2.5 + strong_sell * 0) / total
-                detail = (f"SB:{strong_buy} B:{buy} H:{hold} "
-                          f"S:{sell} SS:{strong_sell} [{latest.get('period','?')}]")
-                return round(score, 2), detail, "Finnhub"
+                score = (sb*10 + b*7.5 + h*5 + s*2.5) / total
+                return round(score, 2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub"
         fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
     else:
         fh_err = "cle absente"
 
     if EODHD_KEY:
-        sym = asset["ticker_eod"].replace(".PA", ".PA").replace(".US", ".US")
-        data, err = _get(f"{EOD_BASE}/fundamentals/{sym}",
-                         {"api_token": EODHD_KEY, "filter": "Highlights", "fmt": "json"},
+        data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
+                         {"api_token": EODHD_KEY, "fmt": "json", "filter": "AnalystRatings"},
                          "eodhd")
-        if isinstance(data, dict) and not _is_quota_error(err):
-            hl = data.get("Highlights", {})
-            target = hl.get("AnalystTargetPrice")
-            rating = hl.get("RecommendationKey", "")
-            mapping = {"strong_buy": 10, "buy": 7.5, "hold": 5,
-                       "sell": 2.5, "strong_sell": 0}
-            if rating and rating.lower() in mapping:
-                score = mapping[rating.lower()]
-                detail = f"Rating EODHD : {rating} | Target : {target or 'N/D'}"
-                return round(score, 2), detail, f"EODHD (fallback FH:{fh_err})"
+        if isinstance(data, dict) and data.get("Rating") and not _is_quota_error(err):
+            rat   = data["Rating"]
+            label = str(rat.get("Rating", "")).lower()
+            tp    = rat.get("TargetPrice", "N/D")
+            m     = {"strong buy": 9.0, "buy": 7.5, "hold": 5.0,
+                     "sell": 2.5, "strong sell": 0.5}
+            score = m.get(label, 5.0)
+            return score, f"Rating:{rat.get('Rating','?')} TP:{tp}$", f"EODHD (fallback Finnhub:{fh_err})"
         eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
     else:
         eod_err = "cle absente"
 
-    return 5.0, "N/D", f"Neutre par defaut (FH:{fh_err}, EOD:{eod_err})"
+    return (5.0, "N/D", f"Neutre par defaut (Finnhub:{fh_err}, EODHD:{eod_err})")
 
 
 # =============================================================================
-# HISTORIQUE MENSUEL (3 mois)
+# HISTORIQUE MENSUEL
 # =============================================================================
 
-def _alphavantage_monthly(asset: dict) -> list | None:
-    """Retourne liste de (date_str, close_float) sur 3 mois, ou None."""
-    ticker_av = asset.get("ticker_av")
-    if not ALPHAVANTAGE_KEY or not ticker_av:
-        return None
-    data, err = _get(AV_BASE, {
-        "function": "TIME_SERIES_MONTHLY",
-        "symbol":   ticker_av,
-        "apikey":   ALPHAVANTAGE_KEY,
-    }, "alphavantage")
-    if not isinstance(data, dict) or _is_quota_error(err):
-        return None
-    ts = data.get("Monthly Time Series", {})
-    if not ts:
-        return None
-    cutoff = date.today() - timedelta(days=91)
-    pts = []
-    for d_str, vals in sorted(ts.items(), reverse=True):
-        try:
-            if date.fromisoformat(d_str) < cutoff:
-                break
-            pts.append((d_str, float(vals["4. close"])))
-        except Exception:
-            continue
-    return pts if pts else None
+session_cache_global: dict = {}
 
 
-def _finnhub_candles(asset: dict) -> list | None:
-    """Retourne liste de (date_str, close_float) via Finnhub candles, ou None."""
-    if not FINNHUB_KEY:
-        return None
-    now_ts   = int(datetime.now().timestamp())
-    from_ts  = int((datetime.now() - timedelta(days=91)).timestamp())
+def get_monthly_history(asset: dict, eur_usd: float, months: int = 3) -> tuple:
+    from_d    = str(date.today() - timedelta(days=months * 31))
+    to_d      = str(date.today())
+    cache_key = f"hist_{asset['ticker_eod']}"
+
+    if asset.get("marche") == "us":
+        ticker_av = asset.get("ticker_av")
+        if ALPHAVANTAGE_KEY and ticker_av:
+            data, err = _get(AV_BASE, {
+                "function": "TIME_SERIES_MONTHLY",
+                "symbol":   ticker_av,
+                "apikey":   ALPHAVANTAGE_KEY,
+            }, "alphavantage")
+            if isinstance(data, dict) and data.get("Monthly Time Series") and not _is_quota_error(err):
+                ts = data["Monthly Time Series"]
+                dates  = []
+                closes = []
+                for month_str, vals in sorted(ts.items()):
+                    if month_str < from_d:
+                        continue
+                    try:
+                        dates.append(month_str[:7])
+                        closes.append(round(float(vals["4. close"]) * eur_usd, 2))
+                    except (ValueError, TypeError, KeyError):
+                        pass
+                if len(dates) >= 2:
+                    return dates, closes, "AlphaVantage", False, None
+            av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
+
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, months)
+            if dates:
+                return dates, closes, f"Finnhub (fallback AV:{av_err})", cache_flag, err_str
+            fh_err = err_str or "vide"
+        else:
+            fh_err = "cle absente"
+
+        if session_cache_global.get(cache_key):
+            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            cached   = session_cache_global[cache_key]
+            return (cached.get("dates", []), cached.get("closes", []),
+                    "Cache", True,
+                    f"Historique US non disponible (AV:{av_err}, FH:{fh_err}) -- cache du {saved_at}")
+        return ([], [], f"Indisponible (AV:{av_err}, FH:{fh_err})", False,
+                "Historique indisponible -- graphique non genere")
+
+    else:
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/eod/{asset['ticker_eod']}",
+                             {"api_token": EODHD_KEY, "fmt": "json",
+                              "period": "m", "from": from_d, "to": to_d},
+                             "eodhd")
+            if isinstance(data, list) and len(data) >= 2 and not _is_quota_error(err):
+                dates  = [d["date"] for d in data if d.get("adjusted_close") or d.get("close")]
+                closes = [float(d.get("adjusted_close") or d.get("close", 0)) for d in data
+                          if d.get("adjusted_close") or d.get("close")]
+                return dates, closes, "EODHD", False, None
+            eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            eod_err = "cle absente"
+
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, months)
+            if dates:
+                return dates, closes, f"Finnhub (fallback EODHD:{eod_err})", cache_flag, err_str
+            fh_err = err_str or "vide"
+        else:
+            fh_err = "cle absente"
+
+        if session_cache_global.get(cache_key):
+            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            cached   = session_cache_global[cache_key]
+            return (cached.get("dates", []), cached.get("closes", []),
+                    "Cache", True,
+                    f"Historique EU non disponible (EODHD:{eod_err}, FH:{fh_err}) -- cache du {saved_at}")
+        return ([], [], f"Indisponible (EODHD:{eod_err}, FH:{fh_err})", False,
+                "Historique indisponible -- graphique non genere")
+
+
+def _finnhub_candles(asset: dict, eur_usd: float, months: int) -> tuple:
+    from_ts = int((datetime.now() - timedelta(days=months * 31)).timestamp())
+    to_ts   = int(datetime.now().timestamp())
     data, err = _get(f"{FH_BASE}/stock/candle",
-                     {"symbol": asset["ticker_fh"], "resolution": "M",
-                      "from": from_ts, "to": now_ts, "token": FINNHUB_KEY},
+                     {"symbol": asset["ticker_fh"], "resolution": "W",
+                      "from": from_ts, "to": to_ts, "token": FINNHUB_KEY},
                      "finnhub")
-    if not isinstance(data, dict) or data.get("s") != "ok" or _is_quota_error(err):
-        return None
-    closes = data.get("c", [])
-    times  = data.get("t", [])
-    if not closes or len(closes) != len(times):
-        return None
-    pts = []
-    for ts_val, close in zip(times, closes):
-        d_str = datetime.fromtimestamp(ts_val).strftime("%Y-%m-%d")
-        pts.append((d_str, float(close)))
-    return pts if pts else None
-
-
-def _eodhd_monthly(asset: dict) -> list | None:
-    """Retourne liste de (date_str, close_float) via EODHD, ou None."""
-    if not EODHD_KEY:
-        return None
-    from_d = str(date.today() - timedelta(days=91))
-    to_d   = str(date.today())
-    data, err = _get(f"{EOD_BASE}/eod/{asset['ticker_eod']}",
-                     {"api_token": EODHD_KEY, "period": "m",
-                      "from": from_d, "to": to_d, "fmt": "json"},
-                     "eodhd")
-    if not isinstance(data, list) or _is_quota_error(err):
-        return None
-    pts = []
-    for row in data:
-        try:
-            pts.append((row["date"], float(row["close"])))
-        except Exception:
-            continue
-    return pts if pts else None
-
-
-def get_history(asset: dict) -> tuple:
-    """Retourne (points_list, source_str) avec points_list = [(date, close), ...]."""
-    pts = _alphavantage_monthly(asset)
-    if pts:
-        return pts, "AlphaVantage"
-
-    pts = _finnhub_candles(asset)
-    if pts:
-        return pts, "Finnhub"
-
-    pts = _eodhd_monthly(asset)
-    if pts:
-        return pts, "EODHD"
-
-    return [], "Indisponible"
+    if isinstance(data, dict) and data.get("s") == "ok" and data.get("c") and not _is_quota_error(err):
+        monthly: dict = {}
+        for ts, cl in zip(data["t"], data["c"]):
+            month_key = datetime.fromtimestamp(ts).strftime("%Y-%m")
+            monthly[month_key] = cl
+        dates  = sorted(monthly.keys())
+        closes = [round(monthly[k] * eur_usd, 2)
+                  if asset.get("marche") == "us" else round(monthly[k], 2)
+                  for k in dates]
+        return dates, closes, "Finnhub", False, None
+    err_str = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    return [], [], "Finnhub", False, err_str
 
 
 # =============================================================================
 # SCORING
 # =============================================================================
 
-def score_asset(price_eur: float, cost_eur: float,
-                bull_pct: float, consensus: float,
-                history: list) -> tuple:
-    """
-    Retourne (score_0_10, recommandation_str).
+def score_history(dates: list, closes: list) -> tuple:
+    if len(closes) < 2:
+        return 5.0, "NEUTRE", 0.0, 0.0, 0.0
 
-    Poids :
-      - Prix vs PRU        30 %  (gain/perte latente)
-      - Sentiment          20 %
-      - Consensus          20 %
-      - Historique 3 mois  30 %  (tendance)
-    """
-    # --- Composante Prix vs PRU (30 %) ---
-    if price_eur and cost_eur and cost_eur > 0:
-        pct_chg = (price_eur - cost_eur) / cost_eur * 100
-        if   pct_chg >=  15: prix_s = 10
-        elif pct_chg >=   5: prix_s = 8
-        elif pct_chg >=   0: prix_s = 6
-        elif pct_chg >=  -5: prix_s = 4
-        elif pct_chg >= -15: prix_s = 2
-        else:                 prix_s = 0
-    else:
-        prix_s = 5
+    def safe_ret(idx_from, idx_to=-1):
+        try:
+            return (closes[idx_to] / closes[idx_from] - 1) * 100
+        except (IndexError, ZeroDivisionError):
+            return 0.0
 
-    # --- Composante Sentiment (20 %) ---
-    sent_s = round(bull_pct / 10, 2)
+    ret_1m = safe_ret(-2)
+    ret_3m = safe_ret(-4) if len(closes) >= 4 else safe_ret(0)
+    ret_6m = safe_ret(-7) if len(closes) >= 7 else safe_ret(0)
+    score = 5.0
+    if ret_1m > 5:    score += 1.5
+    elif ret_1m > 2:  score += 0.75
+    elif ret_1m < -5: score -= 1.5
+    elif ret_1m < -2: score -= 0.75
+    if ret_3m > 10:    score += 2.0
+    elif ret_3m > 5:   score += 1.0
+    elif ret_3m < -10: score -= 2.0
+    elif ret_3m < -5:  score -= 1.0
+    if ret_6m > 15:    score += 1.5
+    elif ret_6m > 7:   score += 0.75
+    elif ret_6m < -15: score -= 1.5
+    elif ret_6m < -7:  score -= 0.75
+    score = round(max(0.0, min(10.0, score)), 2)
+    label = "HAUSSIER" if score >= 6.5 else "BAISSIER" if score <= 3.5 else "NEUTRE"
+    return score, label, ret_1m, ret_3m, ret_6m
 
-    # --- Composante Consensus (20 %) ---
-    cons_s = consensus  # déjà en /10
 
-    # --- Composante Historique (30 %) ---
-    if len(history) >= 2:
-        oldest = history[-1][1]
-        newest = history[0][1]
-        if oldest > 0:
-            trend_pct = (newest - oldest) / oldest * 100
-            if   trend_pct >=  10: hist_s = 10
-            elif trend_pct >=   3: hist_s = 7
-            elif trend_pct >=  -3: hist_s = 5
-            elif trend_pct >= -10: hist_s = 3
-            else:                  hist_s = 0
-        else:
-            hist_s = 5
-    else:
-        hist_s = 5
+def score_price(current, cost):
+    pnl = (current - cost) / cost * 100
+    return round(max(0.0, min(10.0, 5.0 + pnl / 10.0)), 2)
 
-    score = round(prix_s * 0.30 + sent_s * 0.20 + cons_s * 0.20 + hist_s * 0.30, 2)
-    score = max(0.0, min(10.0, score))
 
-    if   score >= 8:   rec = "ACHAT FORT"
-    elif score >= 6.5: rec = "ACHAT"
-    elif score >= 5:   rec = "CONSERVER"
-    elif score >= 3:   rec = "SURVEILLER"
-    else:              rec = "VENDRE"
+def score_macro(indices_data):
+    chgs = [v["change_pct"] for v in indices_data.values() if v["change_pct"] != 0]
+    return round(max(0.0, min(10.0, 5.0 + sum(chgs)/len(chgs))), 2) if chgs else 5.0
 
-    return score, rec
+
+def recommend(score):
+    if score >= 7.5: return "ACHAT FORT"
+    if score >= 6.0: return "ACHAT MODERE"
+    if score >= 4.5: return "GARDER"
+    if score >= 3.0: return "A EVITER"
+    return "VENDRE"
+
+
+def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
+                  consensus, macro_score, hist_score, hist_label, total_score):
+    p1 = (f"Gain net {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais."
+          if net_pnl_eur >= 0
+          else f"Perte nette {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais.")
+    p2 = (f"Consensus haussier (score {sc:.1f}/10, Bull {bull:.0f}%)."
+          if sc >= 7 else
+          f"Consensus neutre ({bull:.0f}% bull / {bear:.0f}% bear)."
+          if sc >= 5 else
+          f"Consensus defavorable (score {sc:.1f}/10, Bear {bear:.0f}%).")
+    p3 = ("Contexte macro favorable." if macro_score >= 6
+          else "Contexte macro defavorable." if macro_score <= 4
+          else "Contexte macro neutre.")
+    p4 = f"Momentum mensuel {hist_label} (score historique {hist_score:.1f}/10)."
+    return f"{p1} {p2} {p3} {p4}"
 
 
 # =============================================================================
-# GRAPHIQUE COMBINE (courbes normalisees base 100)
+# GRAPHIQUE COMBINE
 # =============================================================================
 
-def generate_combined_chart(portfolio_histories: dict) -> bool:
-    """
-    Genere un graphique multi-lignes normalisees base 100 pour toutes les positions.
-    Sauvegarde dans reports/charts/portfolio_combined.png.
-    Retourne True si succes.
-    """
+_CHART_COLORS = [
+    "#2563eb", "#16a34a", "#dc2626", "#d97706",
+    "#7c3aed", "#0891b2", "#db2777", "#65a30d",
+]
+
+
+def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
-        from datetime import datetime as dt
 
-        os.makedirs(CHARTS_DIR, exist_ok=True)
+        valid = {
+            name: (dates, closes)
+            for name, (dates, closes) in assets_history.items()
+            if len(dates) >= 2 and len(closes) >= 2
+        }
 
-        fig, ax = plt.subplots(figsize=(12, 6))
-        plotted = 0
-
-        for name, (pts, src) in portfolio_histories.items():
-            if not pts or len(pts) < 2:
-                continue
-            try:
-                dates  = [dt.strptime(p[0][:10], "%Y-%m-%d") for p in reversed(pts)]
-                closes = [p[1] for p in reversed(pts)]
-                base   = closes[0]
-                if base <= 0:
-                    continue
-                norm = [c / base * 100 for c in closes]
-                ax.plot(dates, norm, marker="o", markersize=3, linewidth=1.5, label=name)
-                plotted += 1
-            except Exception:
-                continue
-
-        if plotted == 0:
+        if not valid:
+            _log.warning("generate_combined_chart : aucune serie valide (min 2 points requis)")
             return False
 
-        ax.axhline(100, color="gray", linestyle="--", linewidth=0.8, alpha=0.6)
-        ax.set_title("Performance normalisee base 100 — 3 derniers mois", fontsize=13)
-        ax.set_ylabel("Base 100")
+        os.makedirs(os.path.dirname(chart_path), exist_ok=True)
+
+        fig, ax = plt.subplots(figsize=(12, 5))
+        fig.patch.set_facecolor("#f9f8f5")
+        ax.set_facecolor("#f9f8f5")
+
+        for idx, (name, (dates, closes)) in enumerate(valid.items()):
+            dt_dates = []
+            for d in dates:
+                try:
+                    dt_dates.append(
+                        datetime.strptime(d + "-01" if len(d) == 7 else d, "%Y-%m-%d")
+                    )
+                except Exception:
+                    pass
+
+            if len(dt_dates) < 2:
+                continue
+
+            base = closes[0]
+            if base == 0:
+                continue
+            normalized = [round(c / base * 100, 2) for c in closes]
+
+            color = _CHART_COLORS[idx % len(_CHART_COLORS)]
+            perf_finale = normalized[-1] - 100
+
+            ax.plot(
+                dt_dates, normalized,
+                color=color, linewidth=2.2,
+                marker="o", markersize=4,
+                label=f"{name} ({perf_finale:+.1f}%)",
+                zorder=3,
+            )
+
+            ax.annotate(
+                f"{normalized[-1]:.0f}",
+                (dt_dates[-1], normalized[-1]),
+                textcoords="offset points", xytext=(6, 0),
+                fontsize=7.5, color=color, fontweight="bold",
+            )
+
+        ax.axhline(y=100, color="#9ca3af", linestyle="--", linewidth=1.2,
+                   alpha=0.8, label="Base 100 (point d'entree)", zorder=2)
+
+        y_min, y_max = ax.get_ylim()
+        ax.axhspan(100, max(y_max, 101), alpha=0.04, color="#16a34a", zorder=1)
+        ax.axhspan(min(y_min, 99), 100,  alpha=0.04, color="#dc2626",  zorder=1)
+
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         ax.xaxis.set_major_locator(mdates.MonthLocator())
-        ax.legend(fontsize=8, loc="upper left")
-        ax.grid(True, alpha=0.3)
-        plt.tight_layout()
+        plt.xticks(rotation=30, ha="right", fontsize=8)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}"))
+        ax.tick_params(axis="y", labelsize=8)
+        ax.set_ylabel("Performance (base 100)", fontsize=8, color="#6b7280")
 
-        chart_path = os.path.join(CHARTS_DIR, "portfolio_combined.png")
-        plt.savefig(chart_path, dpi=120, bbox_inches="tight")
+        ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_color("#e5e7eb")
+        ax.spines["bottom"].set_color("#e5e7eb")
+
+        ax.set_title(
+            "Performance comparee du portefeuille -- base 100 (3 mois, EUR)",
+            fontsize=11, fontweight="bold", color="#111827", pad=14,
+        )
+
+        ax.legend(
+            fontsize=8, framealpha=0.7, loc="upper left",
+            bbox_to_anchor=(0.01, 0.99), ncol=2,
+        )
+
+        plt.tight_layout()
+        plt.savefig(chart_path, dpi=130, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
         plt.close(fig)
         return True
 
     except Exception as e:
-        _log.warning("Graphique combine : %s", e)
+        _log.warning("generate_combined_chart non genere : %s", e)
         return False
 
 
 # =============================================================================
-# HISTORY CSV
+# HISTORIQUE CSV
 # =============================================================================
 
-def update_history(rows: list):
-    """Ajoute les lignes du jour dans reports/history.csv."""
+def append_history(now: datetime, rows: list):
     os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
-    write_header = not os.path.exists(HISTORY_PATH)
+    exists = os.path.isfile(HISTORY_PATH)
     with open(HISTORY_PATH, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=HISTORY_COLS)
-        if write_header:
+        if not exists:
             writer.writeheader()
         for row in rows:
-            writer.writerow({col: row.get(col, "") for col in HISTORY_COLS})
+            writer.writerow(row)
 
 
 # =============================================================================
-# MAIN
+# HELPER PARALLELISATION
+# =============================================================================
+
+def _fetch_asset_data(asset: dict, eur_usd: float,
+                      td_prices: dict, session_cache: dict) -> dict:
+    news = get_company_news(asset, 2)
+    bull, bear, sent_src = get_sentiment(asset)
+    cs, cons_str, cons_src = get_consensus(asset)
+    h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
+    synthesis, synth_src = get_news_synthesis(asset)
+    return {
+        "news": news, "bull": bull, "bear": bear, "sent_src": sent_src,
+        "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
+        "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
+        "h_cache": h_cache, "h_err": h_err,
+        "synthesis": synthesis, "synth_src": synth_src,
+    }
+
+
+# =============================================================================
+# MAIN — génération du rapport complet
 # =============================================================================
 
 def main():
-    now          = datetime.now(PARIS_TZ)
+    global session_cache_global
+
+    now = datetime.now(PARIS_TZ)
+    os.makedirs("reports/charts", exist_ok=True)
+    os.makedirs("reports", exist_ok=True)
+    os.makedirs("cache", exist_ok=True)
+    os.makedirs("docs", exist_ok=True)
+
     session_cache = load_session_cache()
+    session_cache_global = session_cache
 
-    # -- EUR/USD ---------------------------------------------------------------
-    eur_usd, eur_usd_src, eur_usd_cached, eur_usd_warn = get_eur_usd(session_cache)
-    if not eur_usd_cached:
-        session_cache["eur_usd"] = eur_usd
+    # ── 1. EUR/USD ────────────────────────────────────────────────────────────
+    eur_usd, eur_usd_src, eur_usd_cache, eur_usd_warn = get_eur_usd(session_cache)
+    session_cache["eur_usd"] = eur_usd
 
-    # -- Cours US (batch TwelveData) ------------------------------------------
-    us_tickers = [a.get("ticker_td") for a in PORTFOLIO + WATCHLIST
-                  if a["marche"] == "us" and a.get("ticker_td")]
-    td_prices  = td_fetch_batch(list(set(us_tickers))) if TWELVEDATA_KEY and us_tickers else {}
+    # ── 2. Cours US en batch (TwelveData) ─────────────────────────────────────
+    us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
+    us_tickers += [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
+    td_prices = td_fetch_batch(list(set(filter(None, us_tickers)))) if TWELVEDATA_KEY else {}
 
-    # -- Indices ---------------------------------------------------------------
-    indices_data = {name: get_index(syms) for name, syms in INDICES.items()}
+    # ── 3. Cours par position + données parallèles ────────────────────────────
+    prices     = {}
+    asset_data = {}
 
-    # -- Analyse parallele (portfolio + watchlist) -----------------------------
-    def analyse_asset(asset: dict, is_watchlist: bool = False) -> dict:
-        price, chg, p_src, p_cached, p_note = get_price_eur(
-            asset, eur_usd, td_prices, session_cache)
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        price_futures = {
+            exe.submit(get_price_eur, a, eur_usd, td_prices, session_cache): a
+            for a in PORTFOLIO
+        }
+        for fut in as_completed(price_futures):
+            a = price_futures[fut]
+            try:
+                prices[a["ticker_eod"]] = fut.result()
+            except Exception as e:
+                _log.warning("Cours %s : %s", a["ticker_eod"], e)
+                prices[a["ticker_eod"]] = (None, 0.0, "Erreur", False, str(e))
 
-        if price and not p_cached:
-            session_cache[f"price_{asset['ticker_eod']}"] = price
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        data_futures = {
+            exe.submit(_fetch_asset_data, a, eur_usd, td_prices, session_cache): a
+            for a in PORTFOLIO
+        }
+        for fut in as_completed(data_futures):
+            a = data_futures[fut]
+            try:
+                asset_data[a["ticker_eod"]] = fut.result()
+            except Exception as e:
+                _log.warning("Données %s : %s", a["ticker_eod"], e)
+                asset_data[a["ticker_eod"]] = {
+                    "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "erreur",
+                    "cs": 5.0, "cons_str": "N/D", "cons_src": "erreur",
+                    "h_dates": [], "h_closes": [], "h_src": "erreur",
+                    "h_cache": False, "h_err": str(e),
+                    "synthesis": "Données indisponibles.", "synth_src": "",
+                }
 
-        bull, bear, sent_src   = get_sentiment(asset)
-        cons, cons_det, cons_src = get_consensus(asset)
-        history, hist_src      = get_history(asset)
-        synth, synth_src       = get_news_synthesis(asset)
+    # ── 4. Indices macro ──────────────────────────────────────────────────────
+    indices_data = {}
+    for idx_name, idx_sym in INDICES.items():
+        indices_data[idx_name] = get_index(idx_sym)
 
-        if price and asset.get("cost_eur"):
-            sc, rec = score_asset(price, asset["cost_eur"], bull, cons, history)
-        else:
-            sc, rec = 5.0, "CONSERVER"
+    macro_score = score_macro(indices_data)
 
-        return {
-            "asset":      asset,
-            "price":      price,
-            "chg":        chg,
-            "p_src":      p_src,
-            "p_cached":   p_cached,
-            "p_note":     p_note,
-            "bull":       bull,
-            "bear":       bear,
-            "sent_src":   sent_src,
-            "cons":       cons,
-            "cons_det":   cons_det,
-            "cons_src":   cons_src,
-            "history":    history,
-            "hist_src":   hist_src,
-            "synth":      synth,
-            "synth_src":  synth_src,
-            "score":      sc,
-            "rec":        rec,
-            "is_watchlist": is_watchlist,
+    # ── 5. Watchlist cours ────────────────────────────────────────────────────
+    watchlist_prices = {}
+    for w in WATCHLIST:
+        p, chg, src, from_cache, note = get_price_eur(w, eur_usd, td_prices, session_cache)
+        watchlist_prices[w["ticker_eod"]] = (p, chg, src, from_cache)
+
+    # ── 6. Watchlist news (RSS) ───────────────────────────────────────────────
+    watchlist_synth = {}
+    for w in WATCHLIST:
+        synth, synth_src = get_news_synthesis(w)
+        watchlist_synth[w["ticker_eod"]] = (synth, synth_src)
+
+    # ── 7. Calculs PnL + scoring par position ────────────────────────────────
+    results      = []
+    history_rows = []
+    cache_warns  = []
+    sources_log  = {
+        "EUR/USD":     eur_usd_src,
+        **{n: indices_data[n]["source"] for n in indices_data},
+    }
+    assets_history = {}
+
+    for asset in PORTFOLIO:
+        key      = asset["ticker_eod"]
+        price_info = prices.get(key, (None, 0.0, "manquant", False, None))
+        price_eur, chg_pct, price_src, price_cache, price_note = price_info
+
+        d = asset_data.get(key, {})
+        h_dates  = d.get("h_dates", [])
+        h_closes = d.get("h_closes", [])
+
+        # Sauvegarde cache historique
+        if h_closes and not d.get("h_cache"):
+            session_cache[f"hist_{key}"] = {"dates": h_dates, "closes": h_closes}
+
+        # Sauvegarde cache prix
+        if price_eur and not price_cache:
+            session_cache[f"price_{key}"] = price_eur
+
+        if price_eur is None:
+            # Pas de cours disponible, on skip mais on loggue
+            _log.warning("Cours introuvable pour %s — position ignorée dans le rapport", key)
+            continue
+
+        qty      = asset["qty"]
+        cost_eur = asset["cost_eur"]
+
+        vm        = round(price_eur * qty, 2)
+        pnl_brut  = round((price_eur - cost_eur) * qty, 2)
+        pnl_brut_pct = round(pnl_brut / (cost_eur * qty) * 100, 2)
+
+        buy_fee   = calc_fee(cost_eur * qty, asset["marche"])
+        sell_fee  = calc_fee(vm, asset["marche"])
+        pnl_net   = round(pnl_brut - buy_fee - sell_fee, 2)
+        pnl_net_pct = round(pnl_net / (cost_eur * qty) * 100, 2)
+
+        # Scoring
+        sc_price   = score_price(price_eur, cost_eur)
+        sc_hist, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
+        bull = d.get("bull", 50.0); bear = d.get("bear", 50.0)
+        cs   = d.get("cs",   5.0)
+
+        total_score = round(
+            sc_price * 0.30 +
+            (bull / 10.0)   * 0.20 +
+            cs              * 0.20 +
+            sc_hist         * 0.30,
+            2
+        )
+        rec = recommend(total_score)
+
+        just = justification(
+            asset["name"], pnl_net, pnl_net_pct,
+            cs, bull, bear, d.get("cons_str", "N/D"),
+            macro_score, sc_hist, hist_label, total_score
+        )
+
+        # Historique CSV
+        history_rows.append({
+            "date":         now.strftime("%Y-%m-%d"),
+            "time":         now.strftime("%H:%M"),
+            "ticker":       key,
+            "name":         asset["name"],
+            "price_eur":    price_eur,
+            "cost_eur":     cost_eur,
+            "qty":          qty,
+            "vm":           vm,
+            "pnl_brut":     pnl_brut,
+            "pnl_brut_pct": pnl_brut_pct,
+            "pnl_net":      pnl_net,
+            "pnl_net_pct":  pnl_net_pct,
+            "score":        total_score,
+            "rec":          rec,
+        })
+
+        # Avertissements cache
+        if price_cache and price_note:
+            cache_warns.append(f"{asset['name']} -- cours : {price_note}")
+        if d.get("h_cache") and d.get("h_err"):
+            cache_warns.append(f"{asset['name']} -- historique : {d['h_err']}")
+
+        # Log sources
+        sources_log[key] = {
+            "cours":     price_src,
+            "sentiment": d.get("sent_src", "N/D"),
+            "consensus": d.get("cons_src", "N/D"),
+            "historique": d.get("h_src",   "N/D"),
+            "synthese":  d.get("synth_src","N/D"),
         }
 
-    all_assets = [(a, False) for a in PORTFOLIO] + [(a, True) for a in WATCHLIST]
-    results    = {}
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {executor.submit(analyse_asset, a, w): (a, w)
-                   for a, w in all_assets}
-        for fut in as_completed(futures):
-            try:
-                r = fut.result()
-                results[r["asset"]["ticker_eod"]] = r
-            except Exception as e:
-                a, _ = futures[fut]
-                _log.warning("Erreur analyse %s : %s", a.get("name"), e)
+        assets_history[asset["name"]] = (h_dates, h_closes)
 
-    # -- Guard v6.2 : si tous les prix US ou EU sont None, on plante visiblement
-    us_prices  = [results[a["ticker_eod"]]["price"]
-                  for a in PORTFOLIO if a["marche"] == "us"
-                  and a["ticker_eod"] in results]
-    eu_prices  = [results[a["ticker_eod"]]["price"]
-                  for a in PORTFOLIO if a["marche"] == "euronext"
-                  and a["ticker_eod"] in results]
-
-    if us_prices and all(p is None for p in us_prices):
-        raise RuntimeError(
-            "ERREUR CRITIQUE : aucun cours US disponible (tous les quotas API sont épuisés). "
-            "Vérifiez les secrets GitHub et les quotas AlphaVantage/TwelveData/EODHD."
-        )
-    if eu_prices and all(p is None for p in eu_prices):
-        raise RuntimeError(
-            "ERREUR CRITIQUE : aucun cours Euronext disponible (tous les quotas API sont épuisés). "
-            "Vérifiez les secrets GitHub et le quota EODHD."
-        )
-
-    # -- Graphique combine -----------------------------------------------------
-    portfolio_histories = {
-        results[a["ticker_eod"]]["asset"]["name"]: (
-            results[a["ticker_eod"]]["history"],
-            results[a["ticker_eod"]]["hist_src"]
-        )
-        for a in PORTFOLIO if a["ticker_eod"] in results
-    }
-    chart_ok = generate_combined_chart(portfolio_histories)
-
-    # -- Lecture image base64 pour rapport Markdown ---------------------------
-    chart_b64 = ""
-    chart_path = os.path.join(CHARTS_DIR, "portfolio_combined.png")
-    if chart_ok and os.path.exists(chart_path):
-        import base64
-        with open(chart_path, "rb") as f:
-            chart_b64 = base64.b64encode(f.read()).decode()
-
-    # -- Mise a jour history.csv -----------------------------------------------
-    history_rows = []
-    for a in PORTFOLIO:
-        r = results.get(a["ticker_eod"])
-        if not r:
-            continue
-        price = r["price"]
-        qty   = a["qty"]
-        cost  = a["cost_eur"]
-        if price:
-            vm        = round(price * qty, 2)
-            fee_buy   = calc_fee(cost * qty, a["marche"])
-            fee_sell  = calc_fee(vm, a["marche"])
-            pnl_brut  = round(vm - cost * qty, 2)
-            pnl_net   = round(pnl_brut - fee_buy - fee_sell, 2)
-            pnl_b_pct = round(pnl_brut / (cost * qty) * 100, 2) if cost else 0
-            pnl_n_pct = round(pnl_net  / (cost * qty) * 100, 2) if cost else 0
-        else:
-            vm = pnl_brut = pnl_net = pnl_b_pct = pnl_n_pct = ""
-        history_rows.append({
-            "date":        now.strftime("%Y-%m-%d"),
-            "time":        now.strftime("%H:%M"),
-            "ticker":      a["ticker_fh"],
-            "name":        a["name"],
-            "price_eur":   price or "",
-            "cost_eur":    cost,
-            "qty":         qty,
-            "vm":          vm,
-            "pnl_brut":    pnl_brut,
-            "pnl_brut_pct": pnl_b_pct,
-            "pnl_net":     pnl_net,
-            "pnl_net_pct": pnl_n_pct,
-            "score":       r["score"],
-            "rec":         r["rec"],
+        results.append({
+            "asset":        asset,
+            "price_eur":    price_eur,
+            "chg_pct":      chg_pct,
+            "price_src":    price_src,
+            "vm":           vm,
+            "pnl_brut":     pnl_brut,
+            "pnl_brut_pct": pnl_brut_pct,
+            "pnl_net":      pnl_net,
+            "pnl_net_pct":  pnl_net_pct,
+            "score":        total_score,
+            "rec":          rec,
+            "just":         just,
+            "bull":         bull,
+            "bear":         bear,
+            "cs":           cs,
+            "cons_str":     d.get("cons_str", "N/D"),
+            "cons_src":     d.get("cons_src", "N/D"),
+            "sent_src":     d.get("sent_src", "N/D"),
+            "hist_label":   hist_label,
+            "ret_1m":       ret_1m,
+            "ret_3m":       ret_3m,
+            "ret_6m":       ret_6m,
+            "h_src":        d.get("h_src", "N/D"),
+            "synthesis":    d.get("synthesis", ""),
+            "synth_src":    d.get("synth_src", ""),
         })
-    update_history(history_rows)
 
-    # -- Construction du rapport Markdown --------------------------------------
-    sources_log  = {}
-    cache_warns  = []
-    lines        = []
+    # ── 8. Tri par score décroissant ─────────────────────────────────────────
+    results.sort(key=lambda x: x["score"], reverse=True)
 
-    # En-tete
-    lines += [
-        f"# Rapport Portfolio — {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+    # ── 9. Totaux portefeuille ────────────────────────────────────────────────
+    total_vm       = round(sum(r["vm"] for r in results), 2)
+    total_cost     = round(sum(r["asset"]["cost_eur"] * r["asset"]["qty"] for r in results), 2)
+    total_pnl_brut = round(sum(r["pnl_brut"] for r in results), 2)
+    total_pnl_brut_pct = round(total_pnl_brut / total_cost * 100, 2) if total_cost else 0
+    total_pnl_net  = round(sum(r["pnl_net"] for r in results), 2)
+    total_pnl_net_pct = round(total_pnl_net / total_cost * 100, 2) if total_cost else 0
+
+    # ── 10. Graphique combiné ─────────────────────────────────────────────────
+    chart_path   = f"{CHARTS_DIR}/portfolio_combined.png"
+    chart_ok     = generate_combined_chart(assets_history, chart_path)
+
+    # ── 11. Sauvegarde cache ──────────────────────────────────────────────────
+    save_session_cache(session_cache)
+
+    # ── 12. Historique CSV ────────────────────────────────────────────────────
+    append_history(now, history_rows)
+
+    # ── 13. Génération du rapport Markdown ───────────────────────────────────
+    macro_trend = "Haussiere" if macro_score >= 6 else "Baissiere" if macro_score <= 4 else "Neutre"
+
+    lines = [
+        f"# Rapport de Portefeuille v5.4 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "",
-        f"**EUR/USD :** {eur_usd:.4f} *(source : {eur_usd_src})*",
+        "---",
         "",
+        "## Contexte Economique",
+        "",
+        f"**Tendance : {macro_trend}** | Score macro : {macro_score}/10",
+        f"**EUR/USD :** 1 EUR = {round(1/eur_usd, 4)} USD",
+        "",
+        "| Indice | Variation | Cours |",
+        "|--------|-----------|-------|",
     ]
 
-    # Indices
-    lines.append("## Marchés")
-    lines.append("")
-    for idx_name, idx_data in indices_data.items():
-        chg_sign = "+" if idx_data["change_pct"] >= 0 else ""
-        lines.append(
-            f"- **{idx_name}** : {idx_data['price']:,.2f} "
-            f"({chg_sign}{idx_data['change_pct']:.2f}%) "
-            f"*(source : {idx_data['source']})*"
-        )
-    lines.append("")
+    for idx_name, idx_val in indices_data.items():
+        chg  = idx_val["change_pct"]
+        sym  = "^" if chg >= 0 else "v"
+        sign = "+" if chg >= 0 else ""
+        prix_fmt = f"{idx_val['price']:,.2f}".replace(",", " ")
+        lines.append(f"| {idx_name} | {sym} {sign}{chg:.2f}% | {prix_fmt} |")
 
-    # Portfolio
-    lines += ["---", "", "## Portefeuille", ""]
-
-    total_vm    = 0.0
-    total_cost  = 0.0
-    total_pnl_n = 0.0
-
-    for a in PORTFOLIO:
-        r = results.get(a["ticker_eod"])
-        if not r:
-            lines.append(f"### {a['name']} — données indisponibles")
-            lines.append("")
-            continue
-
-        price  = r["price"]
-        qty    = a["qty"]
-        cost   = a["cost_eur"]
-        p_src  = r["p_src"]
-
-        sources_log[a["ticker_fh"]] = {
-            "prix": p_src, "sentiment": r["sent_src"],
-            "consensus": r["cons_src"], "historique": r["hist_src"]
-        }
-
-        if r["p_cached"]:
-            cache_warns.append(r["p_note"] or f"{a['name']} : prix depuis cache")
-
-        # Calculs financiers
-        if price:
-            vm       = round(price * qty, 2)
-            fee_buy  = calc_fee(cost * qty, a["marche"])
-            fee_sell = calc_fee(vm, a["marche"])
-            pnl_brut = round(vm - cost * qty, 2)
-            pnl_net  = round(pnl_brut - fee_buy - fee_sell, 2)
-            pnl_pct  = round(pnl_brut / (cost * qty) * 100, 2) if cost else 0
-            pnl_sign = "+" if pnl_brut >= 0 else ""
-            chg_sign = "+" if r["chg"] >= 0 else ""
-            total_vm    += vm
-            total_cost  += cost * qty
-            total_pnl_n += pnl_net
-        else:
-            vm = fee_buy = fee_sell = pnl_brut = pnl_net = pnl_pct = 0
-            pnl_sign = chg_sign = ""
-
-        # Bloc position
-        lines.append(f"### {a['name']} `{a['ticker_fh']}`")
+    lines += [""]
+    macro_news = get_macro_news(5)
+    if macro_news:
+        lines.append("**Manchettes macro :**")
         lines.append("")
-        if price:
-            lines.append(
-                f"**Cours :** {price:.2f} EUR "
-                f"({chg_sign}{r['chg']:.2f}%) "
-                f"*(source : {p_src})*"
-            )
-            if r["p_note"]:
-                lines.append(f"  *{r['p_note']}*")
-            lines.append(
-                f"**Position :** {qty} × {cost:.2f} EUR = "
-                f"{cost*qty:.2f} EUR investis"
-            )
-            lines.append(
-                f"**Valeur marché :** {vm:.2f} EUR | "
-                f"**PnL brut :** {pnl_sign}{pnl_brut:.2f} EUR ({pnl_sign}{pnl_pct:.2f}%) | "
-                f"**PnL net :** {'+' if pnl_net>=0 else ''}{pnl_net:.2f} EUR"
-            )
-        else:
-            lines.append(f"**Cours :** N/D *(source : {p_src})*")
+        for n in macro_news:
+            lines.append(f"- {n}")
+    lines += ["", "---", "", "## Analyse par Valeur", ""]
 
-        lines.append(
-            f"**Sentiment :** Bull {r['bull']:.1f}% / Bear {r['bear']:.1f}% "
-            f"*(source : {r['sent_src']})*"
-        )
-        lines.append(
-            f"**Consensus :** {r['cons']:.1f}/10 — {r['cons_det']} "
-            f"*(source : {r['cons_src']})*"
-        )
-        hist_summary = ""
-        if r["history"] and len(r["history"]) >= 2:
-            oldest = r["history"][-1]
-            newest = r["history"][0]
-            hist_summary = (
-                f"{oldest[0]} : {oldest[1]:.2f} → "
-                f"{newest[0]} : {newest[1]:.2f} "
-                f"*(source : {r['hist_src']})*"
-            )
-        lines.append(f"**Historique 3 mois :** {hist_summary or 'N/D'}")
-        lines.append(f"**Score :** {r['score']:.2f}/10 → **{r['rec']}**")
-        lines.append("")
+    for r in results:
+        asset   = r["asset"]
+        chg     = r["chg_pct"]
+        sym     = "^" if chg >= 0 else "v"
+        sign    = "+" if chg >= 0 else ""
+        chg_str = f"{sym} {sign}{chg:.2f}%"
 
-        synth = r.get("synth", "")
-        synth_src = r.get("synth_src", "")
-        if synth and "Aucune actualite" not in synth:
-            lines.append(f"> {synth} *(source : {synth_src})*")
-        lines.append("")
+        pnl_b_sign = "+" if r["pnl_brut"] >= 0 else "-"
+        pnl_b_str  = f"{pnl_b_sign} {pnl_b_sign}{abs(r['pnl_brut']):.2f} EUR ({pnl_b_sign}{abs(r['pnl_brut_pct']):.1f}%)"
+        pnl_n_sign = "+" if r["pnl_net"] >= 0 else "-"
+        pnl_n_str  = f"{pnl_n_sign} {pnl_n_sign}{abs(r['pnl_net']):.2f} EUR ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%)"
 
-    # Synthese portefeuille
-    if total_cost > 0:
-        total_pnl_brut = total_vm - total_cost
-        total_pct      = round(total_pnl_brut / total_cost * 100, 2)
-        pnl_sign       = "+" if total_pnl_brut >= 0 else ""
+        ret_1m_s = f"{r['ret_1m']:+.1f}%"
+        ret_3m_s = f"{r['ret_3m']:+.1f}%"
+        ret_6m_s = f"{r['ret_6m']:+.1f}%"
+
         lines += [
+            f"### {asset['name']} `{asset['ticker_eod']}`",
+            "",
+            "| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |",
+            "|-------|-----------|-----|----------|---------|-------|---------|",
+            f"| {r['price_eur']:.2f} EUR | {chg_str} | {r['vm']:.2f} EUR "
+            f"| {pnl_b_str} | {pnl_n_str} | **{r['score']}/10** | {r['rec']} |",
+            "",
+        ]
+
+        synth = r.get("synthesis", "").strip()
+        synth_src_val = r.get("synth_src", "RSS Yahoo Finance (brut)").strip()
+        if synth and "Aucune actualite" not in synth:
+            lines.append(f"**Actualite recente :** *(source : {synth_src_val})*")
+            lines.append("")
+            lines.append(f"> {synth}")
+            lines.append("")
+
+        lines += [
+            f"**Sentiment :** Bull {r['bull']:.0f}% / Bear {r['bear']:.0f}% *(source : {r['sent_src']})*",
+            f"**Consensus :** {r['cons_str']} *(source : {r['cons_src']})*",
+            "",
+            f"**Momentum mensuel :** {r['hist_label']} (1M: {ret_1m_s} / 3M: {ret_3m_s} / 6M: {ret_6m_s}) *(source : {r['h_src']})*",
+            "",
+            f"**Justification :** {r['just']}",
+            "",
             "---",
             "",
-            "## Synthèse Portefeuille",
-            "",
-            f"| Métrique | Valeur |",
-            f"|---|---|",
-            f"| Valeur marché totale | {total_vm:.2f} EUR |",
-            f"| Coût total investi   | {total_cost:.2f} EUR |",
-            f"| PnL brut total       | {pnl_sign}{total_pnl_brut:.2f} EUR ({pnl_sign}{total_pct:.2f}%) |",
-            f"| PnL net total        | {'+' if total_pnl_n>=0 else ''}{total_pnl_n:.2f} EUR |",
-            "",
         ]
 
-    # Graphique
-    if chart_b64:
-        lines += [
-            "## Graphique Performance Combinée",
-            "",
-            f"![Performance normalisée base 100](data:image/png;base64,{chart_b64})",
-            "",
-        ]
+    # Section tendances
+    lines += [
+        "## Tendances -- Performance Comparee (base 100)",
+        "",
+        "![Portfolio combine](charts/portfolio_combined.png)",
+        "",
+        "---",
+        "",
+        "## Synthese Portefeuille",
+        "",
+        "| Cout total | Valeur marche | P&L Brut | P&L Net |",
+        "|------------|---------------|----------|---------|",
+    ]
+
+    pb_sign = "+" if total_pnl_brut >= 0 else "-"
+    pn_sign = "+" if total_pnl_net  >= 0 else "-"
+    lines.append(
+        f"| {total_cost:.2f} EUR | {total_vm:.2f} EUR "
+        f"| {pb_sign} {pb_sign}{abs(total_pnl_brut):.2f} EUR ({pb_sign}{abs(total_pnl_brut_pct):.1f}%) "
+        f"| {pn_sign} {pn_sign}{abs(total_pnl_net):.2f} EUR ({pn_sign}{abs(total_pnl_net_pct):.1f}%) |"
+    )
+
+    lines += [
+        "",
+        "---",
+        "",
+        "### Classement par Score",
+        "",
+        "| Valeur | VM | P&L Net | Score | Recomm. |",
+        "|--------|----|---------|-------|---------|",
+    ]
+
+    for r in results:
+        pn_sign = "+" if r["pnl_net"] >= 0 else "-"
+        pnl_n_s = f"{pn_sign} {pn_sign}{abs(r['pnl_net']):.2f} EUR ({pn_sign}{abs(r['pnl_net_pct']):.1f}%)"
+        lines.append(
+            f"| {r['asset']['name']} | {r['vm']:.2f} EUR | {pnl_n_s} | **{r['score']}/10** | {r['rec']} |"
+        )
 
     # Watchlist
     lines += ["", "---", "", "## Watchlist", ""]
     for w in WATCHLIST:
         key_w = w["ticker_eod"]
-        r_w   = results.get(key_w)
-        if not r_w:
-            lines.append(f"**{w['name']}** `{w['ticker_fh']}` — données indisponibles")
-            lines.append("")
-            continue
-        p_val  = r_w["price"]
-        p_src  = r_w["p_src"]
-        p_str  = f"{p_val:.2f} EUR" if p_val else "N/D"
-        synth_w     = r_w.get("synth", "")
-        synth_src_w = r_w.get("synth_src", "")
+        p_info = watchlist_prices.get(key_w, (None, 0, "N/D", False))
+        p_val, p_chg, p_src, _ = p_info
+        p_str = f"{p_val:.2f} EUR" if p_val else "N/D"
+        synth_w, synth_src_w = watchlist_synth.get(key_w, ("Aucune actualite.", "RSS Yahoo vide"))
 
-        lines.append(
-            f"**{w['name']}** `{w['ticker_fh']}` — {w.get('sector', '')} "
-            f"| Cours : {p_str} *(source : {p_src})*"
-        )
+        lines.append(f"**{w['name']}** `{w['ticker_fh']}` -- {w.get('sector', '')} | Cours : {p_str} *(source : {p_src})*")
         lines.append("")
         if synth_w and "Aucune actualite" not in synth_w:
             lines.append(f"> {synth_w} *(source : {synth_src_w})*")
@@ -1303,7 +1413,6 @@ def main():
         "**Avertissements cache :**",
         "",
     ]
-
     if cache_warns:
         for w in cache_warns:
             lines.append(f"- {w}")
@@ -1319,13 +1428,10 @@ def main():
         f"*Chart combine genere : {'Oui' if chart_ok else 'Non'}*",
     ]
 
-    # Ecriture du rapport
+    # Écriture du rapport
     report_path = "reports/daily_report.md"
-    os.makedirs(os.path.dirname(report_path), exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-
-    save_session_cache(session_cache)
 
     print(f"✅ Rapport généré : {report_path}")
     print(f"✅ Quotas : {_quota_status()}")
