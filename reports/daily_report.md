@@ -1,17 +1,17 @@
-# Rapport de Portefeuille v5.4 -- 31/05/2026 11:25 (Paris)
+# Rapport de Portefeuille v5.4 -- 01/06/2026 14:26 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.89/10
-**EUR/USD :** 1 EUR = 1.1658 USD
+**Tendance : Neutre** | Score macro : 5.51/10
+**EUR/USD :** 1 EUR = 1.165 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
 | S&P 500 | ^ +0.22% | 7 580.06 |
-| CAC 40 | v -0.07% | 8 183.34 |
-| Nikkei 225 | ^ +2.53% | 66 329.50 |
+| CAC 40 | ^ +0.40% | 8 216.47 |
+| Nikkei 225 | ^ +0.91% | 66 934.33 |
 
 **Manchettes macro :**
 
@@ -29,18 +29,18 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 23.26 EUR | ^ +0.00% | 139.58 EUR | + +44.54 EUR (+46.9%) | + +30.64 EUR (+32.2%) | **8.67/10** | ACHAT FORT |
+| 23.28 EUR | ^ +0.00% | 139.68 EUR | + +44.64 EUR (+47.0%) | + +30.74 EUR (+32.3%) | **8.65/10** | ACHAT FORT |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> AI Boom Fuels Massive Rally in Bitcoin Mining Stocks as Hut 8 and Cipher Surge | Small-Cap Stock Riot Platforms Is Surfing The A.I. Infrastructure Wave | Strategy Relies More on Bitcoin: Are Core Revenues Losing Momentum?
+> Riot Platforms Inc. (RIOT): Leopold Aschenbrenner Reaffirms Bullish Stance | AI Boom Fuels Massive Rally in Bitcoin Mining Stocks as Hut 8 and Cipher Surge | Small-Cap Stock Riot Platforms Is Surfing The A.I. Infrastructure Wave
 
 **Sentiment :** Bull 59% / Bear 41% *(source : AlphaVantage NLP)*
-**Consensus :** SB:6 B:17 H:2 S:0 SS:0 *(source : Finnhub)*
+**Consensus :** SB:6 B:17 H:3 S:0 SS:0 *(source : Finnhub)*
 
 **Momentum mensuel :** HAUSSIER (1M: +44.5% / 3M: +52.9% / 6M: +54.5%) *(source : Cache)*
 
-**Justification :** Gain net +30.64 EUR (+32.2%) apres frais. Consensus haussier (score 7.9/10, Bull 59%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
+**Justification :** Gain net +30.74 EUR (+32.3%) apres frais. Consensus haussier (score 7.8/10, Bull 59%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
 
 ---
 
@@ -48,18 +48,18 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 93.88 EUR | ^ +0.00% | 187.77 EUR | - -0.05 EUR (-0.0%) | - -13.95 EUR (-7.4%) | **6.8/10** | ACHAT MODERE |
+| 93.95 EUR | ^ +0.00% | 187.90 EUR | + +0.08 EUR (+0.0%) | - -13.82 EUR (-7.4%) | **6.79/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Dell Soars Most Since 2018 on Outlook Fueled by AI Servers | Super Micro Stock Rally Misses the Point From Dell Earnings | Price Prediction: CoreWeave Stock Could Triple by 2030
+> CoreWeave Completes Industry-First Bring-Up and Validation of NVIDIA Vera Rubin NVL72 | NVDA Stock Set For Strong Open Today: CEO Unveils First PC Chips At Computex 2026 | NVIDIA Says “Useful AI Has Arrived” as Vera Rubin Enters Full Production
 
 **Sentiment :** Bull 67% / Bear 33% *(source : Lexical (AV:vide, FH:HTTP 403))*
-**Consensus :** SB:10 B:18 H:12 S:1 SS:1 *(source : Finnhub)*
+**Consensus :** SB:10 B:17 H:13 S:1 SS:1 *(source : Finnhub)*
 
 **Momentum mensuel :** HAUSSIER (1M: -0.3% / 3M: +39.9% / 6M: +52.2%) *(source : Cache)*
 
-**Justification :** Perte nette -13.95 EUR (-7.4%) apres frais. Consensus haussier (score 7.1/10, Bull 67%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Perte nette -13.82 EUR (-7.4%) apres frais. Consensus haussier (score 7.0/10, Bull 67%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
 
 ---
 
@@ -67,7 +67,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 18.84 EUR | ^ +0.00% | 37.68 EUR | + +2.14 EUR (+6.0%) | - -1.84 EUR (-5.2%) | **6.23/10** | ACHAT MODERE |
+| 18.92 EUR | ^ +0.42% | 37.84 EUR | + +2.30 EUR (+6.5%) | - -1.68 EUR (-4.7%) | **5.72/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -76,9 +76,9 @@
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
 
-**Momentum mensuel :** HAUSSIER (1M: +3.3% / 3M: +11.3% / 6M: +11.3%) *(source : EODHD)*
+**Momentum mensuel :** HAUSSIER (1M: +3.3% / 3M: +5.6% / 6M: +5.6%) *(source : EODHD)*
 
-**Justification :** Perte nette -1.84 EUR (-5.2%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Perte nette -1.68 EUR (-4.7%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 6.8/10).
 
 ---
 
@@ -86,18 +86,18 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 134.32 EUR | ^ +0.00% | 268.64 EUR | + +30.52 EUR (+12.8%) | + +16.62 EUR (+7.0%) | **4.86/10** | GARDER |
+| 134.41 EUR | ^ +0.00% | 268.83 EUR | + +30.71 EUR (+12.9%) | + +16.81 EUR (+7.1%) | **5.33/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Palantir soars as Dell earnings validate their Al partnership | Why is Palantir Technologies Inc. (PLTR) One of the Stocks to Buy for The Long Term? | Palantir Technologies Inc. (PLTR): Renaissance Technologies Continues Trimming Stake
+> Palantir Eyes Buy Point As Software Stocks Extend Rally On Snowflake, Dell Earnings | Software stocks surge as Nvidia’s Huang dismisses AI disruption fears | Exploring 3 High Growth Tech Stocks in the US Market
 
-**Sentiment :** Bull 62% / Bear 38% *(source : AlphaVantage NLP)*
-**Consensus :** SB:11 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
+**Sentiment :** Bull 84% / Bear 16% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Consensus :** SB:12 B:14 H:10 S:1 SS:1 *(source : Finnhub)*
 
 **Momentum mensuel :** BAISSIER (1M: -6.5% / 3M: -5.2% / 6M: -22.8%) *(source : Cache)*
 
-**Justification :** Gain net +16.62 EUR (+7.0%) apres frais. Consensus haussier (score 7.2/10, Bull 62%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 1.0/10).
+**Justification :** Gain net +16.81 EUR (+7.1%) apres frais. Consensus haussier (score 7.3/10, Bull 84%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 1.0/10).
 
 ---
 
@@ -105,7 +105,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 16.60 EUR | ^ +0.12% | 166.00 EUR | - -3.00 EUR (-1.8%) | - -6.98 EUR (-4.1%) | **4.1/10** | A EVITER |
+| 16.52 EUR | v -0.48% | 165.20 EUR | - -3.80 EUR (-2.2%) | - -7.78 EUR (-4.6%) | **5.21/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -114,9 +114,9 @@
 **Sentiment :** Bull 0% / Bear 100% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
 
-**Momentum mensuel :** NEUTRE (1M: +7.0% / 3M: -5.5% / 6M: -5.5%) *(source : EODHD)*
+**Momentum mensuel :** HAUSSIER (1M: +7.0% / 3M: +11.4% / 6M: +11.4%) *(source : EODHD)*
 
-**Justification :** Perte nette -6.98 EUR (-4.1%) apres frais. Consensus neutre (0% bull / 100% bear). Contexte macro neutre. Momentum mensuel NEUTRE (score historique 5.5/10).
+**Justification :** Perte nette -7.78 EUR (-4.6%) apres frais. Consensus neutre (0% bull / 100% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 9.2/10).
 
 ---
 
@@ -124,7 +124,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 2.86 EUR | ^ +0.00% | 28.60 EUR | - -9.80 EUR (-25.5%) | - -13.78 EUR (-35.9%) | **2.96/10** | VENDRE |
+| 2.86 EUR | ^ +0.00% | 28.60 EUR | - -9.80 EUR (-25.5%) | - -13.78 EUR (-35.9%) | **2.73/10** | VENDRE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -133,9 +133,9 @@
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
 
-**Momentum mensuel :** BAISSIER (1M: -15.8% / 3M: -14.6% / 6M: -14.6%) *(source : EODHD)*
+**Momentum mensuel :** BAISSIER (1M: -15.8% / 3M: -21.1% / 6M: -21.1%) *(source : EODHD)*
 
-**Justification :** Perte nette -13.78 EUR (-35.9%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 0.8/10).
+**Justification :** Perte nette -13.78 EUR (-35.9%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 0.0/10).
 
 ---
 
@@ -149,7 +149,7 @@
 
 | Cout total | Valeur marche | P&L Brut | P&L Net |
 |------------|---------------|----------|---------|
-| 763.92 EUR | 828.27 EUR | + +64.35 EUR (+8.4%) | + +10.71 EUR (+1.4%) |
+| 763.92 EUR | 828.05 EUR | + +64.13 EUR (+8.4%) | + +10.49 EUR (+1.4%) |
 
 ---
 
@@ -157,53 +157,53 @@
 
 | Valeur | VM | P&L Net | Score | Recomm. |
 |--------|----|---------|-------|---------|
-| Riot Platforms | 139.58 EUR | + +30.64 EUR (+32.2%) | **8.67/10** | ACHAT FORT |
-| CoreWeave | 187.77 EUR | - -13.95 EUR (-7.4%) | **6.8/10** | ACHAT MODERE |
-| JCDecaux | 37.68 EUR | - -1.84 EUR (-5.2%) | **6.23/10** | ACHAT MODERE |
-| Palantir Technologies | 268.64 EUR | + +16.62 EUR (+7.0%) | **4.86/10** | GARDER |
-| Credit Agricole SA | 166.00 EUR | - -6.98 EUR (-4.1%) | **4.1/10** | A EVITER |
-| Abionyx Pharma | 28.60 EUR | - -13.78 EUR (-35.9%) | **2.96/10** | VENDRE |
+| Riot Platforms | 139.68 EUR | + +30.74 EUR (+32.3%) | **8.65/10** | ACHAT FORT |
+| CoreWeave | 187.90 EUR | - -13.82 EUR (-7.4%) | **6.79/10** | ACHAT MODERE |
+| JCDecaux | 37.84 EUR | - -1.68 EUR (-4.7%) | **5.72/10** | GARDER |
+| Palantir Technologies | 268.83 EUR | + +16.81 EUR (+7.1%) | **5.33/10** | GARDER |
+| Credit Agricole SA | 165.20 EUR | - -7.78 EUR (-4.6%) | **5.21/10** | GARDER |
+| Abionyx Pharma | 28.60 EUR | - -13.78 EUR (-35.9%) | **2.73/10** | VENDRE |
 
 ---
 
 ## Watchlist
 
-**NVIDIA** `NVDA` -- IA / Semi-conducteurs | Cours : 181.12 EUR *(source : TwelveData)*
+**NVIDIA** `NVDA` -- IA / Semi-conducteurs | Cours : 181.25 EUR *(source : TwelveData)*
 
-> Down 30%: 3 Reasons Nu Holdings Is a Screaming Bargain Right Now | Alphabet Stock Investors Just Got Great News From a Wall Street Analyst. It's Bad News for Nvidia. | Buy These 3 High-Yield Energy Stocks Now and Let the Dividends Compound Forever *(source : RSS Yahoo Finance)*
+> Update: Nvidia Launches New AI Chip for Windows Laptops | Is Redwire Stock a Buy Ahead of the SpaceX IPO? | 3 Reasons Why IonQ Is the Best Quantum Computing Pure Play *(source : RSS Yahoo Finance)*
 
-**Microsoft** `MSFT` -- IA / Cloud | Cours : 384.83 EUR *(source : TwelveData)*
+**Microsoft** `MSFT` -- IA / Cloud | Cours : 385.11 EUR *(source : TwelveData)*
 
-> Every Big Tech Company Is Solving AI the Same Way. This Stock Is Solving It Differently. | Datadog Share Value Has More Than Doubled As Investors Recognize a Growing Market Opportunity | QQQ’s Hidden Risk: Why the Fund’s Top 5 Holdings Move Together *(source : RSS Yahoo Finance)*
+> Update: Nvidia Launches New AI Chip for Windows Laptops | Exclusive-EU cloud rules to curb Amazon, Google access to strategic tenders, draft document shows | Here Are Monday’s Top Wall Street Analyst Research Calls: Accenture, Caesars Entertainment, Carnival, Dell Technologies,… *(source : RSS Yahoo Finance)*
 
-**Coinbase** `COIN` -- Crypto / Fintech | Cours : 162.13 EUR *(source : TwelveData)*
+**Coinbase** `COIN` -- Crypto / Fintech | Cours : 162.24 EUR *(source : TwelveData)*
 
 > A Look At Coinbase Global (COIN) Valuation As New Paycheck Splitting Feature Expands Its Super App Ambitions | Strategy Bitcoin Transfer Puts Saylor’s Treasury Model Back Under Pressure | One of the hottest crypto products in the world is finally coming to the U.S. *(source : RSS Yahoo Finance)*
 
-**LVMH** `MC.PA` -- Luxe / Consommation | Cours : 473.05 EUR *(source : EODHD)*
+**LVMH** `MC.PA` -- Luxe / Consommation | Cours : 481.25 EUR *(source : EODHD)*
 
 > Shuffle Board: Lenzing and Lanvin Name New CEOs | Lanvin Names Barbara Werschine as CEO | EXCLUSIVE: Lanvin Has a New CEO *(source : RSS Yahoo Finance)*
 
-**TotalEnergies** `TTE.PA` -- Energie | Cours : 75.18 EUR *(source : EODHD)*
+**TotalEnergies** `TTE.PA` -- Energie | Cours : 75.58 EUR *(source : EODHD)*
 
-> TotalEnergies SE: Ordinary and Extraordinary Shareholders’ Meeting on May 29, 2026 | OXY or TTE: Which Energy Stock Should Investors Choose for Now? | Oil Prices Suffer Biggest Weekly Collapse in Two Months *(source : RSS Yahoo Finance)*
+> TotalEnergies Pushes France Mega Wind Farm Forward | TotalEnergies SE: Ordinary and Extraordinary Shareholders’ Meeting on May 29, 2026 | OXY or TTE: Which Energy Stock Should Investors Choose for Now? *(source : RSS Yahoo Finance)*
 
-**Airbus** `AIR.PA` -- Aeronautique / Defense | Cours : 179.70 EUR *(source : EODHD)*
+**Airbus** `AIR.PA` -- Aeronautique / Defense | Cours : 176.30 EUR *(source : EODHD)*
 
-> Airbus Mistral AI Deal Puts Safety And Efficiency In Investor Focus | Susquehanna Bullish on Woodward (WWD) as Aerospace Demand Supports Long-Term Growth | 3 Aerospace Stocks Ready to Ride the Aftermarket Rebound *(source : RSS Yahoo Finance)*
+> Is RTX Corporation Stock Outperforming the Dow? | AAR Corp (AIR) To Offer Additional A320 Slat Repair To its Component MRO Service Offering | Airbus Mistral AI Deal Puts Safety And Efficiency In Investor Focus *(source : RSS Yahoo Finance)*
 
 ---
 
 ## Informations Techniques
 
-**Quotas API :** alphavantage: 7/20 | twelvedata: 1/60 | eodhd: 19/80 | finnhub: 16/55
-**Sources utilisees :** {"EUR/USD": "AlphaVantage", "S&P 500": "EODHD", "CAC 40": "EODHD", "Nikkei 225": "EODHD", "PLTR.US": {"cours": "TwelveData", "sentiment": "AlphaVantage NLP", "consensus": "Finnhub", "historique": "Cache", "synthese": "RSS Yahoo Finance"}, "CRWV.US": {"cours": "TwelveData", "sentiment": "Lexical (AV:vide, FH:HTTP 403)", "consensus": "Finnhub", "historique": "Cache", "synthese": "RSS Yahoo Finance"}, "RIOT.US": {"cours": "TwelveData", "sentiment": "AlphaVantage NLP", "consensus": "Finnhub", "historique": "Cache", "synthese": "RSS Yahoo Finance"}, "DEC.PA": {"cours": "EODHD", "sentiment": "Neutre par defaut (Finnhub:HTTP 403)", "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)", "historique": "EODHD", "synthese": "RSS Yahoo Finance"}, "ACA.PA": {"cours": "EODHD", "sentiment": "Lexical EODHD (Finnhub:HTTP 403)", "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)", "historique": "EODHD", "synthese": "RSS Yahoo Finance"}, "ABNX.PA": {"cours": "EODHD", "sentiment": "Neutre par defaut (Finnhub:HTTP 403)", "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)", "historique": "EODHD", "synthese": "RSS Yahoo Finance"}}
+**Quotas API :** alphavantage: 7/20 | twelvedata: 1/60 | eodhd: 19/80 | finnhub: 17/55
+**Sources utilisees :** {"EUR/USD": "AlphaVantage", "S&P 500": "EODHD", "CAC 40": "EODHD", "Nikkei 225": "EODHD", "PLTR.US": {"cours": "TwelveData", "sentiment": "Lexical (AV:vide, FH:HTTP 403)", "consensus": "Finnhub", "historique": "Cache", "synthese": "RSS Yahoo Finance"}, "CRWV.US": {"cours": "TwelveData", "sentiment": "Lexical (AV:vide, FH:HTTP 403)", "consensus": "Finnhub", "historique": "Cache", "synthese": "RSS Yahoo Finance"}, "RIOT.US": {"cours": "TwelveData", "sentiment": "AlphaVantage NLP", "consensus": "Finnhub", "historique": "Cache", "synthese": "RSS Yahoo Finance"}, "DEC.PA": {"cours": "EODHD", "sentiment": "Neutre par defaut (Finnhub:HTTP 403)", "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)", "historique": "EODHD", "synthese": "RSS Yahoo Finance"}, "ACA.PA": {"cours": "EODHD", "sentiment": "Lexical EODHD (Finnhub:HTTP 403)", "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)", "historique": "EODHD", "synthese": "RSS Yahoo Finance"}, "ABNX.PA": {"cours": "EODHD", "sentiment": "Neutre par defaut (Finnhub:HTTP 403)", "consensus": "Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403)", "historique": "EODHD", "synthese": "RSS Yahoo Finance"}}
 
 **Avertissements cache :**
 
-- Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 30/05/2026 23:38
-- CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 30/05/2026 23:38
-- Riot Platforms -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 30/05/2026 23:38
+- Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 31/05/2026 11:26
+- CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 31/05/2026 11:26
+- Riot Platforms -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 31/05/2026 11:26
 
-*Rapport genere le 31/05/2026 a 11:25 (heure de Paris)*
+*Rapport genere le 01/06/2026 a 14:26 (heure de Paris)*
 *Chart combine genere : Oui*
