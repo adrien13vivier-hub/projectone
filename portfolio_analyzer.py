@@ -1,34 +1,38 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v6.2
+Portfolio Analyzer v6.3
 ================================================================================
-CORRECTIONS v6.2 par rapport à v6.1 :
+CORRECTIONS v6.3 par rapport à v6.2 :
 
-1. QUOTA EODHD CORRIGÉ (BUG CRITIQUE)
-   Avant : "eodhd": {"used": 0, "limit": 18}
-   Le plan gratuit EODHD permet 100 000 req/jour. La limite de 18 était
-   arbitraire et incorrecte. Un run complet consomme environ 15-20 appels
-   EODHD (cours EU × 3 + indices × 3 + historiques × 3 + news × 3 +
-   consensus fallback × 3). Avec limit=18, le quota était atteint à chaque
-   run → les derniers appels retournaient None silencieusement → history.csv
-   non mis à jour → GitHub détectait "pas d'activité" → désactivation du
-   workflow schedulé.
-   Après : "eodhd": {"used": 0, "limit": 80}
+1. BUG CRITIQUE CORRIGÉ — désynchronisation dt_dates / normalized
+   dans generate_combined_chart.
 
-2. QUOTA ALPHAVANTAGE CORRIGÉ
-   Avant : limit=23 (25 req/jour plan gratuit, avec marge de 2)
-   Après : limit=20 (marge de sécurité de 5, évite les erreurs 429)
+   Avant (v6.2) :
+       dt_dates = []
+       for d in dates:
+           try:
+               dt_dates.append(datetime.strptime(...))
+           except Exception:
+               pass   # ← date ignorée MAIS son close reste dans closes
 
-3. GUARD DE SÉCURITÉ AJOUTÉ
-   Si tous les prix d'un marché sont None (tous les quotas épuisés),
-   on lève une exception explicite pour que le workflow échoue visiblement
-   plutôt que de générer un rapport vide sans erreur.
+       normalized = [round(c / base * 100, 2) for c in closes]
+       ax.plot(dt_dates, normalized, ...)
+       # → len(dt_dates) < len(normalized) si une date était invalide
+       # → matplotlib trace une courbe tronquée (ou plante)
 
-4. IMPORT MANQUANT CORRIGÉ
-   La fonction _finnhub_candles importait datetime localement mais le module
-   était déjà importé en haut — pas de bug mais uniformisation.
+   Après (v6.3) :
+       paired = []
+       for d, c in zip(dates, closes):
+           try:
+               paired.append((datetime.strptime(...), c))
+           except Exception:
+               pass   # date ET close ignorés ensemble
+       dt_dates   = [p[0] for p in paired]
+       valid_closes = [p[1] for p in paired]
+       normalized = [round(c / base * 100, 2) for c in valid_closes]
+       # → len(dt_dates) == len(normalized) TOUJOURS
 
-TOUTES LES AUTRES FONCTIONS sont identiques à v6.1.
+TOUTES LES AUTRES FONCTIONS sont identiques à v6.2.
 ================================================================================
 """
 
@@ -77,16 +81,10 @@ HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "pnl_net_pct", "score", "rec"]
 
 # --- QUOTAS JOURNALIERS PAR CLE ----------------------------------------------
-# CORRECTION v6.2 : limites corrigées pour refléter les plans gratuits réels
-# - EODHD plan gratuit : 100 000 req/jour → limite à 80 (large marge)
-#   (la limite de 18 causait un blocage silencieux à chaque run)
-# - AlphaVantage plan gratuit : 25 req/jour → limite à 20 (marge de 5)
-# - TwelveData plan gratuit : 800 req/jour → limite à 60
-# - Finnhub plan gratuit : 60 req/min, illimité/jour → limite à 55
 _QUOTA = {
-    "alphavantage": {"used": 0, "limit": 20},  # était 23, corrigé à 20
+    "alphavantage": {"used": 0, "limit": 20},
     "twelvedata":   {"used": 0, "limit": 60},
-    "eodhd":        {"used": 0, "limit": 80},  # CORRECTION CRITIQUE : était 18 !
+    "eodhd":        {"used": 0, "limit": 80},
     "finnhub":      {"used": 0, "limit": 55},
 }
 
@@ -229,7 +227,7 @@ def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
     )
     try:
         r = requests.get(url, timeout=10,
-                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.2"})
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.3"})
         if r.status_code != 200:
             _rss_cache[ticker_yf] = []
             return []
@@ -895,7 +893,7 @@ def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
 
 
 # =============================================================================
-# GRAPHIQUE COMBINE
+# GRAPHIQUE COMBINE  — FIX v6.3
 # =============================================================================
 
 _CHART_COLORS = [
@@ -928,22 +926,33 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         ax.set_facecolor("#f9f8f5")
 
         for idx, (name, (dates, closes)) in enumerate(valid.items()):
-            dt_dates = []
-            for d in dates:
-                try:
-                    dt_dates.append(
-                        datetime.strptime(d + "-01" if len(d) == 7 else d, "%Y-%m-%d")
-                    )
-                except Exception:
-                    pass
 
-            if len(dt_dates) < 2:
+            # ── FIX v6.3 ────────────────────────────────────────────────────
+            # Avant : boucle séparée sur dates puis calcul sur closes entier
+            # → désynchronisation silencieuse si une date était invalide.
+            # Maintenant : on parse date+close en paires couplées, on ne garde
+            # que les paires où la date ET le close sont valides.
+            paired = []
+            for d, c in zip(dates, closes):
+                try:
+                    dt = datetime.strptime(
+                        d + "-01" if len(d) == 7 else d, "%Y-%m-%d"
+                    )
+                    paired.append((dt, float(c)))
+                except Exception:
+                    pass  # date invalide → close ignoré aussi
+
+            if len(paired) < 2:
                 continue
 
-            base = closes[0]
+            dt_dates     = [p[0] for p in paired]
+            valid_closes = [p[1] for p in paired]
+            # ────────────────────────────────────────────────────────────────
+
+            base = valid_closes[0]
             if base == 0:
                 continue
-            normalized = [round(c / base * 100, 2) for c in closes]
+            normalized = [round(c / base * 100, 2) for c in valid_closes]
 
             color = _CHART_COLORS[idx % len(_CHART_COLORS)]
             perf_finale = normalized[-1] - 100
@@ -1138,16 +1147,13 @@ def main():
         h_dates  = d.get("h_dates", [])
         h_closes = d.get("h_closes", [])
 
-        # Sauvegarde cache historique
         if h_closes and not d.get("h_cache"):
             session_cache[f"hist_{key}"] = {"dates": h_dates, "closes": h_closes}
 
-        # Sauvegarde cache prix
         if price_eur and not price_cache:
             session_cache[f"price_{key}"] = price_eur
 
         if price_eur is None:
-            # Pas de cours disponible, on skip mais on loggue
             _log.warning("Cours introuvable pour %s — position ignorée dans le rapport", key)
             continue
 
@@ -1163,7 +1169,6 @@ def main():
         pnl_net   = round(pnl_brut - buy_fee - sell_fee, 2)
         pnl_net_pct = round(pnl_net / (cost_eur * qty) * 100, 2)
 
-        # Scoring
         sc_price   = score_price(price_eur, cost_eur)
         sc_hist, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
         bull = d.get("bull", 50.0); bear = d.get("bear", 50.0)
@@ -1184,7 +1189,6 @@ def main():
             macro_score, sc_hist, hist_label, total_score
         )
 
-        # Historique CSV
         history_rows.append({
             "date":         now.strftime("%Y-%m-%d"),
             "time":         now.strftime("%H:%M"),
@@ -1202,13 +1206,11 @@ def main():
             "rec":          rec,
         })
 
-        # Avertissements cache
         if price_cache and price_note:
             cache_warns.append(f"{asset['name']} -- cours : {price_note}")
         if d.get("h_cache") and d.get("h_err"):
             cache_warns.append(f"{asset['name']} -- historique : {d['h_err']}")
 
-        # Log sources
         sources_log[key] = {
             "cours":     price_src,
             "sentiment": d.get("sent_src", "N/D"),
@@ -1272,7 +1274,7 @@ def main():
     macro_trend = "Haussiere" if macro_score >= 6 else "Baissiere" if macro_score <= 4 else "Neutre"
 
     lines = [
-        f"# Rapport de Portefeuille v5.4 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# Rapport de Portefeuille v6.3 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "",
         "---",
         "",
@@ -1347,7 +1349,6 @@ def main():
             "",
         ]
 
-    # Section tendances
     lines += [
         "## Tendances -- Performance Comparee (base 100)",
         "",
@@ -1386,7 +1387,6 @@ def main():
             f"| {r['asset']['name']} | {r['vm']:.2f} EUR | {pnl_n_s} | **{r['score']}/10** | {r['rec']} |"
         )
 
-    # Watchlist
     lines += ["", "---", "", "## Watchlist", ""]
     for w in WATCHLIST:
         key_w = w["ticker_eod"]
@@ -1401,7 +1401,6 @@ def main():
             lines.append(f"> {synth_w} *(source : {synth_src_w})*")
         lines.append("")
 
-    # Section technique
     lines += [
         "---",
         "",
@@ -1428,7 +1427,6 @@ def main():
         f"*Chart combine genere : {'Oui' if chart_ok else 'Non'}*",
     ]
 
-    # Écriture du rapport
     report_path = "reports/daily_report.md"
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
