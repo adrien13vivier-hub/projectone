@@ -115,9 +115,6 @@ PORTFOLIO = [
     {"name": "CoreWeave",             "isin": "US21873S1087",
      "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",  "ticker_av": "CRWV",  "ticker_yf": "CRWV",
      "qty": 2,  "cost_eur": 93.91,  "marche": "us"},
-    {"name": "Riot Platforms",        "isin": "US7672921050",
-     "ticker_fh": "RIOT",    "ticker_eod": "RIOT.US",  "ticker_td": "RIOT",  "ticker_av": "RIOT",  "ticker_yf": "RIOT",
-     "qty": 6,  "cost_eur": 15.84,  "marche": "us"},
     {"name": "JCDecaux",              "isin": "FR0000077919",
      "ticker_fh": "DEC.PA",  "ticker_eod": "DEC.PA",   "ticker_td": None,    "ticker_av": None,    "ticker_yf": "DEC.PA",
      "qty": 2,  "cost_eur": 17.77,  "marche": "euronext"},
@@ -928,10 +925,6 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         for idx, (name, (dates, closes)) in enumerate(valid.items()):
 
             # ── FIX v6.3 ────────────────────────────────────────────────────
-            # Avant : boucle séparée sur dates puis calcul sur closes entier
-            # → désynchronisation silencieuse si une date était invalide.
-            # Maintenant : on parse date+close en paires couplées, on ne garde
-            # que les paires où la date ET le close sont valides.
             paired = []
             for d, c in zip(dates, closes):
                 try:
@@ -940,7 +933,7 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
                     )
                     paired.append((dt, float(c)))
                 except Exception:
-                    pass  # date invalide → close ignoré aussi
+                    pass
 
             if len(paired) < 2:
                 continue
@@ -1339,9 +1332,8 @@ def main():
 
         lines += [
             f"**Sentiment :** Bull {r['bull']:.0f}% / Bear {r['bear']:.0f}% *(source : {r['sent_src']})*",
-            f"**Consensus :** {r['cons_str']} *(source : {r['cons_src']})*",
-            "",
-            f"**Momentum mensuel :** {r['hist_label']} (1M: {ret_1m_s} / 3M: {ret_3m_s} / 6M: {ret_6m_s}) *(source : {r['h_src']})*",
+            f"**Consensus analystes :** {r['cons_str']} *(source : {r['cons_src']})*",
+            f"**Perf. historique :** 1M {ret_1m_s} | 3M {ret_3m_s} | 6M {ret_6m_s} -- {r['hist_label']} *(source : {r['h_src']})*",
             "",
             f"**Justification :** {r['just']}",
             "",
@@ -1349,90 +1341,79 @@ def main():
             "",
         ]
 
+    # ── Synthèse portefeuille ─────────────────────────────────────────────────
     lines += [
-        "## Tendances -- Performance Comparee (base 100)",
-        "",
-        "![Portfolio combine](charts/portfolio_combined.png)",
-        "",
-        "---",
-        "",
         "## Synthese Portefeuille",
         "",
-        "| Cout total | Valeur marche | P&L Brut | P&L Net |",
-        "|------------|---------------|----------|---------|",
+        "| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |",
+        "|--------|-----------|--------|----------|---------|-------|---------|",
     ]
-
-    pb_sign = "+" if total_pnl_brut >= 0 else "-"
-    pn_sign = "+" if total_pnl_net  >= 0 else "-"
-    lines.append(
-        f"| {total_cost:.2f} EUR | {total_vm:.2f} EUR "
-        f"| {pb_sign} {pb_sign}{abs(total_pnl_brut):.2f} EUR ({pb_sign}{abs(total_pnl_brut_pct):.1f}%) "
-        f"| {pn_sign} {pn_sign}{abs(total_pnl_net):.2f} EUR ({pn_sign}{abs(total_pnl_net_pct):.1f}%) |"
-    )
-
-    lines += [
-        "",
-        "---",
-        "",
-        "### Classement par Score",
-        "",
-        "| Valeur | VM | P&L Net | Score | Recomm. |",
-        "|--------|----|---------|-------|---------|",
-    ]
-
     for r in results:
-        pn_sign = "+" if r["pnl_net"] >= 0 else "-"
-        pnl_n_s = f"{pn_sign} {pn_sign}{abs(r['pnl_net']):.2f} EUR ({pn_sign}{abs(r['pnl_net_pct']):.1f}%)"
+        pnl_b_sign = "+" if r["pnl_brut"] >= 0 else "-"
+        pnl_n_sign = "+" if r["pnl_net"] >= 0 else "-"
         lines.append(
-            f"| {r['asset']['name']} | {r['vm']:.2f} EUR | {pnl_n_s} | **{r['score']}/10** | {r['rec']} |"
+            f"| {r['asset']['name']} | {r['price_eur']:.2f} | {r['vm']:.2f} "
+            f"| {pnl_b_sign}{abs(r['pnl_brut']):.2f} ({pnl_b_sign}{abs(r['pnl_brut_pct']):.1f}%) "
+            f"| {pnl_n_sign}{abs(r['pnl_net']):.2f} ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%) "
+            f"| {r['score']}/10 | {r['rec']} |"
         )
 
-    lines += ["", "---", "", "## Watchlist", ""]
-    for w in WATCHLIST:
-        key_w = w["ticker_eod"]
-        p_info = watchlist_prices.get(key_w, (None, 0, "N/D", False))
-        p_val, p_chg, p_src, _ = p_info
-        p_str = f"{p_val:.2f} EUR" if p_val else "N/D"
-        synth_w, synth_src_w = watchlist_synth.get(key_w, ("Aucune actualite.", "RSS Yahoo vide"))
-
-        lines.append(f"**{w['name']}** `{w['ticker_fh']}` -- {w.get('sector', '')} | Cours : {p_str} *(source : {p_src})*")
-        lines.append("")
-        if synth_w and "Aucune actualite" not in synth_w:
-            lines.append(f"> {synth_w} *(source : {synth_src_w})*")
-        lines.append("")
-
+    total_pnl_b_sign = "+" if total_pnl_brut >= 0 else "-"
+    total_pnl_n_sign = "+" if total_pnl_net  >= 0 else "-"
     lines += [
+        f"| **TOTAL** | — | **{total_vm:.2f}** "
+        f"| **{total_pnl_b_sign}{abs(total_pnl_brut):.2f} ({total_pnl_b_sign}{abs(total_pnl_brut_pct):.1f}%)** "
+        f"| **{total_pnl_n_sign}{abs(total_pnl_net):.2f} ({total_pnl_n_sign}{abs(total_pnl_net_pct):.1f}%)** "
+        f"| — | — |",
+        "",
         "---",
         "",
-        "## Informations Techniques",
-        "",
-        f"**Quotas API :** {' | '.join(f'{k}: {v}' for k, v in _quota_status().items())}",
-        f"**Sources utilisees :** {json.dumps(sources_log, ensure_ascii=False)}",
-        "",
-        "**Avertissements cache :**",
-        "",
     ]
+
+    # ── Watchlist ─────────────────────────────────────────────────────────────
+    lines += ["## Watchlist", "", "| Valeur | Secteur | Cours EUR | Variation | Actualite |",
+              "|--------|---------|-----------|-----------|-----------|"]
+    for w in WATCHLIST:
+        p, chg, src, from_cache = watchlist_prices.get(w["ticker_eod"], (None, 0.0, "N/D", False))
+        synth_txt, _ = watchlist_synth.get(w["ticker_eod"], ("—", ""))
+        if p:
+            sym  = "^" if chg >= 0 else "v"
+            sign = "+" if chg >= 0 else ""
+            p_str   = f"{p:.2f} EUR{'*' if from_cache else ''}"
+            chg_str = f"{sym} {sign}{chg:.2f}%"
+        else:
+            p_str = chg_str = "N/D"
+        short_synth = (synth_txt[:80] + "…") if len(synth_txt) > 80 else synth_txt
+        lines.append(f"| {w['name']} | {w['sector']} | {p_str} | {chg_str} | {short_synth} |")
+
+    lines += ["", "---", ""]
+
+    # ── Sources & quotas ──────────────────────────────────────────────────────
+    lines += ["## Sources et Quotas", ""]
+    for k, v in sources_log.items():
+        if isinstance(v, dict):
+            parts = ", ".join(f"{sk}: {sv}" for sk, sv in v.items())
+            lines.append(f"- **{k}** : {parts}")
+        else:
+            lines.append(f"- **{k}** : {v}")
+
+    lines += ["", f"**Quotas API utilisés :** {_quota_status()}", ""]
+
     if cache_warns:
+        lines += ["", "## Avertissements Cache", ""]
         for w in cache_warns:
-            lines.append(f"- {w}")
-    else:
-        lines.append("- Aucun avertissement cache.")
+            lines.append(f"- ⚠️  {w}")
+        lines.append("")
 
     if eur_usd_warn:
-        lines.append(f"- EUR/USD : {eur_usd_warn}")
-
-    lines += [
-        "",
-        f"*Rapport genere le {now.strftime('%d/%m/%Y')} a {now.strftime('%H:%M')} (heure de Paris)*",
-        f"*Chart combine genere : {'Oui' if chart_ok else 'Non'}*",
-    ]
+        lines += ["", f"> ⚠️  {eur_usd_warn}", ""]
 
     report_path = "reports/daily_report.md"
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
-    print(f"✅ Rapport généré : {report_path}")
-    print(f"✅ Quotas : {_quota_status()}")
+    print(f"Rapport généré : {report_path}")
+    print(f"Quotas finaux  : {_quota_status()}")
 
 
 if __name__ == "__main__":
