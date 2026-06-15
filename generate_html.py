@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.7
+generate_html.py  v3.8
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
@@ -15,6 +15,9 @@ Convertit reports/daily_report.md  →  docs/index.html
             ligne produit par portfolio_analyzer (source : RSS Yahoo Finance)*
             → le \)? final et le \*? sont désormais optionnels et bien ordonnés
   - v3.7 : synchronisation numéro de version affiché → v6.2
+  - v3.8 : fix extract_kpi() → cible la ligne TOTAL en gras dans le tableau
+            synthèse ; fix extract_positions() → regex m_row tolère ^ et
+            tous les formats de variation actuels
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -52,14 +55,41 @@ if COMBINED_PNG.exists():
 
 # ══════════════════════════════════════════════════════
 # EXTRACTION KPI
+# Cible la ligne TOTAL (en gras) dans le tableau Synthèse :
+#   | **TOTAL** | — | **VM** | **pnl_brut (pct%)** | **pnl_net (pct%)** | — | — |
 # ══════════════════════════════════════════════════════
 def extract_kpi(md: str) -> dict:
     kpi = {"pnl_net": "0", "pnl_pct": "0", "valeur_marche": "0",
            "cout_total": "0", "pnl_brut": "0", "pnl_brut_pct": "0"}
+
+    # ── Ligne TOTAL du tableau synthèse ───────────────────────────────────
+    # Format réel :
+    #   | **TOTAL** | — | **633.60** | **-35.28 (-5.3%)** | **-75.02 (-11.2%)** | — | — |
+    m_total = re.search(
+        r"\|\s*\*{0,2}TOTAL\*{0,2}\s*\|[^|]*\|\s*\*{0,2}([\d\s,.]+)\*{0,2}\s*\|"   # VM
+        r"\s*\*{0,2}([+-][\d\s,.]+)\s*\(([-+]?[\d,.]+)%\)\*{0,2}\s*\|"              # pnl_brut (pct)
+        r"\s*\*{0,2}([+-][\d\s,.]+)\s*\(([-+]?[\d,.]+)%\)\*{0,2}\s*\|",             # pnl_net (pct)
+        md)
+    if m_total:
+        kpi["valeur_marche"] = m_total.group(1).strip().replace(" ", "").replace(",", ".")
+        kpi["pnl_brut"]      = m_total.group(2).strip().replace(" ", "")
+        kpi["pnl_brut_pct"]  = m_total.group(3).strip()
+        kpi["pnl_net"]       = m_total.group(4).strip().replace(" ", "")
+        kpi["pnl_pct"]       = m_total.group(5).strip()
+        # Coût total = VM - pnl_brut
+        try:
+            vm_f  = float(kpi["valeur_marche"].replace(",", "."))
+            pb_f  = float(kpi["pnl_brut"].replace(",", "."))
+            kpi["cout_total"] = f"{vm_f - pb_f:.2f}"
+        except Exception:
+            kpi["cout_total"] = "0"
+        return kpi
+
+    # ── Fallback : ancienne regex (tableau avec coût total explicite) ──────
     m = re.search(
         r"\|\s*([\d\s,.]+)\s*EUR\s*\|\s*([\d\s,.]+)\s*EUR\s*"
-        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([+-][\d,.]+)%[^|]*"
-        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([+-][\d,.]+)%",
+        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([-+]?[\d,.]+)%[^|]*"
+        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([-+]?[\d,.]+)%",
         md)
     if m:
         kpi["cout_total"]    = m.group(1).strip().replace(" ", "")
@@ -101,14 +131,25 @@ def extract_positions(md: str) -> list[dict]:
             continue
         name   = m_head.group(1).strip()
         ticker = m_head.group(2).strip()
+
+        # ── Ligne de données du tableau de position ────────────────────────
+        # Format réel (exemple) :
+        #   | 90.41 EUR | ^ +0.00% | 180.82 EUR | - -7.00 EUR (-3.7%) | - -20.90 EUR (-11.1%) | **6.43/10** | ACHAT MODERE |
+        # Groupe 1 : cours (ex: 90.41)
+        # Groupe 2 : variation complète (ex: ^ +0.00%)
+        # Groupe 3 : VM (ex: 180.82)
+        # Groupe 4 : pnl_brut complet (ex: - -7.00 EUR (-3.7%))
+        # Groupe 5 : pnl_net complet (ex: - -20.90 EUR (-11.1%))
+        # Groupe 6 : score (ex: 6.43/10)
+        # Groupe 7 : recommandation (ex: ACHAT MODERE)
         m_row = re.search(
-            r"\|\s*([\d,.]+)\s*EUR\s*\|"
-            r"\s*([^|]+?)\s*\|"
-            r"\s*([\d,.]+)\s*EUR\s*\|"
-            r"\s*([^|]+?EUR[^|]+?)\s*\|"
-            r"\s*([^|]+?EUR[^|]+?)\s*\|"
-            r"\s*\*?\*?([\d.]+/10)\*?\*?\s*\|"
-            r"\s*([^|]+?)\s*\|",
+            r"\|\s*([\d,.]+)\s*EUR\s*\|"          # cours EUR
+            r"\s*([^|]+?)\s*\|"                    # variation (^ +0.00% etc.)
+            r"\s*([\d,.]+)\s*EUR\s*\|"             # VM EUR
+            r"\s*([^|]*?EUR[^|]*?)\s*\|"           # pnl_brut
+            r"\s*([^|]*?EUR[^|]*?)\s*\|"           # pnl_net
+            r"\s*\*{0,2}([\d.]+/10)\*{0,2}\s*\|"  # score
+            r"\s*([^|]+?)\s*\|",                   # recommandation
             block)
         if not m_row:
             continue
@@ -119,23 +160,34 @@ def extract_positions(md: str) -> list[dict]:
         pnl_net   = m_row.group(5).strip()
         score     = m_row.group(6).strip()
         rec       = m_row.group(7).strip()
+
         m_sent = re.search(r"Sentiment[^:]*:\s*Bull\s*([\d.]+)%\s*/\s*Bear\s*([\d.]+)%", block)
         bull = m_sent.group(1) if m_sent else "—"
         bear = m_sent.group(2) if m_sent else "—"
-        m_mom = re.search(r"Momentum[^:]*:\s*(\w+)\s*\(1M:\s*([^/]+)/\s*3M:\s*([^/]+)/\s*6M:\s*([^)]+)\)", block)
-        mom_label = m_mom.group(1) if m_mom else "—"
-        ret_1m    = m_mom.group(2).strip() if m_mom else "—"
-        ret_3m    = m_mom.group(3).strip() if m_mom else "—"
-        ret_6m    = m_mom.group(4).strip() if m_mom else "—"
+
+        # Momentum : extrait depuis la ligne "Perf. historique :"
+        # Format : Perf. historique : 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER
+        m_perf = re.search(
+            r"Perf\. historique[^:]*:\s*1M\s*([^\s|]+)\s*\|\s*3M\s*([^\s|]+)\s*\|\s*6M\s*([^\s|]+)\s*--\s*(\w+)",
+            block)
+        if m_perf:
+            ret_1m    = m_perf.group(1).strip()
+            ret_3m    = m_perf.group(2).strip()
+            ret_6m    = m_perf.group(3).strip()
+            mom_label = m_perf.group(4).strip()
+        else:
+            # Fallback ancienne regex Momentum
+            m_mom = re.search(
+                r"Momentum[^:]*:\s*(\w+)\s*\(1M:\s*([^/]+)/\s*3M:\s*([^/]+)/\s*6M:\s*([^)]+)\)",
+                block)
+            mom_label = m_mom.group(1) if m_mom else "—"
+            ret_1m    = m_mom.group(2).strip() if m_mom else "—"
+            ret_3m    = m_mom.group(3).strip() if m_mom else "—"
+            ret_6m    = m_mom.group(4).strip() if m_mom else "—"
 
         synthesis = ""
         synth_src = ""
 
-        # ── v3.6 : regex robuste pour extraire la source RSS ────────────────
-        # Format produit par portfolio_analyzer :
-        #   **Actualite recente :** *(source : RSS Yahoo Finance)*
-        # Le \)? final capture la ) de fermeture du *(...)* même si elle
-        # est collée au \* de fermeture de l'italique.
         m_synth_src = re.search(
             r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*([^)]+?)\s*\)?[\s*]*(?:\n|$)",
             block)
@@ -267,11 +319,13 @@ def mom_badge(label: str) -> str:
 
 def var_span(txt: str) -> str:
     t = txt.strip()
-    if t.startswith(("^", "+")) or ("+" in t and "%" in t):
-        return f'<span class="up">▲ {t.lstrip("^")}</span>'
-    if t.startswith(("v", "-")) or ("-" in t and "%" in t):
-        return f'<span class="dn">▼ {t.lstrip("v")}</span>'
-    return t
+    # Supprime le préfixe ^ ou v produit par portfolio_analyzer
+    clean = re.sub(r"^[\^v]\s*", "", t)
+    if clean.startswith("+") or (re.search(r"\+\d", clean)):
+        return f'<span class="up">▲ {clean}</span>'
+    if clean.startswith("-") or (re.search(r"-\d", clean)):
+        return f'<span class="dn">▼ {clean}</span>'
+    return clean
 
 # ══════════════════════════════════════════════════════
 # BLOCS HTML
@@ -394,11 +448,17 @@ def build_synthese_html() -> str:
     for cells in synthese_rows:
         if len(cells) < 5:
             continue
-        name_cell = f"<td><strong>{cells[0]}</strong></td>"
-        vm_cell   = f"<td class='cell-num'>{cells[1]}</td>"
-        pnl_cell_h = pnl_cell(cells[2])
-        score_cell = f"<td>{score_bar(cells[3])}</td>" if "/" in cells[3] else f"<td class='cell-num'>{cells[3]}</td>"
-        rec_cell  = f"<td>{rec_badge(cells[4])}</td>"
+        # Nettoie les ** de la cellule nom et des valeurs
+        clean = [re.sub(r"\*+", "", c).strip() for c in cells]
+        if clean[0].upper() in ("VALEUR", "COUT TOTAL", "TOTAL"):
+            continue
+        name_cell  = f"<td><strong>{clean[0]}</strong></td>"
+        vm_cell    = f"<td class='cell-num'>{clean[1] if len(clean) > 1 else '—'}</td>"
+        pnl_cell_h = pnl_cell(clean[2] if len(clean) > 2 else "—")
+        score_raw  = clean[3] if len(clean) > 3 else "—"
+        rec_raw    = clean[4] if len(clean) > 4 else "—"
+        score_cell = f"<td>{score_bar(score_raw)}</td>" if "/" in score_raw else f"<td class='cell-num'>{score_raw}</td>"
+        rec_cell   = f"<td>{rec_badge(rec_raw)}</td>"
         rows_html += f"<tr>{name_cell}{vm_cell}{pnl_cell_h}{score_cell}{rec_cell}</tr>\n"
 
     return f"""
@@ -837,7 +897,7 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v6.2 · {report_date}</div>
+      <div class="header-meta">v6.3 · {report_date}</div>
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
