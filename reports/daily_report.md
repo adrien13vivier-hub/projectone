@@ -1,17 +1,17 @@
-# Rapport de Portefeuille v6.3 -- 16/06/2026 20:23 (Paris)
+# Rapport de Portefeuille v6.3 -- 17/06/2026 18:49 (Paris)
 
 ---
 
 ## Contexte Economique
 
 **Tendance : Neutre** | Score macro : 5.19/10
-**EUR/USD :** 1 EUR = 1.1612 USD
+**EUR/USD :** 1 EUR = 1.1593 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.31% | 7 531.13 |
-| CAC 40 | ^ +0.75% | 8 447.27 |
-| Nikkei 225 | ^ +0.13% | 69 404.50 |
+| S&P 500 | ^ +0.05% | 7 515.03 |
+| CAC 40 | v -0.20% | 8 430.79 |
+| Nikkei 225 | ^ +0.72% | 69 902.25 |
 
 **Manchettes macro :**
 
@@ -29,7 +29,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 19.73 EUR | ^ +0.00% | 39.46 EUR | + +3.92 EUR (+11.0%) | - -0.06 EUR (-0.2%) | **7.38/10** | ACHAT MODERE |
+| 19.66 EUR | ^ +0.00% | 39.32 EUR | + +3.78 EUR (+10.6%) | - -0.20 EUR (-0.6%) | **7.37/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -37,9 +37,9 @@
 
 **Sentiment :** Bull 100% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +4.7% | 3M +10.6% | 6M +10.6% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +4.4% | 3M +10.2% | 6M +10.2% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Perte nette -0.06 EUR (-0.2%) apres frais. Consensus neutre (100% bull / 0% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Perte nette -0.20 EUR (-0.6%) apres frais. Consensus neutre (100% bull / 0% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
 
 ---
 
@@ -47,17 +47,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 102.29 EUR | ^ +0.00% | 204.57 EUR | + +16.75 EUR (+8.9%) | + +2.85 EUR (+1.5%) | **6.78/10** | ACHAT MODERE |
+| 103.15 EUR | ^ +0.00% | 206.30 EUR | + +18.48 EUR (+9.8%) | + +4.58 EUR (+2.4%) | **6.8/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CoreWeave Is Up 10% Today: Is It Outperforming Other AI Cloud Stocks Like Cloudflare and Snowflake? | Why CoreWeave Stock Is ‘Woefully’ Undervalued | This Overlooked CoreWeave Disclosure Has Cantor Growing More Bullish — What Investors Need To Know
+> Here’s Why Jim Cramer Thinks CoreWeave Inc. (CRWV)’s The Best | APLD's Customer Concentration Remains Elevated: Is Growth at Risk? | CoreWeave (CRWV) to Join Nasdaq-100, Soars 9.67%
 
 **Sentiment :** Bull 53% / Bear 47% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:10 B:17 H:13 S:1 SS:1 *(source : Finnhub)*
 **Perf. historique :** 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER *(source : Cache)*
 
-**Justification :** Gain net +2.85 EUR (+1.5%) apres frais. Consensus haussier (score 7.0/10, Bull 53%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Gain net +4.58 EUR (+2.4%) apres frais. Consensus haussier (score 7.0/10, Bull 53%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
 
 ---
 
@@ -65,7 +65,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 17.24 EUR | v -0.12% | 172.40 EUR | + +3.40 EUR (+2.0%) | - -0.58 EUR (-0.3%) | **6.33/10** | ACHAT MODERE |
+| 17.52 EUR | ^ +0.29% | 175.15 EUR | + +6.15 EUR (+3.6%) | + +2.17 EUR (+1.3%) | **6.61/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -73,9 +73,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +3.9% | 3M +15.7% | 6M +15.7% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +5.2% | 3M +17.2% | 6M +17.2% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Perte nette -0.58 EUR (-0.3%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 9.2/10).
+**Justification :** Gain net +2.17 EUR (+1.3%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
 
 ---
 
@@ -83,17 +83,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 112.97 EUR | ^ +0.00% | 225.94 EUR | - -12.18 EUR (-5.1%) | - -26.08 EUR (-10.9%) | **4.52/10** | GARDER |
+| 116.22 EUR | ^ +0.00% | 232.44 EUR | - -5.68 EUR (-2.4%) | - -19.58 EUR (-8.2%) | **4.62/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Sector Update: Tech Stocks Fall Tuesday Afternoon | Palantir Is Down 26% in 2026 Despite a High-Conviction Upgrade. Is the Bottom Finally In? | Palantir Stock Gets an Upgrade on AI Adoption. Why Its Shares Are Underperforming.
+> EnduroSat Names Brandon Tripp as Chief Commercial Officer | Cognyte vs Palantir: Which AI Intelligence Stock Is the Better Buy? | Is It Time to Sell Microsoft Stock? Why This Analyst Is Warning Investors to Exit.
 
-**Sentiment :** Bull 59% / Bear 41% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 60% / Bear 40% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:12 B:14 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -13.9% | 3M -7.9% | 6M -7.9% -- BAISSIER *(source : AlphaVantage)*
+**Perf. historique :** 1M -13.9% | 3M -7.9% | 6M -7.9% -- BAISSIER *(source : Cache)*
 
-**Justification :** Perte nette -26.08 EUR (-10.9%) apres frais. Consensus haussier (score 7.3/10, Bull 59%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 1.8/10).
+**Justification :** Perte nette -19.58 EUR (-8.2%) apres frais. Consensus haussier (score 7.3/10, Bull 60%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 1.8/10).
 
 ---
 
@@ -101,7 +101,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 2.54 EUR | v -5.76% | 25.35 EUR | - -13.05 EUR (-34.0%) | - -17.03 EUR (-44.4%) | **2.48/10** | VENDRE |
+| 2.57 EUR | ^ +0.00% | 25.70 EUR | - -12.70 EUR (-33.1%) | - -16.68 EUR (-43.4%) | **2.51/10** | VENDRE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -109,9 +109,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -11.4% | 3M -30.1% | 6M -30.1% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -10.1% | 3M -29.1% | 6M -29.1% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Perte nette -17.03 EUR (-44.4%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 0.0/10).
+**Justification :** Perte nette -16.68 EUR (-43.4%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 0.0/10).
 
 ---
 
@@ -119,12 +119,12 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |
 |--------|-----------|--------|----------|---------|-------|---------|
-| JCDecaux | 19.73 | 39.46 | +3.92 (+11.0%) | -0.06 (-0.2%) | 7.38/10 | ACHAT MODERE |
-| CoreWeave | 102.29 | 204.57 | +16.75 (+8.9%) | +2.85 (+1.5%) | 6.78/10 | ACHAT MODERE |
-| Credit Agricole SA | 17.24 | 172.40 | +3.40 (+2.0%) | -0.58 (-0.3%) | 6.33/10 | ACHAT MODERE |
-| Palantir Technologies | 112.97 | 225.94 | -12.18 (-5.1%) | -26.08 (-10.9%) | 4.52/10 | GARDER |
-| Abionyx Pharma | 2.54 | 25.35 | -13.05 (-34.0%) | -17.03 (-44.4%) | 2.48/10 | VENDRE |
-| **TOTAL** | — | **667.72** | **-1.16 (-0.2%)** | **-40.90 (-6.1%)** | — | — |
+| JCDecaux | 19.66 | 39.32 | +3.78 (+10.6%) | -0.20 (-0.6%) | 7.37/10 | ACHAT MODERE |
+| CoreWeave | 103.15 | 206.30 | +18.48 (+9.8%) | +4.58 (+2.4%) | 6.8/10 | ACHAT MODERE |
+| Credit Agricole SA | 17.52 | 175.15 | +6.15 (+3.6%) | +2.17 (+1.3%) | 6.61/10 | ACHAT MODERE |
+| Palantir Technologies | 116.22 | 232.44 | -5.68 (-2.4%) | -19.58 (-8.2%) | 4.62/10 | GARDER |
+| Abionyx Pharma | 2.57 | 25.70 | -12.70 (-33.1%) | -16.68 (-43.4%) | 2.51/10 | VENDRE |
+| **TOTAL** | — | **678.91** | **+10.03 (+1.5%)** | **-29.71 (-4.4%)** | — | — |
 
 ---
 
@@ -132,12 +132,12 @@
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| NVIDIA | IA / Semi-conducteurs | 180.20 EUR | ^ +0.00% | Update: Equity Markets Mixed Intraday as Fed Meeting Begins | Elon Musk Just Rev… |
-| Microsoft | IA / Cloud | 337.56 EUR | ^ +0.00% | Update: Equity Markets Mixed Intraday as Fed Meeting Begins | SpaceX vaults past… |
-| Coinbase | Crypto / Fintech | 147.43 EUR | ^ +0.00% | Ethereum Jumps 10% As Crypto Trade Reignites | Coinbase Global, Inc. (COIN) Is a… |
-| LVMH | Luxe / Consommation | 520.30 EUR | v -0.02% | LVMH: Share transactions disclosure | JAY-Z’s MarcyPen Capital Partners Looking … |
-| TotalEnergies | Energie | 73.05 EUR | v -0.08% | [Latest] Global Metalworking Lubricants Market Size/Share Worth USD 21.47 Billio… |
-| Airbus | Aeronautique / Defense | 185.30 EUR | ^ +0.00% | Airbus (ENXTPA:AIR) Stock Valuation Gap Examined After Recent Performance Pullba… |
+| NVIDIA | IA / Semi-conducteurs | 178.82 EUR | ^ +0.00% | Up 30% in 1 Month, Is Dutch Bros Stock Still a Strong Buy Before July? | Vistra … |
+| Microsoft | IA / Cloud | 331.36 EUR | ^ +0.00% | Alphabet Drops 6% in a Month: Buy, Sell, or Hold the GOOGL Stock? | Linux Founda… |
+| Coinbase | Crypto / Fintech | 148.14 EUR | ^ +0.00% | COIN Broadens Reach Beyond Crypto Trading to Be "Everything Exchange" | SEC Prop… |
+| LVMH | Luxe / Consommation | 511.00 EUR | ^ +0.00% | LVMH: Share transactions disclosure | JAY-Z’s MarcyPen Capital Partners Looking … |
+| TotalEnergies | Energie | 72.21 EUR | v -0.18% | TotalEnergies: Saudi Refinery Won’t Fully Recover Until 2027 | ConocoPhillips (C… |
+| Airbus | Aeronautique / Defense | 187.02 EUR | ^ +0.00% | Airbus (ENXTPA:AIR) Stock Valuation Gap Examined After Recent Performance Pullba… |
 
 ---
 
@@ -147,15 +147,16 @@
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
 - **Nikkei 225** : EODHD
-- **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: AlphaVantage, synthese: RSS Yahoo Finance
+- **PLTR.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
 - **CRWV.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
 - **DEC.PA** : cours: EODHD, sentiment: Lexical EODHD (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 - **ACA.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 - **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '19/80', 'finnhub': '11/55'}
+**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '19/80', 'finnhub': '13/55'}
 
 
 ## Avertissements Cache
 
-- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 15/06/2026 14:55
+- ⚠️  Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 16/06/2026 20:24
+- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 16/06/2026 20:24
