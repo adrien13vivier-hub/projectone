@@ -3,573 +3,494 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Analyzer — Local</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Portfolio Analyzer</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <style>
-:root,[data-theme="light"]{
-  --bg:#f7f6f2;--surface:#ffffff;--surface-2:#f3f0ec;--border:#dcd9d5;
-  --text:#28251d;--muted:#7a7974;--faint:#bab9b4;
-  --primary:#01696f;--primary-h:#0c4e54;--primary-hl:#cedcd8;
-  --error:#a12c7b;--success:#437a22;--warning:#964219;
-  --radius:0.5rem;--radius-lg:0.75rem;
-  --shadow:0 2px 8px rgba(0,0,0,.07);
-  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
-}
-[data-theme="dark"]{
-  --bg:#171614;--surface:#1c1b19;--surface-2:#22211f;--border:#393836;
-  --text:#cdccca;--muted:#797876;--faint:#5a5957;
-  --primary:#4f98a3;--primary-h:#227f8b;--primary-hl:#313b3b;
-  --error:#d163a7;--success:#6daa45;--warning:#bb653b;
-  --shadow:0 2px 8px rgba(0,0,0,.3);
-}
+:root,[data-theme="light"]{--bg:#f7f6f2;--surface:#f9f8f5;--surface2:#fbfbf9;--border:#d4d1ca;--text:#28251d;--muted:#7a7974;--faint:#bab9b4;--primary:#01696f;--primary-h:#0c4e54;--success:#437a22;--error:#a12c7b;--warn:#964219;--radius:0.5rem;--shadow:0 4px 12px rgba(0,0,0,.08);--font:'Satoshi',sans-serif}
+[data-theme="dark"]{--bg:#171614;--surface:#1c1b19;--surface2:#201f1d;--border:#393836;--text:#cdccca;--muted:#797876;--faint:#5a5957;--primary:#4f98a3;--primary-h:#227f8b;--success:#6daa45;--error:#d163a7;--warn:#bb653b}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
-body{font-family:var(--font);font-size:1rem;color:var(--text);background:var(--bg);min-height:100dvh}
-button{cursor:pointer;font:inherit;border:none;background:none}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;font-size:1rem;line-height:1.6}
+button{cursor:pointer;font:inherit;color:inherit;border:none;background:none}
 input,select{font:inherit;color:inherit}
-a,button,[role="button"]{transition:color 180ms,background 180ms,border-color 180ms,box-shadow 180ms}
-:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:var(--radius)}
+img{display:block;max-width:100%}
 
 /* ── Layout ── */
 .app{display:flex;flex-direction:column;min-height:100dvh}
-.topbar{display:flex;align-items:center;justify-content:space-between;
-        padding:.75rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);
-        position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
-.topbar-logo{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.05rem;color:var(--text)}
-.topbar-logo svg{color:var(--primary)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:1.05rem}
+.logo svg{color:var(--primary)}
 .topbar-right{display:flex;align-items:center;gap:.75rem}
-.main{flex:1;padding:2rem 1.5rem;max-width:900px;margin:0 auto;width:100%}
+.badge-user{font-size:.8rem;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:.2rem .7rem}
+.main{flex:1;padding:2rem 1.5rem;max-width:1100px;margin:0 auto;width:100%}
 
-/* ── Btn ── */
-.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;
-     border-radius:var(--radius);font-size:.9rem;font-weight:500;white-space:nowrap}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-primary:hover{background:var(--primary-h)}
-.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
-.btn-ghost:hover{background:var(--surface-2)}
-.btn-danger{background:transparent;color:var(--error);border:1px solid currentColor}
-.btn-danger:hover{background:var(--error);color:#fff}
-.btn-sm{padding:.35rem .75rem;font-size:.82rem}
-.btn:disabled{opacity:.45;cursor:default}
-
-/* ── Card ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-      padding:1.5rem;box-shadow:var(--shadow)}
-.card-title{font-weight:700;font-size:1.05rem;margin-bottom:1rem;color:var(--text)}
-
-/* ── Form ── */
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-.form-col{display:flex;flex-direction:column;gap:.3rem}
-.form-col.full{grid-column:1/-1}
-label{font-size:.82rem;font-weight:500;color:var(--muted)}
-input[type=text],input[type=number],input[type=password],select{
-  padding:.5rem .7rem;border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--bg);color:var(--text);font-size:.9rem;width:100%}
-input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-hl)}
-
-/* ── Login ── */
-#login-view{display:flex;align-items:center;justify-content:center;min-height:100dvh;padding:1rem}
-.login-box{width:100%;max-width:380px}
-.login-box .card-title{font-size:1.2rem;text-align:center}
-.login-box .logo-wrap{text-align:center;margin-bottom:1.5rem}
-.login-box .logo-wrap svg{color:var(--primary)}
-.login-form{display:flex;flex-direction:column;gap:.9rem}
-.login-form .btn-primary{width:100%;justify-content:center;padding:.65rem}
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow)}
+.card+.card{margin-top:1.5rem}
+.card-title{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--text)}
 
 /* ── Tabs ── */
-.tabs{display:flex;gap:.25rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
-.tab{padding:.55rem 1rem;font-size:.9rem;font-weight:500;color:var(--muted);
-     border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:var(--radius) var(--radius) 0 0}
-.tab:hover{color:var(--text);background:var(--surface-2)}
-.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.25rem}
+.tab{flex:1;padding:.5rem .75rem;border-radius:calc(var(--radius) - 2px);font-size:.875rem;font-weight:500;color:var(--muted);transition:all .18s ease;text-align:center}
+.tab.active{background:var(--primary);color:#fff}
+.tab:hover:not(.active){background:var(--surface2);color:var(--text)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:var(--radius);font-size:.875rem;font-weight:600;transition:all .18s ease}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-h)}
+.btn-danger{background:var(--error);color:#fff}.btn-danger:hover{opacity:.85}
+.btn-ghost{border:1px solid var(--border);color:var(--text)}.btn-ghost:hover{background:var(--surface2)}
+.btn-sm{padding:.3rem .75rem;font-size:.8rem}
+
+/* ── Forms ── */
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em}
+.form-group input,.form-group select{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-size:.9rem;transition:border-color .18s}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary)}
+
+/* ── Login ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100dvh;background:var(--bg)}
+.login-card{width:100%;max-width:380px;padding:2.5rem;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius)*2);box-shadow:var(--shadow)}
+.login-card h1{font-size:1.4rem;margin-bottom:.5rem;font-weight:700}
+.login-card p{color:var(--muted);font-size:.875rem;margin-bottom:1.5rem}
+.error-msg{color:var(--error);font-size:.825rem;margin-top:.5rem;min-height:1.2rem}
 
 /* ── Table portefeuille ── */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-thead th{text-align:left;padding:.5rem .6rem;font-size:.78rem;font-weight:600;
-          color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
-tbody td{padding:.5rem .6rem;border-bottom:1px solid var(--border);vertical-align:middle}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover{background:var(--surface-2)}
-td input,td select{padding:.3rem .45rem;font-size:.83rem;border-radius:4px}
-.del-btn{color:var(--error);opacity:.6;font-size:1rem;padding:.2rem .4rem}
-.del-btn:hover{opacity:1}
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{background:var(--surface2);padding:.5rem .6rem;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:.45rem .6rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+td input,td select{width:100%;padding:.3rem .4rem;border:1px solid transparent;border-radius:4px;background:transparent;font-size:.82rem;min-width:70px;transition:border-color .15s}
+td input:focus,td select:focus{border-color:var(--primary);outline:none;background:var(--surface2)}
+.del-btn{color:var(--error);opacity:.6;padding:.2rem .4rem;border-radius:4px;font-size:.9rem}
+.del-btn:hover{opacity:1;background:color-mix(in srgb,var(--error) 10%,transparent)}
 
-/* ── Badge ── */
-.badge{display:inline-block;padding:.2rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600}
-.badge-green{background:color-mix(in oklch,var(--success) 15%,var(--surface));color:var(--success)}
-.badge-blue{background:var(--primary-hl);color:var(--primary)}
-.badge-red{background:color-mix(in oklch,var(--error) 12%,var(--surface));color:var(--error)}
+/* ── Logs ── */
+.log-box{background:#111;color:#d4e6c3;font-family:monospace;font-size:.78rem;border-radius:var(--radius);padding:1rem;max-height:320px;overflow-y:auto;white-space:pre-wrap;margin-top:1rem}
 
-/* ── Alert ── */
-.alert{padding:.7rem 1rem;border-radius:var(--radius);font-size:.88rem;margin-bottom:1rem;display:flex;gap:.5rem;align-items:flex-start}
-.alert-error{background:color-mix(in oklch,var(--error) 10%,var(--bg));color:var(--error);border:1px solid color-mix(in oklch,var(--error) 25%,transparent)}
-.alert-success{background:color-mix(in oklch,var(--success) 10%,var(--bg));color:var(--success);border:1px solid color-mix(in oklch,var(--success) 25%,transparent)}
-.alert-info{background:var(--primary-hl);color:var(--primary-h);border:1px solid color-mix(in oklch,var(--primary) 30%,transparent)}
+/* ── Alert / Info boxes ── */
+.info-box{border-radius:var(--radius);padding:.9rem 1rem;font-size:.875rem;margin-bottom:1rem}
+.info-box.success{background:color-mix(in srgb,var(--success) 12%,transparent);border:1px solid color-mix(in srgb,var(--success) 30%,transparent);color:var(--success)}
+.info-box.warn{background:color-mix(in srgb,var(--warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);color:var(--warn)}
+.info-box.error{background:color-mix(in srgb,var(--error) 12%,transparent);border:1px solid color-mix(in srgb,var(--error) 30%,transparent);color:var(--error)}
+.info-box.neutral{background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
 
-/* ── Analyse ── */
-.analyze-box{text-align:center;padding:2rem 1rem}
-.analyze-box p{color:var(--muted);margin-bottom:1.5rem;font-size:.95rem}
-.log-block{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);
-           padding:.75rem 1rem;font-family:var(--mono);font-size:.78rem;color:var(--text);
-           text-align:left;max-height:260px;overflow-y:auto;white-space:pre-wrap;margin-top:1rem}
-.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--primary-hl);
-         border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* ── User list ── */
+.user-item{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.5rem;background:var(--surface2);gap:1rem;flex-wrap:wrap}
+.user-meta{display:flex;flex-direction:column;gap:.15rem;flex:1;min-width:0}
+.user-meta strong{font-size:.9rem}
+.user-meta span{font-size:.78rem;color:var(--muted)}
+.user-link a{font-size:.78rem;color:var(--primary);word-break:break-all}
+.slot-badge{font-size:.75rem;font-weight:600;background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary);border-radius:999px;padding:.15rem .55rem;white-space:nowrap}
 
-/* ── Admin panel ── */
-.user-row{display:flex;align-items:center;justify-content:space-between;
-          padding:.65rem 0;border-bottom:1px solid var(--border)}
-.user-row:last-child{border-bottom:none}
-.user-info{display:flex;align-items:center;gap:.6rem;font-size:.9rem}
+/* ── Report link ── */
+.report-link-box{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:color-mix(in srgb,var(--success) 10%,transparent);border:1px solid color-mix(in srgb,var(--success) 25%,transparent);border-radius:var(--radius);margin-top:1rem}
+.report-link-box a{color:var(--success);font-weight:600;font-size:.875rem;word-break:break-all}
 
 /* ── Theme toggle ── */
-.theme-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;
-           border-radius:var(--radius);color:var(--muted)}
-.theme-btn:hover{background:var(--surface-2);color:var(--text)}
+.theme-btn{padding:.35rem;border-radius:var(--radius);color:var(--muted);transition:color .18s}
+.theme-btn:hover{color:var(--text)}
 
 /* ── Responsive ── */
-@media(max-width:600px){
+@media(max-width:640px){
   .main{padding:1rem .75rem}
-  .form-row{grid-template-columns:1fr}
+  .tabs{flex-direction:column}
   .topbar{padding:.6rem 1rem}
 }
-@media(prefers-color-scheme:dark){:root:not([data-theme]){--bg:#171614;--surface:#1c1b19;--surface-2:#22211f;--border:#393836;--text:#cdccca;--muted:#797876;--faint:#5a5957;--primary:#4f98a3;--primary-h:#227f8b;--primary-hl:#313b3b;--error:#d163a7;--success:#6daa45;--warning:#bb653b;--shadow:0 2px 8px rgba(0,0,0,.3)}}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════ LOGIN ═══════════════════════════════════ -->
-<div id="login-view">
-  <div class="login-box card">
-    <div class="logo-wrap">
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-label="Portfolio Analyzer">
-        <rect width="48" height="48" rx="12" fill="currentColor" opacity=".1"/>
-        <polyline points="8,36 18,24 26,30 38,14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <circle cx="38" cy="14" r="3" fill="currentColor"/>
-        <circle cx="8" cy="36" r="3" fill="currentColor"/>
-      </svg>
+<!-- ════ LOGIN ════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style="margin-bottom:.75rem;color:var(--primary)">
+      <rect width="36" height="36" rx="8" fill="currentColor" opacity=".12"/>
+      <path d="M9 27 L18 9 L27 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 22h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <h1>Portfolio Analyzer</h1>
+    <p>Connectez-vous pour accéder à votre espace personnel.</p>
+    <div class="form-group">
+      <label>Identifiant</label>
+      <input id="login-user" type="text" placeholder="admin" autocomplete="username">
     </div>
-    <p class="card-title">Portfolio Analyzer</p>
-    <div id="login-alert"></div>
-    <form class="login-form" id="login-form">
-      <div class="form-col">
-        <label for="l-user">Identifiant</label>
-        <input type="text" id="l-user" autocomplete="username" placeholder="admin" required>
-      </div>
-      <div class="form-col">
-        <label for="l-pass">Mot de passe</label>
-        <input type="password" id="l-pass" autocomplete="current-password" placeholder="••••••" required>
-      </div>
-      <button class="btn btn-primary" type="submit" id="login-btn">Connexion</button>
-    </form>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input id="login-pass" type="password" placeholder="••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem" onclick="doLogin()">Se connecter</button>
+    <div class="error-msg" id="login-err"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════ APP ════════════════════════════════════ -->
-<div id="app-view" style="display:none" class="app">
+<!-- ════ APP ════ -->
+<div class="app" id="app-screen" style="display:none">
   <header class="topbar">
-    <div class="topbar-logo">
-      <svg width="26" height="26" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-        <polyline points="8,36 18,24 26,30 38,14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="38" cy="14" r="3" fill="currentColor"/>
-        <circle cx="8" cy="36" r="3" fill="currentColor"/>
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
+        <path d="M9 27 L18 9 L27 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 22h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
       Portfolio Analyzer
     </div>
     <div class="topbar-right">
-      <span id="topbar-user" style="font-size:.85rem;color:var(--muted)"></span>
-      <button class="theme-btn" id="theme-toggle" aria-label="Basculer le thème">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <span class="badge-user" id="badge-user">—</span>
+      <button class="theme-btn" data-theme-toggle aria-label="Basculer thème">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <button class="btn btn-ghost btn-sm" id="logout-btn">Déconnexion</button>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnexion</button>
     </div>
   </header>
 
   <main class="main">
-    <div id="app-alert"></div>
+    <nav class="tabs" id="nav-tabs">
+      <button class="tab active" onclick="switchTab('portfolio',this)">📁 Portefeuille</button>
+      <button class="tab" onclick="switchTab('analyse',this)">📊 Analyse</button>
+      <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">⚙️ Utilisateurs</button>
+    </nav>
 
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-tab="portfolio">📊 Portefeuille</button>
-      <button class="tab" data-tab="analyze">🚀 Analyse</button>
-      <button class="tab" id="admin-tab" data-tab="admin" style="display:none">⚙️ Utilisateurs</button>
-    </div>
-
-    <!-- ── Onglet Portefeuille ── -->
-    <div id="tab-portfolio">
+    <!-- ── Portefeuille ── -->
+    <div class="tab-panel active" id="panel-portfolio">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-          <p class="card-title" style="margin:0">Lignes du portefeuille</p>
+          <div class="card-title" style="margin:0">Mon portefeuille</div>
           <div style="display:flex;gap:.5rem">
-            <button class="btn btn-ghost btn-sm" id="add-line-btn">+ Ajouter</button>
-            <button class="btn btn-primary btn-sm" id="save-btn">💾 Enregistrer</button>
+            <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Ligne</button>
+            <button class="btn btn-primary btn-sm" onclick="savePortfolio()">💾 Enregistrer</button>
           </div>
         </div>
-
-        <div id="portfolio-empty" class="analyze-box" style="display:none">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" stroke-width="1.5" style="margin:0 auto 1rem"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          <p>Aucune ligne. Cliquez sur <strong>+ Ajouter</strong> pour commencer.</p>
-        </div>
-
-        <div class="tbl-wrap" id="tbl-wrap">
-          <table id="portfolio-table">
+        <div id="save-status"></div>
+        <div class="table-wrap">
+          <table>
             <thead>
               <tr>
-                <th>Nom</th>
-                <th>Ticker FH</th>
-                <th>Ticker EODHD</th>
-                <th>ISIN</th>
-                <th>Qté</th>
-                <th>Prix achat (€)</th>
-                <th>Marché</th>
-                <th>Courtier</th>
-                <th>Devise</th>
-                <th>Type</th>
-                <th></th>
+                <th>Nom</th><th>Ticker FH</th><th>Ticker EODHD</th><th>ISIN</th>
+                <th>Qté</th><th>Prix achat</th><th>Marché</th><th>Courtier</th>
+                <th>Devise</th><th>Type</th><th></th>
               </tr>
             </thead>
             <tbody id="portfolio-tbody"></tbody>
           </table>
         </div>
-      </div>
-    </div>
-
-    <!-- ── Onglet Analyse ── -->
-    <div id="tab-analyze" style="display:none">
-      <div class="card">
-        <p class="card-title">Lancer l'analyse</p>
-        <div class="analyze-box" id="analyze-box">
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" style="margin:0 auto 1rem">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-          </svg>
-          <p>L'analyse utilise les données de votre portefeuille enregistré.<br>Elle génère un rapport HTML consultable directement dans votre navigateur.</p>
-          <button class="btn btn-primary" id="run-analysis-btn" style="justify-content:center">
-            🚀 Lancer l'analyse
-          </button>
-          <div id="analyze-log" style="display:none" class="log-block"></div>
-          <div id="analyze-report-link" style="margin-top:1rem;display:none">
-            <a href="/report/index.html" target="_blank" class="btn btn-primary">📄 Ouvrir le rapport</a>
-          </div>
+        <div style="margin-top:.75rem">
+          <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Ajouter une ligne</button>
         </div>
       </div>
     </div>
 
-    <!-- ── Onglet Admin ── -->
-    <div id="tab-admin" style="display:none">
-      <div class="card" style="margin-bottom:1.5rem">
-        <p class="card-title">Utilisateurs <span id="user-count-badge" class="badge badge-blue">0/5</span></p>
-        <div id="users-list"></div>
-      </div>
+    <!-- ── Analyse ── -->
+    <div class="tab-panel" id="panel-analyse">
       <div class="card">
-        <p class="card-title">Créer un compte</p>
-        <div id="create-user-alert"></div>
-        <form id="create-user-form">
-          <div class="form-row">
-            <div class="form-col">
-              <label for="nu-user">Identifiant</label>
-              <input type="text" id="nu-user" required placeholder="ex: alice">
-            </div>
-            <div class="form-col">
-              <label for="nu-pass">Mot de passe</label>
-              <input type="password" id="nu-pass" required placeholder="Minimum 6 caractères">
-            </div>
-            <div class="form-col">
-              <label for="nu-role">Rôle</label>
-              <select id="nu-role">
-                <option value="user">Utilisateur</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div class="form-col" style="justify-content:flex-end">
-              <button class="btn btn-primary" type="submit">Créer le compte</button>
-            </div>
-          </div>
-        </form>
+        <div class="card-title">Lancer l'analyse</div>
+        <div class="info-box neutral" id="slot-info">⏰ Chargement du planning…</div>
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:1rem">L'analyse est lancée automatiquement à votre horaire dédié. Vous pouvez aussi la déclencher manuellement ci-dessous.</p>
+        <button class="btn btn-primary" onclick="runAnalysis()" id="btn-analyze">
+          ▶ Lancer maintenant
+        </button>
+        <div id="analyze-result"></div>
+        <div class="log-box" id="log-box" style="display:none"></div>
+      </div>
+
+      <div class="card" id="report-card" style="display:none">
+        <div class="card-title">Votre rapport Cloudflare Pages</div>
+        <div class="report-link-box">
+          <span>🔗</span>
+          <a id="report-cf-link" href="#" target="_blank" rel="noopener noreferrer">—</a>
+        </div>
+        <p style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">Ce lien vous est personnel. Partagez-le uniquement avec des personnes de confiance.</p>
+      </div>
+    </div>
+
+    <!-- ── Admin ── -->
+    <div class="tab-panel" id="panel-admin">
+      <div class="card">
+        <div class="card-title">Créer un utilisateur</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group"><label>Identifiant</label><input id="new-user" placeholder="prenom"></div>
+          <div class="form-group"><label>Mot de passe</label><input id="new-pass" type="password" placeholder="Min. 6 caractères"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="createUser()">Créer le compte</button>
+        <div id="create-result" style="margin-top:.75rem"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Comptes actifs <span id="user-count" style="color:var(--muted);font-weight:400"></span></div>
+        <div id="user-list"></div>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-// ─── État ────────────────────────────────────────────────────────────────────
-let TOKEN = null, USERNAME = null, ROLE = null;
-const BROKERS = ['BoursoBank','Crédit Agricole','XTB','Degiro','Trade Republic','Autre'];
-const MARKETS = ['us','euronext','xetra','lse','autre'];
-const CURRENCIES = ['EUR','USD','GBP'];
-const ASSET_TYPES = ['action','ETF','obligation','crypto','autre'];
-
-// ─── Theme ───────────────────────────────────────────────────────────────────
+// ── Thème ──────────────────────────────────────────────────────────
 (function(){
-  const root = document.documentElement;
-  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
-  root.setAttribute('data-theme', d);
-  const btn = document.getElementById('theme-toggle');
-  btn.addEventListener('click', () => {
-    d = d === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', d);
-    btn.innerHTML = d === 'dark'
-      ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-      : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  t&&t.addEventListener('click',()=>{
+    d=d==='dark'?'light':'dark';
+    r.setAttribute('data-theme',d);
+    t.innerHTML=d==='dark'
+      ?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      :'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
   });
 })();
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function showAlert(el, msg, type='error') {
-  el.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-}
-function clearAlert(el) { el.innerHTML = ''; }
+// ── État global ────────────────────────────────────────────────────
+let TOKEN=null, CURRENT_USER=null, USER_ROLE=null, REPORT_URL=null;
+const BASE='';
 
-async function api(path, opts={}) {
-  const headers = {'Content-Type':'application/json'};
-  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
-  const res = await fetch(path, {...opts, headers: {...headers, ...(opts.headers||{})}});
-  if (res.status === 401) { doLogout(); throw new Error('Session expirée'); }
-  return res;
-}
-
-// ─── Login ───────────────────────────────────────────────────────────────────
-document.getElementById('login-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const btn = document.getElementById('login-btn');
-  const alertEl = document.getElementById('login-alert');
-  clearAlert(alertEl);
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Connexion...';
-
-  const body = new URLSearchParams({
-    username: document.getElementById('l-user').value.trim(),
-    password: document.getElementById('l-pass').value
+function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(TOKEN) opts.headers['Authorization']='Bearer '+TOKEN;
+  if(body) opts.body=JSON.stringify(body);
+  return fetch(BASE+path,opts).then(async r=>{
+    if(!r.ok){const e=await r.json().catch(()=>({detail:r.statusText}));throw new Error(e.detail||r.statusText);}
+    return r.json();
   });
-
-  try {
-    const res = await fetch('/api/login', {method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'}});
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      showAlert(alertEl, err.detail || 'Identifiants incorrects');
-      return;
-    }
-    const data = await res.json();
-    TOKEN = data.access_token;
-    USERNAME = data.username;
-    ROLE = data.role;
-    document.getElementById('login-view').style.display = 'none';
-    document.getElementById('app-view').style.display = 'flex';
-    document.getElementById('topbar-user').textContent = USERNAME + (ROLE==='admin' ? ' (admin)' : '');
-    if (ROLE === 'admin') document.getElementById('admin-tab').style.display = '';
-    loadPortfolio();
-  } catch(err) {
-    showAlert(alertEl, err.message || 'Erreur réseau');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Connexion';
-  }
-});
-
-function doLogout() {
-  TOKEN = USERNAME = ROLE = null;
-  document.getElementById('app-view').style.display = 'none';
-  document.getElementById('login-view').style.display = 'flex';
-  document.getElementById('l-pass').value = '';
-  document.getElementById('login-alert').innerHTML = '';
-  switchTab('portfolio');
 }
-document.getElementById('logout-btn').addEventListener('click', doLogout);
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-function switchTab(name) {
-  ['portfolio','analyze','admin'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
-    document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t===name);
+// ── Login ──────────────────────────────────────────────────────────
+async function doLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-err');
+  err.textContent='';
+  if(!u||!p){err.textContent='Identifiant et mot de passe requis.';return;}
+  try{
+    const fd=new FormData();
+    fd.append('username',u);fd.append('password',p);
+    const res=await fetch(BASE+'/api/login',{method:'POST',body:fd});
+    if(!res.ok){const e=await res.json().catch(()=>({}));err.textContent=e.detail||'Erreur connexion';return;}
+    const data=await res.json();
+    TOKEN=data.access_token;
+    CURRENT_USER=data.username;
+    USER_ROLE=data.role;
+    REPORT_URL=data.report_url||null;
+    showApp();
+  }catch(e){err.textContent=e.message;}
+}
+
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function doLogout(){
+  TOKEN=null;CURRENT_USER=null;USER_ROLE=null;REPORT_URL=null;
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='';
+}
+
+// ── App init ───────────────────────────────────────────────────────
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='flex';
+  document.getElementById('badge-user').textContent=CURRENT_USER+(USER_ROLE==='admin'?' (admin)':'');
+  if(USER_ROLE==='admin') document.getElementById('tab-admin').style.display='';
+  loadPortfolio();
+  loadSlotInfo();
+  if(REPORT_URL){
+    const box=document.getElementById('report-card');
+    const lnk=document.getElementById('report-cf-link');
+    box.style.display='';
+    lnk.href=REPORT_URL;
+    lnk.textContent=REPORT_URL;
+  }
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='admin') loadUsers();
+}
+
+// ── Slot info ──────────────────────────────────────────────────────
+async function loadSlotInfo(){
+  try{
+    const data=await api('GET','/api/status');
+    const me=data.schedule&&data.schedule.find(s=>s.username===CURRENT_USER);
+    const box=document.getElementById('slot-info');
+    if(me){
+      box.className='info-box success';
+      box.textContent='⏰ Votre analyse est planifiée chaque jour à '+me.slot+' (heure de Paris).';
+    } else {
+      box.className='info-box warn';
+      box.textContent='⚠️ Aucun slot planifié trouvé pour ce compte.';
+    }
+  }catch(e){
+    document.getElementById('slot-info').textContent='Impossible de charger le planning.';
+  }
+}
+
+// ── Portefeuille ───────────────────────────────────────────────────
+const MARKETS=['us','euronext','xetra','lse','autre'];
+const BROKERS=['BoursoBank','Crédit Agricole','XTB','Degiro','Trade Republic','Autre'];
+const CURRENCIES=['EUR','USD','GBP','CHF'];
+const TYPES=['action','etf','obligation','crypto','autre'];
+
+function mkSelect(opts,val){
+  return '<select>'+opts.map(o=>`<option${o===val?' selected':''}>${o}</option>`).join('')+'</select>';
+}
+
+function mkRow(l={}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input value="${l.name||''}" placeholder="Nom"></td>
+    <td><input value="${l.ticker_finnhub||''}" placeholder="AAPL"></td>
+    <td><input value="${l.ticker_eodhd||''}" placeholder="AAPL.US"></td>
+    <td><input value="${l.isin||''}" placeholder="FR0000…"></td>
+    <td><input type="number" value="${l.quantity||''}" placeholder="10" min="0"></td>
+    <td><input type="number" value="${l.buy_price||''}" placeholder="150.00" min="0" step="0.01"></td>
+    <td>${mkSelect(MARKETS,l.market||'us')}</td>
+    <td>${mkSelect(BROKERS,l.broker||'BoursoBank')}</td>
+    <td>${mkSelect(CURRENCIES,l.currency||'EUR')}</td>
+    <td>${mkSelect(TYPES,l.asset_type||'action')}</td>
+    <td><button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer">✕</button></td>
+  `;
+  return tr;
+}
+
+async function loadPortfolio(){
+  try{
+    const data=await api('GET',`/api/portfolio/${CURRENT_USER}`);
+    const tbody=document.getElementById('portfolio-tbody');
+    tbody.innerHTML='';
+    (data.lines||[]).forEach(l=>tbody.appendChild(mkRow(l)));
+  }catch(e){console.warn('Erreur chargement portefeuille',e);}
+}
+
+function addLine(){
+  document.getElementById('portfolio-tbody').appendChild(mkRow());
+}
+
+function readLines(){
+  const rows=document.querySelectorAll('#portfolio-tbody tr');
+  const lines=[];
+  rows.forEach(tr=>{
+    const inputs=tr.querySelectorAll('input,select');
+    lines.push({
+      name:inputs[0].value.trim(),
+      ticker_finnhub:inputs[1].value.trim(),
+      ticker_eodhd:inputs[2].value.trim(),
+      isin:inputs[3].value.trim(),
+      quantity:parseFloat(inputs[4].value)||0,
+      buy_price:parseFloat(inputs[5].value)||0,
+      market:inputs[6].value,
+      broker:inputs[7].value,
+      currency:inputs[8].value,
+      asset_type:inputs[9].value
+    });
   });
-  if (name==='admin') loadUsers();
-}
-document.getElementById('tabs').addEventListener('click', e => {
-  const t = e.target.closest('.tab');
-  if (t) switchTab(t.dataset.tab);
-});
-
-// ─── Portfolio ────────────────────────────────────────────────────────────────
-let lines = [];
-
-async function loadPortfolio() {
-  try {
-    const res = await api(`/api/portfolio/${USERNAME}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    lines = data.lines || [];
-    renderTable();
-  } catch {}
+  return lines.filter(l=>l.name||l.ticker_finnhub);
 }
 
-function emptyLine() {
-  return {name:'',ticker_finnhub:'',ticker_eodhd:'',isin:'',quantity:1,buy_price:0,market:'euronext',broker:'Autre',currency:'EUR',asset_type:'action'};
-}
-
-function renderTable() {
-  const tbody = document.getElementById('portfolio-tbody');
-  const empty = document.getElementById('portfolio-empty');
-  const wrap  = document.getElementById('tbl-wrap');
-  if (!lines.length) {
-    empty.style.display = '';
-    wrap.style.display  = 'none';
-    return;
+async function savePortfolio(){
+  const lines=readLines();
+  const st=document.getElementById('save-status');
+  try{
+    await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines});
+    st.innerHTML='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>';
+    setTimeout(()=>st.innerHTML='',3000);
+  }catch(e){
+    st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ '+e.message+'</div>';
   }
-  empty.style.display = 'none';
-  wrap.style.display  = '';
-
-  tbody.innerHTML = lines.map((l,i) => `
-    <tr>
-      <td><input type="text" value="${esc(l.name)}" data-i="${i}" data-f="name" style="min-width:110px"></td>
-      <td><input type="text" value="${esc(l.ticker_finnhub)}" data-i="${i}" data-f="ticker_finnhub" style="width:75px" placeholder="PLTR"></td>
-      <td><input type="text" value="${esc(l.ticker_eodhd)}" data-i="${i}" data-f="ticker_eodhd" style="width:85px" placeholder="PLTR.US"></td>
-      <td><input type="text" value="${esc(l.isin||'')}" data-i="${i}" data-f="isin" style="width:115px" placeholder="FR00..."></td>
-      <td><input type="number" value="${l.quantity}" data-i="${i}" data-f="quantity" style="width:55px" min="0" step="any"></td>
-      <td><input type="number" value="${l.buy_price}" data-i="${i}" data-f="buy_price" style="width:80px" min="0" step="any"></td>
-      <td><select data-i="${i}" data-f="market">${MARKETS.map(m=>`<option${l.market===m?' selected':''}>${m}</option>`).join('')}</select></td>
-      <td><select data-i="${i}" data-f="broker">${BROKERS.map(b=>`<option${l.broker===b?' selected':''}>${b}</option>`).join('')}</select></td>
-      <td><select data-i="${i}" data-f="currency">${CURRENCIES.map(c=>`<option${l.currency===c?' selected':''}>${c}</option>`).join('')}</select></td>
-      <td><select data-i="${i}" data-f="asset_type">${ASSET_TYPES.map(t=>`<option${l.asset_type===t?' selected':''}>${t}</option>`).join('')}</select></td>
-      <td><button class="del-btn" data-i="${i}" title="Supprimer">✕</button></td>
-    </tr>`).join('');
 }
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') }
-
-document.getElementById('portfolio-tbody').addEventListener('input', e => {
-  const el = e.target;
-  const i = +el.dataset.i, f = el.dataset.f;
-  if (i >= 0 && f) {
-    lines[i][f] = el.type==='number' ? +el.value : el.value;
-  }
-});
-
-document.getElementById('portfolio-tbody').addEventListener('click', e => {
-  const btn = e.target.closest('.del-btn');
-  if (btn) {
-    lines.splice(+btn.dataset.i, 1);
-    renderTable();
-  }
-});
-
-document.getElementById('add-line-btn').addEventListener('click', () => {
-  lines.push(emptyLine());
-  renderTable();
-  document.getElementById('portfolio-tbody').lastElementChild?.scrollIntoView({behavior:'smooth'});
-});
-
-document.getElementById('save-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('save-btn');
-  const alertEl = document.getElementById('app-alert');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-  try {
-    const res = await api(`/api/portfolio/${USERNAME}`, {
-      method: 'POST',
-      body: JSON.stringify({lines})
-    });
-    if (res.ok) {
-      showAlert(alertEl, `✅ ${lines.length} ligne(s) enregistrée(s).`, 'success');
-      setTimeout(()=>clearAlert(alertEl), 3000);
+// ── Analyse ────────────────────────────────────────────────────────
+async function runAnalysis(){
+  const btn=document.getElementById('btn-analyze');
+  const result=document.getElementById('analyze-result');
+  const logBox=document.getElementById('log-box');
+  btn.disabled=true;btn.textContent='⏳ Analyse en cours…';
+  result.innerHTML='';
+  logBox.style.display='none';
+  try{
+    const data=await api('POST',`/api/analyze/${CURRENT_USER}`);
+    if(data.success){
+      result.innerHTML='<div class="info-box success" style="margin-top:.75rem">✅ Analyse terminée — '+data.lines_analyzed+' ligne(s).</div>';
+      // Lien rapport local
+      if(data.report_url){
+        result.innerHTML+=`<div class="report-link-box" style="margin-top:.75rem">🔗 Rapport local : <a href="${data.report_url}" target="_blank">${data.report_url}</a></div>`;
+      }
+      // Lien Cloudflare (persistant)
+      if(REPORT_URL){
+        const box=document.getElementById('report-card');
+        const lnk=document.getElementById('report-cf-link');
+        box.style.display='';
+        lnk.href=REPORT_URL;
+        lnk.textContent=REPORT_URL;
+      }
     } else {
-      const e = await res.json().catch(()=>({}));
-      showAlert(alertEl, e.detail || 'Erreur lors de la sauvegarde');
+      result.innerHTML='<div class="info-box error" style="margin-top:.75rem">❌ Échec de l'analyse.</div>';
     }
-  } catch { showAlert(alertEl, 'Erreur réseau'); }
-  finally { btn.disabled=false; btn.innerHTML='💾 Enregistrer'; }
-});
-
-// ─── Analyse ─────────────────────────────────────────────────────────────────
-document.getElementById('run-analysis-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('run-analysis-btn');
-  const logEl = document.getElementById('analyze-log');
-  const linkEl = document.getElementById('analyze-report-link');
-  const alertEl = document.getElementById('app-alert');
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Analyse en cours...';
-  logEl.style.display = 'none';
-  linkEl.style.display = 'none';
-  clearAlert(alertEl);
-
-  try {
-    const res = await api(`/api/analyze/${USERNAME}`, {method:'POST'});
-    const data = await res.json();
-
-    let logText = '';
-    (data.logs || []).forEach(s => {
-      logText += `[${s.step}] rc=${s.returncode} (${s.elapsed_s}s)\n`;
-      if (s.stdout) logText += s.stdout + '\n';
-      if (s.stderr) logText += '⚠ ' + s.stderr + '\n';
-    });
-    if (logText) { logEl.textContent = logText; logEl.style.display = ''; }
-
-    if (data.success) {
-      showAlert(alertEl, `✅ Analyse terminée — ${data.lines_analyzed} ligne(s) analysée(s).`, 'success');
-      linkEl.style.display = '';
-    } else {
-      showAlert(alertEl, '❌ L\'analyse a échoué. Consultez les logs ci-dessous.');
+    if(data.logs&&data.logs.length){
+      logBox.style.display='';
+      logBox.textContent=data.logs.map(l=>`[${l.step}] rc=${l.returncode} (${l.elapsed_s}s)\n${l.stdout||''}${l.stderr?'\nSTDERR: '+l.stderr:''}`).join('\n─────────────\n');
     }
-  } catch(err) {
-    showAlert(alertEl, 'Erreur réseau : ' + err.message);
+  }catch(e){
+    result.innerHTML='<div class="info-box error" style="margin-top:.75rem">❌ '+e.message+'</div>';
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🚀 Lancer l\'analyse';
+    btn.disabled=false;btn.textContent='▶ Lancer maintenant';
   }
-});
+}
 
-// ─── Admin ───────────────────────────────────────────────────────────────────
-async function loadUsers() {
-  try {
-    const res = await api('/api/users');
-    if (!res.ok) return;
-    const users = await res.json();
-    const badge = document.getElementById('user-count-badge');
-    badge.textContent = `${users.length}/5`;
-    badge.className = 'badge ' + (users.length >= 5 ? 'badge-red' : 'badge-blue');
-    document.getElementById('users-list').innerHTML = users.map(u => `
-      <div class="user-row">
-        <div class="user-info">
-          <span class="badge ${u.role==='admin'?'badge-green':'badge-blue'}">${u.role}</span>
-          <span>${u.username}</span>
+// ── Admin ──────────────────────────────────────────────────────────
+async function loadUsers(){
+  try{
+    const users=await api('GET','/api/users');
+    const list=document.getElementById('user-list');
+    document.getElementById('user-count').textContent=`(${users.length} / 5)`;
+    list.innerHTML='';
+    users.forEach(u=>{
+      const div=document.createElement('div');
+      div.className='user-item';
+      div.innerHTML=`
+        <div class="user-meta">
+          <strong>${u.username}${u.role==='admin'?' 👑':''}</strong>
+          <span>Créé le ${new Date(u.created_at).toLocaleDateString('fr-FR')}</span>
+          <div class="user-link"><a href="${u.report_url}" target="_blank" rel="noopener">${u.report_url}</a></div>
         </div>
-        ${u.username!=='admin' ? `<button class="btn btn-ghost btn-sm btn-danger" onclick="deleteUser('${u.username}')">Supprimer</button>` : '<span style="font-size:.78rem;color:var(--faint)">protégé</span>'}
-      </div>`).join('');
-  } catch {}
+        <span class="slot-badge">${u.slot}</span>
+        ${u.username!=='admin'?`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.username}')">Supprimer</button>`:''}
+      `;
+      list.appendChild(div);
+    });
+  }catch(e){document.getElementById('user-list').innerHTML='<div class="info-box error">'+e.message+'</div>';}
 }
 
-async function deleteUser(username) {
-  if (!confirm(`Supprimer l'utilisateur « ${username} » et son portefeuille ?`)) return;
-  try {
-    const res = await api(`/api/users/${username}`, {method:'DELETE'});
-    if (res.ok) loadUsers();
-    else { const e = await res.json().catch(()=>({})); alert(e.detail || 'Erreur'); }
-  } catch { alert('Erreur réseau'); }
+async function createUser(){
+  const uname=document.getElementById('new-user').value.trim();
+  const pass=document.getElementById('new-pass').value;
+  const res=document.getElementById('create-result');
+  if(!uname||!pass){res.innerHTML='<div class="info-box error">Identifiant et mot de passe requis.</div>';return;}
+  try{
+    const data=await api('POST','/api/users',{username:uname,password:pass});
+    res.innerHTML=`
+      <div class="info-box success">
+        ✅ Compte <strong>${data.created}</strong> créé — slot <strong>${data.slot}</strong><br>
+        🔗 Lien rapport : <a href="${data.report_url}" target="_blank" style="color:var(--success)">${data.report_url}</a>
+      </div>
+    `;
+    document.getElementById('new-user').value='';
+    document.getElementById('new-pass').value='';
+    loadUsers();
+  }catch(e){res.innerHTML='<div class="info-box error">❌ '+e.message+'</div>';}
 }
 
-document.getElementById('create-user-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const alertEl = document.getElementById('create-user-alert');
-  clearAlert(alertEl);
-  const payload = {
-    username: document.getElementById('nu-user').value.trim(),
-    password: document.getElementById('nu-pass').value,
-    role:     document.getElementById('nu-role').value
-  };
-  if (payload.password.length < 6) { showAlert(alertEl,'Le mot de passe doit faire au moins 6 caractères'); return; }
-  try {
-    const res = await api('/api/users', {method:'POST', body:JSON.stringify(payload)});
-    if (res.ok) {
-      showAlert(alertEl, `✅ Compte « ${payload.username} » créé.`, 'success');
-      document.getElementById('create-user-form').reset();
-      loadUsers();
-    } else {
-      const err = await res.json().catch(()=>({}));
-      showAlert(alertEl, err.detail || 'Erreur lors de la création');
-    }
-  } catch { showAlert(alertEl, 'Erreur réseau'); }
-});
+async function deleteUser(username){
+  if(!confirm(`Supprimer le compte « ${username} » et son portefeuille ?`)) return;
+  try{
+    await api('DELETE',`/api/users/${username}`);
+    loadUsers();
+  }catch(e){alert('Erreur : '+e.message);}
+}
 </script>
 </body>
 </html>
