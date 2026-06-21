@@ -1,2 +1,7 @@
+fastapi
+uvicorn[standard]
+bcrypt
+pyjwt
 requests
 matplotlib
+python-multipart

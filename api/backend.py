@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-backend.py  v1.0
+backend.py  v1.1
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Serveur FastAPI local — hébergement personnel, max 5 utilisateurs.
 
@@ -8,7 +8,7 @@ Endpoints :
   POST /api/login              → jeton JWT
   GET  /api/portfolio/{user}   → lignes du portefeuille
   POST /api/portfolio/{user}   → sauvegarder les lignes
-  POST /api/analyze/{user}     → exporter portfolio_{user}.json
+  POST /api/analyze/{user}     → exporter active_portfolio.json
                                  puis lancer portfolio_analyzer.py
                                  puis lancer generate_html.py
   GET  /api/users              → liste des utilisateurs (admin)
@@ -34,7 +34,7 @@ from typing import List, Optional
 import sqlite3, bcrypt, jwt as pyjwt
 
 # ── Config ──────────────────────────────────────────────────────────
-ROOT        = Path(__file__).parent.parent          # racine du projet
+ROOT        = Path(__file__).parent.parent
 DATA_DIR    = ROOT / "data"
 PORTFOLIOS  = DATA_DIR / "portfolios"
 DB_PATH     = DATA_DIR / "users.db"
@@ -106,7 +106,7 @@ def require_admin(user: dict = Depends(current_user)) -> dict:
     return user
 
 # ── App FastAPI ──────────────────────────────────────────────────────
-app = FastAPI(title="Portfolio Analyzer — Backend local", version="1.0")
+app = FastAPI(title="Portfolio Analyzer — Backend local", version="1.1")
 
 # Sert docs/ (rapport HTML généré) en statique
 docs_dir = ROOT / "docs"
@@ -121,7 +121,7 @@ class PortfolioLine(BaseModel):
     isin: Optional[str] = ""
     quantity: float
     buy_price: float
-    market: str          # US | Euronext | Xetra | LSE | Autre
+    market: str          # us | euronext | xetra | lse | autre
     broker: str
     currency: str        # EUR | USD | GBP
     asset_type: Optional[str] = "action"
@@ -192,8 +192,8 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
 
 @app.post("/api/analyze/{username}")
 def run_analysis(username: str, user: dict = Depends(current_user)):
-    """Exporte portfolio_{username}.json → PORTFOLIO dans portfolio_analyzer.py,
-       lance l'analyse, puis génère le rapport HTML."""
+    """Exporte le portefeuille de l'utilisateur dans active_portfolio.json,
+    lance portfolio_analyzer.py --portfolio <fichier>, puis generate_html.py."""
     if user["sub"] != username and user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès interdit")
 
@@ -206,8 +206,8 @@ def run_analysis(username: str, user: dict = Depends(current_user)):
     if not lines:
         raise HTTPException(status_code=400, detail="Le portefeuille est vide")
 
-    # Écrire le fichier d'entrée pour portfolio_analyzer.py
-    input_file = ROOT / "data" / "active_portfolio.json"
+    # Fichier d'entrée pour portfolio_analyzer.py
+    input_file = DATA_DIR / "active_portfolio.json"
     input_file.write_text(
         json.dumps({"username": username, "lines": lines}, ensure_ascii=False, indent=2),
         encoding="utf-8"
@@ -262,6 +262,9 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     if existing:
         con.close()
         raise HTTPException(status_code=409, detail="Nom d'utilisateur déjà pris")
+    if len(data.password) < 6:
+        con.close()
+        raise HTTPException(status_code=422, detail="Le mot de passe doit faire au moins 6 caractères")
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     con.execute(
         "INSERT INTO users VALUES (?,?,?,?)",
