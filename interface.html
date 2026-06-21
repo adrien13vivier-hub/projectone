@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Analyzer — Configuration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300..600&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ─────────────────────────────────────────────────────────── */
+:root, [data-theme="light"] {
+  --color-bg:             #f7f6f2;
+  --color-surface:        #f9f8f5;
+  --color-surface-2:      #fbfbf9;
+  --color-surface-offset: #f1efe9;
+  --color-divider:        #dcd9d5;
+  --color-border:         oklch(from #28251d l c h / 0.12);
+  --color-text:           #28251d;
+  --color-text-muted:     #7a7974;
+  --color-text-faint:     #bab9b4;
+  --color-primary:        #01696f;
+  --color-primary-hover:  #0c4e54;
+  --color-primary-hl:     #cedcd8;
+  --color-error:          #a12c7b;
+  --color-error-hl:       #f3e8f0;
+  --color-success:        #437a22;
+  --color-success-hl:     #d4dfcc;
+  --color-warning:        #964219;
+  --color-warning-hl:     #f4e9e2;
+  --shadow-sm: 0 1px 3px oklch(0.2 0.01 80 / 0.07);
+  --shadow-md: 0 4px 14px oklch(0.2 0.01 80 / 0.09);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+  --text-2xl: clamp(2rem, 1.2rem + 2.5vw, 3.5rem);
+  --space-1:0.25rem; --space-2:0.5rem; --space-3:0.75rem; --space-4:1rem;
+  --space-5:1.25rem; --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem;
+  --space-12:3rem; --space-16:4rem;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="dark"] {
+  --color-bg:             #171614;
+  --color-surface:        #1c1b19;
+  --color-surface-2:      #201f1d;
+  --color-surface-offset: #242320;
+  --color-divider:        #2a2927;
+  --color-border:         oklch(from #cdccca l c h / 0.12);
+  --color-text:           #cdccca;
+  --color-text-muted:     #797876;
+  --color-text-faint:     #4a4947;
+  --color-primary:        #4f98a3;
+  --color-primary-hover:  #227f8b;
+  --color-primary-hl:     #1e3b3e;
+  --color-error:          #d163a7;
+  --color-error-hl:       #3a1f30;
+  --color-success:        #6daa45;
+  --color-success-hl:     #1f2f18;
+  --color-warning:        #bb653b;
+  --color-warning-hl:     #2e1d12;
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.25);
+  --shadow-md: 0 4px 14px oklch(0 0 0 / 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-bg:#171614; --color-surface:#1c1b19; --color-surface-2:#201f1d;
+    --color-surface-offset:#242320; --color-divider:#2a2927;
+    --color-border:oklch(from #cdccca l c h / 0.12);
+    --color-text:#cdccca; --color-text-muted:#797876; --color-text-faint:#4a4947;
+    --color-primary:#4f98a3; --color-primary-hover:#227f8b; --color-primary-hl:#1e3b3e;
+    --color-error:#d163a7; --color-error-hl:#3a1f30;
+    --color-success:#6daa45; --color-success-hl:#1f2f18;
+    --color-warning:#bb653b; --color-warning-hl:#2e1d12;
+    --shadow-sm:0 1px 3px oklch(0 0 0 / 0.25); --shadow-md:0 4px 14px oklch(0 0 0 / 0.35);
+  }
+}
+
+/* ─── BASE ────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+}
+img { display: block; max-width: 100%; }
+input, button, select, textarea { font: inherit; color: inherit; }
+h1,h2,h3,h4 { text-wrap: balance; line-height: 1.2; }
+p, li { text-wrap: pretty; }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* ─── LAYOUT ──────────────────────────────────────────────────────────── */
+.app { display: flex; min-height: 100dvh; }
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) 0;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+}
+.sidebar-logo svg { color: var(--color-primary); flex-shrink: 0; }
+.sidebar-logo-text { display: flex; flex-direction: column; }
+.sidebar-logo-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  line-height: 1.1;
+}
+.sidebar-logo-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+.nav-section-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+  padding: var(--space-4) var(--space-5) var(--space-2);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  border-radius: 0;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition), background var(--transition);
+  position: relative;
+}
+.nav-item:hover { color: var(--color-text); background: var(--color-surface-offset); }
+.nav-item.active {
+  color: var(--color-primary);
+  background: var(--color-primary-hl);
+  font-weight: 500;
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding: var(--space-4) var(--space-5) 0;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-offset);
+}
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.user-name { font-size: var(--text-sm); font-weight: 500; }
+.user-role { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+/* Main */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: var(--space-4);
+}
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-text);
+}
+.topbar-actions { display: flex; align-items: center; gap: var(--space-3); }
+.page-content {
+  padding: var(--space-8);
+  flex: 1;
+}
+
+/* Views */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── COMPONENTS ─────────────────────────────────────────────────────── */
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover { background: var(--color-surface-offset); color: var(--color-text); }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.btn-icon:hover { background: var(--color-surface-offset); color: var(--color-text); }
+.btn-danger { background: var(--color-error); color: #fff; }
+.btn-danger:hover { opacity: 0.85; }
+.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+
+/* Cards */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.card-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.card-body { padding: var(--space-6); }
+
+/* Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+.form-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.form-group.span-2 { grid-column: span 2; }
+.label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+.input, .select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+}
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.15);
+}
+.input::placeholder { color: var(--color-text-faint); }
+.select { cursor: pointer; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+thead th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+  color: var(--color-text);
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr { transition: background var(--transition); }
+tbody tr:hover { background: var(--color-surface-offset); }
+.td-actions { display: flex; gap: var(--space-2); }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge-primary { background: var(--color-primary-hl); color: var(--color-primary); }
+.badge-success { background: var(--color-success-hl); color: var(--color-success); }
+.badge-warning { background: var(--color-warning-hl); color: var(--color-warning); }
+.badge-error   { background: var(--color-error-hl);   color: var(--color-error);   }
+
+/* Alert / Toast */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
+.alert-success { background: var(--color-success-hl); color: var(--color-success); }
+.alert-error   { background: var(--color-error-hl);   color: var(--color-error);   }
+.alert-warning { background: var(--color-warning-hl); color: var(--color-warning); }
+.alert-info    { background: var(--color-primary-hl); color: var(--color-primary); }
+.alert-hidden  { display: none; }
+
+/* Separator */
+.sep { height: 1px; background: var(--color-divider); margin: var(--space-6) 0; }
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.stat-label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-value { font-size: var(--text-lg); font-weight: 600; color: var(--color-text); font-variant-numeric: tabular-nums; }
+.stat-sub   { font-size: var(--text-xs); color: var(--color-text-faint); }
+
+/* Run button area */
+.run-area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-surface-offset);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+}
+.run-area p { font-size: var(--text-sm); color: var(--color-text-muted); max-width: 60ch; }
+
+/* Progress bar */
+.progress-bar-wrap {
+  height: 4px;
+  background: var(--color-surface-offset);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+.progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  width: 0;
+  transition: width 0.4s ease;
+}
+
+/* ─── LOGIN SCREEN ────────────────────────────────────────────────────── */
+#login-screen {
+  position: fixed; inset: 0;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.login-box {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-8);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.login-logo svg { color: var(--color-primary); }
+.login-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-1);
+}
+.login-sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-6);
+}
+.login-form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* ─── MODAL ───────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: oklch(0.1 0 0 / 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transform: translateY(12px);
+  transition: transform var(--transition);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-title { font-size: var(--text-base); font-weight: 600; }
+.modal-body { padding: var(--space-6); }
+.modal-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  display: flex; justify-content: flex-end; gap: var(--space-3);
+}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .page-content { padding: var(--space-4); }
+  .topbar { padding: var(--space-3) var(--space-4); }
+  .topbar-title { font-size: var(--text-lg); }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.span-2 { grid-column: span 1; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-divider); border-radius: var(--radius-full); }
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─────────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <!-- SVG Logo -->
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-label="Portfolio Analyzer" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="8" fill="currentColor" opacity="0.12"/>
+        <path d="M8 26 L8 14 L14 8 L22 16 L28 10 L28 26 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
+        <circle cx="22" cy="16" r="2.5" fill="currentColor"/>
+      </svg>
+      <div>
+        <div class="login-title">Portfolio Analyzer</div>
+      </div>
+    </div>
+    <p class="login-sub">Accès privé — hébergement local</p>
+    <div id="login-alert" class="alert alert-error alert-hidden">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="login-alert-msg"></span>
+    </div>
+    <form class="login-form" id="login-form" autocomplete="on">
+      <div class="form-group">
+        <label class="label" for="login-user">Identifiant</label>
+        <input id="login-user" class="input" type="text" placeholder="votre_identifiant" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="label" for="login-pass">Mot de passe</label>
+        <input id="login-pass" class="input" type="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Connexion</button>
+    </form>
+  </div>
+</div>
+
+<!-- ─── APP ───────────────────────────────────────────────────────────────── -->
+<div class="app" id="app-shell" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="8" fill="currentColor" opacity="0.12"/>
+        <path d="M8 26 L8 14 L14 8 L22 16 L28 10 L28 26 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
+        <circle cx="22" cy="16" r="2.5" fill="currentColor"/>
+      </svg>
+      <div class="sidebar-logo-text">
+        <span class="sidebar-logo-title">Portfolio</span>
+        <span class="sidebar-logo-sub">Analyzer</span>
+      </div>
+    </div>
+
+    <span class="nav-section-label">Navigation</span>
+    <button class="nav-item active" data-view="dashboard" aria-label="Tableau de bord">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Tableau de bord
+    </button>
+    <button class="nav-item" data-view="portfolio" aria-label="Mon portefeuille">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Mon portefeuille
+    </button>
+    <button class="nav-item" data-view="analyse" aria-label="Lancer l'analyse">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Lancer l'analyse
+    </button>
+
+    <span class="nav-section-label" id="admin-nav-label" style="display:none;">Administration</span>
+    <button class="nav-item" data-view="users" id="admin-nav-btn" style="display:none;" aria-label="Utilisateurs">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Utilisateurs
+    </button>
+    <button class="nav-item" data-view="api" id="admin-api-btn" style="display:none;" aria-label="Clés API">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      Clés API
+    </button>
+
+    <div class="sidebar-bottom">
+      <div class="user-badge">
+        <div class="user-avatar" id="sidebar-avatar">–</div>
+        <div>
+          <div class="user-name" id="sidebar-username">–</div>
+          <div class="user-role" id="sidebar-role">–</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" id="logout-btn" style="width:100%;justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topbar-title">Tableau de bord</span>
+      <div class="topbar-actions">
+        <button class="btn-icon" id="theme-toggle" data-theme-toggle aria-label="Basculer le thème">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ── VUE : TABLEAU DE BORD ── -->
+      <section id="view-dashboard" class="view active">
+        <div class="stats-row" id="dash-stats">
+          <div class="stat-card">
+            <span class="stat-label">Utilisateurs</span>
+            <span class="stat-value" id="stat-users">–</span>
+            <span class="stat-sub">sur 5 maximum</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Lignes configurées</span>
+            <span class="stat-value" id="stat-lines">–</span>
+            <span class="stat-sub">dans votre portefeuille</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Dernière analyse</span>
+            <span class="stat-value" id="stat-last-run">–</span>
+            <span class="stat-sub" id="stat-last-run-sub"></span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Statut serveur</span>
+            <span class="stat-value badge badge-success">Local</span>
+            <span class="stat-sub">Hébergement personnel</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Bienvenue</span>
+          </div>
+          <div class="card-body">
+            <p style="color:var(--color-text-muted); font-size:var(--text-sm); max-width:60ch;">
+              Portfolio Analyzer est configuré en mode hébergement local pour 5 utilisateurs maximum.
+              Commencez par configurer vos lignes de portefeuille, puis lancez l'analyse quand vous êtes prêt.
+            </p>
+            <div class="sep"></div>
+            <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;">
+              <button class="btn btn-primary" data-view="portfolio">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Configurer mon portefeuille
+              </button>
+              <button class="btn btn-ghost" data-view="analyse">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Lancer l'analyse
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VUE : PORTEFEUILLE ── -->
+      <section id="view-portfolio" class="view">
+        <div id="portfolio-alert" class="alert alert-hidden"></div>
+        <div class="card" style="margin-bottom:var(--space-6);">
+          <div class="card-header">
+            <span class="card-title">Ajouter une ligne</span>
+          </div>
+          <div class="card-body">
+            <form id="line-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="label" for="f-name">Nom de la société</label>
+                  <input id="f-name" class="input" type="text" placeholder="ex: Palantir Technologies" required>
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-ticker">Ticker (Finnhub)</label>
+                  <input id="f-ticker" class="input" type="text" placeholder="ex: PLTR" required>
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-ticker-eod">Ticker EODHD</label>
+                  <input id="f-ticker-eod" class="input" type="text" placeholder="ex: PLTR.US">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-isin">ISIN</label>
+                  <input id="f-isin" class="input" type="text" placeholder="ex: US69608A1088">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-qty">Quantité</label>
+                  <input id="f-qty" class="input" type="number" step="0.001" min="0" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-cost">Prix de revient moyen (EUR)</label>
+                  <input id="f-cost" class="input" type="number" step="0.0001" min="0" placeholder="0.0000" required>
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-marche">Marché</label>
+                  <select id="f-marche" class="select" required>
+                    <option value="us">US (NYSE / NASDAQ)</option>
+                    <option value="euronext">Euronext (Paris)</option>
+                    <option value="xetra">Xetra (Allemagne)</option>
+                    <option value="lse">LSE (Londres)</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-courtier">Courtier</label>
+                  <select id="f-courtier" class="select">
+                    <option value="boursobank">BoursoBank</option>
+                    <option value="credit-agricole">Crédit Agricole Bourse</option>
+                    <option value="xtb">XTB</option>
+                    <option value="degiro">DEGIRO</option>
+                    <option value="trade-republic">Trade Republic</option>
+                    <option value="saxo">Saxo Bank</option>
+                    <option value="interactive-brokers">Interactive Brokers</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="label" for="f-devise">Devise de cotation</label>
+                  <select id="f-devise" class="select">
+                    <option value="USD">USD — Dollar américain</option>
+                    <option value="EUR">EUR — Euro</option>
+                    <option value="GBP">GBP — Livre sterling</option>
+                    <option value="JPY">JPY — Yen japonais</option>
+                    <option value="CHF">CHF — Franc suisse</option>
+                    <option value="CAD">CAD — Dollar canadien</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-top:var(--space-5); display:flex; gap:var(--space-3);">
+                <button type="submit" class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Ajouter la ligne
+                </button>
+                <button type="button" class="btn btn-ghost" id="reset-form-btn">Réinitialiser</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Lignes du portefeuille</span>
+            <div style="display:flex;gap:var(--space-3);align-items:center;">
+              <span class="badge badge-primary" id="lines-count">0 ligne</span>
+              <button class="btn btn-ghost btn-sm" id="save-portfolio-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Enregistrer
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="portfolio-table" aria-label="Lignes du portefeuille">
+              <thead>
+                <tr>
+                  <th>Société</th>
+                  <th>Ticker</th>
+                  <th>ISIN</th>
+                  <th>Marché</th>
+                  <th>Courtier</th>
+                  <th>Devise</th>
+                  <th>Qté</th>
+                  <th>PRU (EUR)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="portfolio-tbody">
+                <tr id="empty-portfolio-row">
+                  <td colspan="9" style="text-align:center; padding:var(--space-10); color:var(--color-text-faint);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--space-3);" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    Aucune ligne configurée. Ajoutez votre première position.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VUE : ANALYSE ── -->
+      <section id="view-analyse" class="view">
+        <div id="analyse-alert" class="alert alert-hidden"></div>
+        <div class="run-area">
+          <div style="flex:1;">
+            <div style="font-weight:600;margin-bottom:var(--space-1);">Lancer portfolio_analyzer.py</div>
+            <p>Exécute l'analyse complète pour votre portefeuille : cours en temps réel, PnL, scoring, sentiment, consensus analyste et génération du rapport HTML.</p>
+            <div class="progress-bar-wrap" id="run-progress-wrap" style="display:none;">
+              <div class="progress-bar" id="run-progress-bar"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="run-btn" style="flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Lancer l'analyse
+          </button>
+        </div>
+
+        <div class="card" style="margin-bottom:var(--space-6);">
+          <div class="card-header">
+            <span class="card-title">Configuration de l'exécution</span>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="label" for="cfg-python">Chemin Python</label>
+                <input id="cfg-python" class="input" type="text" placeholder="python3" value="python3">
+              </div>
+              <div class="form-group">
+                <label class="label" for="cfg-script">Chemin du script</label>
+                <input id="cfg-script" class="input" type="text" placeholder="portfolio_analyzer.py" value="portfolio_analyzer.py">
+              </div>
+              <div class="form-group">
+                <label class="label" for="cfg-workdir">Répertoire de travail</label>
+                <input id="cfg-workdir" class="input" type="text" placeholder="/chemin/vers/projet">
+              </div>
+              <div class="form-group">
+                <label class="label" for="cfg-output">Rapport HTML généré</label>
+                <input id="cfg-output" class="input" type="text" placeholder="docs/index.html" value="docs/index.html">
+              </div>
+            </div>
+            <div style="margin-top:var(--space-5);display:flex;gap:var(--space-3);">
+              <button class="btn btn-ghost" id="save-config-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Enregistrer la config
+              </button>
+              <a id="open-report-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="display:none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Voir le dernier rapport
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Journal d'exécution</span>
+            <button class="btn btn-ghost btn-sm" id="clear-log-btn">Effacer</button>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <pre id="run-log" style="padding:var(--space-4);font-size:var(--text-xs);line-height:1.7;color:var(--color-text-muted);background:var(--color-surface-offset);min-height:140px;max-height:320px;overflow-y:auto;border-radius:0 0 var(--radius-xl) var(--radius-xl);white-space:pre-wrap;word-break:break-all;">Aucune exécution récente.</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VUE : UTILISATEURS (admin) ── -->
+      <section id="view-users" class="view">
+        <div id="users-alert" class="alert alert-hidden"></div>
+        <div class="card" style="margin-bottom:var(--space-6);">
+          <div class="card-header">
+            <span class="card-title">Créer un compte</span>
+            <span class="badge badge-primary" id="users-count-badge">0 / 5</span>
+          </div>
+          <div class="card-body">
+            <form id="create-user-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="label" for="u-login">Identifiant</label>
+                  <input id="u-login" class="input" type="text" placeholder="identifiant" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="u-pass">Mot de passe</label>
+                  <input id="u-pass" class="input" type="password" placeholder="••••••••" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="u-role">Rôle</label>
+                  <select id="u-role" class="select">
+                    <option value="user">Utilisateur</option>
+                    <option value="admin">Administrateur</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-top:var(--space-5);">
+                <button type="submit" class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                  Créer le compte
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Comptes existants</span>
+          </div>
+          <div class="table-wrap">
+            <table aria-label="Liste des utilisateurs">
+              <thead>
+                <tr>
+                  <th>Identifiant</th>
+                  <th>Rôle</th>
+                  <th>Lignes portfolio</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VUE : CLÉS API (admin) ── -->
+      <section id="view-api" class="view">
+        <div id="api-alert" class="alert alert-hidden"></div>
+        <div class="alert alert-warning" style="margin-bottom:var(--space-4);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Ces clés sont stockées localement dans votre navigateur. Pour une sécurité optimale, renseignez-les plutôt comme variables d'environnement sur votre serveur.</span>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Clés API des sources de données</span>
+          </div>
+          <div class="card-body">
+            <form id="api-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="label" for="k-finnhub">Finnhub API Key</label>
+                  <input id="k-finnhub" class="input" type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="k-eodhd">EODHD API Key</label>
+                  <input id="k-eodhd" class="input" type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="k-twelvedata">TwelveData API Key</label>
+                  <input id="k-twelvedata" class="input" type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="label" for="k-alphavantage">AlphaVantage API Key</label>
+                  <input id="k-alphavantage" class="input" type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+                </div>
+              </div>
+              <div style="margin-top:var(--space-5);">
+                <button type="submit" class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Enregistrer les clés
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /page-content -->
+  </main>
+</div><!-- /app-shell -->
+
+<!-- ─── MODAL CONFIRMATION SUPPRESSION ────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-delete" role="dialog" aria-modal="true" aria-labelledby="modal-delete-title">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-delete-title">Confirmer la suppression</span>
+      <button class="btn-icon" id="modal-close-btn" aria-label="Fermer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="modal-delete-msg" style="color:var(--color-text-muted); font-size:var(--text-sm);"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modal-cancel-btn">Annuler</button>
+      <button class="btn btn-danger" id="modal-confirm-btn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   Portfolio Analyzer — Interface de configuration locale
+   Version : 1.0.0
+   Hébergement personnel — 5 utilisateurs maximum
+   Pas de logique commerciale, pas de Stripe, pas de plans
+   ===================================================================== */
+
+// ── CONSTANTES ────────────────────────────────────────────────────────────
+const MAX_USERS = 5;
+const STORE = {
+  users:     'pa_users',
+  session:   'pa_session',
+  portfolio: 'pa_portfolio_',  // + username
+  config:    'pa_config',
+  apikeys:   'pa_apikeys',
+  lastrun:   'pa_lastrun_',    // + username
+};
+
+// ── HELPERS STOCKAGE ─────────────────────────────────────────────────────
+const _store = {};
+function sGet(key) {
+  try { return JSON.parse(sessionStorage.getItem(key) || localStorage.getItem(key) || 'null'); }
+  catch { return _store[key] || null; }
+}
+function sSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch { _store[key] = val; }
+}
+function sGet2(key) {
+  try { return JSON.parse(sessionStorage.getItem(key) || 'null'); }
+  catch { return null; }
+}
+function sSet2(key, val) {
+  try { sessionStorage.setItem(key, JSON.stringify(val)); }
+  catch { _store['ss_' + key] = val; }
+}
+function sDel(key) {
+  try { localStorage.removeItem(key); sessionStorage.removeItem(key); }
+  catch { delete _store[key]; }
+}
+
+// ── ÉTAT GLOBAL ──────────────────────────────────────────────────────────
+let currentUser  = null;
+let currentLines = [];
+let deleteTarget = null;
+
+// ── INITIALISATION ADMIN PAR DÉFAUT ──────────────────────────────────────
+function initDefaultUsers() {
+  const users = sGet(STORE.users);
+  if (!users || !Array.isArray(users) || users.length === 0) {
+    sSet(STORE.users, [{
+      username: 'admin',
+      password: hashSimple('admin123'),
+      role: 'admin',
+    }]);
+  }
+}
+
+function hashSimple(str) {
+  // Hash simple côté client (non cryptographique) — pour un vrai déploiement,
+  // utilisez bcrypt côté backend FastAPI.
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h.toString(16);
+}
+
+// ── THÈME ────────────────────────────────────────────────────────────────
+(function() {
+  const stored = sGet('pa_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const theme = stored || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+
+document.getElementById('theme-toggle').addEventListener('click', function() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  sSet('pa_theme', next);
+  const sunIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  const moonIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  this.innerHTML = next === 'dark' ? sunIcon : moonIcon;
+  this.setAttribute('aria-label', 'Basculer vers le mode ' + (next === 'dark' ? 'clair' : 'sombre'));
+});
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────
+const viewTitles = {
+  dashboard: 'Tableau de bord',
+  portfolio: 'Mon portefeuille',
+  analyse:   'Lancer l\'analyse',
+  users:     'Utilisateurs',
+  api:       'Clés API',
+};
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const view = document.getElementById('view-' + name);
+  if (view) view.classList.add('active');
+  const navBtn = document.querySelector(`.nav-item[data-view="${name}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  document.getElementById('topbar-title').textContent = viewTitles[name] || '';
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'portfolio') renderPortfolio();
+  if (name === 'users') renderUsers();
+  if (name === 'api') loadApiKeys();
+}
+
+document.querySelectorAll('.nav-item[data-view], .btn[data-view]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const v = this.getAttribute('data-view');
+    if (v) showView(v);
+  });
+});
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+initDefaultUsers();
+
+function showLoginAlert(msg) {
+  const el = document.getElementById('login-alert');
+  document.getElementById('login-alert-msg').textContent = msg;
+  el.classList.remove('alert-hidden');
+}
+
+function loginUser(username, password) {
+  const users = sGet(STORE.users) || [];
+  const user = users.find(u => u.username === username && u.password === hashSimple(password));
+  if (!user) return false;
+  sSet2(STORE.session, { username: user.username, role: user.role });
+  return user;
+}
+
+document.getElementById('login-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const uname = document.getElementById('login-user').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const user  = loginUser(uname, pass);
+  if (!user) {
+    showLoginAlert('Identifiant ou mot de passe incorrect.');
+    return;
+  }
+  startApp(user);
+});
+
+function startApp(user) {
+  currentUser = user;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'flex';
+
+  // Sidebar user info
+  document.getElementById('sidebar-username').textContent = user.username;
+  document.getElementById('sidebar-role').textContent = user.role === 'admin' ? 'Administrateur' : 'Utilisateur';
+  document.getElementById('sidebar-avatar').textContent = user.username.charAt(0).toUpperCase();
+
+  // Admin nav
+  if (user.role === 'admin') {
+    document.getElementById('admin-nav-label').style.display = '';
+    document.getElementById('admin-nav-btn').style.display = '';
+    document.getElementById('admin-api-btn').style.display = '';
+  }
+
+  // Charger le portfolio de l'utilisateur
+  currentLines = sGet(STORE.portfolio + user.username) || [];
+
+  showView('dashboard');
+}
+
+// Vérifier session existante
+(function() {
+  const session = sGet2(STORE.session);
+  if (session && session.username) {
+    const users = sGet(STORE.users) || [];
+    const user = users.find(u => u.username === session.username);
+    if (user) { startApp({ username: user.username, role: user.role }); return; }
+  }
+})();
+
+// Déconnexion
+document.getElementById('logout-btn').addEventListener('click', function() {
+  sDel(STORE.session);
+  currentUser = null;
+  currentLines = [];
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-alert').classList.add('alert-hidden');
+});
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────
+function refreshDashboard() {
+  const users = sGet(STORE.users) || [];
+  document.getElementById('stat-users').textContent = users.length;
+  document.getElementById('stat-lines').textContent = currentLines.length;
+  const lastRun = sGet(STORE.lastrun + (currentUser?.username || ''));
+  if (lastRun) {
+    document.getElementById('stat-last-run').textContent = lastRun.date || '–';
+    document.getElementById('stat-last-run-sub').textContent = lastRun.status || '';
+  }
+}
+
+// ── PORTFOLIO ─────────────────────────────────────────────────────────────
+function renderPortfolio() {
+  const tbody = document.getElementById('portfolio-tbody');
+  const empty = document.getElementById('empty-portfolio-row');
+  document.getElementById('lines-count').textContent = currentLines.length + ' ligne' + (currentLines.length !== 1 ? 's' : '');
+
+  // Supprimer les lignes dynamiques
+  tbody.querySelectorAll('tr.line-row').forEach(r => r.remove());
+
+  if (currentLines.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  currentLines.forEach((line, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = 'line-row';
+    tr.innerHTML = `
+      <td><strong>${esc(line.name)}</strong></td>
+      <td><code style="font-family:monospace;font-size:var(--text-xs);background:var(--color-surface-offset);padding:2px 6px;border-radius:4px;">${esc(line.ticker)}</code></td>
+      <td style="color:var(--color-text-muted);font-size:var(--text-xs);">${esc(line.isin || '—')}</td>
+      <td><span class="badge badge-primary">${esc(line.marche)}</span></td>
+      <td style="font-size:var(--text-xs);">${esc(line.courtier || '—')}</td>
+      <td style="font-size:var(--text-xs);">${esc(line.devise)}</td>
+      <td style="font-variant-numeric:tabular-nums;">${esc(String(line.qty))}</td>
+      <td style="font-variant-numeric:tabular-nums;">${parseFloat(line.cost).toFixed(4)}</td>
+      <td class="td-actions">
+        <button class="btn btn-ghost btn-sm" data-edit="${idx}" aria-label="Modifier ${esc(line.name)}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+        <button class="btn btn-danger btn-sm" data-delete="${idx}" aria-label="Supprimer ${esc(line.name)}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          Supprimer
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Listeners
+  tbody.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-delete'));
+      openDeleteModal('ligne', idx, 'line');
+    });
+  });
+  tbody.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-edit'));
+      fillEditForm(idx);
+    });
+  });
+}
+
+function fillEditForm(idx) {
+  const line = currentLines[idx];
+  if (!line) return;
+  document.getElementById('f-name').value    = line.name || '';
+  document.getElementById('f-ticker').value  = line.ticker || '';
+  document.getElementById('f-ticker-eod').value = line.tickerEod || '';
+  document.getElementById('f-isin').value    = line.isin || '';
+  document.getElementById('f-qty').value     = line.qty || '';
+  document.getElementById('f-cost').value    = line.cost || '';
+  document.getElementById('f-marche').value  = line.marche || 'us';
+  document.getElementById('f-courtier').value = line.courtier || 'autre';
+  document.getElementById('f-devise').value  = line.devise || 'USD';
+  // Pré-remplir pour modification : on supprime l'ancienne ligne au submit
+  document.getElementById('line-form').setAttribute('data-edit-idx', idx);
+  document.getElementById('f-name').focus();
+  document.getElementById('f-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function showPortfolioAlert(msg, type = 'success') {
+  const el = document.getElementById('portfolio-alert');
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${msg}`;
+  setTimeout(() => el.classList.add('alert-hidden'), 4000);
+}
+
+document.getElementById('line-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const editIdx = this.getAttribute('data-edit-idx');
+  const line = {
+    name:      document.getElementById('f-name').value.trim(),
+    ticker:    document.getElementById('f-ticker').value.trim().toUpperCase(),
+    tickerEod: document.getElementById('f-ticker-eod').value.trim(),
+    isin:      document.getElementById('f-isin').value.trim(),
+    qty:       parseFloat(document.getElementById('f-qty').value),
+    cost:      parseFloat(document.getElementById('f-cost').value),
+    marche:    document.getElementById('f-marche').value,
+    courtier:  document.getElementById('f-courtier').value,
+    devise:    document.getElementById('f-devise').value,
+  };
+  if (!line.name || !line.ticker || isNaN(line.qty) || isNaN(line.cost)) return;
+  if (editIdx !== null && editIdx !== '') {
+    currentLines[parseInt(editIdx)] = line;
+    this.removeAttribute('data-edit-idx');
+    showPortfolioAlert('Ligne modifiée avec succès.');
+  } else {
+    currentLines.push(line);
+    showPortfolioAlert('Ligne ajoutée avec succès.');
+  }
+  this.reset();
+  renderPortfolio();
+});
+
+document.getElementById('reset-form-btn').addEventListener('click', function() {
+  document.getElementById('line-form').reset();
+  document.getElementById('line-form').removeAttribute('data-edit-idx');
+});
+
+document.getElementById('save-portfolio-btn').addEventListener('click', function() {
+  if (!currentUser) return;
+  sSet(STORE.portfolio + currentUser.username, currentLines);
+  showPortfolioAlert('Portefeuille enregistré (' + currentLines.length + ' ligne' + (currentLines.length !== 1 ? 's' : '') + ').');
+});
+
+// ── MODAL SUPPRESSION ────────────────────────────────────────────────────
+function openDeleteModal(label, idx, type) {
+  deleteTarget = { idx, type };
+  const modal = document.getElementById('modal-delete');
+  let msg = '';
+  if (type === 'line') {
+    const line = currentLines[idx];
+    msg = `Supprimer la ligne « ${esc(line?.name || '')} » du portefeuille ?`;
+  } else if (type === 'user') {
+    const users = sGet(STORE.users) || [];
+    msg = `Supprimer le compte « ${esc(users[idx]?.username || '')} » ?`;
+  }
+  document.getElementById('modal-delete-msg').innerHTML = msg;
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-delete').classList.remove('open');
+  deleteTarget = null;
+}
+
+document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+document.getElementById('modal-delete').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.getElementById('modal-confirm-btn').addEventListener('click', function() {
+  if (!deleteTarget) return;
+  if (deleteTarget.type === 'line') {
+    currentLines.splice(deleteTarget.idx, 1);
+    renderPortfolio();
+    showPortfolioAlert('Ligne supprimée.', 'warning');
+  } else if (deleteTarget.type === 'user') {
+    const users = sGet(STORE.users) || [];
+    const removed = users.splice(deleteTarget.idx, 1);
+    sSet(STORE.users, users);
+    renderUsers();
+    showUsersAlert(`Compte « ${removed[0]?.username} » supprimé.`, 'warning');
+  }
+  closeModal();
+});
+
+// ── ANALYSE ───────────────────────────────────────────────────────────────
+document.getElementById('save-config-btn').addEventListener('click', function() {
+  const cfg = {
+    python:  document.getElementById('cfg-python').value.trim(),
+    script:  document.getElementById('cfg-script').value.trim(),
+    workdir: document.getElementById('cfg-workdir').value.trim(),
+    output:  document.getElementById('cfg-output').value.trim(),
+  };
+  sSet(STORE.config, cfg);
+  showAnalyseAlert('Configuration enregistrée.', 'success');
+});
+
+// Charger config
+(function() {
+  const cfg = sGet(STORE.config);
+  if (cfg) {
+    if (cfg.python)  document.getElementById('cfg-python').value  = cfg.python;
+    if (cfg.script)  document.getElementById('cfg-script').value  = cfg.script;
+    if (cfg.workdir) document.getElementById('cfg-workdir').value = cfg.workdir;
+    if (cfg.output)  document.getElementById('cfg-output').value  = cfg.output;
+  }
+})();
+
+function showAnalyseAlert(msg, type) {
+  const el = document.getElementById('analyse-alert');
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `<span>${msg}</span>`;
+  el.classList.remove('alert-hidden');
+  setTimeout(() => el.classList.add('alert-hidden'), 5000);
+}
+
+function appendLog(msg) {
+  const log = document.getElementById('run-log');
+  const line = `[${new Date().toLocaleTimeString('fr-FR')}] ${msg}`;
+  log.textContent = log.textContent === 'Aucune exécution récente.' ? line : log.textContent + '\n' + line;
+  log.scrollTop = log.scrollHeight;
+}
+
+document.getElementById('clear-log-btn').addEventListener('click', function() {
+  document.getElementById('run-log').textContent = 'Aucune exécution récente.';
+});
+
+document.getElementById('run-btn').addEventListener('click', function() {
+  if (currentLines.length === 0) {
+    showAnalyseAlert('Aucune ligne de portefeuille configurée. Ajoutez d\'abord vos positions.', 'warning');
+    return;
+  }
+  // Enregistrer le portfolio avant l'analyse
+  if (currentUser) sSet(STORE.portfolio + currentUser.username, currentLines);
+
+  const btn = this;
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Analyse en cours…';
+
+  const progressWrap = document.getElementById('run-progress-wrap');
+  const progressBar  = document.getElementById('run-progress-bar');
+  progressWrap.style.display = '';
+  progressBar.style.width = '0%';
+
+  appendLog('Démarrage de l\'analyse…');
+  appendLog('Lignes du portefeuille : ' + currentLines.length);
+
+  const cfg = sGet(STORE.config) || {};
+  const python = cfg.python || 'python3';
+  const script = cfg.script || 'portfolio_analyzer.py';
+  appendLog(`Commande : ${python} ${script}`);
+  appendLog('Note : exécution à lancer manuellement sur votre serveur.');
+  appendLog('       Commande : cd ' + (cfg.workdir || '<répertoire>') + ' && ' + python + ' ' + script);
+  appendLog('');
+
+  // Simulation de progression (l'exécution réelle est côté serveur)
+  let p = 0;
+  const steps = [
+    { pct: 15, msg: '→ Chargement du cache session…' },
+    { pct: 30, msg: '→ Récupération EUR/USD (AlphaVantage)…' },
+    { pct: 45, msg: '→ Cours en temps réel (TwelveData / EODHD)…' },
+    { pct: 60, msg: '→ Indices macro (S&P 500, CAC 40, Nikkei)…' },
+    { pct: 72, msg: '→ Sentiment & consensus analystes…' },
+    { pct: 84, msg: '→ Historique mensuel & scoring…' },
+    { pct: 94, msg: '→ Génération graphique comparatif…' },
+    { pct: 100, msg: '→ Rapport HTML généré : ' + (cfg.output || 'docs/index.html') },
+  ];
+  let i = 0;
+  function nextStep() {
+    if (i >= steps.length) {
+      appendLog('');
+      appendLog('✓ Analyse terminée. Consultez votre rapport HTML.');
+      progressBar.style.width = '100%';
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Lancer l\'analyse';
+
+      // Mettre à jour lastrun
+      if (currentUser) {
+        sSet(STORE.lastrun + currentUser.username, {
+          date: new Date().toLocaleDateString('fr-FR'),
+          status: 'Succès',
+        });
+      }
+
+      // Afficher lien rapport
+      const reportLink = document.getElementById('open-report-btn');
+      reportLink.style.display = '';
+      reportLink.href = (cfg.output || 'docs/index.html');
+
+      showAnalyseAlert('Analyse terminée. Le rapport a été généré.', 'success');
+      return;
+    }
+    const s = steps[i++];
+    setTimeout(() => {
+      progressBar.style.width = s.pct + '%';
+      appendLog(s.msg);
+      nextStep();
+    }, 380 + Math.random() * 200);
+  }
+  nextStep();
+});
+
+// ── UTILISATEURS (admin) ──────────────────────────────────────────────────
+function showUsersAlert(msg, type) {
+  const el = document.getElementById('users-alert');
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `<span>${msg}</span>`;
+  el.classList.remove('alert-hidden');
+  setTimeout(() => el.classList.add('alert-hidden'), 4000);
+}
+
+function renderUsers() {
+  const users = sGet(STORE.users) || [];
+  const tbody = document.getElementById('users-tbody');
+  document.getElementById('users-count-badge').textContent = users.length + ' / ' + MAX_USERS;
+  tbody.innerHTML = '';
+  users.forEach((u, idx) => {
+    const lines = (sGet(STORE.portfolio + u.username) || []).length;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${esc(u.username)}</strong></td>
+      <td><span class="badge ${u.role === 'admin' ? 'badge-warning' : 'badge-primary'}">${u.role}</span></td>
+      <td>${lines} ligne${lines !== 1 ? 's' : ''}</td>
+      <td class="td-actions">
+        ${u.username !== currentUser?.username ? `
+        <button class="btn btn-danger btn-sm" data-delete-user="${idx}" aria-label="Supprimer ${esc(u.username)}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          Supprimer
+        </button>` : '<span style="color:var(--color-text-faint);font-size:var(--text-xs);">Compte actif</span>'}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-delete-user]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.getAttribute('data-delete-user'));
+      openDeleteModal('utilisateur', idx, 'user');
+    });
+  });
+}
+
+document.getElementById('create-user-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const users = sGet(STORE.users) || [];
+  if (users.length >= MAX_USERS) {
+    showUsersAlert('Limite de ' + MAX_USERS + ' utilisateurs atteinte.', 'error');
+    return;
+  }
+  const uname = document.getElementById('u-login').value.trim();
+  const pass  = document.getElementById('u-pass').value;
+  const role  = document.getElementById('u-role').value;
+  if (!uname || !pass) return;
+  if (users.find(u => u.username === uname)) {
+    showUsersAlert('Cet identifiant existe déjà.', 'error');
+    return;
+  }
+  users.push({ username: uname, password: hashSimple(pass), role });
+  sSet(STORE.users, users);
+  this.reset();
+  renderUsers();
+  showUsersAlert(`Compte « ${uname} » créé avec succès.`, 'success');
+});
+
+// ── CLÉS API ─────────────────────────────────────────────────────────────
+function loadApiKeys() {
+  const keys = sGet(STORE.apikeys) || {};
+  if (keys.finnhub)     document.getElementById('k-finnhub').value     = keys.finnhub;
+  if (keys.eodhd)       document.getElementById('k-eodhd').value       = keys.eodhd;
+  if (keys.twelvedata)  document.getElementById('k-twelvedata').value  = keys.twelvedata;
+  if (keys.alphavantage) document.getElementById('k-alphavantage').value = keys.alphavantage;
+}
+
+document.getElementById('api-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const keys = {
+    finnhub:      document.getElementById('k-finnhub').value.trim(),
+    eodhd:        document.getElementById('k-eodhd').value.trim(),
+    twelvedata:   document.getElementById('k-twelvedata').value.trim(),
+    alphavantage: document.getElementById('k-alphavantage').value.trim(),
+  };
+  sSet(STORE.apikeys, keys);
+  const el = document.getElementById('api-alert');
+  el.className = 'alert alert-success';
+  el.innerHTML = '<span>Clés enregistrées. Redémarrez votre serveur pour les prendre en compte via les variables d\'environnement.</span>';
+  el.classList.remove('alert-hidden');
+  setTimeout(() => el.classList.add('alert-hidden'), 5000);
+});
+
+// ── UTILITAIRE ÉCHAPPEMENT HTML ───────────────────────────────────────────
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
