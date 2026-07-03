@@ -901,19 +901,48 @@ _CHART_COLORS = [
 
 def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
     try:
+        import os
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
+        from datetime import datetime, timedelta
 
-        valid = {
-            name: (dates, closes)
-            for name, (dates, closes) in assets_history.items()
-            if len(dates) >= 2 and len(closes) >= 2
-        }
+        cutoff = datetime.now() - timedelta(days=30)
+        valid = {}
+
+        for name, (dates, closes) in assets_history.items():
+            if not dates or not closes:
+                continue
+
+            pairs = []
+            for d, c in zip(dates, closes):
+                try:
+                    if len(d) == 7:
+                        dt = datetime.strptime(d + "-01", "%Y-%m-%d")
+                    else:
+                        dt = datetime.strptime(d[:10], "%Y-%m-%d")
+                    val = float(c)
+                    if val > 0 and dt >= cutoff:
+                        pairs.append((dt, val))
+                except Exception:
+                    continue
+
+            if len(pairs) < 2:
+                continue
+
+            pairs.sort(key=lambda x: x[0])
+            dt_list = [p[0] for p in pairs]
+            val_list = [p[1] for p in pairs]
+
+            base = val_list[0]
+            if base <= 0:
+                continue
+
+            normalized = [round(v / base * 100, 2) for v in val_list]
+            valid[name] = (dt_list, normalized)
 
         if not valid:
-            _log.warning("generate_combined_chart : aucune serie valide (min 2 points requis)")
             return False
 
         os.makedirs(os.path.dirname(chart_path), exist_ok=True)
@@ -922,87 +951,86 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
         fig.patch.set_facecolor("#f9f8f5")
         ax.set_facecolor("#f9f8f5")
 
-        for idx, (name, (dates, closes)) in enumerate(valid.items()):
+        colors = [
+            "#2563eb", "#16a34a", "#dc2626", "#d97706",
+            "#7c3aed", "#0891b2", "#db2777", "#65a30d",
+        ]
 
-            # ── FIX v6.3 ────────────────────────────────────────────────────
-            paired = []
-            for d, c in zip(dates, closes):
-                try:
-                    dt = datetime.strptime(
-                        d + "-01" if len(d) == 7 else d, "%Y-%m-%d"
-                    )
-                    paired.append((dt, float(c)))
-                except Exception:
-                    pass
+        all_y = []
+        all_x = []
 
-            if len(paired) < 2:
-                continue
-
-            dt_dates     = [p[0] for p in paired]
-            valid_closes = [p[1] for p in paired]
-            # ────────────────────────────────────────────────────────────────
-
-            base = valid_closes[0]
-            if base == 0:
-                continue
-            normalized = [round(c / base * 100, 2) for c in valid_closes]
-
-            color = _CHART_COLORS[idx % len(_CHART_COLORS)]
+        for idx, (name, (dt_list, normalized)) in enumerate(valid.items()):
+            color = colors[idx % len(colors)]
             perf_finale = normalized[-1] - 100
+            all_y.extend(normalized)
+            all_x.extend(dt_list)
 
             ax.plot(
-                dt_dates, normalized,
+                dt_list, normalized,
                 color=color, linewidth=2.2,
                 marker="o", markersize=4,
                 label=f"{name} ({perf_finale:+.1f}%)",
                 zorder=3,
             )
-
             ax.annotate(
                 f"{normalized[-1]:.0f}",
-                (dt_dates[-1], normalized[-1]),
+                (dt_list[-1], normalized[-1]),
                 textcoords="offset points", xytext=(6, 0),
                 fontsize=7.5, color=color, fontweight="bold",
             )
 
-        ax.axhline(y=100, color="#9ca3af", linestyle="--", linewidth=1.2,
-                   alpha=0.8, label="Base 100 (point d'entree)", zorder=2)
+        ax.axhline(
+            y=100, color="#9ca3af", linestyle="--",
+            linewidth=1.2, alpha=0.8,
+            label="Base 100 (début de période)", zorder=2
+        )
 
-        y_min, y_max = ax.get_ylim()
-        ax.axhspan(100, max(y_max, 101), alpha=0.04, color="#16a34a", zorder=1)
-        ax.axhspan(min(y_min, 99), 100,  alpha=0.04, color="#dc2626",  zorder=1)
+        ax.relim()
+        ax.autoscale_view()
 
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-        ax.xaxis.set_major_locator(mdates.MonthLocator())
-        plt.xticks(rotation=30, ha="right", fontsize=8)
+        if all_y:
+            y_min = min(min(all_y), 100)
+            y_max = max(max(all_y), 100)
+            pad = max((y_max - y_min) * 0.12, 3)
+            ax.set_ylim(y_min - pad, y_max + pad)
+
+        if all_x:
+            ax.set_xlim(min(all_x) - timedelta(days=1), max(all_x) + timedelta(days=2))
+
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}"))
         ax.tick_params(axis="y", labelsize=8)
         ax.set_ylabel("Performance (base 100)", fontsize=8, color="#6b7280")
 
         ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
+        ax.grid(axis="x", linestyle=":", alpha=0.2, color="#d1d5db")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_color("#e5e7eb")
         ax.spines["bottom"].set_color("#e5e7eb")
 
         ax.set_title(
-            "Performance comparee du portefeuille -- base 100 (3 mois, EUR)",
+            "Performance comparée du portefeuille — base 100 (30 derniers jours, EUR)",
             fontsize=11, fontweight="bold", color="#111827", pad=14,
         )
-
         ax.legend(
             fontsize=8, framealpha=0.7, loc="upper left",
             bbox_to_anchor=(0.01, 0.99), ncol=2,
         )
 
         plt.tight_layout()
-        plt.savefig(chart_path, dpi=130, bbox_inches="tight",
-                    facecolor=fig.get_facecolor())
+        plt.savefig(
+            chart_path, dpi=130, bbox_inches="tight",
+            facecolor=fig.get_facecolor()
+        )
         plt.close(fig)
         return True
 
-    except Exception as e:
-        _log.warning("generate_combined_chart non genere : %s", e)
+    except Exception:
         return False
 
 
