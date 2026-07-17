@@ -1,17 +1,17 @@
-# Rapport de Portefeuille v6.3 -- 16/07/2026 17:22 (Paris)
+# Rapport de Portefeuille v6.3 -- 17/07/2026 17:03 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Baissiere** | Score macro : 3.88/10
-**EUR/USD :** 1 EUR = 1.1445 USD
+**Tendance : Baissiere** | Score macro : 3.23/10
+**EUR/USD :** 1 EUR = 1.1443 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.17% | 7 559.48 |
-| CAC 40 | v -0.39% | 8 349.71 |
-| Nikkei 225 | v -2.79% | 66 835.54 |
+| S&P 500 | v -0.59% | 7 489.56 |
+| CAC 40 | v -0.68% | 8 320.92 |
+| Nikkei 225 | v -4.03% | 64 141.12 |
 
 **Manchettes macro :**
 
@@ -29,7 +29,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 22.36 EUR | ^ +4.88% | 44.72 EUR | + +9.18 EUR (+25.8%) | + +5.20 EUR (+14.6%) | **6.27/10** | ACHAT MODERE |
+| 21.94 EUR | v -1.53% | 43.88 EUR | + +8.34 EUR (+23.5%) | + +4.36 EUR (+12.3%) | **6.21/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -37,9 +37,9 @@
 
 **Sentiment :** Bull 0% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +10.8% | 3M +16.9% | 6M +16.9% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +15.8% | 3M +22.1% | 6M +22.1% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Gain net +5.20 EUR (+14.6%) apres frais. Consensus neutre (0% bull / 0% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 10.0/10).
+**Justification :** Gain net +4.36 EUR (+12.3%) apres frais. Consensus neutre (0% bull / 0% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 10.0/10).
 
 ---
 
@@ -47,7 +47,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 17.88 EUR | ^ +0.59% | 178.75 EUR | + +9.75 EUR (+5.8%) | + +5.77 EUR (+3.4%) | **6.0/10** | ACHAT MODERE |
+| 17.74 EUR | v -1.00% | 177.40 EUR | + +8.40 EUR (+5.0%) | + +4.42 EUR (+2.6%) | **6.2/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -55,9 +55,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +1.0% | 3M +14.5% | 6M +14.5% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +1.8% | 3M +15.5% | 6M +15.5% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Gain net +5.77 EUR (+3.4%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 7.8/10).
+**Justification :** Gain net +4.42 EUR (+2.6%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 8.5/10).
 
 ---
 
@@ -65,17 +65,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 64.11 EUR | ^ +0.00% | 128.21 EUR | - -59.61 EUR (-31.7%) | - -73.51 EUR (-39.1%) | **5.65/10** | GARDER |
+| 64.05 EUR | ^ +0.00% | 128.09 EUR | - -59.73 EUR (-31.8%) | - -73.63 EUR (-39.2%) | **5.79/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> 3 Reasons Why Micron Stock Keeps Falling | CoreWeave Has Fallen 49% From Its 52-Week High. Is the Beaten-Down AI Stock a Bargain or a Value Trap? | Can CoreWeave Become a $1 Trillion Company?
+> Micron Technology: Record DRAM Pricing Meets A Stock In Retreat | Coreweave Down 35% . This Analyst Reiterated His $250 Target Even After ‘Meta Compute’ Was Announced. | MU Stock Alert: What to Know as Micron Teams Up With Qualcomm
 
-**Sentiment :** Bull 57% / Bear 43% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Sentiment :** Bull 64% / Bear 36% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:10 B:19 H:13 S:1 SS:1 *(source : Finnhub)*
 **Perf. historique :** 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER *(source : Cache)*
 
-**Justification :** Perte nette -73.51 EUR (-39.1%) apres frais. Consensus haussier (score 7.0/10, Bull 57%). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Perte nette -73.63 EUR (-39.2%) apres frais. Consensus haussier (score 7.0/10, Bull 64%). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 8.5/10).
 
 ---
 
@@ -83,17 +83,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 115.57 EUR | ^ +0.00% | 231.14 EUR | - -6.98 EUR (-2.9%) | - -20.88 EUR (-8.8%) | **4.53/10** | GARDER |
+| 115.25 EUR | ^ +0.00% | 230.51 EUR | - -7.61 EUR (-3.2%) | - -21.51 EUR (-9.0%) | **4.53/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Does Palantir's Latest Partnership With Nvidia Make It a Screaming Buy? | XNTK vs. QQQ: Does a 35-Stock Tech ETF Beat Just Buying the Nasdaq-100? | Expanded SBA Fraud Push and New Alliances Might Change The Case For Investing In Palantir Technologies (PLTR)
+> 3 Hypergrowth Stocks That You Should Consider Buying in July | Alex Karp Grouped Palantir With These 3 Unstoppable Stocks as the Only True Artificial Intelligence (AI) Infrastructure… | Palantir CTO Warns AI Distillation Threat Could Undermine U.S. AI Lead
 
-**Sentiment :** Bull 57% / Bear 43% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 58% / Bear 42% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:12 B:14 H:11 S:1 SS:1 *(source : Finnhub)*
 **Perf. historique :** 1M -13.9% | 3M -7.9% | 6M -7.9% -- BAISSIER *(source : Cache)*
 
-**Justification :** Perte nette -20.88 EUR (-8.8%) apres frais. Consensus haussier (score 7.2/10, Bull 57%). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 1.8/10).
+**Justification :** Perte nette -21.51 EUR (-9.0%) apres frais. Consensus haussier (score 7.2/10, Bull 58%). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 1.8/10).
 
 ---
 
@@ -101,7 +101,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 1.85 EUR | v -0.54% | 18.50 EUR | - -19.90 EUR (-51.8%) | - -23.88 EUR (-62.2%) | **2.0/10** | VENDRE |
+| 1.88 EUR | ^ +0.97% | 18.80 EUR | - -19.60 EUR (-51.0%) | - -23.58 EUR (-61.4%) | **2.0/10** | VENDRE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -109,9 +109,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -9.3% | 3M -45.3% | 6M -45.3% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -9.2% | 3M -45.2% | 6M -45.2% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Perte nette -23.88 EUR (-62.2%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 0.0/10).
+**Justification :** Perte nette -23.58 EUR (-61.4%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 0.0/10).
 
 ---
 
@@ -119,12 +119,12 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |
 |--------|-----------|--------|----------|---------|-------|---------|
-| JCDecaux | 22.36 | 44.72 | +9.18 (+25.8%) | +5.20 (+14.6%) | 6.27/10 | ACHAT MODERE |
-| Credit Agricole SA | 17.88 | 178.75 | +9.75 (+5.8%) | +5.77 (+3.4%) | 6.0/10 | ACHAT MODERE |
-| CoreWeave | 64.11 | 128.21 | -59.61 (-31.7%) | -73.51 (-39.1%) | 5.65/10 | GARDER |
-| Palantir Technologies | 115.57 | 231.14 | -6.98 (-2.9%) | -20.88 (-8.8%) | 4.53/10 | GARDER |
-| Abionyx Pharma | 1.85 | 18.50 | -19.90 (-51.8%) | -23.88 (-62.2%) | 2.0/10 | VENDRE |
-| **TOTAL** | — | **601.32** | **-67.56 (-10.1%)** | **-107.30 (-16.0%)** | — | — |
+| JCDecaux | 21.94 | 43.88 | +8.34 (+23.5%) | +4.36 (+12.3%) | 6.21/10 | ACHAT MODERE |
+| Credit Agricole SA | 17.74 | 177.40 | +8.40 (+5.0%) | +4.42 (+2.6%) | 6.2/10 | ACHAT MODERE |
+| CoreWeave | 64.05 | 128.09 | -59.73 (-31.8%) | -73.63 (-39.2%) | 5.79/10 | GARDER |
+| Palantir Technologies | 115.25 | 230.51 | -7.61 (-3.2%) | -21.51 (-9.0%) | 4.53/10 | GARDER |
+| Abionyx Pharma | 1.88 | 18.80 | -19.60 (-51.0%) | -23.58 (-61.4%) | 2.0/10 | VENDRE |
+| **TOTAL** | — | **598.68** | **-70.20 (-10.5%)** | **-109.94 (-16.4%)** | — | — |
 
 ---
 
@@ -132,12 +132,12 @@
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| NVIDIA | IA / Semi-conducteurs | 180.20 EUR | ^ +0.00% | Warren Buffett's Successor, Greg Abel, Has Nearly 30% of Berkshire Hathaway's $3… |
-| Microsoft | IA / Cloud | 348.24 EUR | ^ +0.00% | Are companies getting a return on investment from AI yet? | Soluna names former … |
-| Coinbase | Crypto / Fintech | 142.30 EUR | ^ +0.00% | Coinbase’s Base Blockchain Pivots to Trading and AI After Social Initiatives Sta… |
-| LVMH | Luxe / Consommation | 501.60 EUR | ^ +1.17% | LVMH (ENXTPA:MC) Stock Looks Fairly Valued On Its 38% Slump | Richemont Surges A… |
-| TotalEnergies | Energie | 69.40 EUR | v -1.76% | Sector Update: Energy Stocks Edge Higher Premarket Thursday | TotalEnergies Sees… |
-| Airbus | Aeronautique / Defense | 195.58 EUR | ^ +0.10% | Airbus activities generated $8.4 billion in GDP and supported nearly 60,000 jobs… |
+| NVIDIA | IA / Semi-conducteurs | 177.37 EUR | ^ +0.00% | Why QDTE’s 0.97% Fee Costs You More Than Two Weeks of Payouts | S&P Global Spun … |
+| Microsoft | IA / Cloud | 342.20 EUR | ^ +0.00% | Microsoft CEO Nadella criticizes Anthropic's Fable AI over refusals in internal … |
+| Coinbase | Crypto / Fintech | 137.09 EUR | ^ +0.00% | Circle Stock Is Downgraded As Stablecoin Competition Heats Up | Price Prediction… |
+| LVMH | Luxe / Consommation | 492.85 EUR | v -2.04% | Louis Vuitton’s China Dilemma: Protect the Monogram, Risk the Narrative | LVMH (… |
+| TotalEnergies | Energie | 70.44 EUR | ^ +1.22% | Antero Resources Is in Play: Which Energy Titan Will Acquire It? | TotalEnergies… |
+| Airbus | Aeronautique / Defense | 193.40 EUR | v -1.13% | Air China and Shenzhen Airlines order 55 Airbus jets for $12.4B | Airbus Wins Ma… |
 
 ---
 
@@ -158,5 +158,5 @@
 
 ## Avertissements Cache
 
-- ⚠️  Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 15/07/2026 17:15
-- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 15/07/2026 17:15
+- ⚠️  Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 16/07/2026 17:23
+- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 16/07/2026 17:23
