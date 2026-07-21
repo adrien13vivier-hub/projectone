@@ -1,17 +1,17 @@
-# Rapport de Portefeuille v6.3 -- 20/07/2026 11:47 (Paris)
+# Rapport de Portefeuille v6.3 -- 21/07/2026 17:27 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Baissiere** | Score macro : 3.42/10
-**EUR/USD :** 1 EUR = 1.1433 USD
+**Tendance : Haussiere** | Score macro : 6.36/10
+**EUR/USD :** 1 EUR = 1.1413 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -1.01% | 7 457.69 |
-| CAC 40 | ^ +0.31% | 8 364.62 |
-| Nikkei 225 | v -4.03% | 64 141.12 |
+| S&P 500 | ^ +0.72% | 7 496.77 |
+| CAC 40 | ^ +0.09% | 8 347.83 |
+| Nikkei 225 | ^ +3.26% | 66 232.19 |
 
 **Manchettes macro :**
 
@@ -25,29 +25,11 @@
 
 ## Analyse par Valeur
 
-### JCDecaux `DEC.PA`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
-|-------|-----------|-----|----------|---------|-------|---------|
-| 22.04 EUR | ^ +0.46% | 44.08 EUR | + +8.54 EUR (+24.0%) | + +4.56 EUR (+12.8%) | **7.22/10** | ACHAT MODERE |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> JCDecaux : Half-year liquidity contract statement for JCDecaux SE | JCDecaux renews Heathrow advertising contract for 8 years | VivaTech 2026: JCDecaux unveils “Le Bus Shelter” and the groundbreaking digital experience “Unlimited DOOH”
-
-**Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
-**Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +14.0% | 3M +20.3% | 6M +20.3% -- HAUSSIER *(source : EODHD)*
-
-**Justification :** Gain net +4.56 EUR (+12.8%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 10.0/10).
-
----
-
 ### Credit Agricole SA `ACA.PA`
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 17.95 EUR | ^ +0.90% | 179.45 EUR | + +10.45 EUR (+6.2%) | + +6.47 EUR (+3.8%) | **6.01/10** | ACHAT MODERE |
+| 18.05 EUR | ^ +0.70% | 180.55 EUR | + +11.55 EUR (+6.8%) | + +7.57 EUR (+4.5%) | **6.25/10** | ACHAT MODERE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -55,9 +37,27 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +1.1% | 3M +14.6% | 6M +14.6% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +1.9% | 3M +15.5% | 6M +15.5% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Gain net +6.47 EUR (+3.8%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 7.8/10).
+**Justification :** Gain net +7.57 EUR (+4.5%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro favorable. Momentum mensuel HAUSSIER (score historique 8.5/10).
+
+---
+
+### JCDecaux `DEC.PA`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
+|-------|-----------|-----|----------|---------|-------|---------|
+| 21.84 EUR | v -1.53% | 43.68 EUR | + +8.14 EUR (+22.9%) | + +4.16 EUR (+11.7%) | **6.19/10** | ACHAT MODERE |
+
+**Actualite recente :** *(source : RSS Yahoo Finance)*
+
+> JCDecaux connects 100% of its DOOH inventory to programmatic in 9 Latin American markets | JCDecaux : Half-year liquidity contract statement for JCDecaux SE | JCDecaux renews Heathrow advertising contract for 8 years
+
+**Sentiment :** Bull 0% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
+**Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
+**Perf. historique :** 1M +15.3% | 3M +21.6% | 6M +21.6% -- HAUSSIER *(source : EODHD)*
+
+**Justification :** Gain net +4.16 EUR (+11.7%) apres frais. Consensus neutre (0% bull / 0% bear). Contexte macro favorable. Momentum mensuel HAUSSIER (score historique 10.0/10).
 
 ---
 
@@ -65,17 +65,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 64.03 EUR | ^ +0.00% | 128.06 EUR | - -59.76 EUR (-31.8%) | - -73.66 EUR (-39.2%) | **5.42/10** | GARDER |
+| 68.46 EUR | ^ +0.00% | 136.92 EUR | - -50.90 EUR (-27.1%) | - -64.80 EUR (-34.5%) | **5.56/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> MU, SNDK, CRWV, IREN Stocks Climb After Brutal Week: Retail Bets On Memory, Neocloud Rebound | CoreWeave vs. Applied Digital: Evaluating Disparities in Revenue Scale for These Artificial Intelligence Companies | Why CoreWeave Stock Keeps Falling
+> Nvidia touts Vera Rubin performance ahead of rival AMD's Advancing AI event | Nebius Advances On Nvidia Stake Disclosure Amid AI Cloud Swoon | How Nebius Stock Became the Neocloud Standout
 
 **Sentiment :** Bull 46% / Bear 54% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:10 B:19 H:13 S:1 SS:1 *(source : Finnhub)*
 **Perf. historique :** 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER *(source : Cache)*
 
-**Justification :** Perte nette -73.66 EUR (-39.2%) apres frais. Consensus haussier (score 7.0/10, Bull 46%). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Perte nette -64.80 EUR (-34.5%) apres frais. Consensus haussier (score 7.0/10, Bull 46%). Contexte macro favorable. Momentum mensuel HAUSSIER (score historique 8.5/10).
 
 ---
 
@@ -83,17 +83,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 115.75 EUR | ^ +0.00% | 231.50 EUR | - -6.62 EUR (-2.8%) | - -20.52 EUR (-8.6%) | **4.51/10** | GARDER |
+| 116.82 EUR | ^ +0.00% | 233.64 EUR | - -4.48 EUR (-1.9%) | - -18.38 EUR (-7.7%) | **4.69/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> 1 Quantum Computing Stock That Could Be the Next Palantir | Palantir: The Stock Is Richly Valued With a Forward P/S Multiple of Over 40x, but Is the Growth Story Still Worth Buying… | Ondas Stock Climbs After Seven Weeks In The Red: Retail Hopes For 'Drone Rally' As US-Iran War Rages On
+> Google Expands in Miami After Its Billionaire Founders Buy Homes | Is Innodata's 40% Growth Outlook Just the Start of an AI Gold Rush? | Prediction: Palantir Stock Will Go Parabolic After Aug. 3. Here's Why
 
-**Sentiment :** Bull 56% / Bear 44% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 64% / Bear 36% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:12 B:14 H:11 S:1 SS:1 *(source : Finnhub)*
 **Perf. historique :** 1M -13.9% | 3M -7.9% | 6M -7.9% -- BAISSIER *(source : Cache)*
 
-**Justification :** Perte nette -20.52 EUR (-8.6%) apres frais. Consensus haussier (score 7.2/10, Bull 56%). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 1.8/10).
+**Justification :** Perte nette -18.38 EUR (-7.7%) apres frais. Consensus haussier (score 7.2/10, Bull 64%). Contexte macro favorable. Momentum mensuel BAISSIER (score historique 1.8/10).
 
 ---
 
@@ -101,7 +101,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 1.88 EUR | v -0.53% | 18.76 EUR | - -19.64 EUR (-51.1%) | - -23.62 EUR (-61.5%) | **2.0/10** | VENDRE |
+| 1.86 EUR | ^ +0.98% | 18.60 EUR | - -19.80 EUR (-51.6%) | - -23.78 EUR (-61.9%) | **2.0/10** | VENDRE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -109,9 +109,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -8.0% | 3M -44.5% | 6M -44.5% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -10.1% | 3M -45.8% | 6M -45.8% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Perte nette -23.62 EUR (-61.5%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 0.0/10).
+**Justification :** Perte nette -23.78 EUR (-61.9%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro favorable. Momentum mensuel BAISSIER (score historique 0.0/10).
 
 ---
 
@@ -119,12 +119,12 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |
 |--------|-----------|--------|----------|---------|-------|---------|
-| JCDecaux | 22.04 | 44.08 | +8.54 (+24.0%) | +4.56 (+12.8%) | 7.22/10 | ACHAT MODERE |
-| Credit Agricole SA | 17.95 | 179.45 | +10.45 (+6.2%) | +6.47 (+3.8%) | 6.01/10 | ACHAT MODERE |
-| CoreWeave | 64.03 | 128.06 | -59.76 (-31.8%) | -73.66 (-39.2%) | 5.42/10 | GARDER |
-| Palantir Technologies | 115.75 | 231.50 | -6.62 (-2.8%) | -20.52 (-8.6%) | 4.51/10 | GARDER |
-| Abionyx Pharma | 1.88 | 18.76 | -19.64 (-51.1%) | -23.62 (-61.5%) | 2.0/10 | VENDRE |
-| **TOTAL** | — | **601.85** | **-67.03 (-10.0%)** | **-106.77 (-16.0%)** | — | — |
+| Credit Agricole SA | 18.05 | 180.55 | +11.55 (+6.8%) | +7.57 (+4.5%) | 6.25/10 | ACHAT MODERE |
+| JCDecaux | 21.84 | 43.68 | +8.14 (+22.9%) | +4.16 (+11.7%) | 6.19/10 | ACHAT MODERE |
+| CoreWeave | 68.46 | 136.92 | -50.90 (-27.1%) | -64.80 (-34.5%) | 5.56/10 | GARDER |
+| Palantir Technologies | 116.82 | 233.64 | -4.48 (-1.9%) | -18.38 (-7.7%) | 4.69/10 | GARDER |
+| Abionyx Pharma | 1.86 | 18.60 | -19.80 (-51.6%) | -23.78 (-61.9%) | 2.0/10 | VENDRE |
+| **TOTAL** | — | **613.39** | **-55.49 (-8.3%)** | **-95.23 (-14.2%)** | — | — |
 
 ---
 
@@ -132,12 +132,12 @@
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| NVIDIA | IA / Semi-conducteurs | 177.23 EUR | ^ +0.00% | Meta Platforms Looks Set to Abandon a $174 Billion Investment to Fuel Its AI Amb… |
-| Microsoft | IA / Cloud | 344.40 EUR | ^ +0.00% | Microsoft CEO’s Anthropic criticism reveals bigger AI power struggle | One Date … |
-| Coinbase | Crypto / Fintech | 137.37 EUR | ^ +0.00% | Coinbase CEO Armstrong Dismisses Chamath’s Bitcoin Mining Warning: Will Price Su… |
-| LVMH | Luxe / Consommation | 491.75 EUR | v -0.68% | So you want to buy a sports franchise? Why entering sports ownership gives the r… |
-| TotalEnergies | Energie | 71.09 EUR | ^ +0.82% | Thousands Of Trucks Haul Iraq’s Oil Through Syria In Sign Of Hormuz Legacy | Can… |
-| Airbus | Aeronautique / Defense | 193.02 EUR | v -0.67% | British Airways selects RTX's Pratt & Whitney GTF™ engines to power up to 63 Air… |
+| NVIDIA | IA / Semi-conducteurs | 181.06 EUR | ^ +0.00% | Why Hasbro Stock Jumped Today | Coinbase Surges 11%, Strategy and Hut 8 Gain 5% … |
+| Microsoft | IA / Cloud | 349.35 EUR | ^ +0.00% | 3M investors are still waiting for a more 'consistent' growth story | Microsoft … |
+| Coinbase | Crypto / Fintech | 157.07 EUR | ^ +0.00% | Coinbase Surges 11%, Strategy and Hut 8 Gain 5% as Crypto Catalysts Stack Up | C… |
+| LVMH | Luxe / Consommation | 478.55 EUR | v -1.70% | So you want to buy a sports franchise? Why entering sports ownership gives the r… |
+| TotalEnergies | Energie | 72.63 EUR | ^ +2.09% | ADNOC approves $6.2bn Umm Shaif gas cap development | Seeking Clues to TotalEner… |
+| Airbus | Aeronautique / Defense | 193.96 EUR | ^ +1.14% | Turkish Airlines Joins SAFFA Fund | Airbus pushes ahead with future single-aisle… |
 
 ---
 
@@ -147,16 +147,16 @@
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
 - **Nikkei 225** : EODHD
-- **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
+- **PLTR.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
 - **CRWV.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
-- **DEC.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
+- **DEC.PA** : cours: EODHD, sentiment: Lexical EODHD (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 - **ACA.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 - **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '19/80', 'finnhub': '12/55'}
+**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '19/80', 'finnhub': '13/55'}
 
 
 ## Avertissements Cache
 
-- ⚠️  Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 17/07/2026 17:03
-- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 17/07/2026 17:03
+- ⚠️  Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 20/07/2026 11:47
+- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 20/07/2026 11:47

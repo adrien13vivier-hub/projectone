@@ -1,11 +1,11 @@
 {
-  "eur_usd": 0.87462497,
-  "price_PLTR.US": 115.7479,
-  "price_CRWV.US": 64.0313,
+  "eur_usd": 0.87622515,
+  "price_PLTR.US": 116.8183,
+  "price_CRWV.US": 68.4595,
   "price_RIOT.US": 21.3637,
-  "price_DEC.PA": 22.04,
-  "price_ACA.PA": 17.945,
-  "price_ABNX.PA": 1.876,
+  "price_DEC.PA": 21.84,
+  "price_ACA.PA": 18.055,
+  "price_ABNX.PA": 1.86,
   "sources_log": {
     "EUR/USD": "AlphaVantage",
     "S&P 500": "EODHD",
@@ -119,7 +119,7 @@
       18.2445,
       18.84,
       19.24,
-      21.94
+      22.18
     ]
   },
   "hist_ACA.PA": {
@@ -133,7 +133,7 @@
       15.5204,
       16.6,
       17.595,
-      17.785
+      17.93
     ]
   },
   "hist_ABNX.PA": {
@@ -147,11 +147,11 @@
       3.3977,
       2.86,
       2.05,
-      1.886
+      1.842
     ]
   },
-  "date": "2026-07-20",
-  "saved_at": "20/07/2026 11:47",
+  "date": "2026-07-21",
+  "saved_at": "21/07/2026 17:27",
   "price_NVDA.US": 181.122,
   "price_MSFT.US": 384.8381,
   "price_COIN.US": 162.1305,
