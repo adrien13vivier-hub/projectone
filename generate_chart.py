@@ -83,6 +83,12 @@ def build_chart_html(rows):
         by_name.setdefault(r["name"], {})
         by_name[r["name"]][key] = round(r["pnl_net"], 2)
 
+    # On ne garde que les valeurs encore detenues (presentes au dernier run).
+    # Les lignes vendues (ex : JCDecaux) disparaissent du graphique.
+    current_names = {r["name"] for r in last_rows}
+    if current_names:
+        by_name = {n: v for n, v in by_name.items() if n in current_names}
+
     # Pour chaque action : tableau aligné sur all_labels (None = null en JSON)
     ASSET_COLORS = [
         "#2563eb", "#16a34a", "#dc2626", "#d97706",
@@ -91,7 +97,17 @@ def build_chart_html(rows):
     line_datasets = []
     for idx, (name, session_pnl) in enumerate(sorted(by_name.items())):
         color = ASSET_COLORS[idx % len(ASSET_COLORS)]
-        data_aligned = [session_pnl.get(lbl, None) for lbl in all_labels]
+        # Projection sur l'axe X complet : forward-fill (dernier PnL connu)
+        # + back-fill (prolongement de la 1re valeur connue vers la gauche).
+        # => la courbe parcourt 100% du graphique, sans trou ni depart decale.
+        raw = [session_pnl.get(lbl) for lbl in all_labels]
+        first_known = next((v for v in raw if v is not None), None)
+        data_aligned = []
+        last = first_known
+        for v in raw:
+            if v is not None:
+                last = v
+            data_aligned.append(last)
         line_datasets.append({
             "label":           name,
             "data":            data_aligned,
