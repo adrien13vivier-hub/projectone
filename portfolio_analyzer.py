@@ -1,22 +1,39 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v6.4
+Portfolio Analyzer v6.5
 ================================================================================
-CHANGEMENTS v6.4 par rapport a v6.3 :
+CHANGEMENTS v6.5 par rapport a v6.4 :
 
-1. PORTEFEUILLE — JCDecaux (DEC.PA) supprime : 2 actions vendues a 19,26 EUR.
+PROBLEME CONSTATE : seules 2 valeurs sur 4 apparaissaient sur le graphique
+combine. Cause racine : tout l'historique etait collecte en granularite
+MENSUELLE (AlphaVantage TIME_SERIES_MONTHLY, EODHD period="m", Finnhub
+resolution="W" reagrege par mois). Sur une fenetre de 1 mois, chaque valeur
+ne renvoyait donc que 1 ou 2 points -> rejet par les garde-fous len >= 2,
+puis repli sur le cache. Seules les valeurs dont le cache datait encore de
+l'epoque "3 mois" avaient assez de points pour etre tracees.
 
-2. HISTORIQUE — fenetre ramenee de 3 mois a 1 mois (HISTORY_MONTHS = 1).
-   Les 3 mois provoquaient des trous de collecte et une echelle illisible.
+CORRECTIONS :
 
-3. GRAPHIQUE COMBINE — toutes les valeurs parcourent desormais la totalite
-   de l'axe X : construction d'un axe de dates commun (union de toutes les
-   dates disponibles), projection de chaque actif sur cet axe complet
-   (forward-fill + back-fill), puis normalisation base 100 sur la premiere
-   date commune. Avant, chaque actif etait normalise sur SA propre premiere
-   date, donc les courbes demarraient a des endroits differents.
+1. COLLECTE JOURNALIERE — AlphaVantage TIME_SERIES_DAILY, EODHD period="d",
+   Finnhub resolution="D". ~21 points de cotation par mois au lieu de 1.
 
-TOUTES LES AUTRES FONCTIONS sont identiques a v6.3.
+2. PROFONDEUR vs AFFICHAGE dissocies :
+     HISTORY_DAYS      = 180  -> profondeur collectee (necessaire au scoring)
+     CHART_WINDOW_DAYS = 30   -> fenetre reellement affichee sur le graphique
+   Le graphique reste donc bien sur 1 mois, mais les rendements 3M et 6M du
+   score de tendance (30% de la note finale) restent calculables.
+
+3. EODHD ajoute comme repli daily pour les valeurs US (avant Finnhub).
+
+4. score_history() calcule desormais les rendements PAR DATE et non plus par
+   index de liste (closes[-2], closes[-4], closes[-7] supposaient des points
+   mensuels : en journalier cela revenait a comparer la veille et l'avant-
+   veille).
+
+5. generate_combined_chart() : chaque valeur du portefeuille est desormais
+   tracee meme si elle n'a que peu de points dans la fenetre (amorcage sur
+   le dernier cours connu AVANT la fenetre). Toutes les courbes parcourent
+   la totalite de l'axe X.
 ================================================================================
 """
 
@@ -62,8 +79,8 @@ HISTORY_PATH = "reports/history.csv"
 CHARTS_DIR   = "reports/charts"
 
 # --- FENETRE HISTORIQUE (1 mois) --------------------------------------------
-HISTORY_MONTHS = 1          # nb de mois recuperes aupres des APIs
-CHART_WINDOW_DAYS = 30      # fenetre affichee sur le graphique
+HISTORY_DAYS      = 180     # profondeur de collecte, en cotations JOURNALIERES
+CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mois)
 HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
                 "pnl_net_pct", "score", "rec"]
@@ -702,8 +719,30 @@ def get_consensus(asset: dict) -> tuple:
 session_cache_global: dict = {}
 
 
-def get_monthly_history(asset: dict, eur_usd: float, months: int = HISTORY_MONTHS) -> tuple:
-    from_d    = str(date.today() - timedelta(days=months * 31))
+def _eodhd_daily(ticker_eod: str, from_d: str, to_d: str, fx: float = 1.0) -> tuple:
+    """Cotations JOURNALIERES EODHD. Retourne (dates, closes, erreur)."""
+    data, err = _get(f"{EOD_BASE}/eod/{ticker_eod}",
+                     {"api_token": EODHD_KEY, "fmt": "json",
+                      "period": "d", "from": from_d, "to": to_d},
+                     "eodhd")
+    if isinstance(data, list) and len(data) >= 2 and not _is_quota_error(err):
+        dates, closes = [], []
+        for row in data:
+            px = row.get("adjusted_close") or row.get("close")
+            if not px:
+                continue
+            try:
+                dates.append(str(row["date"])[:10])
+                closes.append(round(float(px) * fx, 4))
+            except (ValueError, TypeError, KeyError):
+                continue
+        if len(dates) >= 2:
+            return dates, closes, None
+    return [], [], ("quota atteint" if _is_quota_error(err) else (err or "vide"))
+
+
+def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -> tuple:
+    from_d    = str(date.today() - timedelta(days=days))
     to_d      = str(date.today())
     cache_key = f"hist_{asset['ticker_eod']}"
 
@@ -711,20 +750,21 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = HISTORY_MONTH
         ticker_av = asset.get("ticker_av")
         if ALPHAVANTAGE_KEY and ticker_av:
             data, err = _get(AV_BASE, {
-                "function": "TIME_SERIES_MONTHLY",
-                "symbol":   ticker_av,
-                "apikey":   ALPHAVANTAGE_KEY,
+                "function":   "TIME_SERIES_DAILY",
+                "symbol":     ticker_av,
+                "outputsize": "compact",
+                "apikey":     ALPHAVANTAGE_KEY,
             }, "alphavantage")
-            if isinstance(data, dict) and data.get("Monthly Time Series") and not _is_quota_error(err):
-                ts = data["Monthly Time Series"]
+            ts = data.get("Time Series (Daily)") if isinstance(data, dict) else None
+            if ts and not _is_quota_error(err):
                 dates  = []
                 closes = []
-                for month_str, vals in sorted(ts.items()):
-                    if month_str < from_d:
+                for day_str, vals in sorted(ts.items()):
+                    if day_str < from_d:
                         continue
                     try:
-                        dates.append(month_str[:7])
-                        closes.append(round(float(vals["4. close"]) * eur_usd, 2))
+                        dates.append(day_str[:10])
+                        closes.append(round(float(vals["4. close"]) * eur_usd, 4))
                     except (ValueError, TypeError, KeyError):
                         pass
                 if len(dates) >= 2:
@@ -733,10 +773,17 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = HISTORY_MONTH
         else:
             av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
 
-        if FINNHUB_KEY:
-            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, months)
+        if EODHD_KEY:
+            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, eur_usd)
             if dates:
-                return dates, closes, f"Finnhub (fallback AV:{av_err})", cache_flag, err_str
+                return dates, closes, f"EODHD (fallback AV:{av_err})", False, None
+        else:
+            eod_err = "cle absente"
+
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, days)
+            if dates:
+                return dates, closes, f"Finnhub (fallback AV:{av_err}, EODHD:{eod_err})", cache_flag, err_str
             fh_err = err_str or "vide"
         else:
             fh_err = "cle absente"
@@ -746,27 +793,20 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = HISTORY_MONTH
             cached   = session_cache_global[cache_key]
             return (cached.get("dates", []), cached.get("closes", []),
                     "Cache", True,
-                    f"Historique US non disponible (AV:{av_err}, FH:{fh_err}) -- cache du {saved_at}")
-        return ([], [], f"Indisponible (AV:{av_err}, FH:{fh_err})", False,
+                    f"Historique US non disponible (AV:{av_err}, EODHD:{eod_err}, FH:{fh_err}) -- cache du {saved_at}")
+        return ([], [], f"Indisponible (AV:{av_err}, EODHD:{eod_err}, FH:{fh_err})", False,
                 "Historique indisponible -- graphique non genere")
 
     else:
         if EODHD_KEY:
-            data, err = _get(f"{EOD_BASE}/eod/{asset['ticker_eod']}",
-                             {"api_token": EODHD_KEY, "fmt": "json",
-                              "period": "m", "from": from_d, "to": to_d},
-                             "eodhd")
-            if isinstance(data, list) and len(data) >= 2 and not _is_quota_error(err):
-                dates  = [d["date"] for d in data if d.get("adjusted_close") or d.get("close")]
-                closes = [float(d.get("adjusted_close") or d.get("close", 0)) for d in data
-                          if d.get("adjusted_close") or d.get("close")]
+            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, 1.0)
+            if dates:
                 return dates, closes, "EODHD", False, None
-            eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
         else:
             eod_err = "cle absente"
 
         if FINNHUB_KEY:
-            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, months)
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, days)
             if dates:
                 return dates, closes, f"Finnhub (fallback EODHD:{eod_err})", cache_flag, err_str
             fh_err = err_str or "vide"
@@ -783,21 +823,21 @@ def get_monthly_history(asset: dict, eur_usd: float, months: int = HISTORY_MONTH
                 "Historique indisponible -- graphique non genere")
 
 
-def _finnhub_candles(asset: dict, eur_usd: float, months: int) -> tuple:
-    from_ts = int((datetime.now() - timedelta(days=months * 31)).timestamp())
+def _finnhub_candles(asset: dict, eur_usd: float, days: int) -> tuple:
+    from_ts = int((datetime.now() - timedelta(days=days)).timestamp())
     to_ts   = int(datetime.now().timestamp())
     data, err = _get(f"{FH_BASE}/stock/candle",
-                     {"symbol": asset["ticker_fh"], "resolution": "W",
+                     {"symbol": asset["ticker_fh"], "resolution": "D",
                       "from": from_ts, "to": to_ts, "token": FINNHUB_KEY},
                      "finnhub")
     if isinstance(data, dict) and data.get("s") == "ok" and data.get("c") and not _is_quota_error(err):
-        monthly: dict = {}
+        daily: dict = {}
         for ts, cl in zip(data["t"], data["c"]):
-            month_key = datetime.fromtimestamp(ts).strftime("%Y-%m")
-            monthly[month_key] = cl
-        dates  = sorted(monthly.keys())
-        closes = [round(monthly[k] * eur_usd, 2)
-                  if asset.get("marche") == "us" else round(monthly[k], 2)
+            day_key = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+            daily[day_key] = cl
+        dates  = sorted(daily.keys())
+        closes = [round(daily[k] * eur_usd, 4)
+                  if asset.get("marche") == "us" else round(daily[k], 4)
                   for k in dates]
         return dates, closes, "Finnhub", False, None
     err_str = "quota atteint" if _is_quota_error(err) else (err or "vide")
@@ -808,19 +848,45 @@ def _finnhub_candles(asset: dict, eur_usd: float, months: int) -> tuple:
 # SCORING
 # =============================================================================
 
+def _parse_serie(dates: list, closes: list) -> list:
+    """(date, cours) triee. Tolere "YYYY-MM-DD" et "YYYY-MM" (ancien cache)."""
+    serie = []
+    for d, c in zip(dates or [], closes or []):
+        try:
+            s = str(d)
+            iso = s + "-01" if len(s) == 7 else s[:10]
+            dt  = datetime.strptime(iso, "%Y-%m-%d")
+            v   = float(c)
+            if v > 0:
+                serie.append((dt, v))
+        except Exception:
+            continue
+    serie.sort(key=lambda x: x[0])
+    return serie
+
+
 def score_history(dates: list, closes: list) -> tuple:
     if len(closes) < 2:
         return 5.0, "NEUTRE", 0.0, 0.0, 0.0
 
-    def safe_ret(idx_from, idx_to=-1):
-        try:
-            return (closes[idx_to] / closes[idx_from] - 1) * 100
-        except (IndexError, ZeroDivisionError):
-            return 0.0
+    serie = _parse_serie(dates, closes)
+    if len(serie) < 2:
+        return 5.0, "NEUTRE", 0.0, 0.0, 0.0
 
-    ret_1m = safe_ret(-2)
-    ret_3m = safe_ret(-4) if len(closes) >= 4 else safe_ret(0)
-    ret_6m = safe_ret(-7) if len(closes) >= 7 else safe_ret(0)
+    last_dt, last_px = serie[-1]
+
+    def ret_since(nb_days: int) -> float:
+        """Rendement depuis la cotation la plus proche d'il y a nb_days."""
+        target = last_dt - timedelta(days=nb_days)
+        passe  = [px for dt, px in serie if dt <= target]
+        ref    = passe[-1] if passe else serie[0][1]
+        if ref <= 0:
+            return 0.0
+        return (last_px / ref - 1) * 100
+
+    ret_1m = ret_since(30)
+    ret_3m = ret_since(90)
+    ret_6m = ret_since(180)
     score = 5.0
     if ret_1m > 5:    score += 1.5
     elif ret_1m > 2:  score += 0.75
@@ -895,44 +961,53 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
 
         cutoff = datetime.now() - timedelta(days=CHART_WINDOW_DAYS)
 
-        # --- 1. Parsing + filtre fenetre 1 mois, actif par actif -------------
+        # --- 1. Parsing de TOUT l'historique disponible, actif par actif ------
+        #     (pas de filtre ici : les points anterieurs a la fenetre servent
+        #      a amorcer les courbes qui demarrent tard)
         series = {}
         for name, (dates, closes) in assets_history.items():
-            if not dates or not closes:
-                continue
-
             points = {}
-            for d, c in zip(dates, closes):
+            for d, c in zip(dates or [], closes or []):
                 try:
-                    if len(d) == 7:
-                        dt = datetime.strptime(d + "-01", "%Y-%m-%d")
-                    else:
-                        dt = datetime.strptime(d[:10], "%Y-%m-%d")
+                    s = str(d)
+                    iso = s + "-01" if len(s) == 7 else s[:10]
+                    dt  = datetime.strptime(iso, "%Y-%m-%d")
                     val = float(c)
-                    if val > 0 and dt >= cutoff:
+                    if val > 0:
                         points[dt] = val
                 except Exception:
                     continue
-
-            if len(points) >= 2:
+            if points:
                 series[name] = points
 
         if not series:
             return False
 
-        # --- 2. Axe X COMMUN : union de toutes les dates disponibles ---------
-        common_dates = sorted({dt for pts in series.values() for dt in pts})
+        # --- 2. Axe X COMMUN : les dates situees dans la fenetre 1 mois ------
+        common_dates = sorted({dt for pts in series.values() for dt in pts if dt >= cutoff})
         if len(common_dates) < 2:
-            return False
+            # Aucune donnee recente : on retombe sur le dernier mois
+            # reellement disponible plutot que d'abandonner le graphique.
+            toutes = sorted({dt for pts in series.values() for dt in pts})
+            if len(toutes) < 2:
+                return False
+            borne = toutes[-1] - timedelta(days=CHART_WINDOW_DAYS)
+            common_dates = [dt for dt in toutes if dt >= borne]
+            if len(common_dates) < 2:
+                common_dates = toutes[-2:]
 
-        # --- 3. Projection de chaque actif sur l'axe complet ------------------
-        #     forward-fill (on garde le dernier cours connu) puis back-fill
-        #     (on prolonge la premiere valeur connue vers la gauche).
-        #     Resultat : toutes les courbes couvrent 100% de l'axe X.
+        debut = common_dates[0]
+
+        # --- 3. Projection de CHAQUE actif sur l'axe complet ------------------
+        #     amorcage sur le dernier cours connu AVANT la fenetre, puis
+        #     forward-fill. Toute valeur ayant au moins 1 cotation est tracee
+        #     et couvre 100% de l'axe X.
         valid = {}
         for name, pts in series.items():
+            avant = [px for dt, px in sorted(pts.items()) if dt < debut]
+            last  = avant[-1] if avant else None
+
             filled = []
-            last = None
             for dt in common_dates:
                 v = pts.get(dt)
                 if v is not None:
