@@ -1,17 +1,17 @@
-# Rapport de Portefeuille v6.3 -- 28/07/2026 17:56 (Paris)
+# Rapport de Portefeuille v6.3 -- 29/07/2026 17:42 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 4.01/10
-**EUR/USD :** 1 EUR = 1.1394 USD
+**Tendance : Baissiere** | Score macro : 4.0/10
+**EUR/USD :** 1 EUR = 1.1381 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.35% | 7 439.16 |
-| CAC 40 | ^ +0.63% | 8 458.78 |
-| Nikkei 225 | v -3.95% | 62 364.92 |
+| S&P 500 | v -0.81% | 7 368.92 |
+| CAC 40 | v -0.70% | 8 399.64 |
+| Nikkei 225 | v -1.49% | 61 434.19 |
 
 **Manchettes macro :**
 
@@ -29,35 +29,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 18.66 EUR | v -0.05% | 186.65 EUR | + +17.65 EUR (+10.4%) | + +13.67 EUR (+8.1%) | **6.06/10** | ACHAT MODERE |
+| 18.41 EUR | v -1.39% | 184.05 EUR | + +15.05 EUR (+8.9%) | + +11.07 EUR (+6.5%) | **5.54/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CREDIT AGRICOLE SA: Crédit Agricole now stands at 29.3% of Banco BPM’s share capital | Morgan Stanley Among Banks Challenging Growing Dollar Optimism | CREDIT AGRICOLE SA: Worldline’s partnership with Crédit Agricole is evolving with the acquisition of 100% of CAWL by Cré…
+> Hong Kong Data Center Loan Sale Shows Banks Hitting Sector Limits | CREDIT AGRICOLE SA: Crédit Agricole now stands at 29.3% of Banco BPM’s share capital | Morgan Stanley Among Banks Challenging Growing Dollar Optimism
 
-**Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
+**Sentiment :** Bull 0% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +6.1% | 3M +6.1% | 6M +6.1% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +6.5% | 3M +15.9% | 6M +9.2% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Gain net +13.67 EUR (+8.1%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 7.5/10).
-
----
-
-### CoreWeave `CRWV.US`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
-|-------|-----------|-----|----------|---------|-------|---------|
-| 58.84 EUR | ^ +0.00% | 117.68 EUR | - -70.14 EUR (-37.3%) | - -84.04 EUR (-44.7%) | **5.25/10** | GARDER |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> Meta Partners With BlackRock Over $14 Billion Data Center Project | CoreWeave (CRWV) Lands Flow Traders To Run AI Training For Quant Trading | CRWV Powers Anam's AI Avatars With Low-Latency Cloud Infrastructure
-
-**Sentiment :** Bull 46% / Bear 54% *(source : AlphaVantage NLP)*
-**Consensus analystes :** SB:10 B:19 H:13 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER *(source : Cache)*
-
-**Justification :** Perte nette -84.04 EUR (-44.7%) apres frais. Consensus haussier (score 7.0/10, Bull 46%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 8.5/10).
+**Justification :** Gain net +11.07 EUR (+6.5%) apres frais. Consensus neutre (0% bull / 0% bear). Contexte macro defavorable. Momentum mensuel HAUSSIER (score historique 9.2/10).
 
 ---
 
@@ -65,17 +47,35 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 108.92 EUR | ^ +0.00% | 217.83 EUR | - -20.29 EUR (-8.5%) | - -34.19 EUR (-14.4%) | **4.64/10** | GARDER |
+| 109.56 EUR | ^ +0.00% | 219.11 EUR | - -19.01 EUR (-8.0%) | - -32.91 EUR (-13.8%) | **4.76/10** | GARDER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Can PLTR Stock Live Up To Its Multiple? | Palantir Technologies Inc. (PLTR) Just Overtook the 20-Day Moving Average | Palantir Technologies Inc. (PLTR) Just Reclaimed the 50-Day Moving Average
+> Microsoft vs Palantir: Which AI Stock Has More Upside in 2026? | Should You 'Buy' or 'Sell' Palantir Stock Before Aug. 3 Earnings? | Direxion unveils options income ETF suite tied to Nvidia, Tesla and other megacap
 
-**Sentiment :** Bull 71% / Bear 29% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Sentiment :** Bull 58% / Bear 42% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:12 B:14 H:11 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -13.9% | 3M -7.9% | 6M -7.9% -- BAISSIER *(source : Cache)*
+**Perf. historique :** 1M +9.4% | 3M -10.5% | 6M -15.7% -- BAISSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Perte nette -34.19 EUR (-14.4%) apres frais. Consensus haussier (score 7.2/10, Bull 71%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 1.8/10).
+**Justification :** Perte nette -32.91 EUR (-13.8%) apres frais. Consensus haussier (score 7.2/10, Bull 58%). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 3.0/10).
+
+---
+
+### CoreWeave `CRWV.US`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
+|-------|-----------|-----|----------|---------|-------|---------|
+| 54.45 EUR | ^ +0.00% | 108.90 EUR | - -78.92 EUR (-42.0%) | - -92.82 EUR (-49.4%) | **2.95/10** | VENDRE |
+
+**Actualite recente :** *(source : RSS Yahoo Finance)*
+
+> Wall Street Picks AI Winners and Losers as Credit Swaps Surge | Nvidia: Stop Worrying About Circular Financing and Embrace the Bank | Flow Traders chooses CoreWeave to support AI and deep learning workloads
+
+**Sentiment :** Bull 65% / Bear 35% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Consensus analystes :** SB:10 B:19 H:13 S:1 SS:1 *(source : Finnhub)*
+**Perf. historique :** 1M -30.3% | 3M -41.1% | 6M -27.8% -- BAISSIER *(source : EODHD (fallback AV:vide))*
+
+**Justification :** Perte nette -92.82 EUR (-49.4%) apres frais. Consensus haussier (score 7.0/10, Bull 65%). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 0.0/10).
 
 ---
 
@@ -83,7 +83,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 1.92 EUR | ^ +0.00% | 19.16 EUR | - -19.24 EUR (-50.1%) | - -23.22 EUR (-60.5%) | **2.75/10** | VENDRE |
+| 1.87 EUR | v -2.19% | 18.74 EUR | - -19.66 EUR (-51.2%) | - -23.64 EUR (-61.6%) | **2.0/10** | VENDRE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -91,9 +91,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -6.5% | 3M -6.5% | 6M -6.5% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -6.1% | 3M -44.4% | 6M -48.8% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Perte nette -23.22 EUR (-60.5%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 2.5/10).
+**Justification :** Perte nette -23.64 EUR (-61.6%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro defavorable. Momentum mensuel BAISSIER (score historique 0.0/10).
 
 ---
 
@@ -101,11 +101,11 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |
 |--------|-----------|--------|----------|---------|-------|---------|
-| Credit Agricole SA | 18.66 | 186.65 | +17.65 (+10.4%) | +13.67 (+8.1%) | 6.06/10 | ACHAT MODERE |
-| CoreWeave | 58.84 | 117.68 | -70.14 (-37.3%) | -84.04 (-44.7%) | 5.25/10 | GARDER |
-| Palantir Technologies | 108.92 | 217.83 | -20.29 (-8.5%) | -34.19 (-14.4%) | 4.64/10 | GARDER |
-| Abionyx Pharma | 1.92 | 19.16 | -19.24 (-50.1%) | -23.22 (-60.5%) | 2.75/10 | VENDRE |
-| **TOTAL** | — | **541.32** | **-92.02 (-14.5%)** | **-127.78 (-20.2%)** | — | — |
+| Credit Agricole SA | 18.41 | 184.05 | +15.05 (+8.9%) | +11.07 (+6.5%) | 5.54/10 | GARDER |
+| Palantir Technologies | 109.56 | 219.11 | -19.01 (-8.0%) | -32.91 (-13.8%) | 4.76/10 | GARDER |
+| CoreWeave | 54.45 | 108.90 | -78.92 (-42.0%) | -92.82 (-49.4%) | 2.95/10 | VENDRE |
+| Abionyx Pharma | 1.87 | 18.74 | -19.66 (-51.2%) | -23.64 (-61.6%) | 2.0/10 | VENDRE |
+| **TOTAL** | — | **530.80** | **-102.54 (-16.2%)** | **-138.30 (-21.8%)** | — | — |
 
 ---
 
@@ -113,12 +113,12 @@
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| NVIDIA | IA / Semi-conducteurs | 173.72 EUR | ^ +0.00% | Billionaire Stanley Druckenmiller Slashed His Stake in This Stock. But Wall Stre… |
-| Microsoft | IA / Cloud | 348.81 EUR | ^ +0.00% | Meta Partners With BlackRock Over $14 Billion Data Center Project | The 5 Hypers… |
-| Coinbase | Crypto / Fintech | 145.46 EUR | ^ +0.00% | Earnings Preview: Hut 8 (HUT) Q2 Earnings Expected to Decline | 3 Crypto Stock E… |
-| LVMH | Luxe / Consommation | 470.30 EUR | ^ +0.00% | Bernard Arnault slams claim his kids are feuding for control of the $142 billion… |
-| TotalEnergies | Energie | 73.78 EUR | v -0.05% | TotalEnergies, Eni reach agreement to develop Cyprus’ Cronos gas field | Chevron… |
-| Airbus | Aeronautique / Defense | 212.00 EUR | v -0.40% | United (UAL) Unveils New Economy Plus Seating For Its Airbus A321XLR Fleet | Boe… |
+| NVIDIA | IA / Semi-conducteurs | 168.65 EUR | ^ +0.00% | Amazon's Warehouse Robot Army Keeps Growing. Is Symbotic Still the Best Way to P… |
+| Microsoft | IA / Cloud | 346.67 EUR | ^ +0.00% | Stock Market Today: Dow Dives 800 Points As Fed Rate Call Looms; GE HealthCare S… |
+| Coinbase | Crypto / Fintech | 144.23 EUR | ^ +0.00% | Coinbase CEO Brian Armstrong's Bold Fix for America's $39.7 Trillion Debt Crisis… |
+| LVMH | Luxe / Consommation | 467.05 EUR | v -0.69% | Luxury brands, automakers signal consumer weakness from China | LVMH sells SirDa… |
+| TotalEnergies | Energie | 75.89 EUR | ^ +2.86% | TotalEnergies, Eni reach agreement to develop Cyprus’ Cronos gas field | Chevron… |
+| Airbus | Aeronautique / Defense | 208.90 EUR | v -1.46% | SES Launches Multi-Orbit Satellite Connectivity on LATAM Airbus, Embraer Fleet |… |
 
 ---
 
@@ -128,15 +128,9 @@
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
 - **Nikkei 225** : EODHD
-- **PLTR.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
-- **CRWV.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: Cache, synthese: RSS Yahoo Finance
-- **ACA.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
+- **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance
+- **CRWV.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance
+- **ACA.PA** : cours: EODHD, sentiment: Lexical EODHD (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 - **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '15/80', 'finnhub': '11/55'}
-
-
-## Avertissements Cache
-
-- ⚠️  Palantir Technologies -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 27/07/2026 12:30
-- ⚠️  CoreWeave -- historique : Historique US non disponible (AV:vide, FH:HTTP 403) -- cache du 27/07/2026 12:30
+**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '17/80', 'finnhub': '9/55'}
