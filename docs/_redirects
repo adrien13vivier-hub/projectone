@@ -1,1 +1,9 @@
-/* /index.html 200
+# Rapports personnels : servis tels quels depuis docs/r/<jeton>/
+/r/*/          /r/:splat/index.html   200
+
+# Ancien schéma mono-profil -> page d'accueil (les liens partagés avant
+# la v7 ne doivent plus exposer de rapport).
+/report/*      /index.html            301
+
+# Tout le reste retombe sur la page d'accueil neutre.
+/*             /index.html            200
