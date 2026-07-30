@@ -5,13 +5,48 @@ Génère docs/chart.html — graphique de l'évolution du PnL sur 1 mois
 Appelé par le workflow après portfolio_analyzer.py.
 """
 import csv
+import re
 import os
 import json
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 
-HISTORY_PATH = "reports/history.csv"
-OUT_PATH     = "docs/chart.html"
+# --- Chemins : resolus par utilisateur via --user ----------------------------
+import argparse as _argparse
+
+_ap = _argparse.ArgumentParser(description="Graphique HTML du PnL sur 1 mois.")
+_ap.add_argument("--user",    default=None, help="Utilisateur (dossier reports/<user>/).")
+_ap.add_argument("--history", default=None, help="Chemin explicite du history.csv.")
+_ap.add_argument("--output",  default=None, help="Chemin explicite du chart.html de sortie.")
+_args, _ = _ap.parse_known_args()
+
+def _slug(v):
+    return re.sub(r"[^a-zA-Z0-9_-]+", "-", str(v or "default").strip().lower()).strip("-") or "default"
+
+USER = _slug(_args.user) if _args.user else None
+
+if _args.history:
+    HISTORY_PATH = _args.history
+elif USER:
+    HISTORY_PATH = f"reports/{USER}/history.csv"
+else:
+    HISTORY_PATH = "reports/history.csv"
+
+if _args.output:
+    OUT_PATH = _args.output
+elif USER:
+    try:
+        import sys as _sys, os as _os
+        _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+        from api.load_portfolio import dossier_rapport
+        OUT_PATH = f"{dossier_rapport(USER)}/chart.html"
+    except Exception:
+        OUT_PATH = f"docs/{USER}/chart.html"
+else:
+    OUT_PATH = "docs/chart.html"
+
+import os as _os2
+_os2.makedirs(_os2.path.dirname(OUT_PATH) or ".", exist_ok=True)
 PARIS_TZ     = ZoneInfo("Europe/Paris")
 # Fenêtre stricte : 1 mois
 WINDOW_DAYS  = 30
