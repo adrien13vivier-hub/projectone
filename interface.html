@@ -155,6 +155,36 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 
     <!-- ── Portefeuille ── -->
     <div class="tab-panel active" id="panel-portfolio">
+
+      <!-- Reglages du profil : courtier, indices suivis, watchlist -->
+      <div class="card">
+        <div class="card-title">Mon profil</div>
+        <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+          <div class="form-group">
+            <label>Courtier</label>
+            <select id="cfg-broker" onchange="onBrokerChange()"></select>
+            <small id="broker-note" style="color:var(--muted);font-size:.78rem"></small>
+          </div>
+          <div class="form-group">
+            <label>Indices macro suivis</label>
+            <div id="cfg-indices" style="display:flex;flex-wrap:wrap;gap:.6rem"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.25rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+            <label style="margin:0">Watchlist <span style="color:var(--muted);font-weight:400">— valeurs suivies sans etre detenues</span></label>
+            <button class="btn btn-ghost btn-sm" onclick="addWatch()">+ Valeur</button>
+          </div>
+          <div class="table-wrap" style="margin-top:.5rem">
+            <table>
+              <thead><tr><th>Nom</th><th>Ticker</th><th>Place</th><th>Secteur</th><th></th></tr></thead>
+              <tbody id="watch-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
           <div class="card-title" style="margin:0">Mon portefeuille</div>
@@ -168,9 +198,9 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
           <table>
             <thead>
               <tr>
-                <th>Nom</th><th>Ticker FH</th><th>Ticker EODHD</th><th>ISIN</th>
-                <th>Qté</th><th>Prix achat</th><th>Marché</th><th>Courtier</th>
-                <th>Devise</th><th>Type</th><th></th>
+                <th>Nom</th><th>Ticker</th><th>ISIN</th>
+                <th>Qté</th><th>Prix de revient</th><th>Place de cotation</th>
+                <th>Type</th><th></th>
               </tr>
             </thead>
             <tbody id="portfolio-tbody"></tbody>
@@ -196,12 +226,22 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
       </div>
 
       <div class="card" id="report-card" style="display:none">
-        <div class="card-title">Votre rapport Cloudflare Pages</div>
+        <div class="card-title">Mon rapport en ligne</div>
         <div class="report-link-box">
           <span>🔗</span>
           <a id="report-cf-link" href="#" target="_blank" rel="noopener noreferrer">—</a>
+          <button class="btn btn-ghost btn-sm" onclick="copierLien()" style="margin-left:auto">Copier</button>
         </div>
-        <p style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">Ce lien vous est personnel. Partagez-le uniquement avec des personnes de confiance.</p>
+        <div id="copy-status" style="font-size:.8rem;color:var(--success);margin-top:.4rem"></div>
+        <div class="info-box neutral" style="margin-top:.9rem;font-size:.82rem">
+          <strong>Cette adresse vaut mot de passe.</strong> Elle ne demande aucune
+          connexion : toute personne qui l'obtient voit ton portefeuille.
+          Ne la publie pas et ne la transmets pas dans un groupe.
+          En cas de fuite, demande à l'administrateur de la régénérer.
+        </div>
+        <p style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">
+          Mise à jour automatique chaque jour ouvré, à ton créneau attribué.
+        </p>
       </div>
     </div>
 
@@ -302,6 +342,18 @@ function showApp(){
   }
 }
 
+async function copierLien(){
+  const st=document.getElementById('copy-status');
+  const url=document.getElementById('report-cf-link').href;
+  try{
+    await navigator.clipboard.writeText(url);
+    st.textContent='✅ Lien copié dans le presse-papiers.';
+  }catch(e){
+    st.textContent='Copie automatique refusée par le navigateur — sélectionne le lien à la main.';
+  }
+  setTimeout(()=>st.textContent='',4000);
+}
+
 // ── Tabs ───────────────────────────────────────────────────────────
 function switchTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -330,74 +382,141 @@ async function loadSlotInfo(){
 }
 
 // ── Portefeuille ───────────────────────────────────────────────────
-const MARKETS=['us','euronext','xetra','lse','autre'];
-const BROKERS=['BoursoBank','Crédit Agricole','XTB','Degiro','Trade Republic','Autre'];
-const CURRENCIES=['EUR','USD','GBP','CHF'];
-const TYPES=['action','etf','obligation','crypto','autre'];
+// Places de cotation et courtiers viennent du serveur : l'interface ne code
+// plus aucune correspondance en dur.
+let MARKETS = [{code:'us',label:'États-Unis (NYSE / Nasdaq)'}];
+let BROKERS = [{code:'autre',label:'Autre / personnalisé',note:''}];
+const INDICES_DISPO = ['S&P 500','CAC 40','Nikkei 225'];
+const TYPES = ['action','etf','obligation','crypto','autre'];
 
-function mkSelect(opts,val){
-  return '<select>'+opts.map(o=>`<option${o===val?' selected':''}>${o}</option>`).join('')+'</select>';
+async function loadReferentiels(){
+  try{ MARKETS = await api('GET','/api/markets'); }catch(e){ console.warn('Places indisponibles',e); }
+  try{ BROKERS = await api('GET','/api/brokers'); }catch(e){ console.warn('Courtiers indisponibles',e); }
+
+  const sel = document.getElementById('cfg-broker');
+  sel.innerHTML = BROKERS.map(b=>`<option value="${b.code}">${b.label}</option>`).join('');
+
+  document.getElementById('cfg-indices').innerHTML = INDICES_DISPO.map((n,i)=>
+    `<label style="display:flex;align-items:center;gap:.35rem;font-weight:400;margin:0">
+       <input type="checkbox" class="idx-cb" value="${n}" checked> ${n}
+     </label>`).join('');
+}
+
+function onBrokerChange(){
+  const code = document.getElementById('cfg-broker').value;
+  const b = BROKERS.find(x=>x.code===code);
+  document.getElementById('broker-note').textContent = b && b.note ? b.note : '';
+}
+
+function mkSelect(opts,val,cls){
+  return `<select class="${cls||''}">`+opts.map(o=>{
+    const v = typeof o==='string' ? o : o.code;
+    const l = typeof o==='string' ? o : o.label;
+    return `<option value="${v}"${v===val?' selected':''}>${l}</option>`;
+  }).join('')+'</select>';
 }
 
 function mkRow(l={}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
-    <td><input value="${l.name||''}" placeholder="Nom"></td>
-    <td><input value="${l.ticker_finnhub||''}" placeholder="AAPL"></td>
-    <td><input value="${l.ticker_eodhd||''}" placeholder="AAPL.US"></td>
+    <td><input value="${l.name||''}" placeholder="Air Liquide"></td>
+    <td><input value="${l.ticker||l.ticker_eodhd||''}" placeholder="AI.PA ou AAPL"></td>
     <td><input value="${l.isin||''}" placeholder="FR0000…"></td>
-    <td><input type="number" value="${l.quantity||''}" placeholder="10" min="0"></td>
+    <td><input type="number" value="${l.quantity||''}" placeholder="10" min="0" step="any"></td>
     <td><input type="number" value="${l.buy_price||''}" placeholder="150.00" min="0" step="0.01"></td>
     <td>${mkSelect(MARKETS,l.market||'us')}</td>
-    <td>${mkSelect(BROKERS,l.broker||'BoursoBank')}</td>
-    <td>${mkSelect(CURRENCIES,l.currency||'EUR')}</td>
     <td>${mkSelect(TYPES,l.asset_type||'action')}</td>
     <td><button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer">✕</button></td>
   `;
   return tr;
 }
 
+function mkWatchRow(w={}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input value="${w.name||''}" placeholder="NVIDIA"></td>
+    <td><input value="${w.ticker||''}" placeholder="NVDA"></td>
+    <td>${mkSelect(MARKETS,w.market||'us')}</td>
+    <td><input value="${w.sector||''}" placeholder="Semi-conducteurs"></td>
+    <td><button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer">✕</button></td>
+  `;
+  return tr;
+}
+
 async function loadPortfolio(){
+  await loadReferentiels();
   try{
     const data=await api('GET',`/api/portfolio/${CURRENT_USER}`);
     const tbody=document.getElementById('portfolio-tbody');
     tbody.innerHTML='';
     (data.lines||[]).forEach(l=>tbody.appendChild(mkRow(l)));
+
+    const cfg=data.settings||{};
+    if(cfg.broker){ document.getElementById('cfg-broker').value=cfg.broker; }
+    onBrokerChange();
+
+    if(Array.isArray(cfg.indices)){
+      document.querySelectorAll('.idx-cb').forEach(cb=>{cb.checked=cfg.indices.includes(cb.value);});
+    }
+    const wt=document.getElementById('watch-tbody');
+    wt.innerHTML='';
+    (cfg.watchlist||[]).forEach(w=>wt.appendChild(mkWatchRow(w)));
   }catch(e){console.warn('Erreur chargement portefeuille',e);}
 }
 
 function addLine(){
   document.getElementById('portfolio-tbody').appendChild(mkRow());
 }
+function addWatch(){
+  document.getElementById('watch-tbody').appendChild(mkWatchRow());
+}
 
 function readLines(){
-  const rows=document.querySelectorAll('#portfolio-tbody tr');
   const lines=[];
-  rows.forEach(tr=>{
-    const inputs=tr.querySelectorAll('input,select');
+  document.querySelectorAll('#portfolio-tbody tr').forEach(tr=>{
+    const f=tr.querySelectorAll('input,select');
     lines.push({
-      name:inputs[0].value.trim(),
-      ticker_finnhub:inputs[1].value.trim(),
-      ticker_eodhd:inputs[2].value.trim(),
-      isin:inputs[3].value.trim(),
-      quantity:parseFloat(inputs[4].value)||0,
-      buy_price:parseFloat(inputs[5].value)||0,
-      market:inputs[6].value,
-      broker:inputs[7].value,
-      currency:inputs[8].value,
-      asset_type:inputs[9].value
+      name:f[0].value.trim(),
+      ticker:f[1].value.trim().toUpperCase(),
+      isin:f[2].value.trim(),
+      quantity:parseFloat(f[3].value)||0,
+      buy_price:parseFloat(f[4].value)||0,
+      market:f[5].value,
+      asset_type:f[6].value
     });
   });
-  return lines.filter(l=>l.name||l.ticker_finnhub);
+  return lines.filter(l=>l.name&&l.ticker);
+}
+
+function readSettings(){
+  const watchlist=[];
+  document.querySelectorAll('#watch-tbody tr').forEach(tr=>{
+    const f=tr.querySelectorAll('input,select');
+    const w={name:f[0].value.trim(),ticker:f[1].value.trim().toUpperCase(),
+             market:f[2].value,sector:f[3].value.trim()};
+    if(w.name&&w.ticker) watchlist.push(w);
+  });
+  const indices=[...document.querySelectorAll('.idx-cb:checked')].map(cb=>cb.value);
+  return {broker:document.getElementById('cfg-broker').value, indices, watchlist};
 }
 
 async function savePortfolio(){
   const lines=readLines();
+  const settings=readSettings();
   const st=document.getElementById('save-status');
+  if(!lines.length){
+    st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ Aucune ligne valide : il faut au minimum un nom et un ticker.</div>';
+    return;
+  }
   try{
-    await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines});
-    st.innerHTML='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>';
-    setTimeout(()=>st.innerHTML='',3000);
+    const r=await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines,settings});
+    let html='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>';
+    if(r.erreurs&&r.erreurs.length){
+      html+='<div class="info-box error" style="margin-bottom:.75rem">⚠️ Lignes rejetées :<br>'
+           +r.erreurs.map(e=>'• '+e).join('<br>')+'</div>';
+    }
+    st.innerHTML=html;
+    if(!r.erreurs||!r.erreurs.length) setTimeout(()=>st.innerHTML='',3000);
   }catch(e){
     st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ '+e.message+'</div>';
   }
@@ -474,8 +593,21 @@ async function createUser(){
     const data=await api('POST','/api/users',{username:uname,password:pass});
     res.innerHTML=`
       <div class="info-box success">
-        ✅ Compte <strong>${data.created}</strong> créé — slot <strong>${data.slot}</strong><br>
-        🔗 Lien rapport : <a href="${data.report_url}" target="_blank" style="color:var(--success)">${data.report_url}</a>
+        ✅ Compte <strong>${data.created}</strong> créé — analyse quotidienne à <strong>${data.slot}</strong>
+      </div>
+      <div class="info-box neutral" style="margin-top:.6rem">
+        <strong>Adresse à transmettre à ${data.created}</strong> — à faire maintenant,
+        elle ne sera plus mise en avant ensuite :
+        <div class="report-link-box" style="margin-top:.5rem">
+          <a href="${data.report_url}" target="_blank" rel="noopener noreferrer"
+             style="color:var(--accent);word-break:break-all">${data.report_url}</a>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto"
+                  onclick="navigator.clipboard.writeText('${data.report_url}')">Copier</button>
+        </div>
+        <p style="margin:.6rem 0 0;font-size:.8rem">
+          Le rapport apparaîtra après la première analyse. D'ici là, l'adresse
+          renvoie sur la page d'accueil.
+        </p>
       </div>
     `;
     document.getElementById('new-user').value='';
