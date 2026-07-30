@@ -1,0 +1,74 @@
+{
+  "boursobank": {
+    "label": "BoursoBank",
+    "note": "Tarif Découverte. Ordre <= 500 EUR : 1,99 EUR fixe, au-dela 0,60 %.",
+    "fees": {
+      "euronext": { "threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99 },
+      "us":       { "threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95 }
+    }
+  },
+  "trade_republic": {
+    "label": "Trade Republic",
+    "note": "1 EUR de frais externes par ordre, quel que soit le montant.",
+    "fees": {
+      "euronext": { "threshold": 0, "flat": 1.0, "rate": 0.0, "min": 1.0 },
+      "us":       { "threshold": 0, "flat": 1.0, "rate": 0.0, "min": 1.0 }
+    }
+  },
+  "degiro": {
+    "label": "DEGIRO",
+    "note": "Frais de traitement 1 EUR + courtage variable selon la place.",
+    "fees": {
+      "euronext": { "threshold": 0, "flat": 2.0,  "rate": 0.0,    "min": 2.0 },
+      "us":       { "threshold": 0, "flat": 2.0,  "rate": 0.0,    "min": 2.0 }
+    }
+  },
+  "bourse_direct": {
+    "label": "Bourse Direct",
+    "note": "Tarif Optimum Euronext.",
+    "fees": {
+      "euronext": { "threshold": 500,  "flat": 0.99, "rate": 0.0009, "min": 0.99 },
+      "us":       { "threshold": 1000, "flat": 9.9,  "rate": 0.0035, "min": 9.9 }
+    }
+  },
+  "fortuneo": {
+    "label": "Fortuneo",
+    "note": "Tarif Optimum.",
+    "fees": {
+      "euronext": { "threshold": 500,  "flat": 1.95, "rate": 0.0035, "min": 1.95 },
+      "us":       { "threshold": 2000, "flat": 9.5,  "rate": 0.0035, "min": 9.5 }
+    }
+  },
+  "saxo": {
+    "label": "Saxo Banque",
+    "note": "Offre Classic.",
+    "fees": {
+      "euronext": { "threshold": 0, "flat": 2.0, "rate": 0.0008, "min": 2.0 },
+      "us":       { "threshold": 0, "flat": 1.0, "rate": 0.0008, "min": 1.0 }
+    }
+  },
+  "interactive_brokers": {
+    "label": "Interactive Brokers",
+    "note": "Tarif Fixed, minimums par place.",
+    "fees": {
+      "euronext": { "threshold": 0, "flat": 1.25, "rate": 0.0005, "min": 1.25 },
+      "us":       { "threshold": 0, "flat": 1.0,  "rate": 0.0005, "min": 1.0 }
+    }
+  },
+  "autre": {
+    "label": "Autre / personnalisé",
+    "note": "Grille neutre. Saisir custom_fees dans le profil pour l'ajuster.",
+    "fees": {
+      "euronext": { "threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99 },
+      "us":       { "threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95 }
+    }
+  },
+  "sans_frais": {
+    "label": "Aucun frais (simulation)",
+    "note": "Pour analyser la performance brute, sans friction de courtage.",
+    "fees": {
+      "euronext": { "threshold": 0, "flat": 0.0, "rate": 0.0, "min": 0.0 },
+      "us":       { "threshold": 0, "flat": 0.0, "rate": 0.0, "min": 0.0 }
+    }
+  }
+}
