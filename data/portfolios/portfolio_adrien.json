@@ -1,0 +1,14 @@
+{
+  "username": "adrien",
+  "settings": {
+    "broker": "boursobank",
+    "indices": ["S&P 500", "CAC 40"],
+    "watchlist": []
+  },
+  "lines": [
+    { "name": "Palantir Technologies", "ticker": "PLTR",    "market": "us",             "quantity": 2,  "buy_price": 119.06 },
+    { "name": "CoreWeave",             "ticker": "CRWV",    "market": "us",             "quantity": 2,  "buy_price": 93.91 },
+    { "name": "Credit Agricole SA",    "ticker": "ACA.PA",  "market": "euronext_paris", "quantity": 10, "buy_price": 16.90 },
+    { "name": "Abionyx Pharma",        "ticker": "ABNX.PA", "market": "euronext_paris", "quantity": 10, "buy_price": 3.84 }
+  ]
+}
