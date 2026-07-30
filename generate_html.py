@@ -30,10 +30,49 @@ _log = logging.getLogger("generate_html")
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
 
 # ── Chemins ───────────────────────────────────────────────────
-MD_PATH      = Path("reports/daily_report.md")
-HTML_PATH    = Path("docs/index.html")
-ARCHIVE_PATH = Path("docs/archive.json")
-CHARTS_DIR   = Path("reports/charts")
+# --- Chemins : resolus par utilisateur via --user ----------------------------
+import argparse as _argparse
+import re as _re
+
+_ap = _argparse.ArgumentParser(description="Rapport Markdown -> page HTML.")
+_ap.add_argument("--user",   default=None, help="Utilisateur (reports/<user>/ -> docs/<user>/).")
+_ap.add_argument("--output", default=None, help="Dossier de sortie HTML.")
+_ap.add_argument("--input",  default=None, help="Chemin explicite du daily_report.md.")
+_args, _ = _ap.parse_known_args()
+
+def _slug(v):
+    return _re.sub(r"[^a-zA-Z0-9_-]+", "-", str(v or "default").strip().lower()).strip("-") or "default"
+
+USER = _slug(_args.user) if _args.user else None
+
+if _args.input:
+    MD_PATH = Path(_args.input)
+elif USER:
+    MD_PATH = Path(f"reports/{USER}/daily_report.md")
+else:
+    MD_PATH = Path("reports/daily_report.md")
+
+if _args.output:
+    OUT_DIR = Path(_args.output)
+elif USER:
+    # Publication sous un jeton aleatoire et non sous le nom d'utilisateur :
+    # les fichiers servis par Cloudflare Pages sont publics, un chemin
+    # devinable exposerait le portefeuille des autres utilisateurs.
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from api.load_portfolio import dossier_rapport
+        OUT_DIR = Path(dossier_rapport(USER))
+    except Exception as _e:
+        _log.warning("Jeton de rapport indisponible (%s) -- repli sur docs/%s", _e, USER)
+        OUT_DIR = Path(f"docs/{USER}")
+else:
+    OUT_DIR = Path("docs")
+
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+HTML_PATH    = OUT_DIR / "index.html"
+ARCHIVE_PATH = OUT_DIR / "archive.json"
+CHARTS_DIR   = Path(f"reports/{USER}/charts") if USER else Path("reports/charts")
 COMBINED_PNG = CHARTS_DIR / "portfolio_combined.png"
 
 # ── Lecture Markdown ──────────────────────────────────────────
