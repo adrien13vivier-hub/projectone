@@ -46,6 +46,8 @@ DB_PATH          = DATA_DIR / "users.db"
 INTERFACE        = ROOT / "interface.html"
 ANALYZER         = ROOT / "portfolio_analyzer.py"
 GEN_HTML         = ROOT / "generate_html.py"
+GEN_CHART        = ROOT / "generate_chart.py"
+GEN_PORTAL       = ROOT / "generate_portal.py"
 MAX_USERS        = 5
 JWT_SECRET       = os.getenv("JWT_SECRET", "changeme-secret-local")
 JWT_ALG          = "HS256"
@@ -89,7 +91,8 @@ def init_db():
     # Compte admin par défaut si la table est vide
     if not con.execute("SELECT 1 FROM users").fetchone():
         hashed = bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode()
-        report_url = f"{CLOUDFLARE_BASE}/report/admin/index.html"
+        from api.load_portfolio import lien_rapport as _lr
+        report_url = _lr("admin", CLOUDFLARE_BASE)
         con.execute(
             "INSERT INTO users VALUES (?,?,?,?,?,?)",
             ("admin", hashed, "admin",
@@ -128,6 +131,9 @@ def require_admin(user: dict = Depends(current_user)) -> dict:
     return user
 
 # ── Analyse d'un utilisateur ─────────────────────────────────────────
+from api.load_portfolio import lien_rapport, dossier_rapport
+
+
 def run_analysis_for(username: str) -> dict:
     """Exporte le portefeuille, lance l'analyseur et génère le rapport HTML.
     Rapport déposé dans docs/<username>/index.html."""
@@ -142,12 +148,14 @@ def run_analysis_for(username: str) -> dict:
 
     input_file = DATA_DIR / f"active_portfolio_{username}.json"
     input_file.write_text(
-        json.dumps({"username": username, "lines": lines}, ensure_ascii=False, indent=2),
+        json.dumps({"username": username,
+                    "settings": portfolio_data.get("settings", {}),
+                    "lines":    lines}, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
 
     # Dossier de sortie propre à l'utilisateur
-    out_dir = ROOT / "docs" / username
+    out_dir = ROOT / dossier_rapport(username)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logs = []
@@ -167,15 +175,17 @@ def run_analysis_for(username: str) -> dict:
                      "stderr": result.stderr[-2000:] if result.stderr else ""})
         return result.returncode
 
-    rc1 = run([str(ANALYZER), "--portfolio", str(input_file)], "portfolio_analyzer")
-    rc2 = run([str(GEN_HTML), "--user", username, "--output", str(out_dir)], "generate_html")
+    rc1 = run([str(ANALYZER), "--portfolio", str(input_file), "--user", username], "portfolio_analyzer")
+    rc2 = run([str(GEN_HTML),  "--user", username, "--output", str(out_dir)], "generate_html")
+    run([str(GEN_CHART),  "--user", username], "generate_chart")
+    run([str(GEN_PORTAL)], "generate_portal")
 
     success = (rc1 == 0 and rc2 == 0)
     return {
         "success": success,
         "username": username,
         "lines_analyzed": len(lines),
-        "report_url": f"/report/{username}/index.html" if success else None,
+        "report_url": (lien_rapport(username, CLOUDFLARE_BASE) if success else None),
         "logs": logs
     }
 
@@ -223,19 +233,35 @@ app.mount("/report", StaticFiles(directory=str(docs_dir), html=True), name="repo
 
 # ── Modèles ──────────────────────────────────────────────────────────
 class PortfolioLine(BaseModel):
-    name:           str
-    ticker_finnhub: str
-    ticker_eodhd:   str
-    isin:           Optional[str] = ""
-    quantity:       float
-    buy_price:      float
-    market:         str          # us | euronext | xetra | lse | autre
-    broker:         str
-    currency:       str          # EUR | USD | GBP
-    asset_type:     Optional[str] = "action"
+    """Une ligne telle que saisie dans l'interface.
+
+    Un seul ticker suffit : api/load_portfolio.py en dérive les variantes
+    attendues par chaque fournisseur de données.
+    """
+    name:       str
+    ticker:     str
+    isin:       Optional[str] = ""
+    quantity:   float
+    buy_price:  float
+    market:     Optional[str] = "us"     # code de place, voir MARCHES
+    currency:   Optional[str] = None     # déduit de la place si absent
+    asset_type: Optional[str] = "action"
+
+class WatchItem(BaseModel):
+    name:   str
+    ticker: str
+    market: Optional[str] = "us"
+    sector: Optional[str] = ""
+
+class ProfileSettings(BaseModel):
+    broker:       Optional[str]  = "autre"
+    custom_fees:  Optional[dict] = None
+    indices:      Optional[List[str]] = None
+    watchlist:    Optional[List[WatchItem]] = None
 
 class PortfolioSave(BaseModel):
-    lines: List[PortfolioLine]
+    lines:    List[PortfolioLine]
+    settings: Optional[ProfileSettings] = None
 
 class UserCreate(BaseModel):
     username: str
@@ -308,15 +334,47 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
     if user["sub"] != username and user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès interdit")
     pfile = PORTFOLIOS / f"portfolio_{username}.json"
+    settings = data.settings.model_dump() if data.settings else {}
+    if settings.get("watchlist"):
+        settings["watchlist"] = [w for w in settings["watchlist"] if w.get("name")]
+
     pfile.write_text(
         json.dumps({
-            "username":  username,
+            "username": username,
             "saved_at": datetime.now(timezone.utc).isoformat(),
+            "settings": settings,
             "lines":    [l.model_dump() for l in data.lines]
         }, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
-    return {"saved": len(data.lines), "file": str(pfile)}
+
+    # Contrôle immédiat : on renvoie les lignes rejetées pour que l'interface
+    # puisse les signaler à l'utilisateur avant qu'il lance une analyse.
+    erreurs = []
+    try:
+        from api.load_portfolio import load_profile
+        erreurs = load_profile(str(pfile), username).get("erreurs", [])
+    except Exception:
+        pass
+
+    return {"saved": len(data.lines), "file": str(pfile), "erreurs": erreurs}
+
+
+@app.get("/api/brokers")
+def list_brokers():
+    """Catalogue des courtiers proposés dans l'interface."""
+    from api.load_portfolio import charger_courtiers
+    cat = charger_courtiers()
+    return [{"code": c, "label": f.get("label", c), "note": f.get("note", ""),
+             "fees": f.get("fees", {})} for c, f in cat.items()]
+
+
+@app.get("/api/markets")
+def list_markets():
+    """Places de cotation reconnues, pour alimenter le menu déroulant."""
+    from api.load_portfolio import MARCHES
+    return [{"code": c, "label": f["label"], "devise": f["devise"],
+             "suffixe": f["suffixe"]} for c, f in MARCHES.items()]
 
 
 @app.post("/api/analyze/{username}")
@@ -370,8 +428,24 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     slot_index = next((i for i in range(MAX_USERS) if i not in used_slots), nb)
     offset_min = SLOT_MINUTES[slot_index] if slot_index < len(SLOT_MINUTES) else slot_index * 10
 
-    # Lien Cloudflare Pages personnel
-    report_url = f"{CLOUDFLARE_BASE}/report/{data.username}/index.html"
+    # Adresse Cloudflare personnelle, batie sur un jeton aleatoire.
+    # Le nom d'utilisateur n'apparait pas dans l'URL : un chemin devinable
+    # exposerait le portefeuille des autres comptes, Cloudflare Pages ne
+    # sachant pas authentifier les visiteurs.
+    report_url = lien_rapport(data.username, CLOUDFLARE_BASE)
+
+    # Profil vierge, pour que l'utilisateur trouve un support a remplir
+    # des sa premiere connexion.
+    pfile = PORTFOLIOS / f"portfolio_{data.username}.json"
+    if not pfile.exists():
+        pfile.parent.mkdir(parents=True, exist_ok=True)
+        pfile.write_text(json.dumps({
+            "username": data.username,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "settings": {"broker": "autre", "indices": ["S&P 500", "CAC 40"],
+                         "watchlist": []},
+            "lines":    []
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     con.execute(
@@ -395,8 +469,33 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     return {
         "created":    data.username,
         "slot":       f"16h{offset_min:02d} (heure Paris)",
-        "report_url": report_url
+        "report_url": report_url,
+        "message":    ("Transmets cette adresse a l'utilisateur : elle vaut cle "
+                       "d'acces a son rapport et n'est communiquee qu'une fois.")
     }
+
+
+@app.post("/api/users/{username}/rotate-link")
+def rotate_link(username: str, admin: dict = Depends(require_admin)):
+    """Revoque l'adresse actuelle et en genere une nouvelle.
+
+    A utiliser si un utilisateur a diffuse son lien par erreur. L'ancien
+    dossier docs/r/<ancien_jeton>/ doit etre supprime du depot pour que
+    l'ancienne adresse cesse effectivement de repondre.
+    """
+    from api.load_portfolio import jeton_rapport, dossier_rapport as _dr
+    ancien = _dr(username, creer=False)
+    jeton_rapport(username, rotation=True)
+    nouveau_lien = lien_rapport(username, CLOUDFLARE_BASE)
+
+    con = get_db()
+    con.execute("UPDATE users SET report_url=? WHERE username=?", (nouveau_lien, username))
+    con.commit()
+    con.close()
+
+    return {"username": username, "report_url": nouveau_lien,
+            "a_supprimer": ancien,
+            "message": f"Supprime {ancien}/ du depot pour couper l'ancien acces."}
 
 
 @app.delete("/api/users/{username}")
@@ -411,6 +510,18 @@ def delete_user(username: str, admin: dict = Depends(require_admin)):
     pfile = PORTFOLIOS / f"portfolio_{username}.json"
     if pfile.exists():
         pfile.unlink()
+    # Retire le rapport publie et le jeton associe
+    try:
+        import shutil as _shutil
+        from api.load_portfolio import charger_liens, enregistrer_liens, dossier_rapport as _dr
+        dossier = ROOT / _dr(username, creer=False)
+        if dossier.exists():
+            _shutil.rmtree(dossier)
+        table = charger_liens()
+        table.pop(username.strip().lower(), None)
+        enregistrer_liens(table)
+    except Exception as e:
+        print(f"[Suppression] Nettoyage partiel pour {username} : {e}")
     # Supprime le job scheduler
     job_id = f"analyze_{username}"
     if scheduler.get_job(job_id):
