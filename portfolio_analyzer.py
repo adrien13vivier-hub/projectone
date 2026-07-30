@@ -1,48 +1,50 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v6.5
+Portfolio Analyzer v7.0 -- MOTEUR MULTI-UTILISATEUR
 ================================================================================
-CHANGEMENTS v6.5 par rapport a v6.4 :
+Le script n'est plus calque sur un portefeuille en dur. Il prend un PROFIL en
+entree (JSON) et produit un rapport isole par utilisateur.
 
-PROBLEME CONSTATE : seules 2 valeurs sur 4 apparaissaient sur le graphique
-combine. Cause racine : tout l'historique etait collecte en granularite
-MENSUELLE (AlphaVantage TIME_SERIES_MONTHLY, EODHD period="m", Finnhub
-resolution="W" reagrege par mois). Sur une fenetre de 1 mois, chaque valeur
-ne renvoyait donc que 1 ou 2 points -> rejet par les garde-fous len >= 2,
-puis repli sur le cache. Seules les valeurs dont le cache datait encore de
-l'epoque "3 mois" avaient assez de points pour etre tracees.
+UTILISATION
+-----------
+  python portfolio_analyzer.py --portfolio data/portfolios/portfolio_alice.json
+  python portfolio_analyzer.py --user alice
+  python portfolio_analyzer.py --all-users        # les 5 profils en un seul run
 
-CORRECTIONS :
+ISOLATION PAR UTILISATEUR
+-------------------------
+  reports/<user>/history.csv          historique CSV
+  reports/<user>/daily_report.md      rapport Markdown
+  reports/<user>/charts/              graphiques PNG
+  docs/<user>/index.html              page consultable (Cloudflare)
 
-1. COLLECTE JOURNALIERE — AlphaVantage TIME_SERIES_DAILY, EODHD period="d",
-   Finnhub resolution="D". ~21 points de cotation par mois au lieu de 1.
+MUTUALISATION DES APPELS API
+----------------------------
+  cache/market_cache.json est PARTAGE par tous les utilisateurs : les donnees
+  de marche sont indexees par ticker, pas par personne.
+  En mode --all-users, un memo en RAM (_MEMO) garantit qu'un ticker detenu par
+  plusieurs utilisateurs n'est interroge qu'UNE SEULE FOIS.
+  Exemple : 5 utilisateurs detenant Palantir = 1 appel, pas 5.
 
-2. PROFONDEUR vs AFFICHAGE dissocies :
-     HISTORY_DAYS      = 180  -> profondeur collectee (necessaire au scoring)
-     CHART_WINDOW_DAYS = 30   -> fenetre reellement affichee sur le graphique
-   Le graphique reste donc bien sur 1 mois, mais les rendements 3M et 6M du
-   score de tendance (30% de la note finale) restent calculables.
+PARAMETRES PORTES PAR LE PROFIL (et non plus codes en dur)
+----------------------------------------------------------
+  lignes du portefeuille, watchlist, indices suivis, courtier et sa grille de
+  frais, devise de reference.
 
-3. EODHD ajoute comme repli daily pour les valeurs US (avant Finnhub).
-
-4. score_history() calcule desormais les rendements PAR DATE et non plus par
-   index de liste (closes[-2], closes[-4], closes[-7] supposaient des points
-   mensuels : en journalier cela revenait a comparer la veille et l'avant-
-   veille).
-
-5. generate_combined_chart() : chaque valeur du portefeuille est desormais
-   tracee meme si elle n'a que peu de points dans la fenetre (amorcage sur
-   le dernier cours connu AVANT la fenetre). Toutes les courbes parcourent
-   la totalite de l'axe X.
+Format du profil : voir api/load_portfolio.py
 ================================================================================
 """
 
 import os
+import sys
+import argparse
+import re as _re
 import csv
 import json
 import logging
 import time
 import threading
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 import xml.etree.ElementTree as ET
@@ -74,9 +76,57 @@ AV_BASE  = "https://www.alphavantage.co/query"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
 DIVERGENCE_THRESHOLD_PCT = 2.0
-CACHE_PATH   = "cache/session_cache.json"
-HISTORY_PATH = "reports/history.csv"
-CHARTS_DIR   = "reports/charts"
+
+# --- CHEMINS ------------------------------------------------------------------
+# Le cache de MARCHE est volontairement PARTAGE : les cours, historiques et
+# sentiments sont des donnees publiques identiques pour tous les utilisateurs.
+# C'est ce qui permet de ne pas multiplier les appels API par le nombre de
+# comptes.
+CACHE_PATH        = "cache/market_cache.json"
+PORTFOLIOS_DIR    = "data/portfolios"
+BROKERS_PATH      = "data/brokers.json"
+LEGACY_CACHE_PATH = "cache/session_cache.json"
+
+# Chemins propres a l'utilisateur courant -- reaffectes par set_user().
+USER         = "default"
+HISTORY_PATH = "reports/default/history.csv"
+CHARTS_DIR   = "reports/default/charts"
+REPORT_PATH  = "reports/default/daily_report.md"
+
+
+def slugify(value: str) -> str:
+    """Normalise un nom d'utilisateur en identifiant de dossier sur."""
+    s = _re.sub(r"[^a-zA-Z0-9_-]+", "-", str(value or "default").strip().lower())
+    return s.strip("-") or "default"
+
+
+def set_user(username: str):
+    """Bascule tous les chemins de sortie vers l'utilisateur indique."""
+    global USER, HISTORY_PATH, CHARTS_DIR, REPORT_PATH
+    USER         = slugify(username)
+    HISTORY_PATH = f"reports/{USER}/history.csv"
+    CHARTS_DIR   = f"reports/{USER}/charts"
+    REPORT_PATH  = f"reports/{USER}/daily_report.md"
+    os.makedirs(CHARTS_DIR, exist_ok=True)
+    os.makedirs(f"docs/{USER}", exist_ok=True)
+    _migrate_legacy_files()
+
+
+def _migrate_legacy_files():
+    """Reprend le cache de marche de l'ancienne version.
+
+    Le cache contient des donnees publiques indexees par ticker : il est
+    legitimement partageable entre tous les utilisateurs.
+    L'ancien reports/history.csv n'est PAS repris automatiquement : il
+    appartient a un seul utilisateur et le recopier partout fausserait les
+    historiques. Le deplacer une fois a la main (voir README).
+    """
+    try:
+        if os.path.exists(LEGACY_CACHE_PATH) and not os.path.exists(CACHE_PATH):
+            os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+            shutil.copyfile(LEGACY_CACHE_PATH, CACHE_PATH)
+    except Exception as e:
+        _log.warning("Migration ancien format ignoree : %s", e)
 
 # --- FENETRE HISTORIQUE (1 mois) --------------------------------------------
 HISTORY_DAYS      = 180     # profondeur de collecte, en cotations JOURNALIERES
@@ -112,46 +162,82 @@ def _quota_status() -> dict:
     return {k: f"{v['used']}/{v['limit']}" for k, v in _QUOTA.items()}
 
 
-# --- PORTEFEUILLE ------------------------------------------------------------
-PORTFOLIO = [
-    {"name": "Palantir Technologies", "isin": "US69608A1088",
-     "ticker_fh": "PLTR",    "ticker_eod": "PLTR.US",  "ticker_td": "PLTR",  "ticker_av": "PLTR",  "ticker_yf": "PLTR",
-     "qty": 2,  "cost_eur": 119.06, "marche": "us"},
-    {"name": "CoreWeave",             "isin": "US21873S1087",
-     "ticker_fh": "CRWV",    "ticker_eod": "CRWV.US",  "ticker_td": "CRWV",  "ticker_av": "CRWV",  "ticker_yf": "CRWV",
-     "qty": 2,  "cost_eur": 93.91,  "marche": "us"},
-    {"name": "Credit Agricole SA",    "isin": "FR0000045072",
-     "ticker_fh": "ACA.PA",  "ticker_eod": "ACA.PA",   "ticker_td": None,    "ticker_av": None,    "ticker_yf": "ACA.PA",
-     "qty": 10, "cost_eur": 16.90,  "marche": "euronext"},
-    {"name": "Abionyx Pharma",        "isin": "FR0012616852",
-     "ticker_fh": "ABNX.PA", "ticker_eod": "ABNX.PA",  "ticker_td": None,    "ticker_av": None,    "ticker_yf": "ABNX.PA",
-     "qty": 10, "cost_eur": 3.84,   "marche": "euronext"},
-]
+# --- PROFIL UTILISATEUR -------------------------------------------------------
+# Ces quatre structures ne contiennent plus rien en dur : elles sont remplies
+# par apply_profile() a partir du JSON de l'utilisateur.
 
-INDICES = {
+PORTFOLIO: list = []
+WATCHLIST: list = []
+
+# Indices macro par defaut. Un profil peut fournir sa propre selection.
+DEFAULT_INDICES = {
     "S&P 500":    {"eod": "GSPC.INDX", "fh": "^GSPC"},
     "CAC 40":     {"eod": "FCHI.INDX", "fh": "^FCHI"},
     "Nikkei 225": {"eod": "N225.INDX", "fh": "^N225"},
 }
+INDICES = dict(DEFAULT_INDICES)
 
-WATCHLIST = [
-    {"name": "NVIDIA",        "ticker_fh": "NVDA",   "ticker_eod": "NVDA.US", "ticker_td": "NVDA",  "ticker_av": "NVDA",  "ticker_yf": "NVDA",  "marche": "us",       "sector": "IA / Semi-conducteurs"},
-    {"name": "Microsoft",     "ticker_fh": "MSFT",   "ticker_eod": "MSFT.US", "ticker_td": "MSFT",  "ticker_av": "MSFT",  "ticker_yf": "MSFT",  "marche": "us",       "sector": "IA / Cloud"},
-    {"name": "Coinbase",      "ticker_fh": "COIN",   "ticker_eod": "COIN.US", "ticker_td": "COIN",  "ticker_av": "COIN",  "ticker_yf": "COIN",  "marche": "us",       "sector": "Crypto / Fintech"},
-    {"name": "LVMH",          "ticker_fh": "MC.PA",  "ticker_eod": "MC.PA",   "ticker_td": None,    "ticker_av": None,    "ticker_yf": "MC.PA", "marche": "euronext", "sector": "Luxe / Consommation"},
-    {"name": "TotalEnergies", "ticker_fh": "TTE.PA", "ticker_eod": "TTE.PA",  "ticker_td": None,    "ticker_av": None,    "ticker_yf": "TTE.PA","marche": "euronext", "sector": "Energie"},
-    {"name": "Airbus",        "ticker_fh": "AIR.PA", "ticker_eod": "AIR.PA",  "ticker_td": None,    "ticker_av": None,    "ticker_yf": "AIR.PA","marche": "euronext", "sector": "Aeronautique / Defense"},
-]
-
-BROKERAGE = {
-    "euronext": {"threshold": 500,  "flat": 1.99,  "rate": 0.006,  "min": 1.99},
-    "us":       {"threshold": 6000, "flat": 6.95,  "rate": 0.0012, "min": 6.95},
+# Grille de frais neutre, utilisee si le profil ne precise aucun courtier.
+DEFAULT_BROKERAGE = {
+    "euronext": {"threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99},
+    "us":       {"threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95},
 }
+BROKERAGE   = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
+BROKER_NAME = "Grille par defaut"
+
+PROFILE: dict = {}
+
+
+def apply_profile(profile: dict):
+    """Charge un profil utilisateur dans l'etat global du module."""
+    global PORTFOLIO, WATCHLIST, INDICES, BROKERAGE, BROKER_NAME, PROFILE
+
+    PROFILE   = profile or {}
+    settings  = PROFILE.get("settings") or {}
+
+    PORTFOLIO = PROFILE.get("lines") or []
+    WATCHLIST = settings.get("watchlist") or []
+
+    idx = settings.get("indices")
+    if isinstance(idx, dict) and idx:
+        INDICES = idx
+    elif isinstance(idx, list) and idx:
+        INDICES = {n: DEFAULT_INDICES[n] for n in idx if n in DEFAULT_INDICES} or dict(DEFAULT_INDICES)
+    else:
+        INDICES = dict(DEFAULT_INDICES)
+
+    fees = settings.get("fees")
+    if isinstance(fees, dict) and fees:
+        BROKERAGE = {k: dict(v) for k, v in fees.items()}
+    else:
+        BROKERAGE = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
+    BROKER_NAME = settings.get("broker_label") or settings.get("broker") or "Grille par defaut"
+
+    set_user(PROFILE.get("username") or "default")
 
 
 def calc_fee(amount: float, marche: str) -> float:
-    t = BROKERAGE.get(marche, BROKERAGE["euronext"])
-    return round(max(t["flat"] if amount <= t["threshold"] else t["rate"] * amount, t["min"]), 2)
+    """Frais de courtage pour un montant donne, selon la grille du profil."""
+    t = BROKERAGE.get(marche) or BROKERAGE.get("euronext") or DEFAULT_BROKERAGE["euronext"]
+    flat  = float(t.get("flat", 0.0))
+    rate  = float(t.get("rate", 0.0))
+    seuil = float(t.get("threshold", 0.0))
+    mini  = float(t.get("min", 0.0))
+    brut  = flat if (seuil and amount <= seuil) else rate * amount
+    return round(max(brut, mini), 2)
+
+
+# =============================================================================
+# MUTUALISATION DES APPELS API
+# =============================================================================
+# Indexe par TICKER et non par utilisateur : si trois profils detiennent la
+# meme valeur, elle n'est interrogee qu'une fois pour l'ensemble du run.
+
+_MEMO: dict = {}
+
+
+def memo_stats() -> dict:
+    return {"entrees": len(_MEMO)}
 
 
 # =============================================================================
@@ -1156,16 +1242,29 @@ def _fetch_asset_data(asset: dict, eur_usd: float,
 # MAIN — génération du rapport complet
 # =============================================================================
 
-def main():
+def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = True):
+    """Produit le rapport d'UN utilisateur.
+
+    profile      : dict issu de load_profile(). Si None, on garde l'etat courant.
+    shared_cache : cache de marche partage entre plusieurs utilisateurs d'un
+                   meme run (mode --all-users). Si None, il est charge/sauve ici.
+    """
     global session_cache_global
 
-    now = datetime.now(PARIS_TZ)
-    os.makedirs("reports/charts", exist_ok=True)
-    os.makedirs("reports", exist_ok=True)
-    os.makedirs("cache", exist_ok=True)
-    os.makedirs("docs", exist_ok=True)
+    if profile is not None:
+        apply_profile(profile)
 
-    session_cache = load_session_cache()
+    if not PORTFOLIO:
+        _log.error("Portefeuille vide pour '%s' -- rien a analyser.", USER)
+        return False
+
+    now = datetime.now(PARIS_TZ)
+    os.makedirs(CHARTS_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
+    os.makedirs("cache", exist_ok=True)
+    os.makedirs(f"docs/{USER}", exist_ok=True)
+
+    session_cache = shared_cache if shared_cache is not None else load_session_cache()
     session_cache_global = session_cache
 
     # ── 1. EUR/USD ────────────────────────────────────────────────────────────
@@ -1178,40 +1277,49 @@ def main():
     td_prices = td_fetch_batch(list(set(filter(None, us_tickers)))) if TWELVEDATA_KEY else {}
 
     # ── 3. Cours par position + données parallèles ────────────────────────────
-    prices     = {}
-    asset_data = {}
+    # Seuls les tickers encore inconnus du memo sont interroges : c'est ici que
+    # se joue la mutualisation entre utilisateurs.
+    a_faire_px = {a["ticker_eod"]: a for a in PORTFOLIO
+                  if f"px:{a['ticker_eod']}" not in _MEMO}
+    a_faire_ad = {a["ticker_eod"]: a for a in PORTFOLIO
+                  if f"ad:{a['ticker_eod']}" not in _MEMO}
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
-        price_futures = {
-            exe.submit(get_price_eur, a, eur_usd, td_prices, session_cache): a
-            for a in PORTFOLIO
-        }
-        for fut in as_completed(price_futures):
-            a = price_futures[fut]
-            try:
-                prices[a["ticker_eod"]] = fut.result()
-            except Exception as e:
-                _log.warning("Cours %s : %s", a["ticker_eod"], e)
-                prices[a["ticker_eod"]] = (None, 0.0, "Erreur", False, str(e))
+    if a_faire_px:
+        with ThreadPoolExecutor(max_workers=4) as exe:
+            price_futures = {
+                exe.submit(get_price_eur, a, eur_usd, td_prices, session_cache): a
+                for a in a_faire_px.values()
+            }
+            for fut in as_completed(price_futures):
+                a = price_futures[fut]
+                try:
+                    _MEMO[f"px:{a['ticker_eod']}"] = fut.result()
+                except Exception as e:
+                    _log.warning("Cours %s : %s", a["ticker_eod"], e)
+                    _MEMO[f"px:{a['ticker_eod']}"] = (None, 0.0, "Erreur", False, str(e))
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
-        data_futures = {
-            exe.submit(_fetch_asset_data, a, eur_usd, td_prices, session_cache): a
-            for a in PORTFOLIO
-        }
-        for fut in as_completed(data_futures):
-            a = data_futures[fut]
-            try:
-                asset_data[a["ticker_eod"]] = fut.result()
-            except Exception as e:
-                _log.warning("Données %s : %s", a["ticker_eod"], e)
-                asset_data[a["ticker_eod"]] = {
+    if a_faire_ad:
+        with ThreadPoolExecutor(max_workers=4) as exe:
+            data_futures = {
+                exe.submit(_fetch_asset_data, a, eur_usd, td_prices, session_cache): a
+                for a in a_faire_ad.values()
+            }
+            for fut in as_completed(data_futures):
+                a = data_futures[fut]
+                try:
+                    _MEMO[f"ad:{a['ticker_eod']}"] = fut.result()
+                except Exception as e:
+                    _log.warning("Données %s : %s", a["ticker_eod"], e)
+                    _MEMO[f"ad:{a['ticker_eod']}"] = {
                     "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "erreur",
                     "cs": 5.0, "cons_str": "N/D", "cons_src": "erreur",
                     "h_dates": [], "h_closes": [], "h_src": "erreur",
                     "h_cache": False, "h_err": str(e),
-                    "synthesis": "Données indisponibles.", "synth_src": "",
-                }
+                        "synthesis": "Données indisponibles.", "synth_src": "",
+                    }
+
+    prices     = {a["ticker_eod"]: _MEMO[f"px:{a['ticker_eod']}"] for a in PORTFOLIO}
+    asset_data = {a["ticker_eod"]: _MEMO[f"ad:{a['ticker_eod']}"] for a in PORTFOLIO}
 
     # ── 4. Indices macro ──────────────────────────────────────────────────────
     indices_data = {}
@@ -1223,14 +1331,19 @@ def main():
     # ── 5. Watchlist cours ────────────────────────────────────────────────────
     watchlist_prices = {}
     for w in WATCHLIST:
-        p, chg, src, from_cache, note = get_price_eur(w, eur_usd, td_prices, session_cache)
-        watchlist_prices[w["ticker_eod"]] = (p, chg, src, from_cache)
+        k = f"wpx:{w['ticker_eod']}"
+        if k not in _MEMO:
+            p, chg, src, from_cache, note = get_price_eur(w, eur_usd, td_prices, session_cache)
+            _MEMO[k] = (p, chg, src, from_cache)
+        watchlist_prices[w["ticker_eod"]] = _MEMO[k]
 
     # ── 6. Watchlist news (RSS) ───────────────────────────────────────────────
     watchlist_synth = {}
     for w in WATCHLIST:
-        synth, synth_src = get_news_synthesis(w)
-        watchlist_synth[w["ticker_eod"]] = (synth, synth_src)
+        k = f"wsy:{w['ticker_eod']}"
+        if k not in _MEMO:
+            _MEMO[k] = get_news_synthesis(w)
+        watchlist_synth[w["ticker_eod"]] = _MEMO[k]
 
     # ── 7. Calculs PnL + scoring par position ────────────────────────────────
     results      = []
@@ -1365,11 +1478,12 @@ def main():
     total_pnl_net_pct = round(total_pnl_net / total_cost * 100, 2) if total_cost else 0
 
     # ── 10. Graphique combiné ─────────────────────────────────────────────────
-    chart_path   = f"{CHARTS_DIR}/portfolio_combined.png"
+    chart_path   = os.path.join(CHARTS_DIR, "portfolio_combined.png")
     chart_ok     = generate_combined_chart(assets_history, chart_path)
 
     # ── 11. Sauvegarde cache ──────────────────────────────────────────────────
-    save_session_cache(session_cache)
+    if save_cache:
+        save_session_cache(session_cache)
 
     # ── 12. Historique CSV ────────────────────────────────────────────────────
     append_history(now, history_rows)
@@ -1378,7 +1492,7 @@ def main():
     macro_trend = "Haussiere" if macro_score >= 6 else "Baissiere" if macro_score <= 4 else "Neutre"
 
     lines = [
-        f"# Rapport de Portefeuille v6.3 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# Rapport de Portefeuille v7.0 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "",
         "---",
         "",
@@ -1509,6 +1623,8 @@ def main():
             lines.append(f"- **{k}** : {v}")
 
     lines += ["", f"**Quotas API utilisés :** {_quota_status()}", ""]
+    lines += [f"**Profil :** {PROFILE.get('username', USER)} | "
+              f"**Courtier :** {BROKER_NAME}", ""]
 
     if cache_warns:
         lines += ["", "## Avertissements Cache", ""]
@@ -1519,13 +1635,123 @@ def main():
     if eur_usd_warn:
         lines += ["", f"> ⚠️  {eur_usd_warn}", ""]
 
-    report_path = "reports/daily_report.md"
+    report_path = REPORT_PATH
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
     print(f"Rapport généré : {report_path}")
     print(f"Quotas finaux  : {_quota_status()}")
+    return True
+
+
+# =============================================================================
+# CHARGEMENT DES PROFILS
+# =============================================================================
+
+def _normaliser(raw: dict, username: str = None) -> dict:
+    """Convertit un JSON de profil vers le format interne.
+
+    On delegue a api/load_portfolio.py quand il est disponible (c'est lui qui
+    porte la logique de derivation des tickers et des grilles de courtiers) ;
+    sinon on suppose que le JSON est deja au format interne.
+    """
+    try:
+        from api.load_portfolio import normalize_profile
+        return normalize_profile(raw, username)
+    except Exception as e:
+        _log.warning("Normalisation par defaut (api/load_portfolio indisponible : %s)", e)
+        prof = dict(raw or {})
+        prof.setdefault("username", username or "default")
+        prof.setdefault("lines", [])
+        prof.setdefault("settings", {})
+        return prof
+
+
+def load_profile(path: str, username: str = None) -> dict:
+    """Charge un profil depuis un fichier JSON."""
+    with open(path, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    return _normaliser(raw, username or raw.get("username"))
+
+
+def discover_profiles() -> list:
+    """Retourne tous les profils presents dans data/portfolios/."""
+    profils = []
+    if not os.path.isdir(PORTFOLIOS_DIR):
+        return profils
+    for fname in sorted(os.listdir(PORTFOLIOS_DIR)):
+        if not fname.endswith(".json"):
+            continue
+        chemin = os.path.join(PORTFOLIOS_DIR, fname)
+        uname  = fname[len("portfolio_"):-len(".json")] if fname.startswith("portfolio_") \
+                 else fname[:-len(".json")]
+        try:
+            profils.append(load_profile(chemin, uname))
+        except Exception as e:
+            _log.error("Profil illisible %s : %s", chemin, e)
+    return profils
+
+
+def run_all_users() -> int:
+    """Traite tous les profils dans UN SEUL processus.
+
+    Le cache de marche et le memo sont partages : un ticker detenu par
+    plusieurs utilisateurs n'entraine qu'un seul appel API.
+    """
+    profils = discover_profiles()
+    if not profils:
+        _log.error("Aucun profil dans %s", PORTFOLIOS_DIR)
+        return 1
+
+    cache = load_session_cache()
+    ok_count = 0
+    for prof in profils:
+        uname = prof.get("username", "?")
+        print(f"\n=== Analyse : {uname} ({len(prof.get('lines', []))} ligne(s)) ===")
+        try:
+            if main(prof, shared_cache=cache, save_cache=False):
+                ok_count += 1
+        except Exception as e:
+            _log.error("Echec pour %s : %s", uname, e)
+
+    save_session_cache(cache)
+    print(f"\n{ok_count}/{len(profils)} profil(s) traite(s). "
+          f"Appels mutualises : {len(_MEMO)} entrees en memo pour "
+          f"{sum(len(p.get('lines', [])) for p in profils)} ligne(s) cumulees.")
+    print(f"Quotas finaux : {_quota_status()}")
+    return 0 if ok_count else 1
+
+
+def cli():
+    ap = argparse.ArgumentParser(
+        description="Analyseur de portefeuille multi-utilisateur."
+    )
+    ap.add_argument("--portfolio", help="Chemin vers un JSON de profil.")
+    ap.add_argument("--user",      help="Nom d'utilisateur (lit data/portfolios/portfolio_<user>.json).")
+    ap.add_argument("--all-users", action="store_true",
+                    help="Traite tous les profils en un seul run (mutualise les appels API).")
+    args = ap.parse_args()
+
+    if args.all_users:
+        return run_all_users()
+
+    if args.portfolio:
+        chemin = args.portfolio
+        uname  = args.user
+    elif args.user:
+        chemin = os.path.join(PORTFOLIOS_DIR, f"portfolio_{slugify(args.user)}.json")
+        uname  = args.user
+    else:
+        ap.error("Preciser --portfolio, --user ou --all-users.")
+        return 2
+
+    if not os.path.exists(chemin):
+        _log.error("Profil introuvable : %s", chemin)
+        return 1
+
+    profil = load_profile(chemin, uname)
+    return 0 if main(profil) else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(cli())
