@@ -1,4 +1,12 @@
 /*
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow
+
+# Les rapports ne doivent jamais être indexés ni mis en cache par un proxy
+# partagé : l'adresse fait office de clé d'accès.
+/r/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: private, no-store
+  Referrer-Policy: no-referrer
