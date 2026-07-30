@@ -1,9 +1,7 @@
-# Rapports personnels : servis tels quels depuis docs/r/<jeton>/
-/r/*/          /r/:splat/index.html   200
+# L'ancien schéma mono-profil ne doit plus exposer de rapport.
+/report/*   /   301
 
-# Ancien schéma mono-profil -> page d'accueil (les liens partagés avant
-# la v7 ne doivent plus exposer de rapport).
-/report/*      /index.html            301
-
-# Tout le reste retombe sur la page d'accueil neutre.
-/*             /index.html            200
+# Aucune règle générique : les rapports sont servis directement depuis
+# docs/r/<jeton>/index.html par Cloudflare. Une adresse inconnue doit
+# renvoyer une vraie erreur 404, pas la page d'accueil — sinon un lien
+# erroné passe inaperçu, comme cela vient d'arriver.
