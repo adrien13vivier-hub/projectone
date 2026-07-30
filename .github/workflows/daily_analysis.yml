@@ -1,5 +1,5 @@
 # v6.1 — Corrections guard anti-doublon + robustesse keepalive
-name: Daily Portfolio Report v6.1
+name: Daily Portfolio Report v7.0 (multi-utilisateur)
 
 on:
   schedule:
@@ -43,7 +43,9 @@ jobs:
           TODAY=$(date -u +'%Y-%m-%d')
           # Vérification dans history.csv (source de vérité principale)
           HISTORY_OK=false
-          if [ -f "reports/history.csv" ] && grep -q "^$TODAY," reports/history.csv; then
+          # Multi-utilisateur : on inspecte reports/<user>/history.csv
+          if ls reports/*/history.csv >/dev/null 2>&1 \
+             && grep -q "^$TODAY," reports/*/history.csv; then
             HISTORY_OK=true
           fi
           # Vérification dans .last_run (backup)
@@ -104,24 +106,51 @@ jobs:
           TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
         run: |
-          mkdir -p reports/charts cache docs
-          python portfolio_analyzer.py || { echo "❌ ERREUR portfolio_analyzer.py (code $?)"; exit 1; }
+          mkdir -p reports cache docs data/portfolios
+          if ! ls data/portfolios/*.json >/dev/null 2>&1; then
+            echo "❌ Aucun profil dans data/portfolios/ — rien à analyser."
+            exit 1
+          fi
+          echo "Profils détectés :"
+          ls -1 data/portfolios/*.json
+          # --all-users : un seul processus, les appels API sont mutualisés
+          # entre les utilisateurs qui détiennent les mêmes valeurs.
+          python portfolio_analyzer.py --all-users \
+            || { echo "❌ ERREUR portfolio_analyzer.py (code $?)"; exit 1; }
 
       # ── 5. Génération HTML → docs/index.html (Cloudflare Pages) ─────────
-      - name: Generate HTML report for Cloudflare Pages
+      - name: Generate HTML reports for Cloudflare Pages
         if: steps.check_today.outputs.already_done == 'false'
         id: generate_html
         run: |
           mkdir -p docs
-          python generate_html.py || { echo "❌ ERREUR generate_html.py (code $?)"; exit 1; }
-          ls -lh docs/index.html || { echo "❌ docs/index.html non généré"; exit 1; }
+          for f in data/portfolios/*.json; do
+            USER=$(basename "$f" .json | sed 's/^portfolio_//')
+            if [ ! -f "reports/$USER/daily_report.md" ]; then
+              echo "⏭️  $USER : pas de rapport, ignoré."
+              continue
+            fi
+            echo "── $USER ──"
+            python generate_html.py  --user "$USER" \
+              || { echo "❌ generate_html.py a échoué pour $USER"; exit 1; }
+            python generate_chart.py --user "$USER" \
+              || { echo "❌ generate_chart.py a échoué pour $USER"; exit 1; }
+          done
+          # Les rapports sont publiés sous docs/r/<jeton>/ : le nom
+          # d'utilisateur n'apparaît jamais dans l'URL.
+          find docs/r -name index.html -exec ls -lh {} \; 2>/dev/null || true
 
-      # ── 6. Génération du graphique PnL historique → docs/chart.html ──────
-      - name: Generate PnL history chart
+      # ── 6. Page d'accueil listant tous les profils ───────────────────────
+      - name: Generate landing page & report links
         if: steps.check_today.outputs.already_done == 'false'
+        env:
+          CLOUDFLARE_PAGES_URL: ${{ vars.CLOUDFLARE_PAGES_URL }}
         run: |
-          python generate_chart.py || { echo "❌ ERREUR generate_chart.py (code $?)"; exit 1; }
-          ls -lh docs/chart.html || { echo "❌ docs/chart.html non généré"; exit 1; }
+          # Imprime aussi le récapitulatif des liens privés. Ce journal n'est
+          # lisible que par les personnes ayant accès au dépôt : il doit donc
+          # rester privé.
+          python generate_portal.py || { echo "❌ ERREUR generate_portal.py (code $?)"; exit 1; }
+          ls -lh docs/index.html || { echo "❌ docs/index.html non généré"; exit 1; }
 
       # ── 7. Commit rapport + graphiques + pages HTML ─────────────────────
       # CORRECTION : le commit est TOUJOURS effectué (même si diff minimal)
@@ -134,6 +163,8 @@ jobs:
           echo "$(date +'%Y-%m-%d %H:%M:%S UTC')" > reports/.last_run
           git add reports/
           git add docs/
+          git add data/portfolios/ || true
+          git add data/report_links.json || true
           git add cache/ || true
           if git diff --cached --quiet; then
             # CORRECTION : même si aucun changement de données, on force un commit
