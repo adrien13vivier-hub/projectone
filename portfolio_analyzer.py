@@ -1,37 +1,72 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v7.0 -- MOTEUR MULTI-UTILISATEUR
+Portfolio Analyzer v7.2 -- NOTATION REFONDUE
 ================================================================================
-Le script n'est plus calque sur un portefeuille en dur. Il prend un PROFIL en
-entree (JSON) et produit un rapport isole par utilisateur.
 
-UTILISATION
------------
-  python portfolio_analyzer.py --portfolio data/portfolios/portfolio_alice.json
-  python portfolio_analyzer.py --user alice
-  python portfolio_analyzer.py --all-users        # les 5 profils en un seul run
+CE QUI CHANGE, ET POURQUOI
+--------------------------
 
-ISOLATION PAR UTILISATEUR
--------------------------
-  reports/<user>/history.csv          historique CSV
-  reports/<user>/daily_report.md      rapport Markdown
-  reports/<user>/charts/              graphiques PNG
-  docs/<user>/index.html              page consultable (Cloudflare)
+L'ancienne formule etait :
 
-MUTUALISATION DES APPELS API
-----------------------------
-  cache/market_cache.json est PARTAGE par tous les utilisateurs : les donnees
-  de marche sont indexees par ticker, pas par personne.
-  En mode --all-users, un memo en RAM (_MEMO) garantit qu'un ticker detenu par
-  plusieurs utilisateurs n'est interroge qu'UNE SEULE FOIS.
-  Exemple : 5 utilisateurs detenant Palantir = 1 appel, pas 5.
+    note = 0.30 * plus-value_latente
+         + 0.20 * sentiment_presse
+         + 0.20 * consensus_analystes
+         + 0.30 * momentum
 
-PARAMETRES PORTES PAR LE PROFIL (et non plus codes en dur)
-----------------------------------------------------------
-  lignes du portefeuille, watchlist, indices suivis, courtier et sa grille de
-  frais, devise de reference.
+Trois defauts structurels :
 
-Format du profil : voir api/load_portfolio.py
+1. LE PRIX DE REVIENT N'EST PAS UNE PROPRIETE DU TITRE. Deux personnes
+   detenant la meme action recevaient deux notes differentes selon leur date
+   d'achat. Le titre, lui, vaut la meme chose pour tout le monde.
+
+2. LE PRIX COMPTAIT DOUBLE. Plus-value (30%) et momentum (30%) mesurent la
+   meme chose sur une position recente : 60% de la note disait "ca a monte".
+   La formule etait procyclique -- au plus haut juste avant les corrections.
+
+3. AUCUN FONDAMENTAL. Un titre a 90x les benefices pouvait obtenir ACHAT FORT
+   parce qu'il avait monte et que la presse etait enthousiaste.
+
+NOUVELLE ARCHITECTURE : DEUX INDICATEURS DISTINCTS
+--------------------------------------------------
+
+  NOTE DU TITRE (0-10)  -- ne depend PAS de qui le detient
+      Valorisation ............ 22%   PER, PEG, EV/EBITDA, P/B
+      Sante financiere ........ 18%   marges, ROE, dette/fonds propres
+      Croissance .............. 15%   chiffre d'affaires, benefices
+      Momentum ................ 20%   avec penalite de surchauffe
+      Consensus analystes ..... 13%
+      Sentiment presse ........ 07%
+      Risque / volatilite ..... 05%
+
+  MA POSITION           -- specifique au detenteur, PAS dans la note
+      plus-value nette, seuil de rentabilite apres frais, poids dans le
+      portefeuille, ecart au consensus de prix cible.
+
+La recommandation croise les deux : un titre bien note qu'on detient en
+moins-value n'appelle pas la meme action qu'un titre mal note en plus-value.
+
+GESTION DES DONNEES MANQUANTES
+------------------------------
+L'ancienne version mettait 5.0 par defaut, ce qui tirait silencieusement
+toutes les notes vers le milieu. Desormais une composante absente est
+EXCLUE et les poids restants sont renormalises. Un INDICE DE CONFIANCE
+(part des poids reellement disponibles) accompagne chaque note : une note
+de 8/10 calculee sur 40% des criteres n'a pas la valeur d'une note de 8/10
+calculee sur 95%.
+
+LIMITES ASSUMEES -- a lire avant de s'y fier
+--------------------------------------------
+- Aucune formule ne predit les rendements futurs. Ceci est un outil de
+  hierarchisation et d'alerte, pas un signal d'achat.
+- Les seuils de valorisation sont GENERALISTES. Un PER de 40 n'a pas le meme
+  sens pour un editeur de logiciels et pour une banque. Le PEG corrige
+  partiellement en integrant la croissance, mais la comparaison sectorielle
+  n'est pas implementee.
+- Les fondamentaux EODHD sont trimestriels : ils ne bougent pas d'un jour a
+  l'autre. Seuls momentum, sentiment et cours evoluent quotidiennement.
+- Les ETF, obligations et cryptos n'ont pas de fondamentaux d'entreprise :
+  ils sont notes sur les seules composantes applicables, avec un indice de
+  confiance mecaniquement plus bas.
 ================================================================================
 """
 
@@ -133,7 +168,7 @@ HISTORY_DAYS      = 180     # profondeur de collecte, en cotations JOURNALIERES
 CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mois)
 HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
-                "pnl_net_pct", "score", "rec"]
+                "pnl_net_pct", "score", "confiance", "rec"]
 
 # --- QUOTAS JOURNALIERS PAR CLE ----------------------------------------------
 _QUOTA = {
@@ -799,6 +834,75 @@ def get_consensus(asset: dict) -> tuple:
 
 
 # =============================================================================
+# FONDAMENTAUX
+# =============================================================================
+
+def _f(valeur):
+    """Conversion tolerante en float. Retourne None plutot que 0 si absent,
+    pour ne pas confondre 'donnee manquante' et 'valeur nulle'."""
+    if valeur in (None, "", "NA", "N/A", "None"):
+        return None
+    try:
+        v = float(valeur)
+        return None if v != v else v          # ecarte les NaN
+    except (ValueError, TypeError):
+        return None
+
+
+def get_fundamentals(asset: dict) -> tuple:
+    """Ratios fondamentaux via EODHD. Retourne (dict, source).
+
+    Les actifs sans comptes d'entreprise (ETF, obligations, crypto) sont
+    ecartes d'emblee : interroger l'API pour eux gaspille du quota.
+    """
+    if str(asset.get("asset_type", "action")).lower() in ("etf", "obligation", "crypto"):
+        return {}, f"non applicable ({asset.get('asset_type')})"
+
+    if not EODHD_KEY:
+        return {}, "cle absente"
+
+    data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
+                     {"api_token": EODHD_KEY, "fmt": "json",
+                      "filter": "Highlights,Valuation,Technicals"},
+                     "eodhd")
+
+    if not isinstance(data, dict) or _is_quota_error(err):
+        return {}, ("quota atteint" if _is_quota_error(err) else (err or "vide"))
+
+    hi  = data.get("Highlights") or {}
+    va  = data.get("Valuation")  or {}
+    te  = data.get("Technicals") or {}
+
+    ratios = {
+        # Valorisation
+        "per":         _f(hi.get("PERatio")) or _f(va.get("TrailingPE")),
+        "per_fwd":     _f(va.get("ForwardPE")),
+        "peg":         _f(hi.get("PEGRatio")),
+        "ev_ebitda":   _f(va.get("EnterpriseValueEbitda")),
+        "p_book":      _f(va.get("PriceBookMRQ")),
+        "p_sales":     _f(va.get("PriceSalesTTM")),
+        # Rentabilite
+        "marge_nette": _f(hi.get("ProfitMargin")),
+        "marge_ope":   _f(hi.get("OperatingMarginTTM")),
+        "roe":         _f(hi.get("ReturnOnEquityTTM")),
+        "roa":         _f(hi.get("ReturnOnAssetsTTM")),
+        # Croissance
+        "croiss_ca":   _f(hi.get("QuarterlyRevenueGrowthYOY")),
+        "croiss_ben":  _f(hi.get("QuarterlyEarningsGrowthYOY")),
+        # Risque
+        "beta":        _f(te.get("Beta")),
+        "haut_52s":    _f(te.get("52WeekHigh")),
+        "bas_52s":     _f(te.get("52WeekLow")),
+        # Divers
+        "dividende":   _f(hi.get("DividendYield")),
+        "bpa":         _f(hi.get("EarningsShare")),
+    }
+
+    ratios = {k: v for k, v in ratios.items() if v is not None}
+    return (ratios, "EODHD") if ratios else ({}, "aucun ratio exploitable")
+
+
+# =============================================================================
 # HISTORIQUE MENSUEL
 # =============================================================================
 
@@ -951,79 +1055,368 @@ def _parse_serie(dates: list, closes: list) -> list:
     return serie
 
 
-def score_history(dates: list, closes: list) -> tuple:
-    if len(closes) < 2:
-        return 5.0, "NEUTRE", 0.0, 0.0, 0.0
+# =============================================================================
+# NOTATION
+# =============================================================================
+# Chaque fonction renvoie (note_sur_10, disponible) ou None quand la donnee
+# manque. Une composante absente est EXCLUE du calcul, jamais remplacee par
+# une valeur neutre : c'est ce qui permet a l'indice de confiance d'etre
+# honnete sur ce que la note recouvre reellement.
 
+
+def _palier(valeur, paliers: list) -> float:
+    """Note par paliers. `paliers` = [(seuil, note), ...] du meilleur au pire.
+    Le premier seuil dont la valeur est >= (ou <= si decroissant) l'emporte."""
+    for seuil, note in paliers:
+        if valeur >= seuil:
+            return note
+    return paliers[-1][1]
+
+
+def _palier_inverse(valeur, paliers: list) -> float:
+    """Idem, mais plus la valeur est BASSE, meilleure est la note
+    (PER, dette, EV/EBITDA...)."""
+    for seuil, note in paliers:
+        if valeur <= seuil:
+            return note
+    return paliers[-1][1]
+
+
+# ── Valorisation ────────────────────────────────────────────────────────────
+
+def score_valorisation(f: dict):
+    """Le titre est-il cher ? Note haute = bon marche.
+
+    Le PEG prime sur le PER brut : il rapporte le multiple a la croissance,
+    ce qui evite de sanctionner mecaniquement une entreprise qui croit vite.
+    """
+    notes, poids = [], []
+
+    peg = f.get("peg")
+    if peg is not None and peg > 0:
+        notes.append(_palier_inverse(peg, [(0.5, 10), (1.0, 8.5), (1.5, 7),
+                                           (2.0, 5), (3.0, 3), (float("inf"), 1)]))
+        poids.append(3.0)          # meilleur indicateur isole
+
+    per = f.get("per_fwd") or f.get("per")
+    if per is not None:
+        if per <= 0:
+            notes.append(2.0)      # entreprise deficitaire
+            poids.append(2.0)
+        else:
+            notes.append(_palier_inverse(per, [(10, 9.5), (15, 8.5), (20, 7),
+                                               (28, 5.5), (40, 3.5),
+                                               (60, 2), (float("inf"), 0.5)]))
+            poids.append(2.5)
+
+    ev = f.get("ev_ebitda")
+    if ev is not None and ev > 0:
+        notes.append(_palier_inverse(ev, [(6, 9.5), (10, 8), (14, 6.5),
+                                          (20, 4.5), (30, 2.5), (float("inf"), 1)]))
+        poids.append(2.0)
+
+    pb = f.get("p_book")
+    if pb is not None and pb > 0:
+        notes.append(_palier_inverse(pb, [(1.0, 9.5), (2.0, 8), (3.5, 6.5),
+                                          (6.0, 4.5), (10.0, 2.5), (float("inf"), 1)]))
+        poids.append(1.0)
+
+    ps = f.get("p_sales")
+    if ps is not None and ps > 0:
+        notes.append(_palier_inverse(ps, [(1, 9.5), (3, 8), (6, 6),
+                                          (10, 4), (20, 2), (float("inf"), 0.5)]))
+        poids.append(1.0)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Sante financiere ────────────────────────────────────────────────────────
+
+def score_sante(f: dict):
+    """Rentabilite et solidite. Note haute = entreprise saine."""
+    notes, poids = [], []
+
+    mn = f.get("marge_nette")
+    if mn is not None:
+        pct = mn * 100 if abs(mn) <= 1 else mn
+        notes.append(_palier(pct, [(25, 10), (15, 8.5), (10, 7),
+                                   (5, 5.5), (0, 3.5), (-float("inf"), 1)]))
+        poids.append(2.5)
+
+    mo = f.get("marge_ope")
+    if mo is not None:
+        pct = mo * 100 if abs(mo) <= 1 else mo
+        notes.append(_palier(pct, [(30, 10), (20, 8.5), (12, 7),
+                                   (6, 5.5), (0, 3.5), (-float("inf"), 1)]))
+        poids.append(2.0)
+
+    roe = f.get("roe")
+    if roe is not None:
+        pct = roe * 100 if abs(roe) <= 1 else roe
+        # Un ROE tres eleve peut venir d'un fort endettement plutot que
+        # d'une rentabilite reelle : on ne recompense pas au-dela de 40%.
+        notes.append(10.0 if 20 <= pct <= 40 else
+                     _palier(pct, [(40, 8.5), (15, 8), (10, 6.5),
+                                   (5, 5), (0, 3.5), (-float("inf"), 1)]))
+        poids.append(2.5)
+
+    roa = f.get("roa")
+    if roa is not None:
+        pct = roa * 100 if abs(roa) <= 1 else roa
+        notes.append(_palier(pct, [(12, 10), (8, 8.5), (5, 7),
+                                   (2, 5.5), (0, 4), (-float("inf"), 1.5)]))
+        poids.append(1.5)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Croissance ──────────────────────────────────────────────────────────────
+
+def score_croissance(f: dict):
+    """Dynamique du chiffre d'affaires et des benefices."""
+    notes, poids = [], []
+
+    ca = f.get("croiss_ca")
+    if ca is not None:
+        pct = ca * 100 if abs(ca) <= 1 else ca
+        notes.append(_palier(pct, [(30, 10), (20, 9), (12, 7.5), (6, 6),
+                                   (0, 4.5), (-10, 2.5), (-float("inf"), 1)]))
+        poids.append(3.0)
+
+    ben = f.get("croiss_ben")
+    if ben is not None:
+        pct = ben * 100 if abs(ben) <= 1 else ben
+        notes.append(_palier(pct, [(40, 10), (25, 9), (15, 7.5), (5, 6),
+                                   (0, 4.5), (-20, 2.5), (-float("inf"), 1)]))
+        poids.append(2.0)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Momentum ────────────────────────────────────────────────────────────────
+
+def _parse_serie(dates: list, closes: list) -> list:
+    """(date, cours) triee. Tolere "YYYY-MM-DD" et "YYYY-MM" (ancien cache)."""
+    serie = []
+    for d, c in zip(dates or [], closes or []):
+        try:
+            s = str(d)
+            iso = s + "-01" if len(s) == 7 else s[:10]
+            dt = datetime.strptime(iso, "%Y-%m-%d")
+            v = float(c)
+            if v > 0:
+                serie.append((dt, v))
+        except Exception:
+            continue
+    serie.sort(key=lambda x: x[0])
+    return serie
+
+
+def score_history(dates: list, closes: list) -> tuple:
+    """Momentum, AVEC penalite de surchauffe.
+
+    Difference majeure avec l'ancienne version : la note ne croit plus
+    indefiniment avec la hausse. Un titre ayant pris plus de 60% en six mois
+    est plus expose a une correction qu'un titre en progression reguliere.
+    L'ancienne formule le notait au maximum -- exactement au pire moment.
+
+    Retourne (note, label, ret_1m, ret_3m, ret_6m).
+    """
     serie = _parse_serie(dates, closes)
     if len(serie) < 2:
-        return 5.0, "NEUTRE", 0.0, 0.0, 0.0
+        return None, "INDISPONIBLE", 0.0, 0.0, 0.0
 
     last_dt, last_px = serie[-1]
 
-    def ret_since(nb_days: int) -> float:
-        """Rendement depuis la cotation la plus proche d'il y a nb_days."""
-        target = last_dt - timedelta(days=nb_days)
-        passe  = [px for dt, px in serie if dt <= target]
-        ref    = passe[-1] if passe else serie[0][1]
-        if ref <= 0:
-            return 0.0
-        return (last_px / ref - 1) * 100
+    def ret_since(nb_jours: int) -> float:
+        cible = last_dt - timedelta(days=nb_jours)
+        passe = [px for dt, px in serie if dt <= cible]
+        ref = passe[-1] if passe else serie[0][1]
+        return 0.0 if ref <= 0 else (last_px / ref - 1) * 100
 
-    ret_1m = ret_since(30)
-    ret_3m = ret_since(90)
-    ret_6m = ret_since(180)
-    score = 5.0
-    if ret_1m > 5:    score += 1.5
-    elif ret_1m > 2:  score += 0.75
-    elif ret_1m < -5: score -= 1.5
-    elif ret_1m < -2: score -= 0.75
-    if ret_3m > 10:    score += 2.0
-    elif ret_3m > 5:   score += 1.0
-    elif ret_3m < -10: score -= 2.0
-    elif ret_3m < -5:  score -= 1.0
-    if ret_6m > 15:    score += 1.5
-    elif ret_6m > 7:   score += 0.75
-    elif ret_6m < -15: score -= 1.5
-    elif ret_6m < -7:  score -= 0.75
-    score = round(max(0.0, min(10.0, score)), 2)
-    label = "HAUSSIER" if score >= 6.5 else "BAISSIER" if score <= 3.5 else "NEUTRE"
-    return score, label, ret_1m, ret_3m, ret_6m
+    ret_1m, ret_3m, ret_6m = ret_since(30), ret_since(90), ret_since(180)
+
+    note = 5.0
+    note += _palier(ret_1m, [(8, 1.4), (4, 1.0), (1, 0.5), (-1, 0),
+                             (-4, -0.6), (-8, -1.2), (-float("inf"), -1.8)])
+    note += _palier(ret_3m, [(15, 1.8), (8, 1.3), (3, 0.7), (-3, 0),
+                             (-8, -0.9), (-15, -1.6), (-float("inf"), -2.2)])
+    note += _palier(ret_6m, [(25, 1.6), (12, 1.1), (4, 0.6), (-4, 0),
+                             (-12, -0.8), (-25, -1.5), (-float("inf"), -2.0)])
+
+    # Surchauffe : une progression parabolique se paie tot ou tard.
+    if ret_6m > 100:
+        note -= 3.0
+    elif ret_6m > 60:
+        note -= 2.0
+    elif ret_6m > 40:
+        note -= 1.0
+
+    # Capitulation : apres une chute severe, on cesse d'enfoncer la note.
+    # Le titre peut etre en difficulte reelle comme survendu -- l'un dans
+    # l'autre, l'information n'est plus discriminante.
+    if ret_6m < -50:
+        note += 1.0
+
+    note = round(max(0.0, min(10.0, note)), 2)
+    label = ("HAUSSIER" if note >= 6.5 else
+             "BAISSIER" if note <= 3.5 else "NEUTRE")
+    return note, label, ret_1m, ret_3m, ret_6m
 
 
-def score_price(current, cost):
-    pnl = (current - cost) / cost * 100
-    return round(max(0.0, min(10.0, 5.0 + pnl / 10.0)), 2)
+# ── Risque ──────────────────────────────────────────────────────────────────
+
+def score_risque(f: dict, dates: list, closes: list):
+    """Volatilite et position dans le canal 52 semaines.
+
+    Note haute = risque contenu. Le beta mesure l'amplitude par rapport au
+    marche ; la position dans le canal annuel indique s'il reste de la marge
+    avant le plus haut.
+    """
+    notes, poids = [], []
+
+    beta = f.get("beta")
+    if beta is not None and beta > 0:
+        notes.append(_palier_inverse(beta, [(0.7, 9.5), (1.0, 8), (1.3, 6.5),
+                                            (1.8, 4.5), (2.5, 2.5),
+                                            (float("inf"), 1)]))
+        poids.append(2.0)
+
+    haut, bas = f.get("haut_52s"), f.get("bas_52s")
+    serie = _parse_serie(dates, closes)
+    if haut and bas and serie and haut > bas:
+        pos = (serie[-1][1] - bas) / (haut - bas) * 100
+        # Au plus haut annuel : peu de marge. Au plus bas : signal negatif.
+        notes.append(4.0 if pos >= 95 else 5.5 if pos >= 80 else
+                     7.5 if pos >= 50 else 8.0 if pos >= 25 else 5.0)
+        poids.append(1.5)
+
+    # Volatilite realisee sur la periode disponible
+    if len(serie) >= 20:
+        rends = [(serie[i][1] / serie[i - 1][1] - 1)
+                 for i in range(1, len(serie)) if serie[i - 1][1] > 0]
+        if rends:
+            moy = sum(rends) / len(rends)
+            var = sum((r - moy) ** 2 for r in rends) / len(rends)
+            vol_ann = (var ** 0.5) * (252 ** 0.5) * 100
+            notes.append(_palier_inverse(vol_ann, [(15, 9.5), (25, 8), (35, 6.5),
+                                                   (50, 4.5), (70, 2.5),
+                                                   (float("inf"), 1)]))
+            poids.append(2.0)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Agregation ──────────────────────────────────────────────────────────────
+
+POIDS_NOTE = {
+    "valorisation": 0.22,
+    "sante":        0.18,
+    "croissance":   0.15,
+    "momentum":     0.20,
+    "consensus":    0.13,
+    "sentiment":    0.07,
+    "risque":       0.05,
+}
+
+
+def note_titre(composantes: dict) -> tuple:
+    """Agrege les composantes disponibles en une note sur 10.
+
+    Les composantes absentes (None) sont exclues et les poids restants
+    renormalises. Retourne (note, confiance_%, detail).
+
+    La confiance est la part des poids effectivement couverts. Elle doit
+    accompagner la note partout ou celle-ci est affichee : 8.5/10 a 35% de
+    confiance ne se lit pas comme 8.5/10 a 90%.
+    """
+    dispo = {k: v for k, v in composantes.items()
+             if v is not None and k in POIDS_NOTE}
+    if not dispo:
+        return None, 0.0, {}
+
+    poids_total = sum(POIDS_NOTE[k] for k in dispo)
+    note = sum(v * POIDS_NOTE[k] for k, v in dispo.items()) / poids_total
+    confiance = round(poids_total / sum(POIDS_NOTE.values()) * 100, 1)
+    return round(note, 2), confiance, dispo
+
+
+def score_position(price_eur, cost_eur, pnl_net_pct, poids_pct):
+    """Indicateurs propres au detenteur. VOLONTAIREMENT hors de la note.
+
+    Le prix d'achat est de l'histoire personnelle : il ne dit rien de la
+    qualite du titre. Il reste utile pour decider quoi faire, d'ou son
+    calcul separe.
+    """
+    return {
+        "pnl_net_pct":   pnl_net_pct,
+        "poids_pct":     poids_pct,
+        "concentration": ("forte" if poids_pct >= 40 else
+                          "notable" if poids_pct >= 25 else "mesuree"),
+        "seuil_rentab":  round(cost_eur * (1 + max(0.0, -pnl_net_pct) / 100), 2),
+    }
 
 
 def score_macro(indices_data):
     chgs = [v["change_pct"] for v in indices_data.values() if v["change_pct"] != 0]
-    return round(max(0.0, min(10.0, 5.0 + sum(chgs)/len(chgs))), 2) if chgs else 5.0
+    return round(max(0.0, min(10.0, 5.0 + sum(chgs) / len(chgs))), 2) if chgs else 5.0
 
 
-def recommend(score):
-    if score >= 7.5: return "ACHAT FORT"
-    if score >= 6.0: return "ACHAT MODERE"
-    if score >= 4.5: return "GARDER"
-    if score >= 3.0: return "A EVITER"
-    return "VENDRE"
+def recommend(note, confiance: float = 100.0, pnl_net_pct: float = 0.0):
+    """Recommandation croisant qualite du titre et situation du detenteur."""
+    if note is None:
+        return "DONNEES INSUFFISANTES"
+
+    # En dessous de 40% de confiance, la note repose sur trop peu de criteres
+    # pour fonder une recommandation tranchee.
+    if confiance < 40:
+        return "A EXAMINER (donnees partielles)"
+
+    if note >= 7.5:
+        return "RENFORCER"
+    if note >= 6.0:
+        return "CONSERVER"
+    if note >= 4.5:
+        # Zone grise : la situation du detenteur departage.
+        return "SURVEILLER" if pnl_net_pct >= 0 else "SURVEILLER (en moins-value)"
+    if note >= 3.0:
+        return "ALLEGER"
+    return "SORTIR"
 
 
-def justification(name, net_pnl_eur, net_pnl_pct, sc, bull, bear,
-                  consensus, macro_score, hist_score, hist_label, total_score):
-    p1 = (f"Gain net {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais."
-          if net_pnl_eur >= 0
-          else f"Perte nette {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais.")
-    p2 = (f"Consensus haussier (score {sc:.1f}/10, Bull {bull:.0f}%)."
-          if sc >= 7 else
-          f"Consensus neutre ({bull:.0f}% bull / {bear:.0f}% bear)."
-          if sc >= 5 else
-          f"Consensus defavorable (score {sc:.1f}/10, Bear {bear:.0f}%).")
-    p3 = ("Contexte macro favorable." if macro_score >= 6
-          else "Contexte macro defavorable." if macro_score <= 4
-          else "Contexte macro neutre.")
-    p4 = f"Momentum mensuel {hist_label} (score historique {hist_score:.1f}/10)."
-    return f"{p1} {p2} {p3} {p4}"
+def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
+                  note, confiance, hist_label, macro_score):
+    """Explique la note en citant les composantes qui l'ont faite bouger."""
+    if note is None:
+        return "Donnees insuffisantes pour etablir une note."
+
+    libelles = {"valorisation": "valorisation", "sante": "sante financiere",
+                "croissance": "croissance", "momentum": "momentum",
+                "consensus": "consensus analystes", "sentiment": "sentiment presse",
+                "risque": "profil de risque"}
+
+    tri     = sorted(detail.items(), key=lambda x: x[1], reverse=True)
+    forces  = [f"{libelles[k]} {v:.1f}" for k, v in tri[:2] if v >= 6.5]
+    faibles = [f"{libelles[k]} {v:.1f}" for k, v in tri[-2:] if v <= 4.5]
+
+    p = [f"Note {note:.1f}/10 (confiance {confiance:.0f}%)."]
+    if forces:
+        p.append("Points forts : " + ", ".join(forces) + ".")
+    if faibles:
+        p.append("Points faibles : " + ", ".join(faibles) + ".")
+    p.append(f"Momentum {hist_label}.")
+    p.append(f"Position : {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais.")
+    if confiance < 60:
+        p.append("Note etablie sur une partie seulement des criteres.")
+    return " ".join(p)
 
 
 # =============================================================================
@@ -1208,14 +1601,48 @@ def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
 # =============================================================================
 
 def append_history(now: datetime, rows: list):
+    """Ajoute les releves du jour, en respectant l'en-tete deja en place.
+
+    La v7.2 introduit une colonne `confiance`. Un historique ecrit par une
+    version anterieure n'a pas cette colonne : on ne peut pas y ajouter des
+    lignes plus larges que son en-tete sans le rendre illisible. Le fichier
+    est donc migre une fois -- ancien contenu conserve, colonne manquante
+    laissee vide sur les lignes historiques.
+    """
     os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
-    exists = os.path.isfile(HISTORY_PATH)
+
+    entete = None
+    if os.path.isfile(HISTORY_PATH):
+        try:
+            with open(HISTORY_PATH, newline="", encoding="utf-8") as f:
+                entete = next(csv.reader(f), None)
+        except Exception as e:
+            _log.warning("Historique illisible (%s) -- ajout sans migration", e)
+
+    # Migration : on reecrit le fichier avec le nouveau jeu de colonnes.
+    if entete and set(entete) != set(HISTORY_COLS):
+        manquantes = [c for c in HISTORY_COLS if c not in entete]
+        try:
+            with open(HISTORY_PATH, newline="", encoding="utf-8") as f:
+                anciennes = list(csv.DictReader(f))
+            with open(HISTORY_PATH, "w", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=HISTORY_COLS, extrasaction="ignore")
+                w.writeheader()
+                for ligne in anciennes:
+                    w.writerow({c: ligne.get(c, "") for c in HISTORY_COLS})
+            _log.info("Historique migre : colonne(s) ajoutee(s) %s", manquantes)
+            entete = HISTORY_COLS
+        except Exception as e:
+            _log.error("Migration de l'historique impossible (%s)", e)
+            entete = entete or HISTORY_COLS
+
+    colonnes = entete or HISTORY_COLS
     with open(HISTORY_PATH, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=HISTORY_COLS)
-        if not exists:
+        writer = csv.DictWriter(f, fieldnames=colonnes, extrasaction="ignore")
+        if not entete:
             writer.writeheader()
         for row in rows:
-            writer.writerow(row)
+            writer.writerow({c: row.get(c, "") for c in colonnes})
 
 
 # =============================================================================
@@ -1386,25 +1813,26 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         pnl_net   = round(pnl_brut - buy_fee - sell_fee, 2)
         pnl_net_pct = round(pnl_net / (cost_eur * qty) * 100, 2)
 
-        sc_price   = score_price(price_eur, cost_eur)
+        # ── NOTE DU TITRE : independante du detenteur ────────────────────
+        fonda = d.get("fonda") or {}
         sc_hist, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
-        bull = d.get("bull", 50.0); bear = d.get("bear", 50.0)
-        cs   = d.get("cs",   5.0)
+        bull = d.get("bull"); bear = d.get("bear")
+        cs   = d.get("cs")
 
-        total_score = round(
-            sc_price * 0.30 +
-            (bull / 10.0)   * 0.20 +
-            cs              * 0.20 +
-            sc_hist         * 0.30,
-            2
-        )
-        rec = recommend(total_score)
+        composantes = {
+            "valorisation": score_valorisation(fonda),
+            "sante":        score_sante(fonda),
+            "croissance":   score_croissance(fonda),
+            "momentum":     sc_hist,
+            "consensus":    cs,
+            "sentiment":    (bull / 10.0) if bull is not None else None,
+            "risque":       score_risque(fonda, h_dates, h_closes),
+        }
+        total_score, confiance, detail = note_titre(composantes)
 
-        just = justification(
-            asset["name"], pnl_net, pnl_net_pct,
-            cs, bull, bear, d.get("cons_str", "N/D"),
-            macro_score, sc_hist, hist_label, total_score
-        )
+        rec  = recommend(total_score, confiance, pnl_net_pct)
+        just = justification(asset["name"], pnl_net, pnl_net_pct, detail,
+                             total_score, confiance, hist_label, macro_score)
 
         history_rows.append({
             "date":         now.strftime("%Y-%m-%d"),
@@ -1419,7 +1847,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "pnl_brut_pct": pnl_brut_pct,
             "pnl_net":      pnl_net,
             "pnl_net_pct":  pnl_net_pct,
-            "score":        total_score,
+            "score":        total_score if total_score is not None else "",
+            "confiance":    confiance,
             "rec":          rec,
         })
 
@@ -1434,6 +1863,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "consensus": d.get("cons_src", "N/D"),
             "historique": d.get("h_src",   "N/D"),
             "synthese":  d.get("synth_src","N/D"),
+            "fondamentaux": d.get("fonda_src", "N/D"),
         }
 
         assets_history[asset["name"]] = (h_dates, h_closes)
@@ -1449,6 +1879,11 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "pnl_net":      pnl_net,
             "pnl_net_pct":  pnl_net_pct,
             "score":        total_score,
+            "confiance":    confiance,
+            "detail":       detail,
+            "fonda":        fonda,
+            "fonda_src":    d.get("fonda_src", "N/D"),
+            "position":     score_position(price_eur, cost_eur, pnl_net_pct, 0.0),
             "rec":          rec,
             "just":         just,
             "bull":         bull,
@@ -1467,7 +1902,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         })
 
     # ── 8. Tri par score décroissant ─────────────────────────────────────────
-    results.sort(key=lambda x: x["score"], reverse=True)
+    results.sort(key=lambda x: (x["score"] is not None, x["score"] or 0), reverse=True)
 
     # ── 9. Totaux portefeuille ────────────────────────────────────────────────
     total_vm       = round(sum(r["vm"] for r in results), 2)
@@ -1533,6 +1968,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         pnl_n_sign = "+" if r["pnl_net"] >= 0 else "-"
         pnl_n_str  = f"{pnl_n_sign} {pnl_n_sign}{abs(r['pnl_net']):.2f} EUR ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%)"
 
+        note_s = (f"**{r['score']}/10** ({r['confiance']:.0f}%)"
+                  if r["score"] is not None else "n/d")
         ret_1m_s = f"{r['ret_1m']:+.1f}%"
         ret_3m_s = f"{r['ret_3m']:+.1f}%"
         ret_6m_s = f"{r['ret_6m']:+.1f}%"
@@ -1540,10 +1977,10 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         lines += [
             f"### {asset['name']} `{asset['ticker_eod']}`",
             "",
-            "| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |",
-            "|-------|-----------|-----|----------|---------|-------|---------|",
+            "| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |",
+            "|-------|-----------|-----|----------|---------|------------------|---------|",
             f"| {r['price_eur']:.2f} EUR | {chg_str} | {r['vm']:.2f} EUR "
-            f"| {pnl_b_str} | {pnl_n_str} | **{r['score']}/10** | {r['rec']} |",
+            f"| {pnl_b_str} | {pnl_n_str} | {note_s} | {r['rec']} |",
             "",
         ]
 
@@ -1555,8 +1992,53 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             lines.append(f"> {synth}")
             lines.append("")
 
+        # Detail de la note : chaque composante et son poids reel
+        detail = r.get("detail") or {}
+        if detail:
+            libelles = {"valorisation": "Valorisation", "sante": "Sante financiere",
+                        "croissance": "Croissance", "momentum": "Momentum",
+                        "consensus": "Consensus", "sentiment": "Sentiment",
+                        "risque": "Risque"}
+            lines += ["**Detail de la note :**", "",
+                      "| Composante | Note | Poids |",
+                      "|------------|------|-------|"]
+            poids_dispo = sum(POIDS_NOTE[k] for k in detail)
+            for cle in POIDS_NOTE:
+                if cle in detail:
+                    part = POIDS_NOTE[cle] / poids_dispo * 100
+                    lines.append(f"| {libelles[cle]} | {detail[cle]:.1f}/10 | {part:.0f}% |")
+            absentes = [libelles[k] for k in POIDS_NOTE if k not in detail]
+            lines.append("")
+            if absentes:
+                lines.append(f"*Non disponible : {', '.join(absentes)} "
+                             f"-- poids redistribues sur les composantes ci-dessus.*")
+                lines.append("")
+
+        # Ratios fondamentaux bruts, pour verification manuelle
+        f_r = r.get("fonda") or {}
+        if f_r:
+            morceaux = []
+            for cle, lib, suffixe in (("per", "PER", ""), ("peg", "PEG", ""),
+                                      ("ev_ebitda", "EV/EBITDA", ""),
+                                      ("p_book", "P/B", ""),
+                                      ("marge_nette", "Marge nette", "%"),
+                                      ("roe", "ROE", "%"),
+                                      ("croiss_ca", "Croiss. CA", "%"),
+                                      ("beta", "Beta", "")):
+                v = f_r.get(cle)
+                if v is None:
+                    continue
+                if suffixe == "%" and abs(v) <= 1:
+                    v *= 100
+                morceaux.append(f"{lib} {v:.1f}{suffixe}")
+            if morceaux:
+                lines.append(f"**Fondamentaux :** {' | '.join(morceaux)} "
+                             f"*(source : {r.get('fonda_src', 'N/D')})*")
+
+        bull_s = f"{r['bull']:.0f}%" if r.get("bull") is not None else "n/d"
+        bear_s = f"{r['bear']:.0f}%" if r.get("bear") is not None else "n/d"
         lines += [
-            f"**Sentiment :** Bull {r['bull']:.0f}% / Bear {r['bear']:.0f}% *(source : {r['sent_src']})*",
+            f"**Sentiment :** Bull {bull_s} / Bear {bear_s} *(source : {r['sent_src']})*",
             f"**Consensus analystes :** {r['cons_str']} *(source : {r['cons_src']})*",
             f"**Perf. historique :** 1M {ret_1m_s} | 3M {ret_3m_s} | 6M {ret_6m_s} -- {r['hist_label']} *(source : {r['h_src']})*",
             "",
@@ -1570,17 +2052,23 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     lines += [
         "## Synthese Portefeuille",
         "",
-        "| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |",
-        "|--------|-----------|--------|----------|---------|-------|---------|",
+        "| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |",
+        "|--------|-----------|--------|----------|---------|------|-------|---------|",
     ]
     for r in results:
         pnl_b_sign = "+" if r["pnl_brut"] >= 0 else "-"
         pnl_n_sign = "+" if r["pnl_net"] >= 0 else "-"
+        # Les colonnes de note sont construites a part : la concatenation
+        # implicite de f-strings lie plus fort que le ternaire, un
+        # `... if ... else ...` en fin d'expression escamoterait les
+        # colonnes precedentes.
+        cell_note = (f"{r['score']}/10 | {r['confiance']:.0f}%"
+                     if r["score"] is not None else "n/d | -")
         lines.append(
             f"| {r['asset']['name']} | {r['price_eur']:.2f} | {r['vm']:.2f} "
             f"| {pnl_b_sign}{abs(r['pnl_brut']):.2f} ({pnl_b_sign}{abs(r['pnl_brut_pct']):.1f}%) "
             f"| {pnl_n_sign}{abs(r['pnl_net']):.2f} ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%) "
-            f"| {r['score']}/10 | {r['rec']} |"
+            f"| {cell_note} | {r['rec']} |"
         )
 
     total_pnl_b_sign = "+" if total_pnl_brut >= 0 else "-"
@@ -1589,7 +2077,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         f"| **TOTAL** | — | **{total_vm:.2f}** "
         f"| **{total_pnl_b_sign}{abs(total_pnl_brut):.2f} ({total_pnl_b_sign}{abs(total_pnl_brut_pct):.1f}%)** "
         f"| **{total_pnl_n_sign}{abs(total_pnl_net):.2f} ({total_pnl_n_sign}{abs(total_pnl_net_pct):.1f}%)** "
-        f"| — | — |",
+        f"| — | — | — |",
         "",
         "---",
         "",
