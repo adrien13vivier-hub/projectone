@@ -1,16 +1,16 @@
-# Rapport de Portefeuille v7.0 -- 07/08/2026 16:42 (Paris)
+# Rapport de Portefeuille v7.0 -- 10/08/2026 10:18 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.44/10
-**EUR/USD :** 1 EUR = 1.1553 USD
+**Tendance : Neutre** | Score macro : 5.23/10
+**EUR/USD :** 1 EUR = 1.1566 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.53% | 7 750.53 |
-| CAC 40 | ^ +0.35% | 8 730.34 |
+| S&P 500 | ^ +0.62% | 7 757.64 |
+| CAC 40 | v -0.16% | 8 700.90 |
 
 **Manchettes macro :**
 
@@ -28,17 +28,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 146.43 EUR | ^ +0.00% | 292.87 EUR | + +54.75 EUR (+23.0%) | + +40.85 EUR (+17.2%) | **8.22/10** | ACHAT FORT |
+| 148.71 EUR | ^ +0.00% | 297.41 EUR | + +59.29 EUR (+24.9%) | + +45.39 EUR (+19.1%) | **8.5/10** | ACHAT FORT |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> PLTU’s 63.76% Weekly Surge Masks a Brutal Truth: Leveraged Palantir Holders Lost One-Third of Their Money in 12 Months | Meet the Spiffy-Pop: Long-Term Holders' Reward | Software Stocks Are a Hot Mess. So Is the Whole AI Trade.
+> Why Palantir Stock Skyrocketed This Past Week | Vitalhub Q2 Earnings Call Highlights | BofA, JPMorgan, Oppenheimer Name Their 3 Favorite AI Stocks, One Has a $255 Target
 
 **Sentiment :** Bull 90% / Bear 10% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +16.0% | 3M +13.1% | 6M +9.1% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +30.1% | 3M +24.8% | 6M +26.8% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Gain net +40.85 EUR (+17.2%) apres frais. Consensus haussier (score 7.3/10, Bull 90%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 9.2/10).
+**Justification :** Gain net +45.39 EUR (+19.1%) apres frais. Consensus haussier (score 7.3/10, Bull 90%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
 
 ---
 
@@ -46,17 +46,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 19.58 EUR | ^ +0.62% | 195.80 EUR | + +26.80 EUR (+15.9%) | + +22.82 EUR (+13.5%) | **7.75/10** | ACHAT FORT |
+| 19.64 EUR | ^ +0.18% | 196.40 EUR | + +27.40 EUR (+16.2%) | + +23.42 EUR (+13.9%) | **7.99/10** | ACHAT FORT |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CREDIT AGRICOLE SA: 2026 CAPITAL INCREASE RESERVED FOR EMPLOYEES | Is Crédit Agricole (ENXTPA:ACA) Stock A Bargain Or Fully Priced? | China Sells Long-Dated Offshore Yuan Bonds at Record Low Yields
+> CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Credit Agricole (CRARY) Upgraded to Buy: Here's Why | CREDIT AGRICOLE SA: Availability of the 2026 interim financial report
 
 **Sentiment :** Bull 100% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +10.6% | 3M +22.2% | 6M +14.4% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +14.0% | 3M +23.1% | 6M +16.3% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Gain net +22.82 EUR (+13.5%) apres frais. Consensus neutre (100% bull / 0% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 9.2/10).
+**Justification :** Gain net +23.42 EUR (+13.9%) apres frais. Consensus neutre (100% bull / 0% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
 
 ---
 
@@ -64,17 +64,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 76.15 EUR | ^ +0.00% | 152.31 EUR | - -35.51 EUR (-18.9%) | - -49.41 EUR (-26.3%) | **4.17/10** | A EVITER |
+| 78.39 EUR | ^ +0.00% | 156.78 EUR | - -31.04 EUR (-16.5%) | - -44.94 EUR (-23.9%) | **4.24/10** | A EVITER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> BLZE Q2 Earnings Call Focuses on CoreWeave and AI Storage | AI Debt Indigestion Forces Wall Street to Rethink Bond Sales | CRWV vs IREN: Which Stock Does Jim Cramer Think Is The Better Neocloud Bet?
+> Core Scientific (CORZ) Shareholders Rejected a $9B Sale. Does the AMD Deal Vindicate Them? | IREN (IREN) vs. CORZ and APLD: Can Its AI Cloud Buildout Turn Contracted Demand Into Profits? | CoreWeave (CRWV) Wins Bigger AI Trading Capacity Deal As Finance Demand Deepens
 
 **Sentiment :** Bull 46% / Bear 54% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:10 B:21 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +2.2% | 3M -25.2% | 6M -11.8% -- BAISSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +0.7% | 3M -20.6% | 6M -4.7% -- BAISSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Perte nette -49.41 EUR (-26.3%) apres frais. Consensus haussier (score 7.1/10, Bull 46%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 3.0/10).
+**Justification :** Perte nette -44.94 EUR (-23.9%) apres frais. Consensus haussier (score 7.1/10, Bull 46%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 3.0/10).
 
 ---
 
@@ -82,17 +82,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
 |-------|-----------|-----|----------|---------|-------|---------|
-| 1.94 EUR | ^ +2.65% | 19.38 EUR | - -19.02 EUR (-49.5%) | - -23.00 EUR (-59.9%) | **2.24/10** | VENDRE |
+| 1.94 EUR | v -1.52% | 19.38 EUR | - -19.02 EUR (-49.5%) | - -23.00 EUR (-59.9%) | **2.91/10** | VENDRE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma is Scaling up Its Operations After Securing the Resources Needed to Achieve Its Goals and Is Embarking on… | Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital
+> Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma: Half-Year Review of the Liquidity Agreement Entered into with TP ICAP (Europe) SA
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -2.4% | 3M -45.9% | 6M -47.1% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M +6.1% | 3M -43.6% | 6M -43.7% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Perte nette -23.00 EUR (-59.9%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 0.8/10).
+**Justification :** Perte nette -23.00 EUR (-59.9%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 3.0/10).
 
 ---
 
@@ -100,11 +100,11 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |
 |--------|-----------|--------|----------|---------|-------|---------|
-| Palantir Technologies | 146.43 | 292.87 | +54.75 (+23.0%) | +40.85 (+17.2%) | 8.22/10 | ACHAT FORT |
-| Credit Agricole SA | 19.58 | 195.80 | +26.80 (+15.9%) | +22.82 (+13.5%) | 7.75/10 | ACHAT FORT |
-| CoreWeave | 76.15 | 152.31 | -35.51 (-18.9%) | -49.41 (-26.3%) | 4.17/10 | A EVITER |
-| Abionyx Pharma | 1.94 | 19.38 | -19.02 (-49.5%) | -23.00 (-59.9%) | 2.24/10 | VENDRE |
-| **TOTAL** | — | **660.36** | **+27.02 (+4.3%)** | **-8.74 (-1.4%)** | — | — |
+| Palantir Technologies | 148.71 | 297.41 | +59.29 (+24.9%) | +45.39 (+19.1%) | 8.5/10 | ACHAT FORT |
+| Credit Agricole SA | 19.64 | 196.40 | +27.40 (+16.2%) | +23.42 (+13.9%) | 7.99/10 | ACHAT FORT |
+| CoreWeave | 78.39 | 156.78 | -31.04 (-16.5%) | -44.94 (-23.9%) | 4.24/10 | A EVITER |
+| Abionyx Pharma | 1.94 | 19.38 | -19.02 (-49.5%) | -23.00 (-59.9%) | 2.91/10 | VENDRE |
+| **TOTAL** | — | **669.97** | **+36.63 (+5.8%)** | **+0.87 (+0.1%)** | — | — |
 
 ---
 
