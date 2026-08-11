@@ -1,16 +1,16 @@
-# Rapport de Portefeuille v7.0 -- 10/08/2026 10:18 (Paris)
+# Rapport de Portefeuille v7.0 -- 11/08/2026 16:47 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.23/10
-**EUR/USD :** 1 EUR = 1.1566 USD
+**Tendance : Neutre** | Score macro : 5.12/10
+**EUR/USD :** 1 EUR = 1.1545 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.62% | 7 757.64 |
-| CAC 40 | v -0.16% | 8 700.90 |
+| S&P 500 | ^ +0.07% | 7 758.17 |
+| CAC 40 | ^ +0.17% | 8 740.65 |
 
 **Manchettes macro :**
 
@@ -24,87 +24,131 @@
 
 ## Analyse par Valeur
 
-### Palantir Technologies `PLTR.US`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
-|-------|-----------|-----|----------|---------|-------|---------|
-| 148.71 EUR | ^ +0.00% | 297.41 EUR | + +59.29 EUR (+24.9%) | + +45.39 EUR (+19.1%) | **8.5/10** | ACHAT FORT |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> Why Palantir Stock Skyrocketed This Past Week | Vitalhub Q2 Earnings Call Highlights | BofA, JPMorgan, Oppenheimer Name Their 3 Favorite AI Stocks, One Has a $255 Target
-
-**Sentiment :** Bull 90% / Bear 10% *(source : Lexical (AV:vide, FH:HTTP 403))*
-**Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +30.1% | 3M +24.8% | 6M +26.8% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
-
-**Justification :** Gain net +45.39 EUR (+19.1%) apres frais. Consensus haussier (score 7.3/10, Bull 90%). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
-
----
-
 ### Credit Agricole SA `ACA.PA`
 
-| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
-|-------|-----------|-----|----------|---------|-------|---------|
-| 19.64 EUR | ^ +0.18% | 196.40 EUR | + +27.40 EUR (+16.2%) | + +23.42 EUR (+13.9%) | **7.99/10** | ACHAT FORT |
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 20.01 EUR | ^ +0.40% | 200.10 EUR | + +31.10 EUR (+18.4%) | + +27.12 EUR (+16.1%) | **8.02/10** (45%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
 > CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Credit Agricole (CRARY) Upgraded to Buy: Here's Why | CREDIT AGRICOLE SA: Availability of the 2026 interim financial report
 
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Momentum | 9.3/10 | 44% |
+| Consensus | 5.0/10 | 29% |
+| Sentiment | 10.0/10 | 16% |
+| Risque | 8.0/10 | 11% |
+
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+
 **Sentiment :** Bull 100% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +14.0% | 3M +23.1% | 6M +16.3% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +14.0% | 3M +25.9% | 6M +18.8% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Gain net +23.42 EUR (+13.9%) apres frais. Consensus neutre (100% bull / 0% bear). Contexte macro neutre. Momentum mensuel HAUSSIER (score historique 10.0/10).
+**Justification :** Note 8.0/10 (confiance 45%). Points forts : sentiment presse 10.0, momentum 9.3. Momentum HAUSSIER. Position : +27.12 EUR (+16.1%) apres frais. Note etablie sur une partie seulement des criteres.
+
+---
+
+### Palantir Technologies `PLTR.US`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 153.94 EUR | ^ +0.00% | 307.89 EUR | + +69.77 EUR (+29.3%) | + +55.87 EUR (+23.5%) | **7.67/10** (45%) | RENFORCER |
+
+**Actualite recente :** *(source : RSS Yahoo Finance)*
+
+> EXCLUSIVE: CPI Lands Tomorrow and Could Send PLTR, TSLA Surging—But Only if It's A 'Serious Shock,' Cato Economist Says | This Is the Big Question With Micron Technology Stock | Can Palantir Stock Keep Climbing After Its "Otherworldly" Earnings?
+
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Momentum | 9.8/10 | 44% |
+| Consensus | 7.3/10 | 29% |
+| Sentiment | 6.0/10 | 16% |
+| Risque | 2.5/10 | 11% |
+
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+
+**Sentiment :** Bull 60% / Bear 40% *(source : AlphaVantage NLP)*
+**Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
+**Perf. historique :** 1M +38.2% | 3M +28.8% | 6M +35.7% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
+
+**Justification :** Note 7.7/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +55.87 EUR (+23.5%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
 ### CoreWeave `CRWV.US`
 
-| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
-|-------|-----------|-----|----------|---------|-------|---------|
-| 78.39 EUR | ^ +0.00% | 156.78 EUR | - -31.04 EUR (-16.5%) | - -44.94 EUR (-23.9%) | **4.24/10** | A EVITER |
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 77.45 EUR | ^ +0.00% | 154.90 EUR | - -32.92 EUR (-17.5%) | - -46.82 EUR (-24.9%) | **4.26/10** (45%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Core Scientific (CORZ) Shareholders Rejected a $9B Sale. Does the AMD Deal Vindicate Them? | IREN (IREN) vs. CORZ and APLD: Can Its AI Cloud Buildout Turn Contracted Demand Into Profits? | CoreWeave (CRWV) Wins Bigger AI Trading Capacity Deal As Finance Demand Deepens
+> eToro Group Q2 Earnings Call Highlights | CoreWeave closes $2.6 billion GPU-backed loan | IBM's $240M Together AI Deal For Nvidia Systems Puts It In The Neocloud Business
 
-**Sentiment :** Bull 46% / Bear 54% *(source : AlphaVantage NLP)*
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Momentum | 2.0/10 | 44% |
+| Consensus | 7.1/10 | 29% |
+| Sentiment | 7.8/10 | 16% |
+| Risque | 1.0/10 | 11% |
+
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+
+**Sentiment :** Bull 78% / Bear 22% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:10 B:21 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +0.7% | 3M -20.6% | 6M -4.7% -- BAISSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M -0.8% | 3M -18.2% | 6M -7.8% -- BAISSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Perte nette -44.94 EUR (-23.9%) apres frais. Consensus haussier (score 7.1/10, Bull 46%). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 3.0/10).
+**Justification :** Note 4.3/10 (confiance 45%). Points forts : sentiment presse 7.8, consensus analystes 7.1. Points faibles : momentum 2.0, profil de risque 1.0. Momentum BAISSIER. Position : -46.82 EUR (-24.9%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
 ### Abionyx Pharma `ABNX.PA`
 
-| Cours | Variation | VM | P&L Brut | P&L Net | Score | Recomm. |
-|-------|-----------|-----|----------|---------|-------|---------|
-| 1.94 EUR | v -1.52% | 19.38 EUR | - -19.02 EUR (-49.5%) | - -23.00 EUR (-59.9%) | **2.91/10** | VENDRE |
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 1.90 EUR | v -0.83% | 19.04 EUR | - -19.36 EUR (-50.4%) | - -23.34 EUR (-60.8%) | **3.08/10** (45%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
 > Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma: Half-Year Review of the Liquidity Agreement Entered into with TP ICAP (Europe) SA
 
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Momentum | 1.3/10 | 44% |
+| Consensus | 5.0/10 | 29% |
+| Sentiment | 5.0/10 | 16% |
+| Risque | 2.5/10 | 11% |
+
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +6.1% | 3M -43.6% | 6M -43.7% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M +3.7% | 3M -46.6% | 6M -45.8% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Perte nette -23.00 EUR (-59.9%) apres frais. Consensus neutre (50% bull / 50% bear). Contexte macro neutre. Momentum mensuel BAISSIER (score historique 3.0/10).
+**Justification :** Note 3.1/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.3. Momentum BAISSIER. Position : -23.34 EUR (-60.8%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
 ## Synthese Portefeuille
 
-| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Score | Recomm. |
-|--------|-----------|--------|----------|---------|-------|---------|
-| Palantir Technologies | 148.71 | 297.41 | +59.29 (+24.9%) | +45.39 (+19.1%) | 8.5/10 | ACHAT FORT |
-| Credit Agricole SA | 19.64 | 196.40 | +27.40 (+16.2%) | +23.42 (+13.9%) | 7.99/10 | ACHAT FORT |
-| CoreWeave | 78.39 | 156.78 | -31.04 (-16.5%) | -44.94 (-23.9%) | 4.24/10 | A EVITER |
-| Abionyx Pharma | 1.94 | 19.38 | -19.02 (-49.5%) | -23.00 (-59.9%) | 2.91/10 | VENDRE |
-| **TOTAL** | — | **669.97** | **+36.63 (+5.8%)** | **+0.87 (+0.1%)** | — | — |
+| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
+|--------|-----------|--------|----------|---------|------|-------|---------|
+| Credit Agricole SA | 20.01 | 200.10 | +31.10 (+18.4%) | +27.12 (+16.1%) | 8.02/10 | 45% | RENFORCER |
+| Palantir Technologies | 153.94 | 307.89 | +69.77 (+29.3%) | +55.87 (+23.5%) | 7.67/10 | 45% | RENFORCER |
+| CoreWeave | 77.45 | 154.90 | -32.92 (-17.5%) | -46.82 (-24.9%) | 4.26/10 | 45% | ALLEGER |
+| Abionyx Pharma | 1.90 | 19.04 | -19.36 (-50.4%) | -23.34 (-60.8%) | 3.08/10 | 45% | ALLEGER |
+| **TOTAL** | — | **681.93** | **+48.59 (+7.7%)** | **+12.83 (+2.0%)** | — | — | — |
 
 ---
 
@@ -120,10 +164,10 @@
 - **EUR/USD** : AlphaVantage
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
-- **PLTR.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance
-- **CRWV.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance
-- **ACA.PA** : cours: EODHD, sentiment: Lexical EODHD (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
-- **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance
+- **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **CRWV.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **ACA.PA** : cours: EODHD, sentiment: Lexical EODHD (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
 
 **Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '13/80', 'finnhub': '9/55'}
 
