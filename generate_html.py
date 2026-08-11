@@ -181,14 +181,20 @@ def extract_positions(md: str) -> list[dict]:
         # Groupe 5 : pnl_net complet (ex: - -20.90 EUR (-11.1%))
         # Groupe 6 : score (ex: 6.43/10)
         # Groupe 7 : recommandation (ex: ACHAT MODERE)
+        # La cellule de note vaut soit "**6.33/10**" (format v7.1), soit
+        # "**6.33/10** (100%)" depuis la v7.2 qui y accole l'indice de
+        # confiance, soit "n/d" quand aucune note n'a pu etre calculee.
+        # Les trois doivent passer : un rapport genere par une version
+        # anterieure reste lisible.
         m_row = re.search(
-            r"\|\s*([\d,.]+)\s*EUR\s*\|"          # cours EUR
-            r"\s*([^|]+?)\s*\|"                    # variation (^ +0.00% etc.)
-            r"\s*([\d,.]+)\s*EUR\s*\|"             # VM EUR
-            r"\s*([^|]*?EUR[^|]*?)\s*\|"           # pnl_brut
-            r"\s*([^|]*?EUR[^|]*?)\s*\|"           # pnl_net
-            r"\s*\*{0,2}([\d.]+/10)\*{0,2}\s*\|"  # score
-            r"\s*([^|]+?)\s*\|",                   # recommandation
+            r"\|\s*([\d,.]+)\s*EUR\s*\|"              # cours EUR
+            r"\s*([^|]+?)\s*\|"                        # variation (^ +0.00% etc.)
+            r"\s*([\d,.]+)\s*EUR\s*\|"                 # VM EUR
+            r"\s*([^|]*?EUR[^|]*?)\s*\|"               # pnl_brut
+            r"\s*([^|]*?EUR[^|]*?)\s*\|"               # pnl_net
+            r"\s*\*{0,2}([\d.]+/10|n/d)\*{0,2}"        # note
+            r"\s*(?:\(\s*([\d.]+)\s*%\s*\))?\s*\|"     # confiance, facultative
+            r"\s*([^|]+?)\s*\|",                       # recommandation
             block)
         if not m_row:
             continue
@@ -198,7 +204,8 @@ def extract_positions(md: str) -> list[dict]:
         pnl_brut  = m_row.group(4).strip()
         pnl_net   = m_row.group(5).strip()
         score     = m_row.group(6).strip()
-        rec       = m_row.group(7).strip()
+        confiance = (m_row.group(7) or "").strip()
+        rec       = m_row.group(8).strip()
 
         m_sent = re.search(r"Sentiment[^:]*:\s*Bull\s*([\d.]+)%\s*/\s*Bear\s*([\d.]+)%", block)
         bull = m_sent.group(1) if m_sent else "—"
@@ -241,11 +248,25 @@ def extract_positions(md: str) -> list[dict]:
         if synth_lines:
             synthesis = " ".join(line.strip() for line in synth_lines).strip()
 
+        # Detail de la note : le tableau "| Composante | Note | Poids |"
+        composantes = re.findall(
+            r"^\|\s*([A-Za-zÀ-ÿ' ]+?)\s*\|\s*([\d.]+)/10\s*\|\s*([\d.]+)\s*%\s*\|",
+            block, flags=re.MULTILINE)
+
+        m_fonda = re.search(r"\*\*Fondamentaux\s*:\*\*\s*(.+?)\s*(?:\*\(source|$)",
+                            block, flags=re.MULTILINE)
+        fondamentaux = m_fonda.group(1).strip() if m_fonda else ""
+
+        m_absent = re.search(r"\*Non disponible\s*:\s*([^-*]+?)\s*--", block)
+        absentes = m_absent.group(1).strip() if m_absent else ""
+
         positions.append({
             "name": name, "ticker": ticker,
             "prix": prix, "variation": variation, "vm": vm,
             "pnl_brut": pnl_brut, "pnl_net": pnl_net,
-            "score": score, "rec": rec,
+            "score": score, "confiance": confiance, "rec": rec,
+            "composantes": composantes, "fondamentaux": fondamentaux,
+            "absentes": absentes,
             "bull": bull, "bear": bear,
             "mom_label": mom_label,
             "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
@@ -259,15 +280,44 @@ positions = extract_positions(md_content)
 # EXTRACTION SYNTHÈSE / CLASSEMENT
 # ══════════════════════════════════════════════════════
 def extract_synthese(md: str) -> list[dict]:
-    rows = []
-    in_class = False
+    """Lignes du tableau de synthese, indexees PAR NOM DE COLONNE.
+
+    L'ancienne version lisait les cellules par position (cells[1], cells[3]...).
+    Le nombre de colonnes du rapport ayant change entre versions, les valeurs
+    se retrouvaient decalees sous les mauvais en-tetes. On s'appuie desormais
+    sur la ligne d'en-tete du tableau, ce qui reste correct quel que soit
+    l'ordre ou le nombre de colonnes.
+    """
+    rows, entete, in_class = [], None, False
+
     for line in md.split("\n"):
-        if "Classement par Score" in line or "Synthese Portefeuille" in line:
-            in_class = True
-        if in_class and re.match(r"^\|", line) and not re.match(r"^\|[-| :]+\|", line):
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 5 and cells[0] and cells[0] not in ("Valeur", "Cout total"):
-                rows.append(cells)
+        if "Synthese Portefeuille" in line or "Classement par Score" in line:
+            in_class, entete = True, None
+            continue
+        if not in_class:
+            continue
+
+        # Une ligne vide ou un titre termine le tableau : sans cela on
+        # aspirait aussi les lignes des tableaux suivants.
+        if not line.strip() or line.startswith("#"):
+            if entete is not None:
+                in_class = False
+            continue
+        if not line.lstrip().startswith("|"):
+            continue
+        if re.match(r"^\s*\|[-| :]+\|", line):
+            continue
+
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if entete is None:
+            entete = [re.sub(r"[*]+", "", c).strip().lower() for c in cells]
+            continue
+
+        nom = re.sub(r"[*]+", "", cells[0]).strip()
+        if not nom or nom.upper() in ("VALEUR", "COUT TOTAL"):
+            continue
+        rows.append({entete[i]: cells[i] for i in range(min(len(entete), len(cells)))})
+
     return rows
 
 synthese_rows = extract_synthese(md_content)
@@ -417,6 +467,49 @@ def build_positions_html() -> str:
         pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
         var_html = var_span(p["variation"])
 
+        # Un indice de confiance bas signale une note etablie sur peu de
+        # criteres : il doit rester visible a cote de la note, jamais separe.
+        conf = p.get("confiance", "")
+        if conf:
+            try:
+                cls = "conf-basse" if float(conf) < 60 else "conf-ok"
+            except ValueError:
+                cls = "conf-ok"
+            conf_html = f' <span class="conf-badge {cls}">confiance {conf}%</span>'
+        else:
+            conf_html = ""
+
+        # Detail des composantes de la note
+        detail_html = ""
+        if p.get("composantes"):
+            barres = ""
+            for nom, note, poids in p["composantes"]:
+                try:
+                    pct = float(note) * 10
+                except ValueError:
+                    continue
+                teinte = ("var(--red)" if pct < 35 else
+                          "var(--yellow)" if pct < 60 else "var(--green)")
+                barres += (
+                    f'<div class="comp-row">'
+                    f'<span class="comp-name">{nom}</span>'
+                    f'<span class="comp-track"><span class="comp-fill" '
+                    f'style="width:{pct:.0f}%;background:{teinte}"></span></span>'
+                    f'<span class="comp-val">{note}</span>'
+                    f'<span class="comp-w">{poids}%</span>'
+                    f'</div>')
+            note_absente = (f'<p class="comp-missing">Non disponible : {p["absentes"]} '
+                            f'— poids redistribués.</p>' if p.get("absentes") else "")
+            fonda_line = (f'<p class="comp-fonda">{p["fondamentaux"]}</p>'
+                          if p.get("fondamentaux") else "")
+            detail_html = f"""
+    <details class="pos-detail-note">
+      <summary>Comment cette note est calculée</summary>
+      <div class="comp-list">{barres}</div>
+      {fonda_line}
+      {note_absente}
+    </details>"""
+
         synthesis_html = ""
         synth_text = p.get("synthesis", "").strip()
         if synth_text and "Aucune actualite" not in synth_text:
@@ -456,9 +549,10 @@ def build_positions_html() -> str:
     </div>
     <div class="pos-kpi">
       <div>{score_bar(p['score'])}</div>
-      <div class="pos-kpi-lbl">Score global</div>
+      <div class="pos-kpi-lbl">Note du titre{conf_html}</div>
     </div>
   </div>
+  {detail_html}
 
   <div class="pos-details">
     <div class="pos-detail-item">
@@ -483,22 +577,36 @@ def build_positions_html() -> str:
 def build_synthese_html() -> str:
     if not synthese_rows:
         return ""
+    def champ(ligne: dict, *candidats, defaut="—") -> str:
+        """Premiere colonne dont l'en-tete contient l'un des mots cherches."""
+        for c in candidats:
+            for cle, val in ligne.items():
+                if c in cle:
+                    return re.sub(r"[*]+", "", val).strip() or defaut
+        return defaut
+
     rows_html = ""
-    for cells in synthese_rows:
-        if len(cells) < 5:
+    for ligne in synthese_rows:
+        if not isinstance(ligne, dict) or not ligne:
             continue
-        # Nettoie les ** de la cellule nom et des valeurs
-        clean = [re.sub(r"\*+", "", c).strip() for c in cells]
-        if clean[0].upper() in ("VALEUR", "COUT TOTAL", "TOTAL"):
+        nom = re.sub(r"[*]+", "", list(ligne.values())[0]).strip()
+        if not nom or nom.upper() in ("VALEUR", "COUT TOTAL", "TOTAL"):
             continue
-        name_cell  = f"<td><strong>{clean[0]}</strong></td>"
-        vm_cell    = f"<td class='cell-num'>{clean[1] if len(clean) > 1 else '—'}</td>"
-        pnl_cell_h = pnl_cell(clean[2] if len(clean) > 2 else "—")
-        score_raw  = clean[3] if len(clean) > 3 else "—"
-        rec_raw    = clean[4] if len(clean) > 4 else "—"
-        score_cell = f"<td>{score_bar(score_raw)}</td>" if "/" in score_raw else f"<td class='cell-num'>{score_raw}</td>"
-        rec_cell   = f"<td>{rec_badge(rec_raw)}</td>"
-        rows_html += f"<tr>{name_cell}{vm_cell}{pnl_cell_h}{score_cell}{rec_cell}</tr>\n"
+
+        vm_raw    = champ(ligne, "vm", "valeur march")
+        pnl_raw   = champ(ligne, "p&l net", "pnl net")
+        score_raw = champ(ligne, "note", "score")
+        conf_raw  = champ(ligne, "conf", defaut="")
+        rec_raw   = champ(ligne, "recomm")
+
+        score_cell = (f"<td>{score_bar(score_raw)}</td>" if "/" in score_raw
+                      else f"<td class='cell-num'>{score_raw}</td>")
+        conf_cell  = f"<td class='cell-num'>{conf_raw or '—'}</td>"
+
+        rows_html += (f"<tr><td><strong>{nom}</strong></td>"
+                      f"<td class='cell-num'>{vm_raw}</td>"
+                      f"{pnl_cell(pnl_raw)}{score_cell}{conf_cell}"
+                      f"<td>{rec_badge(rec_raw)}</td></tr>\n")
 
     return f"""
 <section class="section-block" id="synthese">
@@ -508,7 +616,7 @@ def build_synthese_html() -> str:
       <thead>
         <tr>
           <th>Valeur</th><th>Valeur Marché</th>
-          <th>P&amp;L Net</th><th>Score</th><th>Recommandation</th>
+          <th>P&amp;L Net</th><th>Note</th><th>Confiance</th><th>Recommandation</th>
         </tr>
       </thead>
       <tbody>{rows_html}</tbody>
@@ -703,6 +811,50 @@ header {
 .pos-kpi { background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
 .pos-kpi-val { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); }
 .pos-kpi-lbl { font-size: .68rem; color: var(--muted); margin-top: 3px; }
+
+/* --- Indice de confiance et detail de la note (v7.2) --------------------- */
+.conf-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 999px;
+  font-size: .62rem; font-weight: 600; white-space: nowrap;
+}
+.conf-ok    { background: var(--accent-dim); color: var(--accent); }
+.conf-basse { background: var(--yellow-dim); color: var(--yellow); }
+
+.pos-detail-note {
+  margin: .75rem 0 0; padding: .6rem .85rem;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.pos-detail-note summary {
+  cursor: pointer; font-size: .78rem; color: var(--muted);
+  font-weight: 500; user-select: none;
+}
+.pos-detail-note summary:hover { color: var(--accent); }
+.pos-detail-note[open] summary { margin-bottom: .7rem; }
+
+.comp-list { display: flex; flex-direction: column; gap: .35rem; }
+.comp-row {
+  display: grid; grid-template-columns: 8.5rem 1fr 2.2rem 2.4rem;
+  align-items: center; gap: .5rem; font-size: .74rem;
+}
+.comp-name  { color: var(--text); }
+.comp-track {
+  height: 5px; background: var(--faint); border-radius: 999px; overflow: hidden;
+}
+.comp-fill  { display: block; height: 100%; border-radius: 999px; }
+.comp-val   { font-family: var(--font-mono); text-align: right; }
+.comp-w     { color: var(--muted); text-align: right; font-size: .68rem; }
+
+.comp-fonda {
+  margin: .7rem 0 0; padding-top: .6rem; border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: .68rem; color: var(--muted);
+  line-height: 1.6;
+}
+.comp-missing { margin: .5rem 0 0; font-size: .68rem; color: var(--yellow); }
+
+@media (max-width: 560px) {
+  .comp-row { grid-template-columns: 6.5rem 1fr 2rem 2.2rem; font-size: .68rem; }
+}
 .pos-details { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .pos-detail-item { display: flex; gap: 10px; align-items: baseline; font-size: .82rem; }
 .detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
