@@ -1,16 +1,16 @@
-# Rapport de Portefeuille v7.0 -- 11/08/2026 16:47 (Paris)
+# Rapport de Portefeuille v7.0 -- 12/08/2026 16:48 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.12/10
-**EUR/USD :** 1 EUR = 1.1545 USD
+**Tendance : Neutre** | Score macro : 4.83/10
+**EUR/USD :** 1 EUR = 1.1547 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.07% | 7 758.17 |
-| CAC 40 | ^ +0.17% | 8 740.65 |
+| S&P 500 | ^ +0.22% | 7 745.40 |
+| CAC 40 | v -0.55% | 8 666.63 |
 
 **Manchettes macro :**
 
@@ -28,7 +28,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 20.01 EUR | ^ +0.40% | 200.10 EUR | + +31.10 EUR (+18.4%) | + +27.12 EUR (+16.1%) | **8.02/10** (45%) | RENFORCER |
+| 20.09 EUR | ^ +0.35% | 200.90 EUR | + +31.90 EUR (+18.9%) | + +27.92 EUR (+16.5%) | **8.02/10** (45%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -47,9 +47,9 @@
 
 **Sentiment :** Bull 100% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +14.0% | 3M +25.9% | 6M +18.8% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +14.5% | 3M +25.7% | 6M +20.5% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Note 8.0/10 (confiance 45%). Points forts : sentiment presse 10.0, momentum 9.3. Momentum HAUSSIER. Position : +27.12 EUR (+16.1%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 8.0/10 (confiance 45%). Points forts : sentiment presse 10.0, momentum 9.3. Momentum HAUSSIER. Position : +27.92 EUR (+16.5%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -57,11 +57,11 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 153.94 EUR | ^ +0.00% | 307.89 EUR | + +69.77 EUR (+29.3%) | + +55.87 EUR (+23.5%) | **7.67/10** (45%) | RENFORCER |
+| 146.05 EUR | ^ +0.00% | 292.11 EUR | + +53.99 EUR (+22.7%) | + +40.09 EUR (+16.8%) | **7.66/10** (45%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> EXCLUSIVE: CPI Lands Tomorrow and Could Send PLTR, TSLA Surging—But Only if It's A 'Serious Shock,' Cato Economist Says | This Is the Big Question With Micron Technology Stock | Can Palantir Stock Keep Climbing After Its "Otherworldly" Earnings?
+> Palantir and Microsoft Drop. Why the AI Revival Is Hitting Software Stocks. | Palantir Stock's Premium Sits On One Country's Demand | Palantir Just Crushed Earnings Again. These 2 Legacy Defense Stocks Are the Cheaper Way to Play the Same Budget.
 
 **Detail de la note :**
 
@@ -69,16 +69,16 @@
 |------------|------|-------|
 | Momentum | 9.8/10 | 44% |
 | Consensus | 7.3/10 | 29% |
-| Sentiment | 6.0/10 | 16% |
+| Sentiment | 5.9/10 | 16% |
 | Risque | 2.5/10 | 11% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
 
-**Sentiment :** Bull 60% / Bear 40% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 59% / Bear 41% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +38.2% | 3M +28.8% | 6M +35.7% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +38.0% | 3M +34.5% | 6M +33.1% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Note 7.7/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +55.87 EUR (+23.5%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 7.7/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +40.09 EUR (+16.8%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -86,28 +86,28 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 77.45 EUR | ^ +0.00% | 154.90 EUR | - -32.92 EUR (-17.5%) | - -46.82 EUR (-24.9%) | **4.26/10** (45%) | ALLEGER |
+| 92.28 EUR | ^ +0.00% | 184.55 EUR | - -3.27 EUR (-1.7%) | - -17.17 EUR (-9.1%) | **4.52/10** (45%) | SURVEILLER (en moins-value) |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> eToro Group Q2 Earnings Call Highlights | CoreWeave closes $2.6 billion GPU-backed loan | IBM's $240M Together AI Deal For Nvidia Systems Puts It In The Neocloud Business
+> AI infrastructure stocks surge after strong earnings from CoreWeave, Supermicro | CoreWeave Signals Much Bigger Year Ahead | CoreWeave surges on Q2 results as analysts highlight strengthening AI demand outlook
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 2.0/10 | 44% |
+| Momentum | 2.5/10 | 44% |
 | Consensus | 7.1/10 | 29% |
-| Sentiment | 7.8/10 | 16% |
+| Sentiment | 8.0/10 | 16% |
 | Risque | 1.0/10 | 11% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
 
-**Sentiment :** Bull 78% / Bear 22% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Sentiment :** Bull 80% / Bear 20% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:10 B:21 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -0.8% | 3M -18.2% | 6M -7.8% -- BAISSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +1.6% | 3M -18.9% | 6M -6.0% -- BAISSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Note 4.3/10 (confiance 45%). Points forts : sentiment presse 7.8, consensus analystes 7.1. Points faibles : momentum 2.0, profil de risque 1.0. Momentum BAISSIER. Position : -46.82 EUR (-24.9%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 4.5/10 (confiance 45%). Points forts : sentiment presse 8.0, consensus analystes 7.1. Points faibles : momentum 2.5, profil de risque 1.0. Momentum BAISSIER. Position : -17.17 EUR (-9.1%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -115,7 +115,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.90 EUR | v -0.83% | 19.04 EUR | - -19.36 EUR (-50.4%) | - -23.34 EUR (-60.8%) | **3.08/10** (45%) | ALLEGER |
+| 1.99 EUR | ^ +4.63% | 19.90 EUR | - -18.50 EUR (-48.2%) | - -22.48 EUR (-58.5%) | **3.08/10** (45%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -134,9 +134,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +3.7% | 3M -46.6% | 6M -45.8% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M +2.7% | 3M -47.4% | 6M -46.1% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Note 3.1/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.3. Momentum BAISSIER. Position : -23.34 EUR (-60.8%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 3.1/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.3. Momentum BAISSIER. Position : -22.48 EUR (-58.5%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -144,11 +144,11 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| Credit Agricole SA | 20.01 | 200.10 | +31.10 (+18.4%) | +27.12 (+16.1%) | 8.02/10 | 45% | RENFORCER |
-| Palantir Technologies | 153.94 | 307.89 | +69.77 (+29.3%) | +55.87 (+23.5%) | 7.67/10 | 45% | RENFORCER |
-| CoreWeave | 77.45 | 154.90 | -32.92 (-17.5%) | -46.82 (-24.9%) | 4.26/10 | 45% | ALLEGER |
-| Abionyx Pharma | 1.90 | 19.04 | -19.36 (-50.4%) | -23.34 (-60.8%) | 3.08/10 | 45% | ALLEGER |
-| **TOTAL** | — | **681.93** | **+48.59 (+7.7%)** | **+12.83 (+2.0%)** | — | — | — |
+| Credit Agricole SA | 20.09 | 200.90 | +31.90 (+18.9%) | +27.92 (+16.5%) | 8.02/10 | 45% | RENFORCER |
+| Palantir Technologies | 146.05 | 292.11 | +53.99 (+22.7%) | +40.09 (+16.8%) | 7.66/10 | 45% | RENFORCER |
+| CoreWeave | 92.28 | 184.55 | -3.27 (-1.7%) | -17.17 (-9.1%) | 4.52/10 | 45% | SURVEILLER (en moins-value) |
+| Abionyx Pharma | 1.99 | 19.90 | -18.50 (-48.2%) | -22.48 (-58.5%) | 3.08/10 | 45% | ALLEGER |
+| **TOTAL** | — | **697.46** | **+64.12 (+10.1%)** | **+28.36 (+4.5%)** | — | — | — |
 
 ---
 
