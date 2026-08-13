@@ -1,16 +1,16 @@
-# Rapport de Portefeuille v7.0 -- 12/08/2026 16:48 (Paris)
+# Rapport de Portefeuille v7.0 -- 13/08/2026 16:48 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 4.83/10
-**EUR/USD :** 1 EUR = 1.1547 USD
+**Tendance : Neutre** | Score macro : 5.35/10
+**EUR/USD :** 1 EUR = 1.1542 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.22% | 7 745.40 |
-| CAC 40 | v -0.55% | 8 666.63 |
+| S&P 500 | ^ +0.86% | 7 815.52 |
+| CAC 40 | v -0.16% | 8 661.45 |
 
 **Manchettes macro :**
 
@@ -28,11 +28,11 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 20.09 EUR | ^ +0.35% | 200.90 EUR | + +31.90 EUR (+18.9%) | + +27.92 EUR (+16.5%) | **8.02/10** (45%) | RENFORCER |
+| 20.14 EUR | v -0.15% | 201.40 EUR | + +32.40 EUR (+19.2%) | + +28.42 EUR (+16.8%) | **8.02/10** (45%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Credit Agricole (CRARY) Upgraded to Buy: Here's Why | CREDIT AGRICOLE SA: Availability of the 2026 interim financial report
+> CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Should Value Investors Buy Credit Agricole (CRARY) Stock? | CREDIT AGRICOLE SA: 2026 CAPITAL INCREASE RESERVED FOR EMPLOYEES
 
 **Detail de la note :**
 
@@ -47,9 +47,9 @@
 
 **Sentiment :** Bull 100% / Bear 0% *(source : Lexical EODHD (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +14.5% | 3M +25.7% | 6M +20.5% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +14.9% | 3M +25.6% | 6M +19.6% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Note 8.0/10 (confiance 45%). Points forts : sentiment presse 10.0, momentum 9.3. Momentum HAUSSIER. Position : +27.92 EUR (+16.5%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 8.0/10 (confiance 45%). Points forts : sentiment presse 10.0, momentum 9.3. Momentum HAUSSIER. Position : +28.42 EUR (+16.8%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -57,11 +57,11 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 146.05 EUR | ^ +0.00% | 292.11 EUR | + +53.99 EUR (+22.7%) | + +40.09 EUR (+16.8%) | **7.66/10** (45%) | RENFORCER |
+| 151.77 EUR | ^ +0.00% | 303.54 EUR | + +65.42 EUR (+27.5%) | + +51.52 EUR (+21.6%) | **7.96/10** (45%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Palantir and Microsoft Drop. Why the AI Revival Is Hitting Software Stocks. | Palantir Stock's Premium Sits On One Country's Demand | Palantir Just Crushed Earnings Again. These 2 Legacy Defense Stocks Are the Cheaper Way to Play the Same Budget.
+> If You Invested $10,000 in Palantir Before It Released Its AIP Platform, Here's What Your Stake Would Be Worth Today | Revenue at Palantir-Backed Ondas Rises 1,236%. Stock Falls as Losses Widen. | Michael Burry Is Short Nebius and Palantir. Both Are Now Soaring and His Short Thesis Looks Broken.
 
 **Detail de la note :**
 
@@ -69,16 +69,16 @@
 |------------|------|-------|
 | Momentum | 9.8/10 | 44% |
 | Consensus | 7.3/10 | 29% |
-| Sentiment | 5.9/10 | 16% |
+| Sentiment | 7.8/10 | 16% |
 | Risque | 2.5/10 | 11% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
 
-**Sentiment :** Bull 59% / Bear 41% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 78% / Bear 22% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +38.0% | 3M +34.5% | 6M +33.1% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +31.5% | 3M +27.9% | 6M +28.6% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Note 7.7/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +40.09 EUR (+16.8%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 8.0/10 (confiance 45%). Points forts : momentum 9.8, sentiment presse 7.8. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +51.52 EUR (+21.6%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -86,28 +86,28 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 92.28 EUR | ^ +0.00% | 184.55 EUR | - -3.27 EUR (-1.7%) | - -17.17 EUR (-9.1%) | **4.52/10** (45%) | SURVEILLER (en moins-value) |
+| 96.36 EUR | ^ +0.00% | 192.73 EUR | + +4.91 EUR (+2.6%) | - -8.99 EUR (-4.8%) | **5.82/10** (45%) | SURVEILLER (en moins-value) |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> AI infrastructure stocks surge after strong earnings from CoreWeave, Supermicro | CoreWeave Signals Much Bigger Year Ahead | CoreWeave surges on Q2 results as analysts highlight strengthening AI demand outlook
+> CoreWeave’s Spike Hasn’t Erased 3-Month Losses: Why Trusted Wall Street Pro Expects 65% Post-Spike Gains | Stock Market Today: Dow Lags Nasdaq's Gain; Cisco Falls 7% On Earnings (Live Coverage) | Dow Jones Futures: Cisco, Coherent Are Earnings Losers After Nebius, Lumentum, CoreWeave Lead AI Rally
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 2.5/10 | 44% |
+| Momentum | 6.6/10 | 44% |
 | Consensus | 7.1/10 | 29% |
-| Sentiment | 8.0/10 | 16% |
+| Sentiment | 4.6/10 | 16% |
 | Risque | 1.0/10 | 11% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
 
-**Sentiment :** Bull 80% / Bear 20% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Sentiment :** Bull 46% / Bear 54% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:10 B:21 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +1.6% | 3M -18.9% | 6M -6.0% -- BAISSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +29.3% | 3M -5.7% | 6M +18.4% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Note 4.5/10 (confiance 45%). Points forts : sentiment presse 8.0, consensus analystes 7.1. Points faibles : momentum 2.5, profil de risque 1.0. Momentum BAISSIER. Position : -17.17 EUR (-9.1%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 5.8/10 (confiance 45%). Points forts : consensus analystes 7.1, momentum 6.6. Points faibles : profil de risque 1.0. Momentum HAUSSIER. Position : -8.99 EUR (-4.8%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -115,17 +115,17 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.99 EUR | ^ +4.63% | 19.90 EUR | - -18.50 EUR (-48.2%) | - -22.48 EUR (-58.5%) | **3.08/10** (45%) | ALLEGER |
+| 1.99 EUR | v -1.09% | 19.88 EUR | - -18.52 EUR (-48.2%) | - -22.50 EUR (-58.6%) | **3.3/10** (45%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma: Half-Year Review of the Liquidity Agreement Entered into with TP ICAP (Europe) SA
+> ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma is Scaling up Its Operations After Securing the Resources Needed to Achieve Its Goals and Is Embarking on… | Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 1.3/10 | 44% |
+| Momentum | 1.8/10 | 44% |
 | Consensus | 5.0/10 | 29% |
 | Sentiment | 5.0/10 | 16% |
 | Risque | 2.5/10 | 11% |
@@ -134,9 +134,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +2.7% | 3M -47.4% | 6M -46.1% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M +7.5% | 3M -45.0% | 6M -40.5% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Note 3.1/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.3. Momentum BAISSIER. Position : -22.48 EUR (-58.5%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 3.3/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.8. Momentum BAISSIER. Position : -22.50 EUR (-58.6%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -144,11 +144,11 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| Credit Agricole SA | 20.09 | 200.90 | +31.90 (+18.9%) | +27.92 (+16.5%) | 8.02/10 | 45% | RENFORCER |
-| Palantir Technologies | 146.05 | 292.11 | +53.99 (+22.7%) | +40.09 (+16.8%) | 7.66/10 | 45% | RENFORCER |
-| CoreWeave | 92.28 | 184.55 | -3.27 (-1.7%) | -17.17 (-9.1%) | 4.52/10 | 45% | SURVEILLER (en moins-value) |
-| Abionyx Pharma | 1.99 | 19.90 | -18.50 (-48.2%) | -22.48 (-58.5%) | 3.08/10 | 45% | ALLEGER |
-| **TOTAL** | — | **697.46** | **+64.12 (+10.1%)** | **+28.36 (+4.5%)** | — | — | — |
+| Credit Agricole SA | 20.14 | 201.40 | +32.40 (+19.2%) | +28.42 (+16.8%) | 8.02/10 | 45% | RENFORCER |
+| Palantir Technologies | 151.77 | 303.54 | +65.42 (+27.5%) | +51.52 (+21.6%) | 7.96/10 | 45% | RENFORCER |
+| CoreWeave | 96.36 | 192.73 | +4.91 (+2.6%) | -8.99 (-4.8%) | 5.82/10 | 45% | SURVEILLER (en moins-value) |
+| Abionyx Pharma | 1.99 | 19.88 | -18.52 (-48.2%) | -22.50 (-58.6%) | 3.3/10 | 45% | ALLEGER |
+| **TOTAL** | — | **717.55** | **+84.21 (+13.3%)** | **+48.45 (+7.7%)** | — | — | — |
 
 ---
 
@@ -164,8 +164,8 @@
 - **EUR/USD** : AlphaVantage
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
-- **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
-- **CRWV.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **PLTR.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **CRWV.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
 - **ACA.PA** : cours: EODHD, sentiment: Lexical EODHD (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
 - **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
 
