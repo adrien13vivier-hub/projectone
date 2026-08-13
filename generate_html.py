@@ -1,1173 +1,2219 @@
 #!/usr/bin/env python3
 """
-generate_html.py  v3.8
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Convertit reports/daily_report.md  →  docs/index.html
-• KPIs animés (compteurs au chargement)
-• Graphique combiné normalisé base 100 (section Tendances)
-• Tableaux positions + synthèse extraits du Markdown
-• Synthèse IA par position (bloc > blockquote dans le Markdown)  ← v3.2
-  - v3.3 : capture multi-lignes (toutes les lignes ">") concaténées
-  - v3.4 : regex synth_src tolère les parenthèses dans le nom de source
-            (ex: "RSS Yahoo Finance (brut)" capturé correctement)
-  - v3.5 : suppression des print() finaux (cron-silent) + version v6.1
-  - v3.6 : regex synth_src rendue robuste face au format ")* en fin de
-            ligne produit par portfolio_analyzer (source : RSS Yahoo Finance)*
-            → le \)? final et le \*? sont désormais optionnels et bien ordonnés
-  - v3.7 : synchronisation numéro de version affiché → v6.2
-  - v3.8 : fix extract_kpi() → cible la ligne TOTAL en gras dans le tableau
-            synthèse ; fix extract_positions() → regex m_row tolère ^ et
-            tous les formats de variation actuels
-• Historique des 30 derniers rapports (archive.json)
-• Mode sombre / clair
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Portfolio Analyzer v7.2 -- NOTATION REFONDUE
+================================================================================
+
+CE QUI CHANGE, ET POURQUOI
+--------------------------
+
+L'ancienne formule etait :
+
+    note = 0.30 * plus-value_latente
+         + 0.20 * sentiment_presse
+         + 0.20 * consensus_analystes
+         + 0.30 * momentum
+
+Trois defauts structurels :
+
+1. LE PRIX DE REVIENT N'EST PAS UNE PROPRIETE DU TITRE. Deux personnes
+   detenant la meme action recevaient deux notes differentes selon leur date
+   d'achat. Le titre, lui, vaut la meme chose pour tout le monde.
+
+2. LE PRIX COMPTAIT DOUBLE. Plus-value (30%) et momentum (30%) mesurent la
+   meme chose sur une position recente : 60% de la note disait "ca a monte".
+   La formule etait procyclique -- au plus haut juste avant les corrections.
+
+3. AUCUN FONDAMENTAL. Un titre a 90x les benefices pouvait obtenir ACHAT FORT
+   parce qu'il avait monte et que la presse etait enthousiaste.
+
+NOUVELLE ARCHITECTURE : DEUX INDICATEURS DISTINCTS
+--------------------------------------------------
+
+  NOTE DU TITRE (0-10)  -- ne depend PAS de qui le detient
+      Valorisation ............ 22%   PER, PEG, EV/EBITDA, P/B
+      Sante financiere ........ 18%   marges, ROE, dette/fonds propres
+      Croissance .............. 15%   chiffre d'affaires, benefices
+      Momentum ................ 20%   avec penalite de surchauffe
+      Consensus analystes ..... 13%
+      Sentiment presse ........ 07%
+      Risque / volatilite ..... 05%
+
+  MA POSITION           -- specifique au detenteur, PAS dans la note
+      plus-value nette, seuil de rentabilite apres frais, poids dans le
+      portefeuille, ecart au consensus de prix cible.
+
+La recommandation croise les deux : un titre bien note qu'on detient en
+moins-value n'appelle pas la meme action qu'un titre mal note en plus-value.
+
+GESTION DES DONNEES MANQUANTES
+------------------------------
+L'ancienne version mettait 5.0 par defaut, ce qui tirait silencieusement
+toutes les notes vers le milieu. Desormais une composante absente est
+EXCLUE et les poids restants sont renormalises. Un INDICE DE CONFIANCE
+(part des poids reellement disponibles) accompagne chaque note : une note
+de 8/10 calculee sur 40% des criteres n'a pas la valeur d'une note de 8/10
+calculee sur 95%.
+
+LIMITES ASSUMEES -- a lire avant de s'y fier
+--------------------------------------------
+- Aucune formule ne predit les rendements futurs. Ceci est un outil de
+  hierarchisation et d'alerte, pas un signal d'achat.
+- Les seuils de valorisation sont GENERALISTES. Un PER de 40 n'a pas le meme
+  sens pour un editeur de logiciels et pour une banque. Le PEG corrige
+  partiellement en integrant la croissance, mais la comparaison sectorielle
+  n'est pas implementee.
+- Les fondamentaux EODHD sont trimestriels : ils ne bougent pas d'un jour a
+  l'autre. Seuls momentum, sentiment et cours evoluent quotidiennement.
+- Les ETF, obligations et cryptos n'ont pas de fondamentaux d'entreprise :
+  ils sont notes sur les seules composantes applicables, avec un indice de
+  confiance mecaniquement plus bas.
+================================================================================
 """
-import base64, json, logging, os, re, sys
-from datetime import datetime, timezone
-from pathlib import Path
 
-_log = logging.getLogger("generate_html")
-logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
-
-# ── Chemins ───────────────────────────────────────────────────
-# --- Chemins : resolus par utilisateur via --user ----------------------------
-import argparse as _argparse
+import os
+import sys
+import argparse
 import re as _re
+import csv
+import json
+import logging
+import time
+import threading
+import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+import xml.etree.ElementTree as ET
+from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
 
-_ap = _argparse.ArgumentParser(description="Rapport Markdown -> page HTML.")
-_ap.add_argument("--user",   default=None, help="Utilisateur (reports/<user>/ -> docs/<user>/).")
-_ap.add_argument("--output", default=None, help="Dossier de sortie HTML.")
-_ap.add_argument("--input",  default=None, help="Chemin explicite du daily_report.md.")
-_args, _ = _ap.parse_known_args()
+# --- LOGGING (cron-friendly : WARNING uniquement, pas de stdout INFO) --------
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(levelname)s %(message)s",
+)
+_log = logging.getLogger("portfolio_analyzer")
 
-def _slug(v):
-    return _re.sub(r"[^a-zA-Z0-9_-]+", "-", str(v or "default").strip().lower()).strip("-") or "default"
+# --- CLES API ----------------------------------------------------------------
+FINNHUB_KEY      = os.environ.get("FINNHUB_API_KEY", "")
+EODHD_KEY        = os.environ.get("EODHD_API_KEY", "")
+TWELVEDATA_KEY   = os.environ.get("TWELVEDATA_API_KEY", "")
+ALPHAVANTAGE_KEY = os.environ.get("ALPHAVANTAGE_API_KEY", "")
 
-USER = _slug(_args.user) if _args.user else None
+for k, v in [("FINNHUB_API_KEY", FINNHUB_KEY), ("EODHD_API_KEY", EODHD_KEY),
+             ("TWELVEDATA_API_KEY", TWELVEDATA_KEY), ("ALPHAVANTAGE_API_KEY", ALPHAVANTAGE_KEY)]:
+    if not v:
+        _log.warning("Cle absente : %s -- fallback cache active pour cette source", k)
 
-if _args.input:
-    MD_PATH = Path(_args.input)
-elif USER:
-    MD_PATH = Path(f"reports/{USER}/daily_report.md")
-else:
-    MD_PATH = Path("reports/daily_report.md")
+FH_BASE  = "https://finnhub.io/api/v1"
+EOD_BASE = "https://eodhd.com/api"
+TD_BASE  = "https://api.twelvedata.com"
+AV_BASE  = "https://www.alphavantage.co/query"
+PARIS_TZ = ZoneInfo("Europe/Paris")
 
-if _args.output:
-    OUT_DIR = Path(_args.output)
-elif USER:
-    # Publication sous un jeton aleatoire et non sous le nom d'utilisateur :
-    # les fichiers servis par Cloudflare Pages sont publics, un chemin
-    # devinable exposerait le portefeuille des autres utilisateurs.
-    try:
-        import sys as _sys
-        _sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from api.load_portfolio import dossier_rapport
-        OUT_DIR = Path(dossier_rapport(USER))
-    except Exception as _e:
-        _log.warning("Jeton de rapport indisponible (%s) -- repli sur docs/%s", _e, USER)
-        OUT_DIR = Path(f"docs/{USER}")
-else:
-    OUT_DIR = Path("docs")
+DIVERGENCE_THRESHOLD_PCT = 2.0
 
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-HTML_PATH    = OUT_DIR / "index.html"
-ARCHIVE_PATH = OUT_DIR / "archive.json"
-CHARTS_DIR   = Path(f"reports/{USER}/charts") if USER else Path("reports/charts")
-COMBINED_PNG = CHARTS_DIR / "portfolio_combined.png"
+# --- CHEMINS ------------------------------------------------------------------
+# Le cache de MARCHE est volontairement PARTAGE : les cours, historiques et
+# sentiments sont des donnees publiques identiques pour tous les utilisateurs.
+# C'est ce qui permet de ne pas multiplier les appels API par le nombre de
+# comptes.
+CACHE_PATH        = "cache/market_cache.json"
+PORTFOLIOS_DIR    = "data/portfolios"
+BROKERS_PATH      = "data/brokers.json"
+LEGACY_CACHE_PATH = "cache/session_cache.json"
 
-# ── Lecture Markdown ──────────────────────────────────────────
-if not MD_PATH.exists():
-    _log.warning("reports/daily_report.md introuvable — page vide générée.")
-    md_content = "# Rapport indisponible\n\nAucun rapport généré ce jour."
-else:
-    md_content = MD_PATH.read_text(encoding="utf-8")
+# Chemins propres a l'utilisateur courant -- reaffectes par set_user().
+USER         = "default"
+HISTORY_PATH = "reports/default/history.csv"
+CHARTS_DIR   = "reports/default/charts"
+REPORT_PATH  = "reports/default/daily_report.md"
 
-# ── Date du rapport ───────────────────────────────────────────
-date_match  = re.search(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2})", md_content)
-report_date = date_match.group(1) if date_match else \
-              datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M")
 
-# ── Graphique combiné → base64 ──────────────────────────────────
-combined_b64 = ""
-if COMBINED_PNG.exists():
-    combined_b64 = base64.b64encode(COMBINED_PNG.read_bytes()).decode()
+def slugify(value: str) -> str:
+    """Normalise un nom d'utilisateur en identifiant de dossier sur."""
+    s = _re.sub(r"[^a-zA-Z0-9_-]+", "-", str(value or "default").strip().lower())
+    return s.strip("-") or "default"
 
-# ══════════════════════════════════════════════════════
-# EXTRACTION KPI
-# Cible la ligne TOTAL (en gras) dans le tableau Synthèse :
-#   | **TOTAL** | — | **VM** | **pnl_brut (pct%)** | **pnl_net (pct%)** | — | — |
-# ══════════════════════════════════════════════════════
-def extract_kpi(md: str) -> dict:
-    kpi = {"pnl_net": "0", "pnl_pct": "0", "valeur_marche": "0",
-           "cout_total": "0", "pnl_brut": "0", "pnl_brut_pct": "0"}
 
-    # ── Ligne TOTAL du tableau synthèse ───────────────────────────────────
-    # Format réel :
-    #   | **TOTAL** | — | **633.60** | **-35.28 (-5.3%)** | **-75.02 (-11.2%)** | — | — |
-    m_total = re.search(
-        r"\|\s*\*{0,2}TOTAL\*{0,2}\s*\|[^|]*\|\s*\*{0,2}([\d\s,.]+)\*{0,2}\s*\|"   # VM
-        r"\s*\*{0,2}([+-][\d\s,.]+)\s*\(([-+]?[\d,.]+)%\)\*{0,2}\s*\|"              # pnl_brut (pct)
-        r"\s*\*{0,2}([+-][\d\s,.]+)\s*\(([-+]?[\d,.]+)%\)\*{0,2}\s*\|",             # pnl_net (pct)
-        md)
-    if m_total:
-        kpi["valeur_marche"] = m_total.group(1).strip().replace(" ", "").replace(",", ".")
-        kpi["pnl_brut"]      = m_total.group(2).strip().replace(" ", "")
-        kpi["pnl_brut_pct"]  = m_total.group(3).strip()
-        kpi["pnl_net"]       = m_total.group(4).strip().replace(" ", "")
-        kpi["pnl_pct"]       = m_total.group(5).strip()
-        # Coût total = VM - pnl_brut
-        try:
-            vm_f  = float(kpi["valeur_marche"].replace(",", "."))
-            pb_f  = float(kpi["pnl_brut"].replace(",", "."))
-            kpi["cout_total"] = f"{vm_f - pb_f:.2f}"
-        except Exception:
-            kpi["cout_total"] = "0"
-        return kpi
+def set_user(username: str):
+    """Bascule tous les chemins de sortie vers l'utilisateur indique."""
+    global USER, HISTORY_PATH, CHARTS_DIR, REPORT_PATH
+    USER         = slugify(username)
+    HISTORY_PATH = f"reports/{USER}/history.csv"
+    CHARTS_DIR   = f"reports/{USER}/charts"
+    REPORT_PATH  = f"reports/{USER}/daily_report.md"
+    os.makedirs(CHARTS_DIR, exist_ok=True)
+    os.makedirs(f"docs/{USER}", exist_ok=True)
+    _migrate_legacy_files()
 
-    # ── Fallback : ancienne regex (tableau avec coût total explicite) ──────
-    m = re.search(
-        r"\|\s*([\d\s,.]+)\s*EUR\s*\|\s*([\d\s,.]+)\s*EUR\s*"
-        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([-+]?[\d,.]+)%[^|]*"
-        r"\|[^|]*?([+-][\d\s,.]+)\s*EUR[^|]*?([-+]?[\d,.]+)%",
-        md)
-    if m:
-        kpi["cout_total"]    = m.group(1).strip().replace(" ", "")
-        kpi["valeur_marche"] = m.group(2).strip().replace(" ", "")
-        kpi["pnl_brut"]      = m.group(3).strip().replace(" ", "")
-        kpi["pnl_brut_pct"]  = m.group(4).strip()
-        kpi["pnl_net"]       = m.group(5).strip().replace(" ", "")
-        kpi["pnl_pct"]       = m.group(6).strip()
-    return kpi
 
-kpi = extract_kpi(md_content)
+def _migrate_legacy_files():
+    """Reprend le cache de marche de l'ancienne version.
 
-def fmt_num(s: str, decimals: int = 2) -> str:
-    try:
-        v = float(s.replace(",", ".").replace(" ", ""))
-        if v >= 0:
-            return f"+{v:,.{decimals}f}".replace(",", " ").replace(".", ",")
-        return f"{v:,.{decimals}f}".replace(",", " ").replace(".", ",")
-    except Exception:
-        return s
-
-def raw_abs(s: str) -> str:
-    return s.lstrip("+-").replace(",", ".").replace(" ", "")
-
-pnl_positive    = not kpi["pnl_net"].startswith("-")
-pnl_class       = "kpi-positive" if pnl_positive else "kpi-negative"
-brut_positive   = not kpi["pnl_brut"].startswith("-")
-brut_class      = "kpi-positive" if brut_positive else "kpi-negative"
-
-# ══════════════════════════════════════════════════════
-# EXTRACTION POSITIONS (blocs ### Valeur)
-# ══════════════════════════════════════════════════════
-def extract_positions(md: str) -> list[dict]:
-    positions = []
-    blocks = re.split(r"(?=^### .+`)", md, flags=re.MULTILINE)
-    for block in blocks:
-        m_head = re.match(r"^### (.+?)\s*`([^`]+)`", block)
-        if not m_head:
-            continue
-        name   = m_head.group(1).strip()
-        ticker = m_head.group(2).strip()
-
-        # ── Ligne de données du tableau de position ────────────────────────
-        # Format réel (exemple) :
-        #   | 90.41 EUR | ^ +0.00% | 180.82 EUR | - -7.00 EUR (-3.7%) | - -20.90 EUR (-11.1%) | **6.43/10** | ACHAT MODERE |
-        # Groupe 1 : cours (ex: 90.41)
-        # Groupe 2 : variation complète (ex: ^ +0.00%)
-        # Groupe 3 : VM (ex: 180.82)
-        # Groupe 4 : pnl_brut complet (ex: - -7.00 EUR (-3.7%))
-        # Groupe 5 : pnl_net complet (ex: - -20.90 EUR (-11.1%))
-        # Groupe 6 : score (ex: 6.43/10)
-        # Groupe 7 : recommandation (ex: ACHAT MODERE)
-        # La cellule de note vaut soit "**6.33/10**" (format v7.1), soit
-        # "**6.33/10** (100%)" depuis la v7.2 qui y accole l'indice de
-        # confiance, soit "n/d" quand aucune note n'a pu etre calculee.
-        # Les trois doivent passer : un rapport genere par une version
-        # anterieure reste lisible.
-        m_row = re.search(
-            r"\|\s*([\d,.]+)\s*EUR\s*\|"              # cours EUR
-            r"\s*([^|]+?)\s*\|"                        # variation (^ +0.00% etc.)
-            r"\s*([\d,.]+)\s*EUR\s*\|"                 # VM EUR
-            r"\s*([^|]*?EUR[^|]*?)\s*\|"               # pnl_brut
-            r"\s*([^|]*?EUR[^|]*?)\s*\|"               # pnl_net
-            r"\s*\*{0,2}([\d.]+/10|n/d)\*{0,2}"        # note
-            r"\s*(?:\(\s*([\d.]+)\s*%\s*\))?\s*\|"     # confiance, facultative
-            r"\s*([^|]+?)\s*\|",                       # recommandation
-            block)
-        if not m_row:
-            continue
-        prix      = m_row.group(1).strip()
-        variation = m_row.group(2).strip()
-        vm        = m_row.group(3).strip()
-        pnl_brut  = m_row.group(4).strip()
-        pnl_net   = m_row.group(5).strip()
-        score     = m_row.group(6).strip()
-        confiance = (m_row.group(7) or "").strip()
-        rec       = m_row.group(8).strip()
-
-        m_sent = re.search(r"Sentiment[^:]*:\s*Bull\s*([\d.]+)%\s*/\s*Bear\s*([\d.]+)%", block)
-        bull = m_sent.group(1) if m_sent else "—"
-        bear = m_sent.group(2) if m_sent else "—"
-
-        # Momentum : extrait depuis la ligne "Perf. historique :"
-        # Format : Perf. historique : 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER
-        m_perf = re.search(
-            r"Perf\. historique[^:]*:\s*1M\s*([^\s|]+)\s*\|\s*3M\s*([^\s|]+)\s*\|\s*6M\s*([^\s|]+)\s*--\s*(\w+)",
-            block)
-        if m_perf:
-            ret_1m    = m_perf.group(1).strip()
-            ret_3m    = m_perf.group(2).strip()
-            ret_6m    = m_perf.group(3).strip()
-            mom_label = m_perf.group(4).strip()
-        else:
-            # Fallback ancienne regex Momentum
-            m_mom = re.search(
-                r"Momentum[^:]*:\s*(\w+)\s*\(1M:\s*([^/]+)/\s*3M:\s*([^/]+)/\s*6M:\s*([^)]+)\)",
-                block)
-            mom_label = m_mom.group(1) if m_mom else "—"
-            ret_1m    = m_mom.group(2).strip() if m_mom else "—"
-            ret_3m    = m_mom.group(3).strip() if m_mom else "—"
-            ret_6m    = m_mom.group(4).strip() if m_mom else "—"
-
-        synthesis = ""
-        synth_src = ""
-
-        m_synth_src = re.search(
-            r"\*\*Actualite[^*]*\*\*[^(]*\(source\s*:\s*([^)]+?)\s*\)?[\s*]*(?:\n|$)",
-            block)
-        if m_synth_src:
-            synth_src = m_synth_src.group(1).strip().rstrip(")*").strip()
-
-        synth_block = block
-        m_actualite_pos = re.search(r"\*\*Actualite[^*]*\*\*", block)
-        if m_actualite_pos:
-            synth_block = block[m_actualite_pos.start():]
-        synth_lines = re.findall(r"^>\s*(.+)", synth_block, flags=re.MULTILINE)
-        if synth_lines:
-            synthesis = " ".join(line.strip() for line in synth_lines).strip()
-
-        # Detail de la note : le tableau "| Composante | Note | Poids |"
-        composantes = re.findall(
-            r"^\|\s*([A-Za-zÀ-ÿ' ]+?)\s*\|\s*([\d.]+)/10\s*\|\s*([\d.]+)\s*%\s*\|",
-            block, flags=re.MULTILINE)
-
-        m_fonda = re.search(r"\*\*Fondamentaux\s*:\*\*\s*(.+?)\s*(?:\*\(source|$)",
-                            block, flags=re.MULTILINE)
-        fondamentaux = m_fonda.group(1).strip() if m_fonda else ""
-
-        m_absent = re.search(r"\*Non disponible\s*:\s*([^-*]+?)\s*--", block)
-        absentes = m_absent.group(1).strip() if m_absent else ""
-
-        positions.append({
-            "name": name, "ticker": ticker,
-            "prix": prix, "variation": variation, "vm": vm,
-            "pnl_brut": pnl_brut, "pnl_net": pnl_net,
-            "score": score, "confiance": confiance, "rec": rec,
-            "composantes": composantes, "fondamentaux": fondamentaux,
-            "absentes": absentes,
-            "bull": bull, "bear": bear,
-            "mom_label": mom_label,
-            "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
-            "synthesis": synthesis, "synth_src": synth_src,
-        })
-    return positions
-
-positions = extract_positions(md_content)
-
-# ══════════════════════════════════════════════════════
-# EXTRACTION SYNTHÈSE / CLASSEMENT
-# ══════════════════════════════════════════════════════
-def extract_synthese(md: str) -> list[dict]:
-    """Lignes du tableau de synthese, indexees PAR NOM DE COLONNE.
-
-    L'ancienne version lisait les cellules par position (cells[1], cells[3]...).
-    Le nombre de colonnes du rapport ayant change entre versions, les valeurs
-    se retrouvaient decalees sous les mauvais en-tetes. On s'appuie desormais
-    sur la ligne d'en-tete du tableau, ce qui reste correct quel que soit
-    l'ordre ou le nombre de colonnes.
+    Le cache contient des donnees publiques indexees par ticker : il est
+    legitimement partageable entre tous les utilisateurs.
+    L'ancien reports/history.csv n'est PAS repris automatiquement : il
+    appartient a un seul utilisateur et le recopier partout fausserait les
+    historiques. Le deplacer une fois a la main (voir README).
     """
-    rows, entete, in_class = [], None, False
-
-    for line in md.split("\n"):
-        if "Synthese Portefeuille" in line or "Classement par Score" in line:
-            in_class, entete = True, None
-            continue
-        if not in_class:
-            continue
-
-        # Une ligne vide ou un titre termine le tableau : sans cela on
-        # aspirait aussi les lignes des tableaux suivants.
-        if not line.strip() or line.startswith("#"):
-            if entete is not None:
-                in_class = False
-            continue
-        if not line.lstrip().startswith("|"):
-            continue
-        if re.match(r"^\s*\|[-| :]+\|", line):
-            continue
-
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if entete is None:
-            entete = [re.sub(r"[*]+", "", c).strip().lower() for c in cells]
-            continue
-
-        nom = re.sub(r"[*]+", "", cells[0]).strip()
-        if not nom or nom.upper() in ("VALEUR", "COUT TOTAL"):
-            continue
-        rows.append({entete[i]: cells[i] for i in range(min(len(entete), len(cells)))})
-
-    return rows
-
-synthese_rows = extract_synthese(md_content)
-
-# ══════════════════════════════════════════════════════
-# EXTRACTION INDICES MACRO
-# ══════════════════════════════════════════════════════
-def extract_indices(md: str) -> list[dict]:
-    indices = []
-    in_idx = False
-    for line in md.split("\n"):
-        if "Indice" in line and "Variation" in line:
-            in_idx = True
-            continue
-        if in_idx and re.match(r"^\|[-| :]+\|", line):
-            continue
-        if in_idx and re.match(r"^\|", line):
-            cells = [c.strip() for c in line.strip().strip("|").split("|")]
-            if len(cells) >= 3 and cells[0]:
-                indices.append({"name": cells[0], "variation": cells[1], "cours": cells[2]})
-        elif in_idx and line.strip() == "":
-            in_idx = False
-    return indices
-
-indices = extract_indices(md_content)
-
-# ══════════════════════════════════════════════════════
-# ARCHIVE JSON
-# ══════════════════════════════════════════════════════
-Path("docs").mkdir(exist_ok=True)
-archive = []
-if ARCHIVE_PATH.exists():
     try:
-        archive = json.loads(ARCHIVE_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        archive = []
+        if os.path.exists(LEGACY_CACHE_PATH) and not os.path.exists(CACHE_PATH):
+            os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+            shutil.copyfile(LEGACY_CACHE_PATH, CACHE_PATH)
+    except Exception as e:
+        _log.warning("Migration ancien format ignoree : %s", e)
 
-pnl_archive = f"{fmt_num(kpi['pnl_net'])} € ({fmt_num(kpi['pnl_pct'], 1)}%)"
-archive = [e for e in archive if e.get("date") != report_date]
-archive.insert(0, {
-    "date":    report_date,
-    "pnl":     pnl_archive,
-    "vm":      kpi["valeur_marche"],
-    "nb_pos":  str(len(positions)),
-})
-archive = archive[:30]
-ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
+# --- FENETRE HISTORIQUE (1 mois) --------------------------------------------
+HISTORY_DAYS      = 180     # profondeur de collecte, en cotations JOURNALIERES
+CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mois)
+HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
+                "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
+                "pnl_net_pct", "score", "confiance", "rec"]
 
-# ══════════════════════════════════════════════════════
-# HELPERS HTML
-# ══════════════════════════════════════════════════════
-def rec_badge(rec: str) -> str:
-    rec_u = rec.upper()
-    if "ACHAT FORT"   in rec_u: cls, ico = "buy-strong", "🟢"
-    elif "ACHAT"      in rec_u: cls, ico = "buy-mod",    "🔵"
-    elif "GARDER"     in rec_u: cls, ico = "hold",       "🟡"
-    elif "EVITER" in rec_u or "ÉVITER" in rec_u: cls, ico = "avoid", "🟠"
-    elif "VENDRE"     in rec_u: cls, ico = "sell",       "🔴"
-    else:                       cls, ico = "hold",       "⚪"
-    label = rec.replace("ACHAT FORT", "ACHAT FORT").replace("ACHAT MODERE", "ACHAT MODÉRÉ") \
-               .replace("A EVITER", "À ÉVITER")
-    return f'<span class="badge {cls}">{ico} {label}</span>'
+# --- QUOTAS JOURNALIERS PAR CLE ----------------------------------------------
+_QUOTA = {
+    "alphavantage": {"used": 0, "limit": 20},
+    "twelvedata":   {"used": 0, "limit": 60},
+    "eodhd":        {"used": 0, "limit": 80},
+    "finnhub":      {"used": 0, "limit": 55},
+}
 
-def score_bar(score_str: str) -> str:
+_quota_lock = threading.Lock()
+
+
+def _quota_ok(key: str) -> bool:
+    with _quota_lock:
+        q = _QUOTA.get(key)
+        return q["used"] < q["limit"] if q else True
+
+
+def _quota_inc(key: str):
+    with _quota_lock:
+        if key in _QUOTA:
+            _QUOTA[key]["used"] += 1
+
+
+def _quota_status() -> dict:
+    return {k: f"{v['used']}/{v['limit']}" for k, v in _QUOTA.items()}
+
+
+# --- PROFIL UTILISATEUR -------------------------------------------------------
+# Ces quatre structures ne contiennent plus rien en dur : elles sont remplies
+# par apply_profile() a partir du JSON de l'utilisateur.
+
+PORTFOLIO: list = []
+WATCHLIST: list = []
+
+# Indices macro par defaut. Un profil peut fournir sa propre selection.
+DEFAULT_INDICES = {
+    "S&P 500":    {"eod": "GSPC.INDX", "fh": "^GSPC"},
+    "CAC 40":     {"eod": "FCHI.INDX", "fh": "^FCHI"},
+    "Nikkei 225": {"eod": "N225.INDX", "fh": "^N225"},
+}
+INDICES = dict(DEFAULT_INDICES)
+
+# Grille de frais neutre, utilisee si le profil ne precise aucun courtier.
+DEFAULT_BROKERAGE = {
+    "euronext": {"threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99},
+    "us":       {"threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95},
+}
+BROKERAGE   = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
+BROKER_NAME = "Grille par defaut"
+
+PROFILE: dict = {}
+
+
+def apply_profile(profile: dict):
+    """Charge un profil utilisateur dans l'etat global du module."""
+    global PORTFOLIO, WATCHLIST, INDICES, BROKERAGE, BROKER_NAME, PROFILE
+
+    PROFILE   = profile or {}
+    settings  = PROFILE.get("settings") or {}
+
+    PORTFOLIO = PROFILE.get("lines") or []
+    WATCHLIST = settings.get("watchlist") or []
+
+    idx = settings.get("indices")
+    if isinstance(idx, dict) and idx:
+        INDICES = idx
+    elif isinstance(idx, list) and idx:
+        INDICES = {n: DEFAULT_INDICES[n] for n in idx if n in DEFAULT_INDICES} or dict(DEFAULT_INDICES)
+    else:
+        INDICES = dict(DEFAULT_INDICES)
+
+    fees = settings.get("fees")
+    if isinstance(fees, dict) and fees:
+        BROKERAGE = {k: dict(v) for k, v in fees.items()}
+    else:
+        BROKERAGE = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
+    BROKER_NAME = settings.get("broker_label") or settings.get("broker") or "Grille par defaut"
+
+    set_user(PROFILE.get("username") or "default")
+
+
+def calc_fee(amount: float, marche: str) -> float:
+    """Frais de courtage pour un montant donne, selon la grille du profil."""
+    t = BROKERAGE.get(marche) or BROKERAGE.get("euronext") or DEFAULT_BROKERAGE["euronext"]
+    flat  = float(t.get("flat", 0.0))
+    rate  = float(t.get("rate", 0.0))
+    seuil = float(t.get("threshold", 0.0))
+    mini  = float(t.get("min", 0.0))
+    brut  = flat if (seuil and amount <= seuil) else rate * amount
+    return round(max(brut, mini), 2)
+
+
+# =============================================================================
+# MUTUALISATION DES APPELS API
+# =============================================================================
+# Indexe par TICKER et non par utilisateur : si trois profils detiennent la
+# meme valeur, elle n'est interrogee qu'une fois pour l'ensemble du run.
+
+_MEMO: dict = {}
+
+
+def memo_stats() -> dict:
+    return {"entrees": len(_MEMO)}
+
+
+# =============================================================================
+# CACHE SESSION
+# =============================================================================
+
+def load_session_cache() -> dict:
     try:
-        val = float(score_str.split("/")[0])
-        pct = val / 10 * 100
-        cls = "bar-green" if val >= 6.5 else "bar-red" if val <= 3.5 else "bar-yellow"
-        return (f'<div class="score-wrap">'
-                f'<span class="score-num">{score_str}</span>'
-                f'<div class="score-bar"><div class="score-fill {cls}" style="width:{pct:.0f}%"></div></div>'
-                f'</div>')
+        with open(CACHE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
     except Exception:
-        return score_str
+        return {}
 
-def pnl_cell(txt: str) -> str:
-    t = txt.strip()
-    cls = ""
-    if "+" in t: cls = "cell-pos"
-    elif "-" in t and any(c.isdigit() for c in t): cls = "cell-neg"
-    return f'<td class="{cls}">{t}</td>' if cls else f'<td class="cell-num">{t}</td>'
 
-def mom_badge(label: str) -> str:
-    l = label.upper()
-    if "HAUSSE" in l or "HAUSSIER" in l: return f'<span class="badge buy-strong">↗ {label}</span>'
-    if "BAISSE" in l or "BAISSIER" in l: return f'<span class="badge sell">↘ {label}</span>'
-    return f'<span class="badge hold">→ {label}</span>'
+def save_session_cache(cache: dict):
+    os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+    cache["date"]     = str(date.today())
+    cache["saved_at"] = datetime.now(PARIS_TZ).strftime("%d/%m/%Y %H:%M")
+    with open(CACHE_PATH, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
 
-def var_span(txt: str) -> str:
-    t = txt.strip()
-    # Supprime le préfixe ^ ou v produit par portfolio_analyzer
-    clean = re.sub(r"^[\^v]\s*", "", t)
-    if clean.startswith("+") or (re.search(r"\+\d", clean)):
-        return f'<span class="up">▲ {clean}</span>'
-    if clean.startswith("-") or (re.search(r"-\d", clean)):
-        return f'<span class="dn">▼ {clean}</span>'
-    return clean
 
-# ══════════════════════════════════════════════════════
-# BLOCS HTML
-# ══════════════════════════════════════════════════════
+# =============================================================================
+# COUCHE HTTP  (quota-aware)
+# =============================================================================
 
-def build_indices_html() -> str:
-    if not indices:
-        return ""
-    rows = ""
-    for idx in indices:
-        rows += (f"<tr><td><strong>{idx['name']}</strong></td>"
-                 f"<td>{var_span(idx['variation'])}</td>"
-                 f"<td class='cell-num'>{idx['cours']}</td></tr>\n")
-    return f"""
-<section class="section-block" id="macro">
-  <h2 class="section-title">🌍 Contexte Économique</h2>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Indice</th><th>Variation</th><th>Cours</th></tr></thead>
-      <tbody>{rows}</tbody>
-    </table>
-  </div>
-</section>"""
+def _get(url: str, params: dict, api_key_name: str, timeout: int = 12) -> tuple:
+    if not _quota_ok(api_key_name):
+        return None, "QUOTA_REACHED"
+    _quota_inc(api_key_name)
+    try:
+        r = requests.get(url, params=params, timeout=timeout)
+        if r.status_code == 200:
+            return r.json(), None
+        if r.status_code == 429:
+            return None, "HTTP_429_QUOTA"
+        return None, f"HTTP {r.status_code}"
+    except requests.exceptions.Timeout:
+        return None, "Timeout"
+    except requests.exceptions.ConnectionError:
+        return None, "Connexion impossible"
+    except Exception as e:
+        return None, str(e)[:60]
 
-def build_combined_chart_html() -> str:
-    if not combined_b64:
-        return ""
-    return f"""
-<section class="section-block" id="tendances">
-  <h2 class="section-title">📉 Tendances — Performance Normalisée (Base 100)</h2>
-  <div class="combined-chart-wrap">
-    <img src="data:image/png;base64,{combined_b64}"
-         alt="Performance normalisée base 100 de toutes les positions"
-         loading="lazy" class="combined-chart-img"
-         width="900" height="500">
-    <p class="chart-caption">
-      Chaque courbe représente la performance d'une valeur normalisée à 100 au premier jour disponible.
-      La ligne pointillée à 100 est la référence (prix d'entrée).
-    </p>
-  </div>
-</section>"""
 
-def build_positions_html() -> str:
-    if not positions:
-        return "<p style='color:var(--muted)'>Aucune position disponible.</p>"
+def _is_quota_error(err: str) -> bool:
+    return err in ("QUOTA_REACHED", "HTTP_429_QUOTA") if err else False
 
-    cards = ""
-    for p in positions:
-        pnl_net_cls  = "kpi-positive" if "+" in p["pnl_net"]  else "kpi-negative"
-        pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
-        var_html = var_span(p["variation"])
 
-        # Un indice de confiance bas signale une note etablie sur peu de
-        # criteres : il doit rester visible a cote de la note, jamais separe.
-        conf = p.get("confiance", "")
-        if conf:
-            try:
-                cls = "conf-basse" if float(conf) < 60 else "conf-ok"
-            except ValueError:
-                cls = "conf-ok"
-            conf_html = f' <span class="conf-badge {cls}">confiance {conf}%</span>'
-        else:
-            conf_html = ""
+# =============================================================================
+# FLUX RSS YAHOO FINANCE
+# =============================================================================
 
-        # Detail des composantes de la note
-        detail_html = ""
-        if p.get("composantes"):
-            barres = ""
-            for nom, note, poids in p["composantes"]:
+_rss_cache: dict = {}
+_RSS_TITLE_MAX = 120
+
+
+def _clean_title(raw: str) -> str:
+    cleaned = " ".join(raw.replace("\r", " ").replace("\n", " ").split()).strip()
+    if len(cleaned) > _RSS_TITLE_MAX:
+        cleaned = cleaned[:_RSS_TITLE_MAX].rstrip() + "…"
+    return cleaned
+
+
+def _fetch_yahoo_rss(ticker_yf: str, n: int = 6) -> list:
+    if ticker_yf in _rss_cache:
+        return _rss_cache[ticker_yf][:n]
+
+    url = (
+        f"https://feeds.finance.yahoo.com/rss/2.0/headline"
+        f"?s={ticker_yf}&region=US&lang=en-US"
+    )
+    try:
+        r = requests.get(url, timeout=10,
+                         headers={"User-Agent": "Mozilla/5.0 PortfolioAnalyzer/6.3"})
+        if r.status_code != 200:
+            _rss_cache[ticker_yf] = []
+            return []
+        root = ET.fromstring(r.content)
+        titles = []
+        for item in root.iter("item"):
+            title_el = item.find("title")
+            if title_el is not None and title_el.text:
+                titles.append(_clean_title(title_el.text))
+            if len(titles) >= n:
+                break
+        _rss_cache[ticker_yf] = titles
+        return titles
+    except Exception as e:
+        _log.warning("RSS Yahoo Finance (%s) : %s", ticker_yf, e)
+        _rss_cache[ticker_yf] = []
+        return []
+
+
+# =============================================================================
+# SYNTHESE ACTUALITE
+# =============================================================================
+
+_synthesis_cache: dict = {}
+
+
+def get_news_synthesis(asset: dict) -> tuple:
+    ticker_yf = asset.get("ticker_yf") or asset.get("ticker_fh", "")
+    key = ticker_yf
+
+    if key in _synthesis_cache:
+        return _synthesis_cache[key]
+
+    titles = _fetch_yahoo_rss(ticker_yf, n=6)
+
+    if not titles:
+        result = ("Aucune actualite disponible via RSS.", "RSS Yahoo vide")
+        _synthesis_cache[key] = result
+        return result
+
+    brut = " | ".join(titles[:3])
+    brut = " ".join(brut.replace("\r", " ").replace("\n", " ").split())
+    result = (brut, "RSS Yahoo Finance")
+    _synthesis_cache[key] = result
+    return result
+
+
+# =============================================================================
+# VALIDATION CROISEE
+# =============================================================================
+
+def cross_validate(val1: float, src1: str, val2: float, src2: str) -> tuple:
+    if val1 and val2 and val1 > 0 and val2 > 0:
+        ecart_pct = abs(val1 - val2) / val1 * 100
+        if ecart_pct > DIVERGENCE_THRESHOLD_PCT:
+            mediane = round((val1 + val2) / 2, 4)
+            note = (f"Divergence {ecart_pct:.1f}% entre {src1} ({val1:.4f}) "
+                    f"et {src2} ({val2:.4f}) -> mediane : {mediane:.4f}")
+            return mediane, note
+    return val1 if val1 and val1 > 0 else val2, None
+
+
+# =============================================================================
+# EUR/USD -- AlphaVantage  (1 appel/run)
+# =============================================================================
+
+def get_eur_usd(session_cache: dict) -> tuple:
+    errors = []
+    if ALPHAVANTAGE_KEY:
+        data, err = _get(AV_BASE, {
+            "function":      "CURRENCY_EXCHANGE_RATE",
+            "from_currency": "USD",
+            "to_currency":   "EUR",
+            "apikey":        ALPHAVANTAGE_KEY,
+        }, "alphavantage")
+        if isinstance(data, dict):
+            rate_info = data.get("Realtime Currency Exchange Rate", {})
+            rate_str  = rate_info.get("5. Exchange Rate")
+            if rate_str:
                 try:
-                    pct = float(note) * 10
+                    return float(rate_str), "AlphaVantage", False, None
                 except ValueError:
+                    pass
+            if data.get("Note") or data.get("Information"):
+                errors.append("AlphaVantage:quota")
+            else:
+                errors.append(f"AlphaVantage:{err or 'vide'}")
+        elif _is_quota_error(err):
+            errors.append("AlphaVantage:quota atteint")
+        else:
+            errors.append(f"AlphaVantage:{err or 'vide'}")
+    else:
+        errors.append("AlphaVantage:cle absente")
+
+    if session_cache.get("eur_usd"):
+        saved_at = session_cache.get("saved_at", "date inconnue")
+        return (session_cache["eur_usd"], "Cache", True,
+                f"EUR/USD non disponible ({', '.join(errors)}) -- cache du {saved_at} utilise")
+
+    return (0.92, "Defaut 0.92", False,
+            f"EUR/USD indisponible ({', '.join(errors)}) -- valeur de secours 0.92 appliquee")
+
+
+# =============================================================================
+# COURS US -- TwelveData  (batch)
+# =============================================================================
+
+_td_cache:     dict  = {}
+_td_last_call: float = 0.0
+_td_errors:    dict  = {}
+
+
+def td_fetch_batch(tickers: list) -> dict:
+    global _td_last_call
+    to_fetch = [t for t in tickers if t and t not in _td_cache]
+    if not to_fetch:
+        return {t: _td_cache.get(t) for t in tickers if t}
+
+    elapsed = time.time() - _td_last_call
+    if elapsed < 3 and _td_last_call > 0:
+        time.sleep(3 - elapsed)
+
+    results = {}
+    for i in range(0, len(to_fetch), 6):
+        batch = to_fetch[i:i+6]
+        data, err = _get(f"{TD_BASE}/price",
+                         {"symbol": ",".join(batch), "apikey": TWELVEDATA_KEY},
+                         "twelvedata")
+        _td_last_call = time.time()
+
+        if isinstance(data, dict):
+            for ticker in batch:
+                item = data.get(ticker, {})
+                if isinstance(item, dict) and item.get("price") and item.get("status") != "error":
+                    try:
+                        val = float(item["price"])
+                        results[ticker]   = val
+                        _td_cache[ticker] = val
+                    except Exception:
+                        results[ticker]    = None
+                        _td_errors[ticker] = "Valeur non numerique"
+                else:
+                    results[ticker]    = None
+                    _td_errors[ticker] = (item.get("message", err or "vide")
+                                          if isinstance(item, dict) else (err or "vide"))
+        else:
+            for ticker in batch:
+                results[ticker]    = None
+                _td_errors[ticker] = err or "Reponse invalide"
+
+        if i + 6 < len(to_fetch):
+            time.sleep(3)
+
+    for t in tickers:
+        if t and t not in results:
+            results[t] = _td_cache.get(t)
+    return results
+
+
+# =============================================================================
+# COURS (tous marches) -- Orchestrateur
+# =============================================================================
+
+def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
+                  session_cache: dict) -> tuple:
+    td_val = eod_val = None
+    note   = None
+    chg    = 0.0
+    errors = []
+    cache_key = f"price_{asset['ticker_eod']}"
+
+    if asset["marche"] == "us":
+        if TWELVEDATA_KEY:
+            td_ticker = asset.get("ticker_td")
+            td_raw    = td_prices.get(td_ticker) if td_ticker else None
+            if td_raw and td_raw > 0:
+                td_val = round(td_raw * eur_usd, 4)
+            elif td_ticker:
+                errors.append(f"TwelveData:{_td_errors.get(td_ticker, 'indisponible')}")
+        else:
+            errors.append("TwelveData:cle absente")
+
+        if td_val is None and EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/real-time/{asset['ticker_eod']}",
+                             {"api_token": EODHD_KEY, "fmt": "json"},
+                             "eodhd")
+            if data and not _is_quota_error(err):
+                raw = data.get("close") or data.get("previousClose")
+                if raw and float(raw) > 0:
+                    chg     = float(data.get("change_p", 0.0))
+                    eod_val = round(float(raw) * eur_usd, 4)
+                else:
+                    errors.append("EODHD:cours nul")
+            elif _is_quota_error(err):
+                errors.append("EODHD:quota atteint")
+            else:
+                errors.append(f"EODHD:{err}")
+
+        if td_val and eod_val:
+            final, note = cross_validate(td_val, "TwelveData", eod_val, "EODHD")
+            return final, chg, "TwelveData+EODHD", False, note
+        if td_val:  return td_val,  0.0, "TwelveData", False, None
+        if eod_val: return eod_val, chg, "EODHD",      False, None
+
+    else:
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/real-time/{asset['ticker_eod']}",
+                             {"api_token": EODHD_KEY, "fmt": "json"},
+                             "eodhd")
+            if data and not _is_quota_error(err):
+                raw = data.get("close") or data.get("previousClose")
+                if raw and float(raw) > 0:
+                    return round(float(raw), 4), float(data.get("change_p", 0.0)), "EODHD", False, None
+                errors.append("EODHD:cours nul")
+            elif _is_quota_error(err):
+                errors.append("EODHD:quota atteint")
+            else:
+                errors.append(f"EODHD:{err}")
+        else:
+            errors.append("EODHD:cle absente")
+
+    if session_cache.get(cache_key):
+        saved_at = session_cache.get("saved_at", "date inconnue")
+        return (session_cache[cache_key], 0.0, "Cache", True,
+                f"Cours non disponible ({', '.join(errors)}) -- cache du {saved_at} utilise")
+
+    return None, 0.0, f"Indisponible ({', '.join(errors)})", False, None
+
+
+# =============================================================================
+# INDICES -- EODHD principal * Finnhub fallback
+# =============================================================================
+
+def get_index(symbols: dict) -> dict:
+    if EODHD_KEY:
+        data, err = _get(f"{EOD_BASE}/real-time/{symbols['eod']}",
+                         {"api_token": EODHD_KEY, "fmt": "json"},
+                         "eodhd")
+        if data and not _is_quota_error(err):
+            raw = data.get("close") or data.get("previousClose")
+            if raw:
+                return {"price":      float(raw),
+                        "change_pct": float(data.get("change_p", 0.0)),
+                        "source":     "EODHD"}
+        eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    else:
+        eod_err = "cle absente"
+
+    if FINNHUB_KEY:
+        data, err = _get(f"{FH_BASE}/quote",
+                         {"symbol": symbols["fh"], "token": FINNHUB_KEY},
+                         "finnhub")
+        if data and data.get("c") and not _is_quota_error(err):
+            return {"price":      float(data["c"]),
+                    "change_pct": float(data.get("dp", 0.0)),
+                    "source":     "Finnhub (fallback)"}
+        fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    else:
+        fh_err = "cle absente"
+
+    return {"price": 0.0, "change_pct": 0.0,
+            "source": f"Indisponible (EODHD:{eod_err}, Finnhub:{fh_err})"}
+
+
+# =============================================================================
+# NEWS
+# =============================================================================
+
+_news_cache: dict = {}
+
+
+def get_company_news(asset: dict, n: int = 2) -> list:
+    key = asset["ticker_eod"]
+    if key in _news_cache:
+        return _news_cache[key][:n]
+    from_d = str(date.today() - timedelta(days=7))
+    to_d   = str(date.today())
+
+    if asset.get("marche") == "euronext":
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/news",
+                             {"s": asset["ticker_eod"], "limit": max(n, 10),
+                              "from": from_d, "api_token": EODHD_KEY, "fmt": "json"},
+                             "eodhd")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                titles = [i.get("title", "") for i in data if i.get("title")]
+                _news_cache[key] = titles
+                return titles[:n]
+        _news_cache[key] = []
+        return []
+    else:
+        if FINNHUB_KEY:
+            data, err = _get(f"{FH_BASE}/company-news",
+                             {"symbol": asset["ticker_fh"], "from": from_d,
+                              "to": to_d, "token": FINNHUB_KEY},
+                             "finnhub")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                titles = [i.get("headline", "") for i in data if i.get("headline")]
+                _news_cache[key] = titles
+                return titles[:n]
+        if EODHD_KEY:
+            data, err = _get(f"{EOD_BASE}/news",
+                             {"s": asset["ticker_eod"], "limit": max(n, 10),
+                              "from": from_d, "api_token": EODHD_KEY, "fmt": "json"},
+                             "eodhd")
+            if isinstance(data, list) and data and not _is_quota_error(err):
+                titles = [i.get("title", "") for i in data if i.get("title")]
+                _news_cache[key] = titles
+                return titles[:n]
+        _news_cache[key] = []
+        return []
+
+
+def get_macro_news(n: int = 5) -> list:
+    if EODHD_KEY:
+        data, err = _get(f"{EOD_BASE}/news",
+                         {"t": "general", "limit": n,
+                          "api_token": EODHD_KEY, "fmt": "json"},
+                         "eodhd")
+        if isinstance(data, list) and data and not _is_quota_error(err):
+            return [i.get("title", "") for i in data if i.get("title")]
+
+    if FINNHUB_KEY:
+        data, err = _get(f"{FH_BASE}/news",
+                         {"category": "general", "token": FINNHUB_KEY},
+                         "finnhub")
+        if isinstance(data, list) and data and not _is_quota_error(err):
+            return [i.get("headline", "") for i in data[:n] if i.get("headline")]
+    return []
+
+
+# =============================================================================
+# SENTIMENT
+# =============================================================================
+
+def get_sentiment(asset: dict) -> tuple:
+    """Tonalite des titres d'actualite, SANS aucun appel API supplementaire.
+
+    On reutilise les articles deja recuperes pour la synthese. Aucune valeur
+    par defaut n'est inventee : sans article, on retourne (None, None), et
+    l'affichage indique franchement que la donnee manque.
+    """
+    news = _news_cache.get(asset["ticker_eod"]) or []
+    if not news:
+        return None, None, "aucun article"
+    bull, bear = _lexical_sentiment(news)
+    return bull, bear, "analyse lexicale des titres"
+
+def _lexical_sentiment(news: list) -> tuple:
+    import re
+
+    bull_w = {
+        "growth", "buy", "bullish", "surge", "record", "beat", "strong",
+        "gain", "up", "rise", "soar", "profit", "positive", "upgrade",
+        "recovery", "rally", "outperform", "momentum", "boost",
+    }
+    bear_w = {
+        "loss", "sell", "bearish", "drop", "miss", "weak", "cut", "down",
+        "fall", "decline", "risk", "negative", "downgrade", "warn",
+        "crash", "default", "layoff", "slowdown", "recession",
+    }
+
+    raw_tokens = re.findall(r"[a-z']+", " ".join(news).lower())
+    b = s = neg_ttl = 0
+
+    for token in raw_tokens:
+        if token in _NEGATORS:
+            neg_ttl = _NEG_WINDOW
+            continue
+
+        is_bull = token in bull_w
+        is_bear = token in bear_w
+
+        if is_bull or is_bear:
+            if neg_ttl > 0:
+                s += 1 if is_bull else 0
+                b += 1 if is_bear else 0
+            else:
+                b += 1 if is_bull else 0
+                s += 1 if is_bear else 0
+            neg_ttl = 0
+        elif neg_ttl > 0:
+            neg_ttl -= 1
+
+    t = b + s or 1
+    return round(b / t * 100, 1), round(s / t * 100, 1)
+
+
+# =============================================================================
+# CONSENSUS
+# =============================================================================
+
+def get_consensus(asset: dict) -> tuple:
+    if FINNHUB_KEY:
+        data, err = _get(f"{FH_BASE}/stock/recommendation",
+                         {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
+                         "finnhub")
+        if isinstance(data, list) and data and not _is_quota_error(err):
+            r  = data[0]
+            sb = r.get("strongBuy", 0); b = r.get("buy", 0)
+            h  = r.get("hold", 0);      s = r.get("sell", 0); ss = r.get("strongSell", 0)
+            total = sb + b + h + s + ss
+            if total > 0:
+                score = (sb*10 + b*7.5 + h*5 + s*2.5) / total
+                return round(score, 2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub"
+        fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    else:
+        fh_err = "cle absente"
+
+    if EODHD_KEY:
+        data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
+                         {"api_token": EODHD_KEY, "fmt": "json", "filter": "AnalystRatings"},
+                         "eodhd")
+        if isinstance(data, dict) and data.get("Rating") and not _is_quota_error(err):
+            rat   = data["Rating"]
+            label = str(rat.get("Rating", "")).lower()
+            tp    = rat.get("TargetPrice", "N/D")
+            m     = {"strong buy": 9.0, "buy": 7.5, "hold": 5.0,
+                     "sell": 2.5, "strong sell": 0.5}
+            score = m.get(label, 5.0)
+            return score, f"Rating:{rat.get('Rating','?')} TP:{tp}$", f"EODHD (fallback Finnhub:{fh_err})"
+        eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    else:
+        eod_err = "cle absente"
+
+    return (5.0, "N/D", f"Neutre par defaut (Finnhub:{fh_err}, EODHD:{eod_err})")
+
+
+# =============================================================================
+# FONDAMENTAUX
+# =============================================================================
+
+def _f(valeur):
+    """Conversion tolerante en float. Retourne None plutot que 0 si absent,
+    pour ne pas confondre 'donnee manquante' et 'valeur nulle'."""
+    if valeur in (None, "", "NA", "N/A", "None"):
+        return None
+    try:
+        v = float(valeur)
+        return None if v != v else v          # ecarte les NaN
+    except (ValueError, TypeError):
+        return None
+
+
+def get_fundamentals(asset: dict) -> tuple:
+    """Ratios fondamentaux via EODHD. Retourne (dict, source).
+
+    Les actifs sans comptes d'entreprise (ETF, obligations, crypto) sont
+    ecartes d'emblee : interroger l'API pour eux gaspille du quota.
+    """
+    if str(asset.get("asset_type", "action")).lower() in ("etf", "obligation", "crypto"):
+        return {}, f"non applicable ({asset.get('asset_type')})"
+
+    if not EODHD_KEY:
+        return {}, "cle absente"
+
+    # Pas de parametre `filter` : selon les cas EODHD renvoie alors soit les
+    # sections demandees imbriquees, soit leur contenu APLATI a la racine.
+    # Ce comportement variable vidait silencieusement tous les ratios --
+    # valorisation, sante et croissance passaient a None, soit 55% du poids
+    # de la note. On recupere donc le document complet et on lit les
+    # sections nous-memes, avec repli sur une lecture a plat.
+    data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
+                     {"api_token": EODHD_KEY, "fmt": "json"},
+                     "eodhd")
+
+    if not isinstance(data, dict) or not data:
+        return {}, ("quota atteint" if _is_quota_error(err) else (err or "vide"))
+    if _is_quota_error(err):
+        return {}, "quota atteint"
+
+    hi = data.get("Highlights") or {}
+    va = data.get("Valuation")  or {}
+    te = data.get("Technicals") or {}
+
+    # Repli : reponse aplatie (les cles usuelles sont a la racine).
+    if not hi and not va and not te:
+        if any(k in data for k in ("PERatio", "ProfitMargin", "MarketCapitalization")):
+            hi = va = te = data
+        else:
+            return {}, "structure inattendue"
+
+    ratios = {
+        # Valorisation
+        "per":         _f(hi.get("PERatio")) or _f(va.get("TrailingPE")),
+        "per_fwd":     _f(va.get("ForwardPE")),
+        "peg":         _f(hi.get("PEGRatio")),
+        "ev_ebitda":   _f(va.get("EnterpriseValueEbitda")),
+        "p_book":      _f(va.get("PriceBookMRQ")),
+        "p_sales":     _f(va.get("PriceSalesTTM")),
+        # Rentabilite
+        "marge_nette": _f(hi.get("ProfitMargin")),
+        "marge_ope":   _f(hi.get("OperatingMarginTTM")),
+        "roe":         _f(hi.get("ReturnOnEquityTTM")),
+        "roa":         _f(hi.get("ReturnOnAssetsTTM")),
+        # Croissance
+        "croiss_ca":   _f(hi.get("QuarterlyRevenueGrowthYOY")),
+        "croiss_ben":  _f(hi.get("QuarterlyEarningsGrowthYOY")),
+        # Risque
+        "beta":        _f(te.get("Beta")),
+        "haut_52s":    _f(te.get("52WeekHigh")),
+        "bas_52s":     _f(te.get("52WeekLow")),
+        # Divers
+        "dividende":   _f(hi.get("DividendYield")),
+        "bpa":         _f(hi.get("EarningsShare")),
+    }
+
+    ratios = {k: v for k, v in ratios.items() if v is not None}
+    return (ratios, "EODHD") if ratios else ({}, "aucun ratio exploitable")
+
+
+# =============================================================================
+# HISTORIQUE MENSUEL
+# =============================================================================
+
+session_cache_global: dict = {}
+
+
+def _eodhd_daily(ticker_eod: str, from_d: str, to_d: str, fx: float = 1.0) -> tuple:
+    """Cotations JOURNALIERES EODHD. Retourne (dates, closes, erreur)."""
+    data, err = _get(f"{EOD_BASE}/eod/{ticker_eod}",
+                     {"api_token": EODHD_KEY, "fmt": "json",
+                      "period": "d", "from": from_d, "to": to_d},
+                     "eodhd")
+    if isinstance(data, list) and len(data) >= 2 and not _is_quota_error(err):
+        dates, closes = [], []
+        for row in data:
+            px = row.get("adjusted_close") or row.get("close")
+            if not px:
+                continue
+            try:
+                dates.append(str(row["date"])[:10])
+                closes.append(round(float(px) * fx, 4))
+            except (ValueError, TypeError, KeyError):
+                continue
+        if len(dates) >= 2:
+            return dates, closes, None
+    return [], [], ("quota atteint" if _is_quota_error(err) else (err or "vide"))
+
+
+def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -> tuple:
+    from_d    = str(date.today() - timedelta(days=days))
+    to_d      = str(date.today())
+    cache_key = f"hist_{asset['ticker_eod']}"
+
+    if asset.get("marche") == "us":
+        ticker_av = asset.get("ticker_av")
+        if ALPHAVANTAGE_KEY and ticker_av:
+            data, err = _get(AV_BASE, {
+                "function":   "TIME_SERIES_DAILY",
+                "symbol":     ticker_av,
+                "outputsize": "compact",
+                "apikey":     ALPHAVANTAGE_KEY,
+            }, "alphavantage")
+            ts = data.get("Time Series (Daily)") if isinstance(data, dict) else None
+            if ts and not _is_quota_error(err):
+                dates  = []
+                closes = []
+                for day_str, vals in sorted(ts.items()):
+                    if day_str < from_d:
+                        continue
+                    try:
+                        dates.append(day_str[:10])
+                        closes.append(round(float(vals["4. close"]) * eur_usd, 4))
+                    except (ValueError, TypeError, KeyError):
+                        pass
+                if len(dates) >= 2:
+                    return dates, closes, "AlphaVantage", False, None
+            av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+        else:
+            av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
+
+        if EODHD_KEY:
+            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, eur_usd)
+            if dates:
+                return dates, closes, f"EODHD (fallback AV:{av_err})", False, None
+        else:
+            eod_err = "cle absente"
+
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, days)
+            if dates:
+                return dates, closes, f"Finnhub (fallback AV:{av_err}, EODHD:{eod_err})", cache_flag, err_str
+            fh_err = err_str or "vide"
+        else:
+            fh_err = "cle absente"
+
+        if session_cache_global.get(cache_key):
+            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            cached   = session_cache_global[cache_key]
+            return (cached.get("dates", []), cached.get("closes", []),
+                    "Cache", True,
+                    f"Historique US non disponible (AV:{av_err}, EODHD:{eod_err}, FH:{fh_err}) -- cache du {saved_at}")
+        return ([], [], f"Indisponible (AV:{av_err}, EODHD:{eod_err}, FH:{fh_err})", False,
+                "Historique indisponible -- graphique non genere")
+
+    else:
+        if EODHD_KEY:
+            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, 1.0)
+            if dates:
+                return dates, closes, "EODHD", False, None
+        else:
+            eod_err = "cle absente"
+
+        if FINNHUB_KEY:
+            dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, days)
+            if dates:
+                return dates, closes, f"Finnhub (fallback EODHD:{eod_err})", cache_flag, err_str
+            fh_err = err_str or "vide"
+        else:
+            fh_err = "cle absente"
+
+        if session_cache_global.get(cache_key):
+            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            cached   = session_cache_global[cache_key]
+            return (cached.get("dates", []), cached.get("closes", []),
+                    "Cache", True,
+                    f"Historique EU non disponible (EODHD:{eod_err}, FH:{fh_err}) -- cache du {saved_at}")
+        return ([], [], f"Indisponible (EODHD:{eod_err}, FH:{fh_err})", False,
+                "Historique indisponible -- graphique non genere")
+
+
+def _finnhub_candles(asset: dict, eur_usd: float, days: int) -> tuple:
+    from_ts = int((datetime.now() - timedelta(days=days)).timestamp())
+    to_ts   = int(datetime.now().timestamp())
+    data, err = _get(f"{FH_BASE}/stock/candle",
+                     {"symbol": asset["ticker_fh"], "resolution": "D",
+                      "from": from_ts, "to": to_ts, "token": FINNHUB_KEY},
+                     "finnhub")
+    if isinstance(data, dict) and data.get("s") == "ok" and data.get("c") and not _is_quota_error(err):
+        daily: dict = {}
+        for ts, cl in zip(data["t"], data["c"]):
+            day_key = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+            daily[day_key] = cl
+        dates  = sorted(daily.keys())
+        closes = [round(daily[k] * eur_usd, 4)
+                  if asset.get("marche") == "us" else round(daily[k], 4)
+                  for k in dates]
+        return dates, closes, "Finnhub", False, None
+    err_str = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    return [], [], "Finnhub", False, err_str
+
+
+# =============================================================================
+# SCORING
+# =============================================================================
+
+def _parse_serie(dates: list, closes: list) -> list:
+    """(date, cours) triee. Tolere "YYYY-MM-DD" et "YYYY-MM" (ancien cache)."""
+    serie = []
+    for d, c in zip(dates or [], closes or []):
+        try:
+            s = str(d)
+            iso = s + "-01" if len(s) == 7 else s[:10]
+            dt  = datetime.strptime(iso, "%Y-%m-%d")
+            v   = float(c)
+            if v > 0:
+                serie.append((dt, v))
+        except Exception:
+            continue
+    serie.sort(key=lambda x: x[0])
+    return serie
+
+
+# =============================================================================
+# NOTATION
+# =============================================================================
+# Chaque fonction renvoie (note_sur_10, disponible) ou None quand la donnee
+# manque. Une composante absente est EXCLUE du calcul, jamais remplacee par
+# une valeur neutre : c'est ce qui permet a l'indice de confiance d'etre
+# honnete sur ce que la note recouvre reellement.
+
+
+def _palier(valeur, paliers: list) -> float:
+    """Note par paliers. `paliers` = [(seuil, note), ...] du meilleur au pire.
+    Le premier seuil dont la valeur est >= (ou <= si decroissant) l'emporte."""
+    for seuil, note in paliers:
+        if valeur >= seuil:
+            return note
+    return paliers[-1][1]
+
+
+def _palier_inverse(valeur, paliers: list) -> float:
+    """Idem, mais plus la valeur est BASSE, meilleure est la note
+    (PER, dette, EV/EBITDA...)."""
+    for seuil, note in paliers:
+        if valeur <= seuil:
+            return note
+    return paliers[-1][1]
+
+
+# ── Valorisation ────────────────────────────────────────────────────────────
+
+def score_valorisation(f: dict):
+    """Le titre est-il cher ? Note haute = bon marche.
+
+    Le PEG prime sur le PER brut : il rapporte le multiple a la croissance,
+    ce qui evite de sanctionner mecaniquement une entreprise qui croit vite.
+    """
+    notes, poids = [], []
+
+    peg = f.get("peg")
+    if peg is not None and peg > 0:
+        notes.append(_palier_inverse(peg, [(0.5, 10), (1.0, 8.5), (1.5, 7),
+                                           (2.0, 5), (3.0, 3), (float("inf"), 1)]))
+        poids.append(3.0)          # meilleur indicateur isole
+
+    per = f.get("per_fwd") or f.get("per")
+    if per is not None:
+        if per <= 0:
+            notes.append(2.0)      # entreprise deficitaire
+            poids.append(2.0)
+        else:
+            notes.append(_palier_inverse(per, [(10, 9.5), (15, 8.5), (20, 7),
+                                               (28, 5.5), (40, 3.5),
+                                               (60, 2), (float("inf"), 0.5)]))
+            poids.append(2.5)
+
+    ev = f.get("ev_ebitda")
+    if ev is not None and ev > 0:
+        notes.append(_palier_inverse(ev, [(6, 9.5), (10, 8), (14, 6.5),
+                                          (20, 4.5), (30, 2.5), (float("inf"), 1)]))
+        poids.append(2.0)
+
+    pb = f.get("p_book")
+    if pb is not None and pb > 0:
+        notes.append(_palier_inverse(pb, [(1.0, 9.5), (2.0, 8), (3.5, 6.5),
+                                          (6.0, 4.5), (10.0, 2.5), (float("inf"), 1)]))
+        poids.append(1.0)
+
+    ps = f.get("p_sales")
+    if ps is not None and ps > 0:
+        notes.append(_palier_inverse(ps, [(1, 9.5), (3, 8), (6, 6),
+                                          (10, 4), (20, 2), (float("inf"), 0.5)]))
+        poids.append(1.0)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Sante financiere ────────────────────────────────────────────────────────
+
+def score_sante(f: dict):
+    """Rentabilite et solidite. Note haute = entreprise saine."""
+    notes, poids = [], []
+
+    mn = f.get("marge_nette")
+    if mn is not None:
+        pct = mn * 100 if abs(mn) <= 1 else mn
+        notes.append(_palier(pct, [(25, 10), (15, 8.5), (10, 7),
+                                   (5, 5.5), (0, 3.5), (-float("inf"), 1)]))
+        poids.append(2.5)
+
+    mo = f.get("marge_ope")
+    if mo is not None:
+        pct = mo * 100 if abs(mo) <= 1 else mo
+        notes.append(_palier(pct, [(30, 10), (20, 8.5), (12, 7),
+                                   (6, 5.5), (0, 3.5), (-float("inf"), 1)]))
+        poids.append(2.0)
+
+    roe = f.get("roe")
+    if roe is not None:
+        pct = roe * 100 if abs(roe) <= 1 else roe
+        # Un ROE tres eleve peut venir d'un fort endettement plutot que
+        # d'une rentabilite reelle : on ne recompense pas au-dela de 40%.
+        notes.append(10.0 if 20 <= pct <= 40 else
+                     _palier(pct, [(40, 8.5), (15, 8), (10, 6.5),
+                                   (5, 5), (0, 3.5), (-float("inf"), 1)]))
+        poids.append(2.5)
+
+    roa = f.get("roa")
+    if roa is not None:
+        pct = roa * 100 if abs(roa) <= 1 else roa
+        notes.append(_palier(pct, [(12, 10), (8, 8.5), (5, 7),
+                                   (2, 5.5), (0, 4), (-float("inf"), 1.5)]))
+        poids.append(1.5)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Croissance ──────────────────────────────────────────────────────────────
+
+def score_croissance(f: dict):
+    """Dynamique du chiffre d'affaires et des benefices."""
+    notes, poids = [], []
+
+    ca = f.get("croiss_ca")
+    if ca is not None:
+        pct = ca * 100 if abs(ca) <= 1 else ca
+        notes.append(_palier(pct, [(30, 10), (20, 9), (12, 7.5), (6, 6),
+                                   (0, 4.5), (-10, 2.5), (-float("inf"), 1)]))
+        poids.append(3.0)
+
+    ben = f.get("croiss_ben")
+    if ben is not None:
+        pct = ben * 100 if abs(ben) <= 1 else ben
+        notes.append(_palier(pct, [(40, 10), (25, 9), (15, 7.5), (5, 6),
+                                   (0, 4.5), (-20, 2.5), (-float("inf"), 1)]))
+        poids.append(2.0)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Momentum ────────────────────────────────────────────────────────────────
+
+def _parse_serie(dates: list, closes: list) -> list:
+    """(date, cours) triee. Tolere "YYYY-MM-DD" et "YYYY-MM" (ancien cache)."""
+    serie = []
+    for d, c in zip(dates or [], closes or []):
+        try:
+            s = str(d)
+            iso = s + "-01" if len(s) == 7 else s[:10]
+            dt = datetime.strptime(iso, "%Y-%m-%d")
+            v = float(c)
+            if v > 0:
+                serie.append((dt, v))
+        except Exception:
+            continue
+    serie.sort(key=lambda x: x[0])
+    return serie
+
+
+def score_history(dates: list, closes: list) -> tuple:
+    """Momentum, AVEC penalite de surchauffe.
+
+    Difference majeure avec l'ancienne version : la note ne croit plus
+    indefiniment avec la hausse. Un titre ayant pris plus de 60% en six mois
+    est plus expose a une correction qu'un titre en progression reguliere.
+    L'ancienne formule le notait au maximum -- exactement au pire moment.
+
+    Retourne (note, label, ret_1m, ret_3m, ret_6m).
+    """
+    serie = _parse_serie(dates, closes)
+    if len(serie) < 2:
+        return None, "INDISPONIBLE", 0.0, 0.0, 0.0
+
+    last_dt, last_px = serie[-1]
+
+    def ret_since(nb_jours: int) -> float:
+        cible = last_dt - timedelta(days=nb_jours)
+        passe = [px for dt, px in serie if dt <= cible]
+        ref = passe[-1] if passe else serie[0][1]
+        return 0.0 if ref <= 0 else (last_px / ref - 1) * 100
+
+    ret_1m, ret_3m, ret_6m = ret_since(30), ret_since(90), ret_since(180)
+
+    note = 5.0
+    note += _palier(ret_1m, [(8, 1.4), (4, 1.0), (1, 0.5), (-1, 0),
+                             (-4, -0.6), (-8, -1.2), (-float("inf"), -1.8)])
+    note += _palier(ret_3m, [(15, 1.8), (8, 1.3), (3, 0.7), (-3, 0),
+                             (-8, -0.9), (-15, -1.6), (-float("inf"), -2.2)])
+    note += _palier(ret_6m, [(25, 1.6), (12, 1.1), (4, 0.6), (-4, 0),
+                             (-12, -0.8), (-25, -1.5), (-float("inf"), -2.0)])
+
+    # Surchauffe : une progression parabolique se paie tot ou tard.
+    if ret_6m > 100:
+        note -= 3.0
+    elif ret_6m > 60:
+        note -= 2.0
+    elif ret_6m > 40:
+        note -= 1.0
+
+    # Capitulation : apres une chute severe, on cesse d'enfoncer la note.
+    # Le titre peut etre en difficulte reelle comme survendu -- l'un dans
+    # l'autre, l'information n'est plus discriminante.
+    if ret_6m < -50:
+        note += 1.0
+
+    note = round(max(0.0, min(10.0, note)), 2)
+    label = ("HAUSSIER" if note >= 6.5 else
+             "BAISSIER" if note <= 3.5 else "NEUTRE")
+    return note, label, ret_1m, ret_3m, ret_6m
+
+
+# ── Risque ──────────────────────────────────────────────────────────────────
+
+def score_risque(f: dict, dates: list, closes: list):
+    """Volatilite et position dans le canal 52 semaines.
+
+    Note haute = risque contenu. Le beta mesure l'amplitude par rapport au
+    marche ; la position dans le canal annuel indique s'il reste de la marge
+    avant le plus haut.
+    """
+    notes, poids = [], []
+
+    beta = f.get("beta")
+    if beta is not None and beta > 0:
+        notes.append(_palier_inverse(beta, [(0.7, 9.5), (1.0, 8), (1.3, 6.5),
+                                            (1.8, 4.5), (2.5, 2.5),
+                                            (float("inf"), 1)]))
+        poids.append(2.0)
+
+    haut, bas = f.get("haut_52s"), f.get("bas_52s")
+    serie = _parse_serie(dates, closes)
+    if haut and bas and serie and haut > bas:
+        pos = (serie[-1][1] - bas) / (haut - bas) * 100
+        # Au plus haut annuel : peu de marge. Au plus bas : signal negatif.
+        notes.append(4.0 if pos >= 95 else 5.5 if pos >= 80 else
+                     7.5 if pos >= 50 else 8.0 if pos >= 25 else 5.0)
+        poids.append(1.5)
+
+    # Volatilite realisee sur la periode disponible
+    if len(serie) >= 20:
+        rends = [(serie[i][1] / serie[i - 1][1] - 1)
+                 for i in range(1, len(serie)) if serie[i - 1][1] > 0]
+        if rends:
+            moy = sum(rends) / len(rends)
+            var = sum((r - moy) ** 2 for r in rends) / len(rends)
+            vol_ann = (var ** 0.5) * (252 ** 0.5) * 100
+            notes.append(_palier_inverse(vol_ann, [(15, 9.5), (25, 8), (35, 6.5),
+                                                   (50, 4.5), (70, 2.5),
+                                                   (float("inf"), 1)]))
+            poids.append(2.0)
+
+    if not notes:
+        return None
+    return round(sum(n * p for n, p in zip(notes, poids)) / sum(poids), 2)
+
+
+# ── Agregation ──────────────────────────────────────────────────────────────
+
+# Le sentiment de presse a ete RETIRE de la note en v7.3.
+#
+# Motif : les deux sources exploitables (AlphaVantage NEWS_SENTIMENT et
+# Finnhub news-sentiment) sont indisponibles ou payantes sur les offres
+# utilisees. En cas d'echec, get_sentiment() renvoyait 50/50, soit une note
+# de 5.0/10 CONSTANTE. Une constante ne discrimine rien : elle consommait du
+# quota et tirait mecaniquement chaque note vers le milieu.
+#
+# Bull/Bear reste calcule et affiche a titre indicatif, mais uniquement a
+# partir des titres d'actualite deja telecharges pour la synthese : cout API
+# nul, et aucune influence sur la note.
+POIDS_NOTE = {
+    "valorisation": 0.24,
+    "sante":        0.19,
+    "croissance":   0.16,
+    "momentum":     0.21,
+    "consensus":    0.15,
+    "risque":       0.05,
+}
+
+
+def note_titre(composantes: dict) -> tuple:
+    """Agrege les composantes disponibles en une note sur 10.
+
+    Les composantes absentes (None) sont exclues et les poids restants
+    renormalises. Retourne (note, confiance_%, detail).
+
+    La confiance est la part des poids effectivement couverts. Elle doit
+    accompagner la note partout ou celle-ci est affichee : 8.5/10 a 35% de
+    confiance ne se lit pas comme 8.5/10 a 90%.
+    """
+    dispo = {k: v for k, v in composantes.items()
+             if v is not None and k in POIDS_NOTE}
+    if not dispo:
+        return None, 0.0, {}
+
+    poids_total = sum(POIDS_NOTE[k] for k in dispo)
+    note = sum(v * POIDS_NOTE[k] for k, v in dispo.items()) / poids_total
+    confiance = round(poids_total / sum(POIDS_NOTE.values()) * 100, 1)
+    return round(note, 2), confiance, dispo
+
+
+def score_position(price_eur, cost_eur, pnl_net_pct, poids_pct):
+    """Indicateurs propres au detenteur. VOLONTAIREMENT hors de la note.
+
+    Le prix d'achat est de l'histoire personnelle : il ne dit rien de la
+    qualite du titre. Il reste utile pour decider quoi faire, d'ou son
+    calcul separe.
+    """
+    return {
+        "pnl_net_pct":   pnl_net_pct,
+        "poids_pct":     poids_pct,
+        "concentration": ("forte" if poids_pct >= 40 else
+                          "notable" if poids_pct >= 25 else "mesuree"),
+        "seuil_rentab":  round(cost_eur * (1 + max(0.0, -pnl_net_pct) / 100), 2),
+    }
+
+
+def score_macro(indices_data):
+    chgs = [v["change_pct"] for v in indices_data.values() if v["change_pct"] != 0]
+    return round(max(0.0, min(10.0, 5.0 + sum(chgs) / len(chgs))), 2) if chgs else 5.0
+
+
+def recommend(note, confiance: float = 100.0, pnl_net_pct: float = 0.0):
+    """Recommandation croisant qualite du titre et situation du detenteur."""
+    if note is None:
+        return "DONNEES INSUFFISANTES"
+
+    # En dessous de 40% de confiance, la note repose sur trop peu de criteres
+    # pour fonder une recommandation tranchee.
+    if confiance < 40:
+        return "A EXAMINER (donnees partielles)"
+
+    if note >= 7.5:
+        return "RENFORCER"
+    if note >= 6.0:
+        return "CONSERVER"
+    if note >= 4.5:
+        # Zone grise : la situation du detenteur departage.
+        return "SURVEILLER" if pnl_net_pct >= 0 else "SURVEILLER (en moins-value)"
+    if note >= 3.0:
+        return "ALLEGER"
+    return "SORTIR"
+
+
+def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
+                  note, confiance, hist_label, macro_score):
+    """Explique la note en citant les composantes qui l'ont faite bouger."""
+    if note is None:
+        return "Donnees insuffisantes pour etablir une note."
+
+    libelles = {"valorisation": "valorisation", "sante": "sante financiere",
+                "croissance": "croissance", "momentum": "momentum",
+                "consensus": "consensus analystes", "risque": "profil de risque"}
+
+    tri     = sorted(detail.items(), key=lambda x: x[1], reverse=True)
+    forces  = [f"{libelles[k]} {v:.1f}" for k, v in tri[:2] if v >= 6.5]
+    faibles = [f"{libelles[k]} {v:.1f}" for k, v in tri[-2:] if v <= 4.5]
+
+    p = [f"Note {note:.1f}/10 (confiance {confiance:.0f}%)."]
+    if forces:
+        p.append("Points forts : " + ", ".join(forces) + ".")
+    if faibles:
+        p.append("Points faibles : " + ", ".join(faibles) + ".")
+    p.append(f"Momentum {hist_label}.")
+    p.append(f"Position : {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais.")
+    if confiance < 60:
+        p.append("Note etablie sur une partie seulement des criteres.")
+    return " ".join(p)
+
+
+# =============================================================================
+# GRAPHIQUE COMBINE  — FIX v6.3
+# =============================================================================
+
+_CHART_COLORS = [
+    "#2563eb", "#16a34a", "#dc2626", "#d97706",
+    "#7c3aed", "#0891b2", "#db2777", "#65a30d",
+]
+
+
+def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
+    try:
+        import os
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import matplotlib.dates as mdates
+        from datetime import datetime, timedelta
+
+        cutoff = datetime.now() - timedelta(days=CHART_WINDOW_DAYS)
+
+        # --- 1. Parsing de TOUT l'historique disponible, actif par actif ------
+        #     (pas de filtre ici : les points anterieurs a la fenetre servent
+        #      a amorcer les courbes qui demarrent tard)
+        series = {}
+        for name, (dates, closes) in assets_history.items():
+            points = {}
+            for d, c in zip(dates or [], closes or []):
+                try:
+                    s = str(d)
+                    iso = s + "-01" if len(s) == 7 else s[:10]
+                    dt  = datetime.strptime(iso, "%Y-%m-%d")
+                    val = float(c)
+                    if val > 0:
+                        points[dt] = val
+                except Exception:
                     continue
-                teinte = ("var(--red)" if pct < 35 else
-                          "var(--yellow)" if pct < 60 else "var(--green)")
-                barres += (
-                    f'<div class="comp-row">'
-                    f'<span class="comp-name">{nom}</span>'
-                    f'<span class="comp-track"><span class="comp-fill" '
-                    f'style="width:{pct:.0f}%;background:{teinte}"></span></span>'
-                    f'<span class="comp-val">{note}</span>'
-                    f'<span class="comp-w">{poids}%</span>'
-                    f'</div>')
-            note_absente = (f'<p class="comp-missing">Non disponible : {p["absentes"]} '
-                            f'— poids redistribués.</p>' if p.get("absentes") else "")
-            fonda_line = (f'<p class="comp-fonda">{p["fondamentaux"]}</p>'
-                          if p.get("fondamentaux") else "")
-            detail_html = f"""
-    <details class="pos-detail-note">
-      <summary>Comment cette note est calculée</summary>
-      <div class="comp-list">{barres}</div>
-      {fonda_line}
-      {note_absente}
-    </details>"""
+            if points:
+                series[name] = points
 
-        synthesis_html = ""
-        synth_text = p.get("synthesis", "").strip()
-        if synth_text and "Aucune actualite" not in synth_text:
-            src_label = f'<span class="synth-src">{p["synth_src"]}</span>' if p.get("synth_src") else ""
-            synthesis_html = f"""
-    <div class="pos-synthesis">
-      <div class="synth-header">💬 Actualité récente {src_label}</div>
-      <p class="synth-text">{synth_text}</p>
-    </div>"""
+        if not series:
+            return False
 
-        cards += f"""
-<div class="position-card" id="pos-{p['ticker'].replace('.','_')}">
-  <div class="pos-header">
-    <div class="pos-title">
-      <span class="pos-name">{p['name']}</span>
-      <code class="pos-ticker">{p['ticker']}</code>
-    </div>
-    <div class="pos-rec">{rec_badge(p['rec'])}</div>
-  </div>
+        # --- 2. Axe X COMMUN : les dates situees dans la fenetre 1 mois ------
+        common_dates = sorted({dt for pts in series.values() for dt in pts if dt >= cutoff})
+        if len(common_dates) < 2:
+            # Aucune donnee recente : on retombe sur le dernier mois
+            # reellement disponible plutot que d'abandonner le graphique.
+            toutes = sorted({dt for pts in series.values() for dt in pts})
+            if len(toutes) < 2:
+                return False
+            borne = toutes[-1] - timedelta(days=CHART_WINDOW_DAYS)
+            common_dates = [dt for dt in toutes if dt >= borne]
+            if len(common_dates) < 2:
+                common_dates = toutes[-2:]
 
-  <div class="pos-kpis">
-    <div class="pos-kpi">
-      <div class="pos-kpi-val cell-num">{p['prix']} EUR</div>
-      <div class="pos-kpi-lbl">Cours {var_html}</div>
-    </div>
-    <div class="pos-kpi">
-      <div class="pos-kpi-val cell-num">{p['vm']} EUR</div>
-      <div class="pos-kpi-lbl">Valeur marché</div>
-    </div>
-    <div class="pos-kpi">
-      <div class="pos-kpi-val {pnl_brut_cls}">{p['pnl_brut']}</div>
-      <div class="pos-kpi-lbl">P&amp;L Brut</div>
-    </div>
-    <div class="pos-kpi">
-      <div class="pos-kpi-val {pnl_net_cls}">{p['pnl_net']}</div>
-      <div class="pos-kpi-lbl">P&amp;L Net</div>
-    </div>
-    <div class="pos-kpi">
-      <div>{score_bar(p['score'])}</div>
-      <div class="pos-kpi-lbl">Note du titre{conf_html}</div>
-    </div>
-  </div>
-  {detail_html}
+        debut = common_dates[0]
 
-  <div class="pos-details">
-    <div class="pos-detail-item">
-      <span class="detail-lbl">Sentiment</span>
-      <span>🐂 Bull <strong>{p['bull']}%</strong> / 🐻 Bear <strong>{p['bear']}%</strong></span>
-    </div>
-    <div class="pos-detail-item">
-      <span class="detail-lbl">Momentum</span>
-      <span>{mom_badge(p['mom_label'])}
-        <span class="mom-rets">1M: {p['ret_1m']} · 3M: {p['ret_3m']} · 6M: {p['ret_6m']}</span>
-      </span>
-    </div>
-  </div>
-  {synthesis_html}
-</div>"""
-    return f"""
-<section class="section-block" id="positions">
-  <h2 class="section-title">📈 Positions Détenues</h2>
-  <div class="positions-grid">{cards}</div>
-</section>"""
+        # --- 3. Projection de CHAQUE actif sur l'axe complet ------------------
+        #     amorcage sur le dernier cours connu AVANT la fenetre, puis
+        #     forward-fill. Toute valeur ayant au moins 1 cotation est tracee
+        #     et couvre 100% de l'axe X.
+        valid = {}
+        for name, pts in series.items():
+            avant = [px for dt, px in sorted(pts.items()) if dt < debut]
+            last  = avant[-1] if avant else None
 
-def build_synthese_html() -> str:
-    if not synthese_rows:
-        return ""
-    def champ(ligne: dict, *candidats, defaut="—") -> str:
-        """Premiere colonne dont l'en-tete contient l'un des mots cherches."""
-        for c in candidats:
-            for cle, val in ligne.items():
-                if c in cle:
-                    return re.sub(r"[*]+", "", val).strip() or defaut
-        return defaut
+            filled = []
+            for dt in common_dates:
+                v = pts.get(dt)
+                if v is not None:
+                    last = v
+                filled.append(last)
 
-    rows_html = ""
-    for ligne in synthese_rows:
-        if not isinstance(ligne, dict) or not ligne:
+            first_known = next((v for v in filled if v is not None), None)
+            if first_known is None or first_known <= 0:
+                continue
+            filled = [v if v is not None else first_known for v in filled]
+
+            base = filled[0]
+            if base <= 0:
+                continue
+
+            valid[name] = (common_dates, [round(v / base * 100, 2) for v in filled])
+
+        if not valid:
+            return False
+
+        os.makedirs(os.path.dirname(chart_path), exist_ok=True)
+
+        fig, ax = plt.subplots(figsize=(12, 5))
+        fig.patch.set_facecolor("#f9f8f5")
+        ax.set_facecolor("#f9f8f5")
+
+        colors = [
+            "#2563eb", "#16a34a", "#dc2626", "#d97706",
+            "#7c3aed", "#0891b2", "#db2777", "#65a30d",
+        ]
+
+        all_y = []
+        all_x = []
+
+        for idx, (name, (dt_list, normalized)) in enumerate(valid.items()):
+            color = colors[idx % len(colors)]
+            perf_finale = normalized[-1] - 100
+            all_y.extend(normalized)
+            all_x.extend(dt_list)
+
+            ax.plot(
+                dt_list, normalized,
+                color=color, linewidth=2.2,
+                marker="o", markersize=4,
+                label=f"{name} ({perf_finale:+.1f}%)",
+                zorder=3,
+            )
+            ax.annotate(
+                f"{normalized[-1]:.0f}",
+                (dt_list[-1], normalized[-1]),
+                textcoords="offset points", xytext=(6, 0),
+                fontsize=7.5, color=color, fontweight="bold",
+            )
+
+        ax.axhline(
+            y=100, color="#9ca3af", linestyle="--",
+            linewidth=1.2, alpha=0.8,
+            label="Base 100 (début de période)", zorder=2
+        )
+
+        ax.relim()
+        ax.autoscale_view()
+
+        if all_y:
+            y_min = min(min(all_y), 100)
+            y_max = max(max(all_y), 100)
+            pad = max((y_max - y_min) * 0.12, 3)
+            ax.set_ylim(y_min - pad, y_max + pad)
+
+        if all_x:
+            ax.set_xlim(min(all_x) - timedelta(days=1), max(all_x) + timedelta(days=2))
+
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}"))
+        ax.tick_params(axis="y", labelsize=8)
+        ax.set_ylabel("Performance (base 100)", fontsize=8, color="#6b7280")
+
+        ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
+        ax.grid(axis="x", linestyle=":", alpha=0.2, color="#d1d5db")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_color("#e5e7eb")
+        ax.spines["bottom"].set_color("#e5e7eb")
+
+        ax.set_title(
+            "Performance comparée du portefeuille — base 100 (30 derniers jours, EUR)",
+            fontsize=11, fontweight="bold", color="#111827", pad=14,
+        )
+        ax.legend(
+            fontsize=8, framealpha=0.7, loc="upper left",
+            bbox_to_anchor=(0.01, 0.99), ncol=2,
+        )
+
+        plt.tight_layout()
+        plt.savefig(
+            chart_path, dpi=130, bbox_inches="tight",
+            facecolor=fig.get_facecolor()
+        )
+        plt.close(fig)
+        return True
+
+    except Exception:
+        return False
+
+
+# =============================================================================
+# HISTORIQUE CSV
+# =============================================================================
+
+def append_history(now: datetime, rows: list):
+    """Ajoute les releves du jour, en respectant l'en-tete deja en place.
+
+    La v7.2 introduit une colonne `confiance`. Un historique ecrit par une
+    version anterieure n'a pas cette colonne : on ne peut pas y ajouter des
+    lignes plus larges que son en-tete sans le rendre illisible. Le fichier
+    est donc migre une fois -- ancien contenu conserve, colonne manquante
+    laissee vide sur les lignes historiques.
+    """
+    os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
+
+    entete = None
+    if os.path.isfile(HISTORY_PATH):
+        try:
+            with open(HISTORY_PATH, newline="", encoding="utf-8") as f:
+                entete = next(csv.reader(f), None)
+        except Exception as e:
+            _log.warning("Historique illisible (%s) -- ajout sans migration", e)
+
+    # Migration : on reecrit le fichier avec le nouveau jeu de colonnes.
+    if entete and set(entete) != set(HISTORY_COLS):
+        manquantes = [c for c in HISTORY_COLS if c not in entete]
+        try:
+            with open(HISTORY_PATH, newline="", encoding="utf-8") as f:
+                anciennes = list(csv.DictReader(f))
+            with open(HISTORY_PATH, "w", newline="", encoding="utf-8") as f:
+                w = csv.DictWriter(f, fieldnames=HISTORY_COLS, extrasaction="ignore")
+                w.writeheader()
+                for ligne in anciennes:
+                    w.writerow({c: ligne.get(c, "") for c in HISTORY_COLS})
+            _log.info("Historique migre : colonne(s) ajoutee(s) %s", manquantes)
+            entete = HISTORY_COLS
+        except Exception as e:
+            _log.error("Migration de l'historique impossible (%s)", e)
+            entete = entete or HISTORY_COLS
+
+    colonnes = entete or HISTORY_COLS
+    with open(HISTORY_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=colonnes, extrasaction="ignore")
+        if not entete:
+            writer.writeheader()
+        for row in rows:
+            writer.writerow({c: row.get(c, "") for c in colonnes})
+
+
+# =============================================================================
+# HELPER PARALLELISATION
+# =============================================================================
+
+def _fetch_asset_data(asset: dict, eur_usd: float,
+                      td_prices: dict, session_cache: dict) -> dict:
+    news = get_company_news(asset, 2)
+    bull, bear, sent_src = get_sentiment(asset)
+    cs, cons_str, cons_src = get_consensus(asset)
+    h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
+    synthesis, synth_src = get_news_synthesis(asset)
+    return {
+        "news": news, "bull": bull, "bear": bear, "sent_src": sent_src,
+        "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
+        "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
+        "h_cache": h_cache, "h_err": h_err,
+        "synthesis": synthesis, "synth_src": synth_src,
+    }
+
+
+# =============================================================================
+# MAIN — génération du rapport complet
+# =============================================================================
+
+def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = True):
+    """Produit le rapport d'UN utilisateur.
+
+    profile      : dict issu de load_profile(). Si None, on garde l'etat courant.
+    shared_cache : cache de marche partage entre plusieurs utilisateurs d'un
+                   meme run (mode --all-users). Si None, il est charge/sauve ici.
+    """
+    global session_cache_global
+
+    if profile is not None:
+        apply_profile(profile)
+
+    if not PORTFOLIO:
+        _log.error("Portefeuille vide pour '%s' -- rien a analyser.", USER)
+        return False
+
+    now = datetime.now(PARIS_TZ)
+    os.makedirs(CHARTS_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
+    os.makedirs("cache", exist_ok=True)
+    os.makedirs(f"docs/{USER}", exist_ok=True)
+
+    session_cache = shared_cache if shared_cache is not None else load_session_cache()
+    session_cache_global = session_cache
+
+    # ── 1. EUR/USD ────────────────────────────────────────────────────────────
+    eur_usd, eur_usd_src, eur_usd_cache, eur_usd_warn = get_eur_usd(session_cache)
+    session_cache["eur_usd"] = eur_usd
+
+    # ── 2. Cours US en batch (TwelveData) ─────────────────────────────────────
+    us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
+    us_tickers += [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
+    td_prices = td_fetch_batch(list(set(filter(None, us_tickers)))) if TWELVEDATA_KEY else {}
+
+    # ── 3. Cours par position + données parallèles ────────────────────────────
+    # Seuls les tickers encore inconnus du memo sont interroges : c'est ici que
+    # se joue la mutualisation entre utilisateurs.
+    a_faire_px = {a["ticker_eod"]: a for a in PORTFOLIO
+                  if f"px:{a['ticker_eod']}" not in _MEMO}
+    a_faire_ad = {a["ticker_eod"]: a for a in PORTFOLIO
+                  if f"ad:{a['ticker_eod']}" not in _MEMO}
+
+    if a_faire_px:
+        with ThreadPoolExecutor(max_workers=4) as exe:
+            price_futures = {
+                exe.submit(get_price_eur, a, eur_usd, td_prices, session_cache): a
+                for a in a_faire_px.values()
+            }
+            for fut in as_completed(price_futures):
+                a = price_futures[fut]
+                try:
+                    _MEMO[f"px:{a['ticker_eod']}"] = fut.result()
+                except Exception as e:
+                    _log.warning("Cours %s : %s", a["ticker_eod"], e)
+                    _MEMO[f"px:{a['ticker_eod']}"] = (None, 0.0, "Erreur", False, str(e))
+
+    if a_faire_ad:
+        with ThreadPoolExecutor(max_workers=4) as exe:
+            data_futures = {
+                exe.submit(_fetch_asset_data, a, eur_usd, td_prices, session_cache): a
+                for a in a_faire_ad.values()
+            }
+            for fut in as_completed(data_futures):
+                a = data_futures[fut]
+                try:
+                    _MEMO[f"ad:{a['ticker_eod']}"] = fut.result()
+                except Exception as e:
+                    _log.warning("Données %s : %s", a["ticker_eod"], e)
+                    _MEMO[f"ad:{a['ticker_eod']}"] = {
+                    "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "erreur",
+                    "cs": 5.0, "cons_str": "N/D", "cons_src": "erreur",
+                    "h_dates": [], "h_closes": [], "h_src": "erreur",
+                    "h_cache": False, "h_err": str(e),
+                        "synthesis": "Données indisponibles.", "synth_src": "",
+                    }
+
+    prices     = {a["ticker_eod"]: _MEMO[f"px:{a['ticker_eod']}"] for a in PORTFOLIO}
+    asset_data = {a["ticker_eod"]: _MEMO[f"ad:{a['ticker_eod']}"] for a in PORTFOLIO}
+
+    # ── 4. Indices macro ──────────────────────────────────────────────────────
+    indices_data = {}
+    for idx_name, idx_sym in INDICES.items():
+        indices_data[idx_name] = get_index(idx_sym)
+
+    macro_score = score_macro(indices_data)
+
+    # ── 5. Watchlist cours ────────────────────────────────────────────────────
+    watchlist_prices = {}
+    for w in WATCHLIST:
+        k = f"wpx:{w['ticker_eod']}"
+        if k not in _MEMO:
+            p, chg, src, from_cache, note = get_price_eur(w, eur_usd, td_prices, session_cache)
+            _MEMO[k] = (p, chg, src, from_cache)
+        watchlist_prices[w["ticker_eod"]] = _MEMO[k]
+
+    # ── 6. Watchlist news (RSS) ───────────────────────────────────────────────
+    watchlist_synth = {}
+    for w in WATCHLIST:
+        k = f"wsy:{w['ticker_eod']}"
+        if k not in _MEMO:
+            _MEMO[k] = get_news_synthesis(w)
+        watchlist_synth[w["ticker_eod"]] = _MEMO[k]
+
+    # ── 7. Calculs PnL + scoring par position ────────────────────────────────
+    results      = []
+    history_rows = []
+    cache_warns  = []
+    sources_log  = {
+        "EUR/USD":     eur_usd_src,
+        **{n: indices_data[n]["source"] for n in indices_data},
+    }
+    assets_history = {}
+
+    for asset in PORTFOLIO:
+        key      = asset["ticker_eod"]
+        price_info = prices.get(key, (None, 0.0, "manquant", False, None))
+        price_eur, chg_pct, price_src, price_cache, price_note = price_info
+
+        d = asset_data.get(key, {})
+        h_dates  = d.get("h_dates", [])
+        h_closes = d.get("h_closes", [])
+
+        if h_closes and not d.get("h_cache"):
+            session_cache[f"hist_{key}"] = {"dates": h_dates, "closes": h_closes}
+
+        if price_eur and not price_cache:
+            session_cache[f"price_{key}"] = price_eur
+
+        if price_eur is None:
+            _log.warning("Cours introuvable pour %s — position ignorée dans le rapport", key)
             continue
-        nom = re.sub(r"[*]+", "", list(ligne.values())[0]).strip()
-        if not nom or nom.upper() in ("VALEUR", "COUT TOTAL", "TOTAL"):
+
+        qty      = asset["qty"]
+        cost_eur = asset["cost_eur"]
+
+        vm        = round(price_eur * qty, 2)
+        pnl_brut  = round((price_eur - cost_eur) * qty, 2)
+        pnl_brut_pct = round(pnl_brut / (cost_eur * qty) * 100, 2)
+
+        buy_fee   = calc_fee(cost_eur * qty, asset["marche"])
+        sell_fee  = calc_fee(vm, asset["marche"])
+        pnl_net   = round(pnl_brut - buy_fee - sell_fee, 2)
+        pnl_net_pct = round(pnl_net / (cost_eur * qty) * 100, 2)
+
+        # ── NOTE DU TITRE : independante du detenteur ────────────────────
+        fonda = d.get("fonda") or {}
+        sc_hist, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
+        bull = d.get("bull"); bear = d.get("bear")
+        cs   = d.get("cs")
+
+        composantes = {
+            "valorisation": score_valorisation(fonda),
+            "sante":        score_sante(fonda),
+            "croissance":   score_croissance(fonda),
+            "momentum":     sc_hist,
+            "consensus":    cs,
+            "risque":       score_risque(fonda, h_dates, h_closes),
+        }
+        total_score, confiance, detail = note_titre(composantes)
+
+        rec  = recommend(total_score, confiance, pnl_net_pct)
+        just = justification(asset["name"], pnl_net, pnl_net_pct, detail,
+                             total_score, confiance, hist_label, macro_score)
+
+        history_rows.append({
+            "date":         now.strftime("%Y-%m-%d"),
+            "time":         now.strftime("%H:%M"),
+            "ticker":       key,
+            "name":         asset["name"],
+            "price_eur":    price_eur,
+            "cost_eur":     cost_eur,
+            "qty":          qty,
+            "vm":           vm,
+            "pnl_brut":     pnl_brut,
+            "pnl_brut_pct": pnl_brut_pct,
+            "pnl_net":      pnl_net,
+            "pnl_net_pct":  pnl_net_pct,
+            "score":        total_score if total_score is not None else "",
+            "confiance":    confiance,
+            "rec":          rec,
+        })
+
+        if price_cache and price_note:
+            cache_warns.append(f"{asset['name']} -- cours : {price_note}")
+        if d.get("h_cache") and d.get("h_err"):
+            cache_warns.append(f"{asset['name']} -- historique : {d['h_err']}")
+
+        sources_log[key] = {
+            "cours":     price_src,
+            "sentiment": d.get("sent_src", "N/D"),
+            "consensus": d.get("cons_src", "N/D"),
+            "historique": d.get("h_src",   "N/D"),
+            "synthese":  d.get("synth_src","N/D"),
+            "fondamentaux": d.get("fonda_src", "N/D"),
+        }
+
+        assets_history[asset["name"]] = (h_dates, h_closes)
+
+        results.append({
+            "asset":        asset,
+            "price_eur":    price_eur,
+            "chg_pct":      chg_pct,
+            "price_src":    price_src,
+            "vm":           vm,
+            "pnl_brut":     pnl_brut,
+            "pnl_brut_pct": pnl_brut_pct,
+            "pnl_net":      pnl_net,
+            "pnl_net_pct":  pnl_net_pct,
+            "score":        total_score,
+            "confiance":    confiance,
+            "detail":       detail,
+            "fonda":        fonda,
+            "fonda_src":    d.get("fonda_src", "N/D"),
+            "position":     score_position(price_eur, cost_eur, pnl_net_pct, 0.0),
+            "rec":          rec,
+            "just":         just,
+            "bull":         bull,
+            "bear":         bear,
+            "cs":           cs,
+            "cons_str":     d.get("cons_str", "N/D"),
+            "cons_src":     d.get("cons_src", "N/D"),
+            "sent_src":     d.get("sent_src", "N/D"),
+            "hist_label":   hist_label,
+            "ret_1m":       ret_1m,
+            "ret_3m":       ret_3m,
+            "ret_6m":       ret_6m,
+            "h_src":        d.get("h_src", "N/D"),
+            "synthesis":    d.get("synthesis", ""),
+            "synth_src":    d.get("synth_src", ""),
+        })
+
+    # ── 8. Tri par score décroissant ─────────────────────────────────────────
+    results.sort(key=lambda x: (x["score"] is not None, x["score"] or 0), reverse=True)
+
+    # ── 9. Totaux portefeuille ────────────────────────────────────────────────
+    total_vm       = round(sum(r["vm"] for r in results), 2)
+    total_cost     = round(sum(r["asset"]["cost_eur"] * r["asset"]["qty"] for r in results), 2)
+    total_pnl_brut = round(sum(r["pnl_brut"] for r in results), 2)
+    total_pnl_brut_pct = round(total_pnl_brut / total_cost * 100, 2) if total_cost else 0
+    total_pnl_net  = round(sum(r["pnl_net"] for r in results), 2)
+    total_pnl_net_pct = round(total_pnl_net / total_cost * 100, 2) if total_cost else 0
+
+    # ── 10. Graphique combiné ─────────────────────────────────────────────────
+    chart_path   = os.path.join(CHARTS_DIR, "portfolio_combined.png")
+    chart_ok     = generate_combined_chart(assets_history, chart_path)
+
+    # ── 11. Sauvegarde cache ──────────────────────────────────────────────────
+    if save_cache:
+        save_session_cache(session_cache)
+
+    # ── 12. Historique CSV ────────────────────────────────────────────────────
+    append_history(now, history_rows)
+
+    # ── 13. Génération du rapport Markdown ───────────────────────────────────
+    macro_trend = "Haussiere" if macro_score >= 6 else "Baissiere" if macro_score <= 4 else "Neutre"
+
+    lines = [
+        f"# Rapport de Portefeuille v7.0 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        "",
+        "---",
+        "",
+        "## Contexte Economique",
+        "",
+        f"**Tendance : {macro_trend}** | Score macro : {macro_score}/10",
+        f"**EUR/USD :** 1 EUR = {round(1/eur_usd, 4)} USD",
+        "",
+        "| Indice | Variation | Cours |",
+        "|--------|-----------|-------|",
+    ]
+
+    for idx_name, idx_val in indices_data.items():
+        chg  = idx_val["change_pct"]
+        sym  = "^" if chg >= 0 else "v"
+        sign = "+" if chg >= 0 else ""
+        prix_fmt = f"{idx_val['price']:,.2f}".replace(",", " ")
+        lines.append(f"| {idx_name} | {sym} {sign}{chg:.2f}% | {prix_fmt} |")
+
+    lines += [""]
+    macro_news = get_macro_news(5)
+    if macro_news:
+        lines.append("**Manchettes macro :**")
+        lines.append("")
+        for n in macro_news:
+            lines.append(f"- {n}")
+    lines += ["", "---", "", "## Analyse par Valeur", ""]
+
+    for r in results:
+        asset   = r["asset"]
+        chg     = r["chg_pct"]
+        sym     = "^" if chg >= 0 else "v"
+        sign    = "+" if chg >= 0 else ""
+        chg_str = f"{sym} {sign}{chg:.2f}%"
+
+        pnl_b_sign = "+" if r["pnl_brut"] >= 0 else "-"
+        pnl_b_str  = f"{pnl_b_sign} {pnl_b_sign}{abs(r['pnl_brut']):.2f} EUR ({pnl_b_sign}{abs(r['pnl_brut_pct']):.1f}%)"
+        pnl_n_sign = "+" if r["pnl_net"] >= 0 else "-"
+        pnl_n_str  = f"{pnl_n_sign} {pnl_n_sign}{abs(r['pnl_net']):.2f} EUR ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%)"
+
+        note_s = (f"**{r['score']}/10** ({r['confiance']:.0f}%)"
+                  if r["score"] is not None else "n/d")
+        ret_1m_s = f"{r['ret_1m']:+.1f}%"
+        ret_3m_s = f"{r['ret_3m']:+.1f}%"
+        ret_6m_s = f"{r['ret_6m']:+.1f}%"
+
+        lines += [
+            f"### {asset['name']} `{asset['ticker_eod']}`",
+            "",
+            "| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |",
+            "|-------|-----------|-----|----------|---------|------------------|---------|",
+            f"| {r['price_eur']:.2f} EUR | {chg_str} | {r['vm']:.2f} EUR "
+            f"| {pnl_b_str} | {pnl_n_str} | {note_s} | {r['rec']} |",
+            "",
+        ]
+
+        synth = r.get("synthesis", "").strip()
+        synth_src_val = r.get("synth_src", "RSS Yahoo Finance (brut)").strip()
+        if synth and "Aucune actualite" not in synth:
+            lines.append(f"**Actualite recente :** *(source : {synth_src_val})*")
+            lines.append("")
+            lines.append(f"> {synth}")
+            lines.append("")
+
+        # Detail de la note : chaque composante et son poids reel
+        detail = r.get("detail") or {}
+        if detail:
+            libelles = {"valorisation": "Valorisation", "sante": "Sante financiere",
+                        "croissance": "Croissance", "momentum": "Momentum",
+                        "consensus": "Consensus", "risque": "Risque"}
+            lines += ["**Detail de la note :**", "",
+                      "| Composante | Note | Poids |",
+                      "|------------|------|-------|"]
+            poids_dispo = sum(POIDS_NOTE[k] for k in detail)
+            for cle in POIDS_NOTE:
+                if cle in detail:
+                    part = POIDS_NOTE[cle] / poids_dispo * 100
+                    lines.append(f"| {libelles[cle]} | {detail[cle]:.1f}/10 | {part:.0f}% |")
+            absentes = [libelles[k] for k in POIDS_NOTE if k not in detail]
+            lines.append("")
+            if absentes:
+                motif = r.get("fonda_src", "")
+                precision = ""
+                if motif and any(a in ("Valorisation", "Sante financiere", "Croissance")
+                                 for a in absentes):
+                    precision = f" Motif cote fondamentaux : {motif}."
+                lines.append(f"*Non disponible : {', '.join(absentes)} "
+                             f"-- poids redistribues sur les composantes ci-dessus."
+                             f"{precision}*")
+                lines.append("")
+
+        # Ratios fondamentaux bruts, pour verification manuelle
+        f_r = r.get("fonda") or {}
+        if f_r:
+            morceaux = []
+            for cle, lib, suffixe in (("per", "PER", ""), ("peg", "PEG", ""),
+                                      ("ev_ebitda", "EV/EBITDA", ""),
+                                      ("p_book", "P/B", ""),
+                                      ("marge_nette", "Marge nette", "%"),
+                                      ("roe", "ROE", "%"),
+                                      ("croiss_ca", "Croiss. CA", "%"),
+                                      ("beta", "Beta", "")):
+                v = f_r.get(cle)
+                if v is None:
+                    continue
+                if suffixe == "%" and abs(v) <= 1:
+                    v *= 100
+                morceaux.append(f"{lib} {v:.1f}{suffixe}")
+            if morceaux:
+                lines.append(f"**Fondamentaux :** {' | '.join(morceaux)} "
+                             f"*(source : {r.get('fonda_src', 'N/D')})*")
+
+        # Indicatif uniquement : ne compte plus dans la note depuis la v7.3.
+        if r.get("bull") is not None:
+            senti = (f"Bull {r['bull']:.0f}% / Bear {r['bear']:.0f}% "
+                     f"*(indicatif, hors note -- source : {r['sent_src']})*")
+        else:
+            senti = f"non disponible *({r.get('sent_src', 'n/d')})*"
+        lines += [
+            f"**Tonalite presse :** {senti}",
+            f"**Consensus analystes :** {r['cons_str']} *(source : {r['cons_src']})*",
+            f"**Perf. historique :** 1M {ret_1m_s} | 3M {ret_3m_s} | 6M {ret_6m_s} -- {r['hist_label']} *(source : {r['h_src']})*",
+            "",
+            f"**Justification :** {r['just']}",
+            "",
+            "---",
+            "",
+        ]
+
+    # ── Synthèse portefeuille ─────────────────────────────────────────────────
+    lines += [
+        "## Synthese Portefeuille",
+        "",
+        "| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |",
+        "|--------|-----------|--------|----------|---------|------|-------|---------|",
+    ]
+    for r in results:
+        pnl_b_sign = "+" if r["pnl_brut"] >= 0 else "-"
+        pnl_n_sign = "+" if r["pnl_net"] >= 0 else "-"
+        # Les colonnes de note sont construites a part : la concatenation
+        # implicite de f-strings lie plus fort que le ternaire, un
+        # `... if ... else ...` en fin d'expression escamoterait les
+        # colonnes precedentes.
+        cell_note = (f"{r['score']}/10 | {r['confiance']:.0f}%"
+                     if r["score"] is not None else "n/d | -")
+        lines.append(
+            f"| {r['asset']['name']} | {r['price_eur']:.2f} | {r['vm']:.2f} "
+            f"| {pnl_b_sign}{abs(r['pnl_brut']):.2f} ({pnl_b_sign}{abs(r['pnl_brut_pct']):.1f}%) "
+            f"| {pnl_n_sign}{abs(r['pnl_net']):.2f} ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%) "
+            f"| {cell_note} | {r['rec']} |"
+        )
+
+    total_pnl_b_sign = "+" if total_pnl_brut >= 0 else "-"
+    total_pnl_n_sign = "+" if total_pnl_net  >= 0 else "-"
+    lines += [
+        f"| **TOTAL** | — | **{total_vm:.2f}** "
+        f"| **{total_pnl_b_sign}{abs(total_pnl_brut):.2f} ({total_pnl_b_sign}{abs(total_pnl_brut_pct):.1f}%)** "
+        f"| **{total_pnl_n_sign}{abs(total_pnl_net):.2f} ({total_pnl_n_sign}{abs(total_pnl_net_pct):.1f}%)** "
+        f"| — | — | — |",
+        "",
+        "---",
+        "",
+    ]
+
+    # ── Watchlist ─────────────────────────────────────────────────────────────
+    lines += ["## Watchlist", "", "| Valeur | Secteur | Cours EUR | Variation | Actualite |",
+              "|--------|---------|-----------|-----------|-----------|"]
+    for w in WATCHLIST:
+        p, chg, src, from_cache = watchlist_prices.get(w["ticker_eod"], (None, 0.0, "N/D", False))
+        synth_txt, _ = watchlist_synth.get(w["ticker_eod"], ("—", ""))
+        if p:
+            sym  = "^" if chg >= 0 else "v"
+            sign = "+" if chg >= 0 else ""
+            p_str   = f"{p:.2f} EUR{'*' if from_cache else ''}"
+            chg_str = f"{sym} {sign}{chg:.2f}%"
+        else:
+            p_str = chg_str = "N/D"
+        short_synth = (synth_txt[:80] + "…") if len(synth_txt) > 80 else synth_txt
+        lines.append(f"| {w['name']} | {w['sector']} | {p_str} | {chg_str} | {short_synth} |")
+
+    lines += ["", "---", ""]
+
+    # ── Sources & quotas ──────────────────────────────────────────────────────
+    lines += ["## Sources et Quotas", ""]
+    for k, v in sources_log.items():
+        if isinstance(v, dict):
+            parts = ", ".join(f"{sk}: {sv}" for sk, sv in v.items())
+            lines.append(f"- **{k}** : {parts}")
+        else:
+            lines.append(f"- **{k}** : {v}")
+
+    lines += ["", f"**Quotas API utilisés :** {_quota_status()}", ""]
+    lines += [f"**Profil :** {PROFILE.get('username', USER)} | "
+              f"**Courtier :** {BROKER_NAME}", ""]
+
+    if cache_warns:
+        lines += ["", "## Avertissements Cache", ""]
+        for w in cache_warns:
+            lines.append(f"- ⚠️  {w}")
+        lines.append("")
+
+    if eur_usd_warn:
+        lines += ["", f"> ⚠️  {eur_usd_warn}", ""]
+
+    report_path = REPORT_PATH
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    print(f"Rapport généré : {report_path}")
+    print(f"Quotas finaux  : {_quota_status()}")
+    return True
+
+
+# =============================================================================
+# CHARGEMENT DES PROFILS
+# =============================================================================
+
+def _normaliser(raw: dict, username: str = None) -> dict:
+    """Convertit un JSON de profil vers le format interne.
+
+    On delegue a api/load_portfolio.py quand il est disponible (c'est lui qui
+    porte la logique de derivation des tickers et des grilles de courtiers) ;
+    sinon on suppose que le JSON est deja au format interne.
+    """
+    try:
+        from api.load_portfolio import normalize_profile
+        return normalize_profile(raw, username)
+    except Exception as e:
+        _log.warning("Normalisation par defaut (api/load_portfolio indisponible : %s)", e)
+        prof = dict(raw or {})
+        prof.setdefault("username", username or "default")
+        prof.setdefault("lines", [])
+        prof.setdefault("settings", {})
+        return prof
+
+
+def load_profile(path: str, username: str = None) -> dict:
+    """Charge un profil depuis un fichier JSON."""
+    with open(path, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    return _normaliser(raw, username or raw.get("username"))
+
+
+def discover_profiles() -> list:
+    """Retourne tous les profils presents dans data/portfolios/."""
+    profils = []
+    if not os.path.isdir(PORTFOLIOS_DIR):
+        return profils
+    for fname in sorted(os.listdir(PORTFOLIOS_DIR)):
+        if not fname.endswith(".json"):
             continue
+        chemin = os.path.join(PORTFOLIOS_DIR, fname)
+        uname  = fname[len("portfolio_"):-len(".json")] if fname.startswith("portfolio_") \
+                 else fname[:-len(".json")]
+        try:
+            profils.append(load_profile(chemin, uname))
+        except Exception as e:
+            _log.error("Profil illisible %s : %s", chemin, e)
+    return profils
 
-        vm_raw    = champ(ligne, "vm", "valeur march")
-        pnl_raw   = champ(ligne, "p&l net", "pnl net")
-        score_raw = champ(ligne, "note", "score")
-        conf_raw  = champ(ligne, "conf", defaut="")
-        rec_raw   = champ(ligne, "recomm")
 
-        score_cell = (f"<td>{score_bar(score_raw)}</td>" if "/" in score_raw
-                      else f"<td class='cell-num'>{score_raw}</td>")
-        conf_cell  = f"<td class='cell-num'>{conf_raw or '—'}</td>"
+def run_all_users() -> int:
+    """Traite tous les profils dans UN SEUL processus.
 
-        rows_html += (f"<tr><td><strong>{nom}</strong></td>"
-                      f"<td class='cell-num'>{vm_raw}</td>"
-                      f"{pnl_cell(pnl_raw)}{score_cell}{conf_cell}"
-                      f"<td>{rec_badge(rec_raw)}</td></tr>\n")
+    Le cache de marche et le memo sont partages : un ticker detenu par
+    plusieurs utilisateurs n'entraine qu'un seul appel API.
+    """
+    profils = discover_profiles()
+    if not profils:
+        _log.error("Aucun profil dans %s", PORTFOLIOS_DIR)
+        return 1
 
-    return f"""
-<section class="section-block" id="synthese">
-  <h2 class="section-title">🏆 Synthèse &amp; Recommandations</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Valeur</th><th>Valeur Marché</th>
-          <th>P&amp;L Net</th><th>Note</th><th>Confiance</th><th>Recommandation</th>
-        </tr>
-      </thead>
-      <tbody>{rows_html}</tbody>
-    </table>
-  </div>
-</section>"""
+    cache = load_session_cache()
+    ok_count = 0
+    for prof in profils:
+        uname = prof.get("username", "?")
+        print(f"\n=== Analyse : {uname} ({len(prof.get('lines', []))} ligne(s)) ===")
+        try:
+            if main(prof, shared_cache=cache, save_cache=False):
+                ok_count += 1
+        except Exception as e:
+            _log.error("Echec pour %s : %s", uname, e)
 
-def build_archive_html() -> str:
-    return """
-<section class="section-block" id="historique">
-  <h2 class="section-title">📂 Historique des Rapports</h2>
-  <button class="archive-toggle" onclick="toggleArchive()" id="archive-btn">
-    ▼ Afficher les 30 derniers rapports
-  </button>
-  <div id="archive-panel">
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>P&L Net</th><th>VM</th><th>Positions</th></tr></thead>
-        <tbody id="archive-tbody">
-          <tr><td colspan="4" style="text-align:center;color:var(--muted)">Chargement…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>"""
+    save_session_cache(cache)
+    print(f"\n{ok_count}/{len(profils)} profil(s) traite(s). "
+          f"Appels mutualises : {len(_MEMO)} entrees en memo pour "
+          f"{sum(len(p.get('lines', [])) for p in profils)} ligne(s) cumulees.")
+    print(f"Quotas finaux : {_quota_status()}")
+    return 0 if ok_count else 1
 
-# ══════════════════════════════════════════════════════
-# CSS
-# ══════════════════════════════════════════════════════
-CSS = """
-:root {
-  --bg:          #0d1117;
-  --surface:     #161b22;
-  --surface-2:   #1c2130;
-  --border:      #21262d;
-  --text:        #e6edf3;
-  --muted:       #7d8590;
-  --faint:       #2d333b;
-  --accent:      #4f98a3;
-  --accent-dim:  rgba(79,152,163,.12);
-  --green:       #3fb950;
-  --green-dim:   rgba(63,185,80,.12);
-  --red:         #f85149;
-  --red-dim:     rgba(248,81,73,.12);
-  --yellow:      #d29922;
-  --yellow-dim:  rgba(210,153,34,.12);
-  --radius:      12px;
-  --radius-sm:   8px;
-  --shadow:      0 4px 24px rgba(0,0,0,.4);
-  --font-body:   'Inter', system-ui, sans-serif;
-  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
-}
-[data-theme="light"] {
-  --bg:          #f6f8fa;
-  --surface:     #ffffff;
-  --surface-2:   #f0f2f5;
-  --border:      #d0d7de;
-  --text:        #1f2328;
-  --muted:       #57606a;
-  --faint:       #d8dee4;
-  --accent:      #0969da;
-  --accent-dim:  rgba(9,105,218,.08);
-  --green:       #1a7f37;
-  --green-dim:   rgba(26,127,55,.08);
-  --red:         #cf222e;
-  --red-dim:     rgba(207,34,46,.08);
-  --yellow:      #9a6700;
-  --shadow:      0 4px 24px rgba(0,0,0,.08);
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; scroll-padding-top: 68px; }
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.65;
-  font-size: 14px;
-  min-height: 100dvh;
-  -webkit-font-smoothing: antialiased;
-}
-header {
-  position: sticky; top: 0; z-index: 200;
-  background: color-mix(in oklab, var(--bg) 88%, transparent);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  height: 56px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-}
-.logo { font-size: 14px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; }
-.logo-icon { font-size: 18px; }
-.logo-name { color: var(--text); }
-.logo-name span { color: var(--accent); }
-.header-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
-.header-nav  { display: flex; gap: 2px; }
-.header-nav a {
-  font-size: 12px; color: var(--muted); text-decoration: none;
-  padding: 5px 10px; border-radius: var(--radius-sm);
-  transition: color .15s, background .15s;
-}
-.header-nav a:hover { color: var(--text); background: var(--surface-2); }
-.header-actions { display: flex; gap: 6px; align-items: center; }
-.btn-icon {
-  background: var(--surface-2); border: 1px solid var(--border);
-  color: var(--muted); border-radius: var(--radius-sm);
-  padding: 5px 10px; font-size: 13px; cursor: pointer;
-  transition: color .15s, background .15s;
-}
-.btn-icon:hover { color: var(--text); background: var(--faint); }
-.container { max-width: 1040px; margin: 0 auto; padding: 28px 20px 100px; }
-.update-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 5px 14px; font-size: .76rem;
-  color: var(--muted); margin-bottom: 24px;
-}
-.update-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 8px var(--green);
-  flex-shrink: 0;
-  animation: pulse 2.4s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
-.kpi-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px; margin-bottom: 36px;
-}
-.kpi-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 18px 20px;
-  transition: border-color .2s, box-shadow .2s;
-  position: relative; overflow: hidden;
-}
-.kpi-card::before {
-  content: ""; position: absolute; inset: 0;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--accent-dim), transparent 60%);
-  opacity: 0; transition: opacity .3s;
-}
-.kpi-card:hover::before { opacity: 1; }
-.kpi-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
-.kpi-val {
-  font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono);
-  letter-spacing: -.5px; line-height: 1.1; position: relative; z-index: 1;
-}
-.kpi-lbl {
-  font-size: .7rem; color: var(--muted); margin-top: 6px;
-  text-transform: uppercase; letter-spacing: .6px; position: relative; z-index: 1;
-}
-.kpi-positive { color: var(--green); }
-.kpi-negative { color: var(--red); }
-.kpi-neutral  { color: var(--accent); }
-.kpi-card.main-card { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 6%, var(--surface)); }
-.section-block { margin-bottom: 48px; }
-.section-title {
-  font-size: .88rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .8px; color: var(--muted); margin-bottom: 16px;
-  padding-bottom: 10px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px;
-}
-.combined-chart-wrap {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
-}
-.combined-chart-img { width: 100%; display: block; max-height: 520px; object-fit: contain; }
-.chart-caption {
-  font-size: .75rem; color: var(--muted);
-  padding: 10px 16px 14px; border-top: 1px solid var(--border);
-  font-style: italic; line-height: 1.5;
-}
-.positions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
-.position-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px;
-  transition: border-color .2s, box-shadow .2s;
-}
-.position-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
-.pos-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 8px; }
-.pos-title  { display: flex; flex-direction: column; gap: 4px; }
-.pos-name   { font-size: .95rem; font-weight: 700; color: var(--text); }
-.pos-ticker {
-  font-family: var(--font-mono); font-size: .75rem;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 4px; padding: 1px 6px; color: var(--accent);
-  display: inline-block; width: fit-content;
-}
-.pos-kpis {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 10px; margin-bottom: 14px;
-}
-.pos-kpi { background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
-.pos-kpi-val { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); }
-.pos-kpi-lbl { font-size: .68rem; color: var(--muted); margin-top: 3px; }
 
-/* --- Indice de confiance et detail de la note (v7.2) --------------------- */
-.conf-badge {
-  display: inline-block; padding: 1px 6px; border-radius: 999px;
-  font-size: .62rem; font-weight: 600; white-space: nowrap;
-}
-.conf-ok    { background: var(--accent-dim); color: var(--accent); }
-.conf-basse { background: var(--yellow-dim); color: var(--yellow); }
+def cli():
+    ap = argparse.ArgumentParser(
+        description="Analyseur de portefeuille multi-utilisateur."
+    )
+    ap.add_argument("--portfolio", help="Chemin vers un JSON de profil.")
+    ap.add_argument("--user",      help="Nom d'utilisateur (lit data/portfolios/portfolio_<user>.json).")
+    ap.add_argument("--all-users", action="store_true",
+                    help="Traite tous les profils en un seul run (mutualise les appels API).")
+    args = ap.parse_args()
 
-.pos-detail-note {
-  margin: .75rem 0 0; padding: .6rem .85rem;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.pos-detail-note summary {
-  cursor: pointer; font-size: .78rem; color: var(--muted);
-  font-weight: 500; user-select: none;
-}
-.pos-detail-note summary:hover { color: var(--accent); }
-.pos-detail-note[open] summary { margin-bottom: .7rem; }
+    if args.all_users:
+        return run_all_users()
 
-.comp-list { display: flex; flex-direction: column; gap: .35rem; }
-.comp-row {
-  display: grid; grid-template-columns: 8.5rem 1fr 2.2rem 2.4rem;
-  align-items: center; gap: .5rem; font-size: .74rem;
-}
-.comp-name  { color: var(--text); }
-.comp-track {
-  height: 5px; background: var(--faint); border-radius: 999px; overflow: hidden;
-}
-.comp-fill  { display: block; height: 100%; border-radius: 999px; }
-.comp-val   { font-family: var(--font-mono); text-align: right; }
-.comp-w     { color: var(--muted); text-align: right; font-size: .68rem; }
+    if args.portfolio:
+        chemin = args.portfolio
+        uname  = args.user
+    elif args.user:
+        chemin = os.path.join(PORTFOLIOS_DIR, f"portfolio_{slugify(args.user)}.json")
+        uname  = args.user
+    else:
+        ap.error("Preciser --portfolio, --user ou --all-users.")
+        return 2
 
-.comp-fonda {
-  margin: .7rem 0 0; padding-top: .6rem; border-top: 1px solid var(--border);
-  font-family: var(--font-mono); font-size: .68rem; color: var(--muted);
-  line-height: 1.6;
-}
-.comp-missing { margin: .5rem 0 0; font-size: .68rem; color: var(--yellow); }
+    if not os.path.exists(chemin):
+        _log.error("Profil introuvable : %s", chemin)
+        return 1
 
-@media (max-width: 560px) {
-  .comp-row { grid-template-columns: 6.5rem 1fr 2rem 2.2rem; font-size: .68rem; }
-}
-.pos-details { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-.pos-detail-item { display: flex; gap: 10px; align-items: baseline; font-size: .82rem; }
-.detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
-.mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
-.pos-synthesis {
-  margin-top: 12px;
-  background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
-  border: 1px solid color-mix(in oklab, var(--accent) 20%, var(--border));
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-}
-.synth-header {
-  font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: var(--accent); margin-bottom: 6px;
-  display: flex; align-items: center; gap: 6px;
-}
-.synth-src {
-  font-size: .68rem; font-weight: 400; color: var(--muted);
-  text-transform: none; letter-spacing: 0;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 4px; padding: 1px 6px;
-}
-.synth-text {
-  font-size: .8rem; color: var(--text); line-height: 1.6;
-  font-style: italic; max-width: none;
-}
-.score-wrap { display: flex; flex-direction: column; gap: 4px; }
-.score-num  { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
-.score-bar  { height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
-.score-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(.16,1,.3,1); }
-.bar-green  { background: var(--green); }
-.bar-yellow { background: var(--yellow); }
-.bar-red    { background: var(--red); }
-.table-wrap {
-  overflow-x: auto; border-radius: var(--radius);
-  border: 1px solid var(--border); box-shadow: var(--shadow); margin: 0;
-}
-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-th {
-  background: var(--surface-2); color: var(--muted); font-weight: 600;
-  font-size: .7rem; text-transform: uppercase; letter-spacing: .5px;
-  padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-td {
-  padding: 10px 14px; border-bottom: 1px solid var(--border);
-  vertical-align: middle; color: var(--text);
-}
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--accent-dim); transition: background .12s; }
-.cell-pos { color: var(--green) !important; font-weight: 600; font-family: var(--font-mono); }
-.cell-neg { color: var(--red)   !important; font-weight: 600; font-family: var(--font-mono); }
-.cell-num { font-family: var(--font-mono); }
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: .73rem; font-weight: 700; padding: 3px 10px;
-  border-radius: 20px; white-space: nowrap;
-}
-.buy-strong { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
-.buy-mod    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,152,163,.3); }
-.hold       { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
-.avoid      { background: rgba(249,115,22,.1); color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
-.sell       { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
-.up { color: var(--green); font-weight: 700; }
-.dn { color: var(--red);   font-weight: 700; }
-.archive-toggle {
-  font-size: .8rem; color: var(--accent); cursor: pointer;
-  background: none; border: none; padding: 4px 0;
-  transition: color .15s; margin-bottom: 12px; display: block;
-}
-.archive-toggle:hover { color: var(--text); }
-#archive-panel { display: none; margin-bottom: 8px; }
-#archive-panel.open { display: block; }
-hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-@media print {
-  header, .header-actions, .archive-toggle, #archive-panel,
-  .update-badge { display: none !important; }
-  body { background: #fff; color: #000; font-size: 13px; }
-  .position-card { break-inside: avoid; border: 1px solid #ccc; }
-  .badge { border: 1px solid #ccc !important; color: #000 !important; background: none !important; }
-  .combined-chart-img { max-height: none; }
-  .pos-synthesis { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
-}
-@media (max-width: 700px) {
-  header { padding: 0 14px; }
-  .header-nav { display: none; }
-  .container { padding: 16px 12px 80px; }
-  .kpi-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .kpi-val { font-size: 1.25rem; }
-  .positions-grid { grid-template-columns: 1fr; }
-  .pos-kpis { grid-template-columns: repeat(3, 1fr); }
-  td, th { padding: 8px 10px; font-size: .76rem; }
-}
-@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-.kpi-card       { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
-.kpi-card:nth-child(1) { animation-delay: .05s; }
-.kpi-card:nth-child(2) { animation-delay: .1s;  }
-.kpi-card:nth-child(3) { animation-delay: .15s; }
-.kpi-card:nth-child(4) { animation-delay: .2s;  }
-.kpi-card:nth-child(5) { animation-delay: .25s; }
-.position-card  { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
-"""
+    profil = load_profile(chemin, uname)
+    return 0 if main(profil) else 1
 
-# ══════════════════════════════════════════════════════
-# JS
-# ══════════════════════════════════════════════════════
-JS = r"""
-(function(){
-  var root = document.documentElement;
-  var btn  = document.querySelector('[data-theme-toggle]');
-  function sg(k){try{return localStorage.getItem(k);}catch(e){return null;}}
-  function ss(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-  var theme = sg('theme') || (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
-  root.setAttribute('data-theme', theme);
-  if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
-  if(btn) btn.addEventListener('click', function(){
-    theme = theme==='dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', theme);
-    ss('theme', theme);
-    btn.textContent = theme==='dark' ? '☀️' : '🌙';
-  });
-})();
 
-function animateCounter(el) {
-  var raw = el.getAttribute('data-val');
-  if (!raw) return;
-  var num = parseFloat(raw.replace(',','.').replace(/\s/g,''));
-  if (isNaN(num)) return;
-  var suffix   = el.getAttribute('data-suffix') || '';
-  var prefix   = el.getAttribute('data-prefix') || '';
-  var decimals = (raw.includes('.') || raw.includes(',')) ? 2 : 0;
-  var duration = 1200;
-  var startTime = null;
-  function step(ts) {
-    if (!startTime) startTime = ts;
-    var p    = Math.min((ts - startTime) / duration, 1);
-    var ease = 1 - Math.pow(1 - p, 4);
-    var cur  = num * ease;
-    var disp = Math.abs(cur).toFixed(decimals).replace('.',',');
-    disp = disp.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    el.textContent = prefix + (num < 0 ? '-' : '') + disp + suffix;
-    if (p < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-document.querySelectorAll('[data-counter]').forEach(function(el){
-  var obs = new IntersectionObserver(function(entries, o){
-    if(entries[0].isIntersecting){ animateCounter(el); o.disconnect(); }
-  }, {threshold: 0.3});
-  obs.observe(el);
-});
-
-document.querySelectorAll('td').forEach(function(td){
-  var t = td.textContent.trim();
-  if (/^[+][\d\s].*[€%]/.test(t)) td.classList.add('cell-pos');
-  else if (/^[-][\d\s].*[€%]/.test(t)) td.classList.add('cell-neg');
-});
-
-document.querySelectorAll('.score-fill').forEach(function(bar){
-  var w = bar.style.width;
-  bar.style.width = '0%';
-  setTimeout(function(){
-    bar.style.width = w;
-  }, 400);
-});
-
-function toggleArchive() {
-  var panel = document.getElementById('archive-panel');
-  var btn   = document.getElementById('archive-btn');
-  var open  = panel.classList.toggle('open');
-  btn.textContent = open ? '\u25b2 Masquer l\'historique' : '\u25bc Afficher les 30 derniers rapports';
-  if (open) loadArchive();
-}
-var _archiveLoaded = false;
-function loadArchive() {
-  if (_archiveLoaded) return;
-  _archiveLoaded = true;
-  fetch('./archive.json')
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var tbody = document.getElementById('archive-tbody');
-      tbody.innerHTML = data.map(function(e, i){
-        var cls = i === 0 ? 'style="background:var(--accent-dim)"' : '';
-        var pnl = e.pnl || '\u2014';
-        var pnlCls = pnl.includes('+') ? 'cell-pos' : pnl.includes('-') ? 'cell-neg' : '';
-        return '<tr ' + cls + '>'
-          + '<td class="cell-num" style="white-space:nowrap">📅 ' + e.date + '</td>'
-          + '<td class="' + pnlCls + '">' + pnl + '</td>'
-          + '<td class="cell-num">' + (e.vm ? e.vm + ' \u20ac' : '\u2014') + '</td>'
-          + '<td class="cell-num">' + (e.nb_pos || '\u2014') + '</td>'
-          + '</tr>';
-      }).join('');
-    })
-    .catch(function(){
-      document.getElementById('archive-tbody').innerHTML =
-        '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Historique non disponible.</td></tr>';
-    });
-}
-"""
-
-# ══════════════════════════════════════════════════════
-# ASSEMBLAGE HTML FINAL
-# ══════════════════════════════════════════════════════
-pnl_prefix  = "+" if pnl_positive    else "-"
-brut_prefix = "+" if brut_positive   else "-"
-pnl_abs     = raw_abs(kpi["pnl_net"])
-pct_abs     = raw_abs(kpi["pnl_pct"])
-brut_abs    = raw_abs(kpi["pnl_brut"])
-brut_pct_abs= raw_abs(kpi["pnl_brut_pct"])
-vm_val      = kpi["valeur_marche"]
-cout_val    = kpi["cout_total"]
-nb_pos      = str(len(positions))
-
-html_out = f"""<!DOCTYPE html>
-<html lang="fr" data-theme="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portfolio Analyzer — {report_date}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <style>{CSS}</style>
-</head>
-<body>
-
-  <!-- HEADER -->
-  <header>
-    <div style="display:flex;align-items:center;gap:16px">
-      <div class="logo">
-        <span class="logo-icon">📊</span>
-        <span class="logo-name"><span>Portfolio</span> Analyzer</span>
-      </div>
-      <div class="header-meta">v6.3 · {report_date}</div>
-    </div>
-    <nav class="header-nav">
-      <a href="#macro">Macro</a>
-      <a href="#tendances">Tendances</a>
-      <a href="#positions">Positions</a>
-      <a href="#synthese">Synthèse</a>
-      <a href="#historique">Historique</a>
-    </nav>
-    <div class="header-actions">
-      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>
-      <button class="btn-icon" data-theme-toggle aria-label="Changer de thème">☀️</button>
-    </div>
-  </header>
-
-  <div class="container">
-
-    <div class="update-badge">
-      <span class="update-dot"></span>
-      Dernière mise à jour :&nbsp;<strong>{report_date}</strong>
-    </div>
-
-    <div class="kpi-bar">
-      <div class="kpi-card main-card">
-        <div class="kpi-val {pnl_class}"
-             data-counter data-val="{pnl_abs}"
-             data-suffix=" €" data-prefix="{pnl_prefix}">
-          {pnl_prefix}{pnl_abs} €
-        </div>
-        <div class="kpi-lbl">PnL Net estimé</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val {pnl_class}"
-             data-counter data-val="{pct_abs}"
-             data-suffix=" %" data-prefix="{pnl_prefix}">
-          {pnl_prefix}{pct_abs} %
-        </div>
-        <div class="kpi-lbl">Performance nette</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val {brut_class}"
-             data-counter data-val="{brut_abs}"
-             data-suffix=" €" data-prefix="{brut_prefix}">
-          {brut_prefix}{brut_abs} €
-        </div>
-        <div class="kpi-lbl">P&amp;L Brut</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val kpi-neutral"
-             data-counter data-val="{vm_val}">
-          {vm_val} €
-        </div>
-        <div class="kpi-lbl">Valeur de Marché</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val kpi-neutral"
-             data-counter data-val="{cout_val}">
-          {cout_val} €
-        </div>
-        <div class="kpi-lbl">Coût Total Investi</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val kpi-neutral">{nb_pos}</div>
-        <div class="kpi-lbl">Positions actives</div>
-      </div>
-    </div>
-
-    {build_indices_html()}
-    {build_combined_chart_html()}
-    {build_positions_html()}
-    {build_synthese_html()}
-    {build_archive_html()}
-
-  </div>
-
-  <script>{JS}</script>
-</body>
-</html>
-"""
-
-Path("docs").mkdir(exist_ok=True)
-HTML_PATH.write_text(html_out, encoding="utf-8")
-sys.exit(0)
+if __name__ == "__main__":
+    sys.exit(cli())
