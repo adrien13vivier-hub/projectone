@@ -330,6 +330,39 @@ def extract_synthese(md: str) -> list[dict]:
 
 synthese_rows = extract_synthese(md_content)
 
+
+def extract_closes(md: str) -> tuple:
+    """Lignes du tableau des plus-values realisees + total."""
+    m = re.search(r"## Plus-values realisees(.*?)(?:\n## |\Z)", md, re.S)
+    if not m:
+        return [], None
+
+    ops, total, entete = [], None, None
+    for line in m.group(1).split("\n"):
+        if not line.lstrip().startswith("|"):
+            continue
+        if re.match(r"^\s*\|[-| :]+\|", line):
+            continue
+        cells = [re.sub(r"[*]+", "", c).strip()
+                 for c in line.strip().strip("|").split("|")]
+        if entete is None:
+            entete = cells
+            continue
+        if cells[0].upper() == "TOTAL":
+            total = cells
+        else:
+            ops.append(cells)
+
+    # Dates de vente, listees sous le tableau
+    dates = dict(re.findall(r"^-\s*(.+?)\s*:\s*vendu le\s*(.+?)\s*$",
+                            m.group(1), flags=re.MULTILINE))
+    for o in ops:
+        o.append(dates.get(o[0], ""))
+    return ops, total
+
+
+closes_rows, closes_total = extract_closes(md_content)
+
 # ══════════════════════════════════════════════════════
 # EXTRACTION INDICES MACRO
 # ══════════════════════════════════════════════════════
@@ -428,23 +461,95 @@ def var_span(txt: str) -> str:
 # BLOCS HTML
 # ══════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════
+# EXTRACTION TAUX 10 ANS
+# ══════════════════════════════════════════════════════
+def extract_bonds(md: str) -> list[dict]:
+    """Lignes du tableau des taux souverains.
+
+    Tolere 3 ou 4 colonnes : la colonne "Sur 1 mois" n'existe pas dans les
+    rapports anterieurs a la v7.4.
+    """
+    bonds, in_bnd = [], False
+    for line in md.split("\n"):
+        if "Taux" in line and "Variation" in line and "Niveau" in line:
+            in_bnd = True
+            continue
+        if not in_bnd:
+            continue
+        if re.match(r"^\|[-| :]+\|", line):
+            continue
+        if line.strip() == "" or not line.lstrip().startswith("|"):
+            in_bnd = False
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 3 and cells[0]:
+            bonds.append({
+                "name":      re.sub(r"[*]+", "", cells[0]).strip(),
+                "variation": cells[1],
+                "niveau":    cells[2],
+                "tendance":  cells[3] if len(cells) > 3 else "",
+            })
+    return bonds
+
+bonds = extract_bonds(md_content)
+
+
 def build_indices_html() -> str:
-    if not indices:
+    if not indices and not bonds:
         return ""
-    rows = ""
-    for idx in indices:
-        rows += (f"<tr><td><strong>{idx['name']}</strong></td>"
-                 f"<td>{var_span(idx['variation'])}</td>"
-                 f"<td class='cell-num'>{idx['cours']}</td></tr>\n")
-    return f"""
-<section class="section-block" id="macro">
-  <h2 class="section-title">🌍 Contexte Économique</h2>
+
+    idx_block = ""
+    if indices:
+        rows = ""
+        for idx in indices:
+            rows += (f"<tr><td><strong>{idx['name']}</strong></td>"
+                     f"<td>{var_span(idx['variation'])}</td>"
+                     f"<td class='cell-num'>{idx['cours']}</td></tr>\n")
+        idx_block = f"""
   <div class="table-wrap">
     <table>
       <thead><tr><th>Indice</th><th>Variation</th><th>Cours</th></tr></thead>
       <tbody>{rows}</tbody>
     </table>
+  </div>"""
+
+    bond_block = ""
+    if bonds:
+        # La colonne "Sur 1 mois" n'existe que depuis la v7.4 : on ne
+        # l'affiche que si au moins une ligne la renseigne, pour ne pas
+        # ajouter une colonne vide aux anciens rapports.
+        avec_tendance = any(b.get("tendance") for b in bonds)
+        brows = ""
+        for b in bonds:
+            tend = ""
+            if avec_tendance:
+                t = b.get("tendance", "") or "—"
+                tend = (f"<td>{var_span(t)}</td>" if t not in ("—", "--", "")
+                        else "<td class='cell-num'>—</td>")
+            brows += (f"<tr><td><strong>{b['name']}</strong></td>"
+                      f"<td>{var_span(b['variation'])}</td>"
+                      f"<td class='cell-num'>{b['niveau']}</td>{tend}</tr>\n")
+        th_tend = "<th>Sur 1 mois</th>" if avec_tendance else ""
+        bond_block = f"""
+  <h3 class="macro-sub">🏛️ Taux souverains 10 ans</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Taux</th><th>Variation</th><th>Niveau</th>{th_tend}</tr></thead>
+      <tbody>{brows}</tbody>
+    </table>
   </div>
+  <p class="macro-note">
+    Le taux long souverain est le prix de l'argent sans risque : c'est la barre
+    que toute action doit franchir. Quand il monte, le rendement exigé sur les
+    actions monte avec lui et pèse sur les valorisations — d'autant plus fort
+    que les bénéfices attendus sont lointains. L'écart OAT&nbsp;-&nbsp;UST
+    mesure la prime que le marché demande à la France face aux États-Unis.
+  </p>"""
+
+    return f"""
+<section class="section-block" id="macro">
+  <h2 class="section-title">🌍 Contexte Économique</h2>{idx_block}{bond_block}
 </section>"""
 
 def build_combined_chart_html() -> str:
@@ -589,6 +694,54 @@ def build_positions_html() -> str:
   <h2 class="section-title">📈 Positions Détenues</h2>
   <div class="positions-grid">{cards}</div>
 </section>"""
+
+def build_closes_html() -> str:
+    """Section des plus-values realisees. Masquee si aucune vente."""
+    if not closes_rows:
+        return ""
+
+    lignes = ""
+    for c in closes_rows:
+        # Colonnes : nom, qte, achat, vente, produit, frais, +/- value, [date]
+        pv   = c[6] if len(c) > 6 else "—"
+        date = c[7] if len(c) > 7 else ""
+        cls  = "kpi-positive" if pv.startswith("+") else "kpi-negative"
+        lignes += (f"<tr><td><strong>{c[0]}</strong>"
+                   f"{f'<div class=vente-date>vendu le {date}</div>' if date else ''}</td>"
+                   f"<td class='cell-num'>{c[1]}</td>"
+                   f"<td class='cell-num'>{c[2]}</td>"
+                   f"<td class='cell-num'>{c[3]}</td>"
+                   f"<td class='cell-num'>{c[5]}</td>"
+                   f"<td class='cell-num {cls}'>{pv}</td></tr>\n")
+
+    pied = ""
+    if closes_total and len(closes_total) > 6:
+        tot = closes_total[6]
+        cls = "kpi-positive" if tot.startswith("+") else "kpi-negative"
+        pied = (f"<tr class='ligne-total'><td><strong>TOTAL</strong></td>"
+                f"<td class='cell-num'>—</td>"
+                f"<td class='cell-num'><strong>{closes_total[2]}</strong></td>"
+                f"<td class='cell-num'>—</td><td class='cell-num'>—</td>"
+                f"<td class='cell-num {cls}'><strong>{tot}</strong></td></tr>")
+
+    return f"""
+<section class="section-block" id="realise">
+  <h2 class="section-title">💰 Plus-values réalisées</h2>
+  <p class="section-note">
+    Positions vendues. Elles ne figurent plus dans le portefeuille et n'entrent
+    pas dans la valorisation. Frais aller-retour déduits.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Valeur</th><th>Qté</th><th>Prix d'achat</th>
+            <th>Prix de vente</th><th>Frais A/R</th><th>+/- value nette</th></tr>
+      </thead>
+      <tbody>{lignes}{pied}</tbody>
+    </table>
+  </div>
+</section>"""
+
 
 def build_synthese_html() -> str:
     if not synthese_rows:
@@ -834,6 +987,23 @@ header {
   font-size: .62rem; font-weight: 600; white-space: nowrap;
 }
 .conf-ok    { background: var(--accent-dim); color: var(--accent); }
+
+/* --- Contexte macro : sous-titre et note explicative (v7.4) ------------- */
+.macro-sub {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .7px; color: var(--muted); margin: 24px 0 12px;
+}
+.macro-note {
+  font-size: .75rem; color: var(--muted); font-style: italic;
+  line-height: 1.6; margin-top: 10px;
+}
+.vente-date {
+  font-size: .66rem; color: var(--muted); margin-top: 2px; font-weight: 400;
+}
+.ligne-total td { border-top: 2px solid var(--border); }
+.section-note {
+  margin: -.4rem 0 .9rem; font-size: .78rem; color: var(--muted); line-height: 1.6;
+}
 .hors-note  {
   font-size: .6rem; color: var(--muted); border: 1px solid var(--border);
   border-radius: 999px; padding: 0 5px; margin-left: 3px; white-space: nowrap;
@@ -1179,6 +1349,7 @@ html_out = f"""<!DOCTYPE html>
     {build_combined_chart_html()}
     {build_positions_html()}
     {build_synthese_html()}
+    {build_closes_html()}
     {build_archive_html()}
 
   </div>
