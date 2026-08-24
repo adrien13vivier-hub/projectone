@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Portfolio Analyzer v7.2 -- NOTATION REFONDUE
+Portfolio Analyzer v7.4 -- NOTATION REFONDUE + CONTEXTE OBLIGATAIRE
 ================================================================================
 
 CE QUI CHANGE, ET POURQUOI
@@ -67,6 +67,21 @@ LIMITES ASSUMEES -- a lire avant de s'y fier
 - Les ETF, obligations et cryptos n'ont pas de fondamentaux d'entreprise :
   ils sont notes sur les seules composantes applicables, avec un indice de
   confiance mecaniquement plus bas.
+
+AJOUT v7.4 -- CONTEXTE OBLIGATAIRE
+-----------------------------------
+Le bloc "Contexte economique" affiche desormais les taux souverains a 10 ans
+americain (UST) et francais (OAT) : niveau courant, variation du jour en
+points de base, variation sur un mois, et ecart OAT-UST.
+
+Ces taux sont le prix de l'argent sans risque. Ils donnent le referentiel
+face auquel toute action est evaluee : quand le 10 ans monte, le rendement
+exige sur les actions monte avec lui, ce qui pese mecaniquement sur les
+valorisations -- d'autant plus fort que les benefices attendus sont lointains.
+
+Volontairement HORS de la note des titres : c'est un cadre de lecture, pas un
+critere de selection. Un taux a 4,5% ne rend pas une entreprise meilleure ou
+pire ; il change la barre a franchir, pour toutes en meme temps.
 ================================================================================
 """
 
@@ -203,6 +218,7 @@ def _quota_status() -> dict:
 
 PORTFOLIO: list = []
 WATCHLIST: list = []
+CLOSED:    list = []      # operations closes (plus-values realisees)
 
 # Indices macro par defaut. Un profil peut fournir sa propre selection.
 DEFAULT_INDICES = {
@@ -225,13 +241,14 @@ PROFILE: dict = {}
 
 def apply_profile(profile: dict):
     """Charge un profil utilisateur dans l'etat global du module."""
-    global PORTFOLIO, WATCHLIST, INDICES, BROKERAGE, BROKER_NAME, PROFILE
+    global PORTFOLIO, WATCHLIST, INDICES, BROKERAGE, BROKER_NAME, PROFILE, CLOSED
 
     PROFILE   = profile or {}
     settings  = PROFILE.get("settings") or {}
 
     PORTFOLIO = PROFILE.get("lines") or []
     WATCHLIST = settings.get("watchlist") or []
+    CLOSED    = PROFILE.get("closed") or []
 
     idx = settings.get("indices")
     if isinstance(idx, dict) and idx:
@@ -613,6 +630,103 @@ def get_index(symbols: dict) -> dict:
 
 
 # =============================================================================
+# TAUX SOUVERAINS 10 ANS
+# =============================================================================
+# EODHD (.GBOND) en source principale, AlphaVantage TREASURY_YIELD en secours
+# -- ce dernier ne couvre QUE les Etats-Unis, l'OAT n'a donc pas de repli.
+
+BONDS = {
+    "UST 10 ans (US)": {"eod": "US10Y.GBOND", "av": "10year"},
+    "OAT 10 ans (FR)": {"eod": "FR10Y.GBOND", "av": None},
+}
+
+
+def get_bond_yield(symbols: dict) -> dict:
+    """Taux 10 ans. Retourne yield=None si indisponible.
+
+    On ne renvoie JAMAIS 0.0 en cas d'echec : un taux a 0% est une valeur
+    plausible, elle serait affichee telle quelle et lue comme une information.
+    None force l'appelant a traiter l'absence explicitement.
+
+    La variation du jour n'est calculee que si la cloture veille est fournie
+    ET distincte de la cloture courante : sinon on renvoie None plutot qu'un
+    zero qui se confondrait avec une seance sans mouvement.
+    """
+    if EODHD_KEY:
+        data, err = _get(f"{EOD_BASE}/real-time/{symbols['eod']}",
+                         {"api_token": EODHD_KEY, "fmt": "json"},
+                         "eodhd")
+        if data and not _is_quota_error(err):
+            brut = data.get("close")
+            veille = data.get("previousClose")
+            if brut in (None, "", "NA"):
+                brut = veille
+                veille = None
+            if brut not in (None, "", "NA"):
+                try:
+                    y = float(brut)
+                    chg_bp = None
+                    if veille not in (None, "", "NA"):
+                        chg_bp = round((y - float(veille)) * 100, 1)
+                    return {"yield": y, "change_bp": chg_bp, "source": "EODHD"}
+                except (TypeError, ValueError):
+                    pass
+        eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    else:
+        eod_err = "cle absente"
+
+    if ALPHAVANTAGE_KEY and symbols.get("av"):
+        data, err = _get(AV_BASE, {
+            "function": "TREASURY_YIELD",
+            "interval": "daily",
+            "maturity": symbols["av"],
+            "apikey":   ALPHAVANTAGE_KEY,
+        }, "alphavantage")
+        if isinstance(data, dict) and data.get("data") and not _is_quota_error(err):
+            pts = [p for p in data["data"] if p.get("value") not in (None, "", ".")]
+            if pts:
+                try:
+                    y = float(pts[0]["value"])
+                    chg_bp = (round((y - float(pts[1]["value"])) * 100, 1)
+                              if len(pts) > 1 else None)
+                    return {"yield": y, "change_bp": chg_bp,
+                            "source": "AlphaVantage (repli)"}
+                except (TypeError, ValueError, KeyError):
+                    pass
+        av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+    else:
+        av_err = "non couvert"
+
+    return {"yield": None, "change_bp": None,
+            "source": f"Indisponible (EODHD:{eod_err}, AlphaVantage:{av_err})"}
+
+
+def get_bond_trend(symbols: dict, jours: int = 30):
+    """Variation du taux sur `jours`, en points de base.
+
+    Le mouvement mensuel dit bien plus que la seance du jour : un 10 ans qui
+    a pris 40 pb en un mois signale un reajustement macro, la ou +2 pb dans
+    la journee n'est que du bruit. Retourne None si l'historique manque.
+    """
+    if not EODHD_KEY:
+        return None
+    from_d = str(date.today() - timedelta(days=jours + 12))   # marge week-ends/feries
+    to_d   = str(date.today())
+    dates, closes, _err = _eodhd_daily(symbols["eod"], from_d, to_d, 1.0)
+    if len(closes) < 2:
+        return None
+
+    serie = _parse_serie(dates, closes)
+    if len(serie) < 2:
+        return None
+    dernier_dt, dernier = serie[-1]
+    cible = dernier_dt - timedelta(days=jours)
+    passe = [v for dt, v in serie if dt <= cible]
+    ref = passe[-1] if passe else serie[0][1]
+    return round((dernier - ref) * 100, 1)
+
+
+# =============================================================================
 # NEWS
 # =============================================================================
 
@@ -684,72 +798,23 @@ def get_macro_news(n: int = 5) -> list:
 # =============================================================================
 
 def get_sentiment(asset: dict) -> tuple:
-    if asset.get("marche") == "us":
-        ticker_av = asset.get("ticker_av")
-        if ALPHAVANTAGE_KEY and ticker_av:
-            data, err = _get(AV_BASE, {
-                "function": "NEWS_SENTIMENT",
-                "tickers":  ticker_av,
-                "limit":    50,
-                "apikey":   ALPHAVANTAGE_KEY,
-            }, "alphavantage")
-            if isinstance(data, dict) and data.get("feed") and not _is_quota_error(err):
-                scores = []
-                for item in data["feed"]:
-                    for ts in item.get("ticker_sentiment", []):
-                        if ts.get("ticker") == ticker_av:
-                            try:
-                                scores.append(float(ts.get("ticker_sentiment_score", 0)))
-                            except (ValueError, TypeError):
-                                pass
-                if scores:
-                    avg  = sum(scores) / len(scores)
-                    bull = round((avg + 1) / 2 * 100, 1)
-                    bear = round(100 - bull, 1)
-                    return bull, bear, "AlphaVantage NLP"
-            av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
-        else:
-            av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
+    """Tonalite des titres d'actualite, SANS aucun appel API supplementaire.
 
-        if FINNHUB_KEY:
-            data, err = _get(f"{FH_BASE}/news-sentiment",
-                             {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
-                             "finnhub")
-            if data and data.get("sentiment") and not _is_quota_error(err):
-                bull = float(data["sentiment"].get("bullishPercent", 0.5)) * 100
-                bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
-                return round(bull, 1), round(bear, 1), f"Finnhub (fallback AV:{av_err})"
-            fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
-        else:
-            fh_err = "cle absente"
+    On reutilise les articles deja recuperes pour la synthese. Aucune valeur
+    par defaut n'est inventee : sans article, on retourne (None, None), et
+    l'affichage indique franchement que la donnee manque.
+    """
+    news = _news_cache.get(asset["ticker_eod"]) or []
+    if not news:
+        return None, None, "aucun article"
+    bull, bear = _lexical_sentiment(news)
+    return bull, bear, "analyse lexicale des titres"
 
-        news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
-        if news:
-            bull, bear = _lexical_sentiment(news)
-            return bull, bear, f"Lexical (AV:{av_err}, FH:{fh_err})"
-        return 50.0, 50.0, f"Neutre par defaut (AV:{av_err}, FH:{fh_err})"
-
-    else:
-        if FINNHUB_KEY:
-            data, err = _get(f"{FH_BASE}/news-sentiment",
-                             {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
-                             "finnhub")
-            if data and data.get("sentiment") and not _is_quota_error(err):
-                bull = float(data["sentiment"].get("bullishPercent", 0.5)) * 100
-                bear = float(data["sentiment"].get("bearishPercent", 0.5)) * 100
-                return round(bull, 1), round(bear, 1), "Finnhub"
-            fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
-        else:
-            fh_err = "cle absente"
-
-        news = _news_cache.get(asset["ticker_eod"]) or get_company_news(asset, n=10)
-        if news:
-            bull, bear = _lexical_sentiment(news)
-            return bull, bear, f"Lexical EODHD (Finnhub:{fh_err})"
-        return 50.0, 50.0, f"Neutre par defaut (Finnhub:{fh_err})"
-
-
-_NEGATORS  = {"not", "no", "never", "without", "hardly", "barely", "scarcely"}
+# Negations et portee : "not strong" ne doit pas compter comme un signal
+# positif. _NEG_WINDOW est le nombre de mots suivants dont la polarite est
+# inversee apres une negation.
+_NEGATORS   = {"not", "no", "never", "without", "hardly", "barely", "scarcely",
+               "fails", "failed", "lacks", "unable"}
 _NEG_WINDOW = 3
 
 
@@ -861,17 +926,31 @@ def get_fundamentals(asset: dict) -> tuple:
     if not EODHD_KEY:
         return {}, "cle absente"
 
+    # Pas de parametre `filter` : selon les cas EODHD renvoie alors soit les
+    # sections demandees imbriquees, soit leur contenu APLATI a la racine.
+    # Ce comportement variable vidait silencieusement tous les ratios --
+    # valorisation, sante et croissance passaient a None, soit 55% du poids
+    # de la note. On recupere donc le document complet et on lit les
+    # sections nous-memes, avec repli sur une lecture a plat.
     data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
-                     {"api_token": EODHD_KEY, "fmt": "json",
-                      "filter": "Highlights,Valuation,Technicals"},
+                     {"api_token": EODHD_KEY, "fmt": "json"},
                      "eodhd")
 
-    if not isinstance(data, dict) or _is_quota_error(err):
+    if not isinstance(data, dict) or not data:
         return {}, ("quota atteint" if _is_quota_error(err) else (err or "vide"))
+    if _is_quota_error(err):
+        return {}, "quota atteint"
 
-    hi  = data.get("Highlights") or {}
-    va  = data.get("Valuation")  or {}
-    te  = data.get("Technicals") or {}
+    hi = data.get("Highlights") or {}
+    va = data.get("Valuation")  or {}
+    te = data.get("Technicals") or {}
+
+    # Repli : reponse aplatie (les cles usuelles sont a la racine).
+    if not hi and not va and not te:
+        if any(k in data for k in ("PERatio", "ProfitMargin", "MarketCapitalization")):
+            hi = va = te = data
+        else:
+            return {}, "structure inattendue"
 
     ratios = {
         # Valorisation
@@ -1317,13 +1396,23 @@ def score_risque(f: dict, dates: list, closes: list):
 
 # ── Agregation ──────────────────────────────────────────────────────────────
 
+# Le sentiment de presse a ete RETIRE de la note en v7.3.
+#
+# Motif : les deux sources exploitables (AlphaVantage NEWS_SENTIMENT et
+# Finnhub news-sentiment) sont indisponibles ou payantes sur les offres
+# utilisees. En cas d'echec, get_sentiment() renvoyait 50/50, soit une note
+# de 5.0/10 CONSTANTE. Une constante ne discrimine rien : elle consommait du
+# quota et tirait mecaniquement chaque note vers le milieu.
+#
+# Bull/Bear reste calcule et affiche a titre indicatif, mais uniquement a
+# partir des titres d'actualite deja telecharges pour la synthese : cout API
+# nul, et aucune influence sur la note.
 POIDS_NOTE = {
-    "valorisation": 0.22,
-    "sante":        0.18,
-    "croissance":   0.15,
-    "momentum":     0.20,
-    "consensus":    0.13,
-    "sentiment":    0.07,
+    "valorisation": 0.24,
+    "sante":        0.19,
+    "croissance":   0.16,
+    "momentum":     0.21,
+    "consensus":    0.15,
     "risque":       0.05,
 }
 
@@ -1365,6 +1454,74 @@ def score_position(price_eur, cost_eur, pnl_net_pct, poids_pct):
     }
 
 
+def compute_closed_trades(closes: list) -> tuple:
+    """Plus-values realisees sur les positions vendues.
+
+    Le rapport photographie le portefeuille a l'instant T : une ligne vendue
+    en disparait entierement, et le gain qu'elle a produit avec elle. Ce
+    registre conserve la trace de ces operations.
+
+    Convention de frais identique aux positions ouvertes : aller-retour,
+    c'est-a-dire les frais d'achat ET ceux de vente.
+
+    Le taux de change est celui FIGE au moment de la vente : le gain de
+    change fait partie du resultat et ne doit pas etre recalcule avec un
+    taux ulterieur.
+    """
+    ops, tot_brut, tot_net, tot_invest = [], 0.0, 0.0, 0.0
+
+    for op in closes or []:
+        qty     = float(op.get("qty", 0))
+        achat   = float(op.get("buy_price_eur", 0))
+        vente   = float(op.get("sell_price", 0))
+        taux    = float(op.get("fx_at_sale", 1.0)) or 1.0
+        marche  = op.get("marche", "euronext")
+
+        if qty <= 0 or achat <= 0 or vente <= 0:
+            continue
+
+        montant_achat = round(achat * qty, 2)
+        produit_brut  = round(vente * qty * taux, 2)
+
+        frais_achat = calc_fee(montant_achat, marche)
+        frais_vente = calc_fee(produit_brut,  marche)
+        frais_tot   = round(frais_achat + frais_vente, 2)
+
+        pv_brute = round(produit_brut - montant_achat, 2)
+        pv_nette = round(pv_brute - frais_tot, 2)
+
+        ops.append({
+            "name":          op.get("name", "?"),
+            "ticker":        op.get("ticker", ""),
+            "qty":           qty,
+            "buy_price_eur": achat,
+            "sell_price":    vente,
+            "sell_currency": op.get("sell_currency", "EUR"),
+            "fx_at_sale":    taux,
+            "sell_date":     op.get("sell_date", ""),
+            "montant_achat": montant_achat,
+            "produit_brut":  produit_brut,
+            "frais":         frais_tot,
+            "pv_brute":      pv_brute,
+            "pv_nette":      pv_nette,
+            "pv_pct":        round(pv_nette / montant_achat * 100, 2) if montant_achat else 0.0,
+            "note":          op.get("note", ""),
+        })
+
+        tot_brut   += pv_brute
+        tot_net    += pv_nette
+        tot_invest += montant_achat
+
+    totaux = {
+        "nb":       len(ops),
+        "brut":     round(tot_brut, 2),
+        "net":      round(tot_net, 2),
+        "investi":  round(tot_invest, 2),
+        "pct":      round(tot_net / tot_invest * 100, 2) if tot_invest else 0.0,
+    }
+    return ops, totaux
+
+
 def score_macro(indices_data):
     chgs = [v["change_pct"] for v in indices_data.values() if v["change_pct"] != 0]
     return round(max(0.0, min(10.0, 5.0 + sum(chgs) / len(chgs))), 2) if chgs else 5.0
@@ -1400,8 +1557,7 @@ def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
 
     libelles = {"valorisation": "valorisation", "sante": "sante financiere",
                 "croissance": "croissance", "momentum": "momentum",
-                "consensus": "consensus analystes", "sentiment": "sentiment presse",
-                "risque": "profil de risque"}
+                "consensus": "consensus analystes", "risque": "profil de risque"}
 
     tri     = sorted(detail.items(), key=lambda x: x[1], reverse=True)
     forces  = [f"{libelles[k]} {v:.1f}" for k, v in tri[:2] if v >= 6.5]
@@ -1656,12 +1812,14 @@ def _fetch_asset_data(asset: dict, eur_usd: float,
     cs, cons_str, cons_src = get_consensus(asset)
     h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
     synthesis, synth_src = get_news_synthesis(asset)
+    fonda, fonda_src = get_fundamentals(asset)
     return {
         "news": news, "bull": bull, "bear": bear, "sent_src": sent_src,
         "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
         "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
         "h_cache": h_cache, "h_err": h_err,
         "synthesis": synthesis, "synth_src": synth_src,
+        "fonda": fonda, "fonda_src": fonda_src,
     }
 
 
@@ -1743,6 +1901,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                     "h_dates": [], "h_closes": [], "h_src": "erreur",
                     "h_cache": False, "h_err": str(e),
                         "synthesis": "Données indisponibles.", "synth_src": "",
+                        "fonda": {}, "fonda_src": "erreur",
                     }
 
     prices     = {a["ticker_eod"]: _MEMO[f"px:{a['ticker_eod']}"] for a in PORTFOLIO}
@@ -1754,6 +1913,28 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         indices_data[idx_name] = get_index(idx_sym)
 
     macro_score = score_macro(indices_data)
+
+    # ── 4 bis. Taux 10 ans (contexte obligataire) ────────────────────────────
+    # Memoise par symbole : en mode --all-users, les taux sont les memes pour
+    # tout le monde et ne sont donc interroges qu'une fois par run.
+    bonds_data = {}
+    for b_name, b_sym in BONDS.items():
+        cle = f"bond:{b_sym['eod']}"
+        if cle not in _MEMO:
+            info = get_bond_yield(b_sym)
+            if info["yield"] is not None:
+                info["trend_bp"] = get_bond_trend(b_sym)
+                session_cache[f"bond_{b_sym['eod']}"] = info["yield"]
+            else:
+                # Repli sur le dernier niveau connu : un taux souverain bouge
+                # lentement, une valeur de la veille reste informative -- a
+                # condition de le signaler.
+                garde = session_cache.get(f"bond_{b_sym['eod']}")
+                info = ({"yield": float(garde), "change_bp": None, "trend_bp": None,
+                         "source": "Cache session (niveau precedent)"}
+                        if garde else {**info, "trend_bp": None})
+            _MEMO[cle] = info
+        bonds_data[b_name] = _MEMO[cle]
 
     # ── 5. Watchlist cours ────────────────────────────────────────────────────
     watchlist_prices = {}
@@ -1779,6 +1960,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     sources_log  = {
         "EUR/USD":     eur_usd_src,
         **{n: indices_data[n]["source"] for n in indices_data},
+        **{n: bonds_data[n]["source"] for n in bonds_data},
     }
     assets_history = {}
 
@@ -1825,7 +2007,6 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "croissance":   score_croissance(fonda),
             "momentum":     sc_hist,
             "consensus":    cs,
-            "sentiment":    (bull / 10.0) if bull is not None else None,
             "risque":       score_risque(fonda, h_dates, h_closes),
         }
         total_score, confiance, detail = note_titre(composantes)
@@ -1948,6 +2129,36 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         lines.append(f"| {idx_name} | {sym} {sign}{chg:.2f}% | {prix_fmt} |")
 
     lines += [""]
+    # Contexte obligataire
+    if any(b.get("yield") is not None for b in bonds_data.values()):
+        lines += [
+            "**Taux souverains 10 ans :**",
+            "",
+            "| Taux | Variation | Niveau | Sur 1 mois |",
+            "|------|-----------|--------|------------|",
+        ]
+        for b_name, b in bonds_data.items():
+            if b.get("yield") is None:
+                lines.append(f"| {b_name} | n/d | n/d | n/d |")
+                continue
+
+            chg = b.get("change_bp")
+            if chg is None:
+                var = "--"
+            else:
+                var = f"{'^' if chg >= 0 else 'v'} {'+' if chg >= 0 else ''}{chg:.1f} pb"
+
+            tr = b.get("trend_bp")
+            trend = "--" if tr is None else f"{'+' if tr >= 0 else ''}{tr:.0f} pb"
+
+            lines.append(f"| {b_name} | {var} | {b['yield']:.2f}% | {trend} |")
+
+        us = bonds_data.get("UST 10 ans (US)", {}).get("yield")
+        fr = bonds_data.get("OAT 10 ans (FR)", {}).get("yield")
+        if us is not None and fr is not None:
+            lines.append(f"| Ecart OAT - UST | -- | {(fr - us) * 100:+.0f} pb | -- |")
+        lines += [""]
+
     macro_news = get_macro_news(5)
     if macro_news:
         lines.append("**Manchettes macro :**")
@@ -1997,8 +2208,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         if detail:
             libelles = {"valorisation": "Valorisation", "sante": "Sante financiere",
                         "croissance": "Croissance", "momentum": "Momentum",
-                        "consensus": "Consensus", "sentiment": "Sentiment",
-                        "risque": "Risque"}
+                        "consensus": "Consensus", "risque": "Risque"}
             lines += ["**Detail de la note :**", "",
                       "| Composante | Note | Poids |",
                       "|------------|------|-------|"]
@@ -2010,8 +2220,14 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             absentes = [libelles[k] for k in POIDS_NOTE if k not in detail]
             lines.append("")
             if absentes:
+                motif = r.get("fonda_src", "")
+                precision = ""
+                if motif and any(a in ("Valorisation", "Sante financiere", "Croissance")
+                                 for a in absentes):
+                    precision = f" Motif cote fondamentaux : {motif}."
                 lines.append(f"*Non disponible : {', '.join(absentes)} "
-                             f"-- poids redistribues sur les composantes ci-dessus.*")
+                             f"-- poids redistribues sur les composantes ci-dessus."
+                             f"{precision}*")
                 lines.append("")
 
         # Ratios fondamentaux bruts, pour verification manuelle
@@ -2035,10 +2251,14 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 lines.append(f"**Fondamentaux :** {' | '.join(morceaux)} "
                              f"*(source : {r.get('fonda_src', 'N/D')})*")
 
-        bull_s = f"{r['bull']:.0f}%" if r.get("bull") is not None else "n/d"
-        bear_s = f"{r['bear']:.0f}%" if r.get("bear") is not None else "n/d"
+        # Indicatif uniquement : ne compte plus dans la note depuis la v7.3.
+        if r.get("bull") is not None:
+            senti = (f"Bull {r['bull']:.0f}% / Bear {r['bear']:.0f}% "
+                     f"*(indicatif, hors note -- source : {r['sent_src']})*")
+        else:
+            senti = f"non disponible *({r.get('sent_src', 'n/d')})*"
         lines += [
-            f"**Sentiment :** Bull {bull_s} / Bear {bear_s} *(source : {r['sent_src']})*",
+            f"**Tonalite presse :** {senti}",
             f"**Consensus analystes :** {r['cons_str']} *(source : {r['cons_src']})*",
             f"**Perf. historique :** 1M {ret_1m_s} | 3M {ret_3m_s} | 6M {ret_6m_s} -- {r['hist_label']} *(source : {r['h_src']})*",
             "",
@@ -2047,6 +2267,42 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "---",
             "",
         ]
+
+    # ── Plus-values réalisées ─────────────────────────────────────────────────
+    ops_closes, tot_closes = compute_closed_trades(CLOSED)
+    if ops_closes:
+        signe_t = "+" if tot_closes["net"] >= 0 else "-"
+        lines += [
+            "",
+            "## Plus-values realisees",
+            "",
+            "*Positions vendues. Ces lignes ne figurent plus dans le portefeuille "
+            "et n'entrent pas dans la valorisation ci-dessus.*",
+            "",
+            "| Valeur | Qte | Achat | Vente | Produit | Frais A/R | +/- value nette |",
+            "|--------|-----|-------|-------|---------|-----------|-----------------|",
+        ]
+        for o in ops_closes:
+            sg = "+" if o["pv_nette"] >= 0 else "-"
+            vente_s = f"{o['sell_price']:.2f} {o['sell_currency']}"
+            if o["sell_currency"] != "EUR":
+                vente_s += f" @ {o['fx_at_sale']:.5f}"
+            lines.append(
+                f"| {o['name']} | {o['qty']:g} | {o['buy_price_eur']:.2f} EUR "
+                f"| {vente_s} | {o['produit_brut']:.2f} EUR | {o['frais']:.2f} EUR "
+                f"| **{sg}{abs(o['pv_nette']):.2f} EUR ({sg}{abs(o['pv_pct']):.1f}%)** |"
+            )
+        lines += [
+            f"| **TOTAL** | — | **{tot_closes['investi']:.2f} EUR** | — | — | — "
+            f"| **{signe_t}{abs(tot_closes['net']):.2f} EUR "
+            f"({signe_t}{abs(tot_closes['pct']):.1f}%)** |",
+            "",
+        ]
+        for o in ops_closes:
+            if o["sell_date"]:
+                lines.append(f"- {o['name']} : vendu le {o['sell_date']}"
+                             + (f" — {o['note']}" if o["note"] else ""))
+        lines += ["", "---"]
 
     # ── Synthèse portefeuille ─────────────────────────────────────────────────
     lines += [
