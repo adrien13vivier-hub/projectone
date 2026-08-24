@@ -1,16 +1,16 @@
-# Rapport de Portefeuille v7.0 -- 21/08/2026 16:21 (Paris)
+# Rapport de Portefeuille v7.0 -- 24/08/2026 09:46 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.44/10
-**EUR/USD :** 1 EUR = 1.1681 USD
+**Tendance : Neutre** | Score macro : 5.07/10
+**EUR/USD :** 1 EUR = 1.1672 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.41% | 7 672.18 |
-| CAC 40 | ^ +0.48% | 8 493.55 |
+| S&P 500 | ^ +0.43% | 7 674.37 |
+| CAC 40 | v -0.29% | 8 460.02 |
 
 **Manchettes macro :**
 
@@ -28,11 +28,11 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 148.11 EUR | ^ +0.00% | 296.22 EUR | + +58.10 EUR (+24.4%) | + +44.20 EUR (+18.6%) | **7.62/10** (45%) | RENFORCER |
+| 154.16 EUR | ^ +0.00% | 308.32 EUR | + +70.20 EUR (+29.5%) | + +56.30 EUR (+23.6%) | **7.64/10** (45%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Palantir and Snowflake Provide the Backbone of Agentic AI but Which Is Better? | 3 Unpopular Stocks That Deserve Some Love | Zacks Investment Ideas feature highlights: Palantir, Match Group and Unity Software
+> Palantir Keeps 55 Cents of Every Revenue Dollar as Profit | Palantir, Freeport Clear Buy Points, Lead Five Stocks To Watch | Prediction: This Will Be Palantir's Stock Price by the End of 2030
 
 **Detail de la note :**
 
@@ -40,16 +40,16 @@
 |------------|------|-------|
 | Momentum | 9.8/10 | 44% |
 | Consensus | 7.3/10 | 29% |
-| Sentiment | 5.6/10 | 16% |
+| Sentiment | 5.7/10 | 16% |
 | Risque | 2.5/10 | 11% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
 
-**Sentiment :** Bull 56% / Bear 44% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 57% / Bear 43% *(source : AlphaVantage NLP)*
 **Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +31.1% | 3M +27.1% | 6M +33.2% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +44.4% | 3M +31.5% | 6M +34.1% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Note 7.6/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +44.20 EUR (+18.6%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 7.6/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +56.30 EUR (+23.6%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -57,7 +57,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 19.14 EUR | ^ +0.24% | 191.45 EUR | + +22.45 EUR (+13.3%) | + +18.47 EUR (+10.9%) | **6.84/10** (45%) | CONSERVER |
+| 19.06 EUR | v -0.05% | 190.60 EUR | + +21.60 EUR (+12.8%) | + +17.62 EUR (+10.4%) | **6.84/10** (45%) | CONSERVER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -76,9 +76,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +5.5% | 3M +18.3% | 6M +9.1% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +4.6% | 3M +18.1% | 6M +7.2% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Note 6.8/10 (confiance 45%). Points forts : momentum 8.4, profil de risque 8.0. Momentum HAUSSIER. Position : +18.47 EUR (+10.9%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.8/10 (confiance 45%). Points forts : momentum 8.4, profil de risque 8.0. Momentum HAUSSIER. Position : +17.62 EUR (+10.4%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -86,28 +86,28 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 75.02 EUR | ^ +0.00% | 150.04 EUR | - -37.78 EUR (-20.1%) | - -51.68 EUR (-27.5%) | **5.04/10** (45%) | SURVEILLER (en moins-value) |
+| 75.27 EUR | ^ +0.00% | 150.53 EUR | - -37.29 EUR (-19.9%) | - -51.19 EUR (-27.2%) | **4.49/10** (45%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> ‘Pharma Bro’ Martin Shkreli ‘Covered’ CoreWeave Short Position: CRWV Stock Slides For Third Session | CoreWeave Signs Hudson River Trading to a Multiyear AI Deal | Arista Networks vs. CoreWeave: What Revenue Trends Tell Investors About These Artificial Intelligence Companies
+> CoreWeave CEO Michael Intrator Sold Over 13,000 Shares for $1.2 Million. What Does This Mean for Investors? | Prediction: CoreWeave Stock Will Double on This Date | Neoclouds Shine in AI Build Out
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 4.8/10 | 44% |
+| Momentum | 3.0/10 | 44% |
 | Consensus | 7.1/10 | 29% |
-| Sentiment | 4.8/10 | 16% |
+| Sentiment | 6.4/10 | 16% |
 | Risque | 1.0/10 | 11% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
 
-**Sentiment :** Bull 48% / Bear 52% *(source : AlphaVantage NLP)*
+**Sentiment :** Bull 64% / Bear 36% *(source : Lexical (AV:vide, FH:HTTP 403))*
 **Consensus analystes :** SB:10 B:21 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +12.8% | 3M -14.9% | 6M -1.2% -- NEUTRE *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +6.3% | 3M -16.7% | 6M -10.4% -- BAISSIER *(source : EODHD (fallback AV:vide))*
 
-**Justification :** Note 5.0/10 (confiance 45%). Points forts : consensus analystes 7.1. Points faibles : profil de risque 1.0. Momentum NEUTRE. Position : -51.68 EUR (-27.5%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 4.5/10 (confiance 45%). Points forts : consensus analystes 7.1. Points faibles : momentum 3.0, profil de risque 1.0. Momentum BAISSIER. Position : -51.19 EUR (-27.2%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -115,7 +115,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.93 EUR | v -3.11% | 19.30 EUR | - -19.10 EUR (-49.7%) | - -23.08 EUR (-60.1%) | **3.3/10** (45%) | ALLEGER |
+| 1.94 EUR | v -0.51% | 19.44 EUR | - -18.96 EUR (-49.4%) | - -22.94 EUR (-59.7%) | **3.08/10** (45%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -125,7 +125,7 @@
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 1.8/10 | 44% |
+| Momentum | 1.3/10 | 44% |
 | Consensus | 5.0/10 | 29% |
 | Sentiment | 5.0/10 | 16% |
 | Risque | 2.5/10 | 11% |
@@ -134,9 +134,9 @@
 
 **Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +6.9% | 3M -40.0% | 6M -39.9% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M +1.8% | 3M -41.1% | 6M -38.7% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Note 3.3/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.8. Momentum BAISSIER. Position : -23.08 EUR (-60.1%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 3.1/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.3. Momentum BAISSIER. Position : -22.94 EUR (-59.7%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -144,11 +144,11 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| Palantir Technologies | 148.11 | 296.22 | +58.10 (+24.4%) | +44.20 (+18.6%) | 7.62/10 | 45% | RENFORCER |
-| Credit Agricole SA | 19.14 | 191.45 | +22.45 (+13.3%) | +18.47 (+10.9%) | 6.84/10 | 45% | CONSERVER |
-| CoreWeave | 75.02 | 150.04 | -37.78 (-20.1%) | -51.68 (-27.5%) | 5.04/10 | 45% | SURVEILLER (en moins-value) |
-| Abionyx Pharma | 1.93 | 19.30 | -19.10 (-49.7%) | -23.08 (-60.1%) | 3.3/10 | 45% | ALLEGER |
-| **TOTAL** | — | **657.01** | **+23.67 (+3.7%)** | **-12.09 (-1.9%)** | — | — | — |
+| Palantir Technologies | 154.16 | 308.32 | +70.20 (+29.5%) | +56.30 (+23.6%) | 7.64/10 | 45% | RENFORCER |
+| Credit Agricole SA | 19.06 | 190.60 | +21.60 (+12.8%) | +17.62 (+10.4%) | 6.84/10 | 45% | CONSERVER |
+| CoreWeave | 75.27 | 150.53 | -37.29 (-19.9%) | -51.19 (-27.2%) | 4.49/10 | 45% | ALLEGER |
+| Abionyx Pharma | 1.94 | 19.44 | -18.96 (-49.4%) | -22.94 (-59.7%) | 3.08/10 | 45% | ALLEGER |
+| **TOTAL** | — | **668.89** | **+35.55 (+5.6%)** | **-0.21 (-0.0%)** | — | — | — |
 
 ---
 
@@ -165,10 +165,10 @@
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
 - **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
-- **CRWV.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **CRWV.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
 - **ACA.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
 - **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
 
-**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '13/80', 'finnhub': '8/55'}
+**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '13/80', 'finnhub': '9/55'}
 
 **Profil :** adrien | **Courtier :** BoursoBank
