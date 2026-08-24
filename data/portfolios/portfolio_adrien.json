@@ -6,9 +6,22 @@
     "watchlist": []
   },
   "lines": [
-    { "name": "Palantir Technologies", "ticker": "PLTR",    "market": "us",             "quantity": 2,  "buy_price": 119.06 },
-    { "name": "CoreWeave",             "ticker": "CRWV",    "market": "us",             "quantity": 2,  "buy_price": 93.91 },
-    { "name": "Credit Agricole SA",    "ticker": "ACA.PA",  "market": "euronext_paris", "quantity": 10, "buy_price": 16.90 },
-    { "name": "Abionyx Pharma",        "ticker": "ABNX.PA", "market": "euronext_paris", "quantity": 10, "buy_price": 3.84 }
+    { "name": "CoreWeave",          "ticker": "CRWV",    "market": "us",             "quantity": 2,  "buy_price": 93.91 },
+    { "name": "Credit Agricole SA", "ticker": "ACA.PA",  "market": "euronext_paris", "quantity": 10, "buy_price": 16.90 },
+    { "name": "Abionyx Pharma",     "ticker": "ABNX.PA", "market": "euronext_paris", "quantity": 10, "buy_price": 3.84 }
+  ],
+  "closed": [
+    {
+      "name": "Palantir Technologies",
+      "ticker": "PLTR",
+      "market": "us",
+      "quantity": 2,
+      "buy_price": 119.06,
+      "sell_price": 172.70,
+      "sell_currency": "USD",
+      "fx_at_sale": 0.86337,
+      "sell_date": "2026-08-17 15:34:15",
+      "note": "Vente integrale de la ligne"
+    }
   ]
 }
