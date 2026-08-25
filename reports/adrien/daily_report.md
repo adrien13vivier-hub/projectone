@@ -1,16 +1,24 @@
-# Rapport de Portefeuille v7.0 -- 24/08/2026 09:46 (Paris)
+# Rapport de Portefeuille v7.0 -- 25/08/2026 16:31 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.07/10
-**EUR/USD :** 1 EUR = 1.1672 USD
+**Tendance : Neutre** | Score macro : 5.15/10
+**EUR/USD :** 1 EUR = 1.1673 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.43% | 7 674.37 |
-| CAC 40 | v -0.29% | 8 460.02 |
+| S&P 500 | ^ +0.25% | 7 671.79 |
+| CAC 40 | ^ +0.06% | 8 457.87 |
+
+**Taux souverains 10 ans :**
+
+| Taux | Variation | Niveau | Sur 1 mois |
+|------|-----------|--------|------------|
+| UST 10 ans (US) | -- | 4.70% | +2 pb |
+| OAT 10 ans (FR) | -- | 4.12% | +16 pb |
+| Ecart OAT - UST | -- | -58 pb | -- |
 
 **Manchettes macro :**
 
@@ -24,61 +32,31 @@
 
 ## Analyse par Valeur
 
-### Palantir Technologies `PLTR.US`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
-|-------|-----------|-----|----------|---------|------------------|---------|
-| 154.16 EUR | ^ +0.00% | 308.32 EUR | + +70.20 EUR (+29.5%) | + +56.30 EUR (+23.6%) | **7.64/10** (45%) | RENFORCER |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> Palantir Keeps 55 Cents of Every Revenue Dollar as Profit | Palantir, Freeport Clear Buy Points, Lead Five Stocks To Watch | Prediction: This Will Be Palantir's Stock Price by the End of 2030
-
-**Detail de la note :**
-
-| Composante | Note | Poids |
-|------------|------|-------|
-| Momentum | 9.8/10 | 44% |
-| Consensus | 7.3/10 | 29% |
-| Sentiment | 5.7/10 | 16% |
-| Risque | 2.5/10 | 11% |
-
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
-
-**Sentiment :** Bull 57% / Bear 43% *(source : AlphaVantage NLP)*
-**Consensus analystes :** SB:12 B:15 H:10 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +44.4% | 3M +31.5% | 6M +34.1% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
-
-**Justification :** Note 7.6/10 (confiance 45%). Points forts : momentum 9.8, consensus analystes 7.3. Points faibles : profil de risque 2.5. Momentum HAUSSIER. Position : +56.30 EUR (+23.6%) apres frais. Note etablie sur une partie seulement des criteres.
-
----
-
 ### Credit Agricole SA `ACA.PA`
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 19.06 EUR | v -0.05% | 190.60 EUR | + +21.60 EUR (+12.8%) | + +17.62 EUR (+10.4%) | **6.84/10** (45%) | CONSERVER |
+| 19.05 EUR | v -0.21% | 190.45 EUR | + +21.45 EUR (+12.7%) | + +17.47 EUR (+10.3%) | **6.85/10** (41%) | CONSERVER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Should Value Investors Buy Credit Agricole (CRARY) Stock? | CREDIT AGRICOLE SA: 2026 CAPITAL INCREASE RESERVED FOR EMPLOYEES
+> Are Investors Undervaluing Credit Agricole (CRARY) Right Now? | CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Should Value Investors Buy Credit Agricole (CRARY) Stock?
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 8.4/10 | 44% |
-| Consensus | 5.0/10 | 29% |
-| Sentiment | 5.0/10 | 16% |
-| Risque | 8.0/10 | 11% |
+| Momentum | 7.9/10 | 51% |
+| Consensus | 5.0/10 | 37% |
+| Risque | 8.0/10 | 12% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
 
-**Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
+**Tonalite presse :** Bull 0% / Bear 0% *(indicatif, hors note -- source : analyse lexicale des titres)*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +4.6% | 3M +18.1% | 6M +7.2% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +3.1% | 3M +16.4% | 6M +7.3% -- HAUSSIER *(source : EODHD)*
 
-**Justification :** Note 6.8/10 (confiance 45%). Points forts : momentum 8.4, profil de risque 8.0. Momentum HAUSSIER. Position : +17.62 EUR (+10.4%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.8/10 (confiance 41%). Points forts : profil de risque 8.0, momentum 7.9. Momentum HAUSSIER. Position : +17.47 EUR (+10.3%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -86,28 +64,27 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 75.27 EUR | ^ +0.00% | 150.53 EUR | - -37.29 EUR (-19.9%) | - -51.19 EUR (-27.2%) | **4.49/10** (45%) | ALLEGER |
+| 76.93 EUR | ^ +4.12% | 153.86 EUR | - -33.96 EUR (-18.1%) | - -47.86 EUR (-25.5%) | **5.18/10** (41%) | SURVEILLER (en moins-value) |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CoreWeave CEO Michael Intrator Sold Over 13,000 Shares for $1.2 Million. What Does This Mean for Investors? | Prediction: CoreWeave Stock Will Double on This Date | Neoclouds Shine in AI Build Out
+> CoreWeave’s AI Data Center Capacity Is Exploding — Its $35 Billion Debt Load Still Makes the Stock Untouchable | Rescale Expands Cloud Ecosystem with CoreWeave for Engineering and AI Workloads | CoreWeave CFO Nitin Agrawal Sells 10,062 Shares for $924,500
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 3.0/10 | 44% |
-| Consensus | 7.1/10 | 29% |
-| Sentiment | 6.4/10 | 16% |
-| Risque | 1.0/10 | 11% |
+| Momentum | 4.8/10 | 51% |
+| Consensus | 7.1/10 | 37% |
+| Risque | 1.0/10 | 12% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
 
-**Sentiment :** Bull 64% / Bear 36% *(source : Lexical (AV:vide, FH:HTTP 403))*
+**Tonalite presse :** Bull 77% / Bear 23% *(indicatif, hors note -- source : analyse lexicale des titres)*
 **Consensus analystes :** SB:10 B:21 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +6.3% | 3M -16.7% | 6M -10.4% -- BAISSIER *(source : EODHD (fallback AV:vide))*
+**Perf. historique :** 1M +20.0% | 3M -18.5% | 6M +10.0% -- NEUTRE *(source : AlphaVantage)*
 
-**Justification :** Note 4.5/10 (confiance 45%). Points forts : consensus analystes 7.1. Points faibles : momentum 3.0, profil de risque 1.0. Momentum BAISSIER. Position : -51.19 EUR (-27.2%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 5.2/10 (confiance 41%). Points forts : consensus analystes 7.1. Points faibles : profil de risque 1.0. Momentum NEUTRE. Position : -47.86 EUR (-25.5%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -115,7 +92,7 @@
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.94 EUR | v -0.51% | 19.44 EUR | - -18.96 EUR (-49.4%) | - -22.94 EUR (-59.7%) | **3.08/10** (45%) | ALLEGER |
+| 1.96 EUR | ^ +1.24% | 19.64 EUR | - -18.76 EUR (-48.9%) | - -22.74 EUR (-59.2%) | **2.54/10** (41%) | SORTIR |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -125,18 +102,17 @@
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 1.3/10 | 44% |
-| Consensus | 5.0/10 | 29% |
-| Sentiment | 5.0/10 | 16% |
-| Risque | 2.5/10 | 11% |
+| Momentum | 0.8/10 | 51% |
+| Consensus | 5.0/10 | 37% |
+| Risque | 2.5/10 | 12% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus.*
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
 
-**Sentiment :** Bull 50% / Bear 50% *(source : Neutre par defaut (Finnhub:HTTP 403))*
+**Tonalite presse :** non disponible *(aucun article)*
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M +1.8% | 3M -41.1% | 6M -38.7% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -0.3% | 3M -43.3% | 6M -40.7% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Note 3.1/10 (confiance 45%). Points faibles : profil de risque 2.5, momentum 1.3. Momentum BAISSIER. Position : -22.94 EUR (-59.7%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 2.5/10 (confiance 41%). Points faibles : profil de risque 2.5, momentum 0.8. Momentum BAISSIER. Position : -22.74 EUR (-59.2%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -144,11 +120,10 @@
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| Palantir Technologies | 154.16 | 308.32 | +70.20 (+29.5%) | +56.30 (+23.6%) | 7.64/10 | 45% | RENFORCER |
-| Credit Agricole SA | 19.06 | 190.60 | +21.60 (+12.8%) | +17.62 (+10.4%) | 6.84/10 | 45% | CONSERVER |
-| CoreWeave | 75.27 | 150.53 | -37.29 (-19.9%) | -51.19 (-27.2%) | 4.49/10 | 45% | ALLEGER |
-| Abionyx Pharma | 1.94 | 19.44 | -18.96 (-49.4%) | -22.94 (-59.7%) | 3.08/10 | 45% | ALLEGER |
-| **TOTAL** | — | **668.89** | **+35.55 (+5.6%)** | **-0.21 (-0.0%)** | — | — | — |
+| Credit Agricole SA | 19.05 | 190.45 | +21.45 (+12.7%) | +17.47 (+10.3%) | 6.85/10 | 41% | CONSERVER |
+| CoreWeave | 76.93 | 153.86 | -33.96 (-18.1%) | -47.86 (-25.5%) | 5.18/10 | 41% | SURVEILLER (en moins-value) |
+| Abionyx Pharma | 1.96 | 19.64 | -18.76 (-48.9%) | -22.74 (-59.2%) | 2.54/10 | 41% | SORTIR |
+| **TOTAL** | — | **363.95** | **-31.27 (-7.9%)** | **-53.13 (-13.4%)** | — | — | — |
 
 ---
 
@@ -164,11 +139,12 @@
 - **EUR/USD** : AlphaVantage
 - **S&P 500** : EODHD
 - **CAC 40** : EODHD
-- **PLTR.US** : cours: TwelveData, sentiment: AlphaVantage NLP, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
-- **CRWV.US** : cours: TwelveData, sentiment: Lexical (AV:vide, FH:HTTP 403), consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: N/D
-- **ACA.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
-- **ABNX.PA** : cours: EODHD, sentiment: Neutre par defaut (Finnhub:HTTP 403), consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: N/D
+- **UST 10 ans (US)** : EODHD
+- **OAT 10 ans (FR)** : EODHD
+- **CRWV.US** : cours: EODHD, sentiment: analyse lexicale des titres, consensus: Finnhub, historique: AlphaVantage, synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
+- **ACA.PA** : cours: EODHD, sentiment: analyse lexicale des titres, consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
+- **ABNX.PA** : cours: EODHD, sentiment: aucun article, consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
 
-**Quotas API utilisés :** {'alphavantage': '5/20', 'twelvedata': '1/60', 'eodhd': '13/80', 'finnhub': '9/55'}
+**Quotas API utilisés :** {'alphavantage': '2/20', 'twelvedata': '1/60', 'eodhd': '19/80', 'finnhub': '4/55'}
 
 **Profil :** adrien | **Courtier :** BoursoBank
