@@ -495,6 +495,319 @@ def extract_bonds(md: str) -> list[dict]:
 bonds = extract_bonds(md_content)
 
 
+# ══════════════════════════════════════════════════════
+# EXTRACTION — STOPS, DIMENSIONNEMENT, RÉPARTITION
+# ══════════════════════════════════════════════════════
+# Ces trois blocs sont apparus avec la v8. Un rapport plus ancien ne les
+# contient pas : chaque extracteur renvoie alors une liste vide et la section
+# correspondante n'est tout simplement pas rendue. La page reste valide.
+
+def _section_md(md: str, titre: str) -> str:
+    """Texte compris entre « ## titre » et le titre de niveau 2 suivant."""
+    debut = md.find(f"## {titre}")
+    if debut < 0:
+        return ""
+    suite = md.find("\n## ", debut + 3)
+    return md[debut:suite if suite > 0 else len(md)]
+
+
+def _lignes_table(texte: str, cles: list) -> list:
+    """Lignes de la première table dont l'en-tête contient toutes les `cles`.
+
+    Retourne une liste de listes de cellules, déjà débarrassées des `|`.
+    Volontairement tolérant : une colonne ajoutée plus tard ne casse rien,
+    l'appelant lit les cellules par index et ignore le surplus.
+    """
+    lignes, dans_table = [], False
+    for ligne in texte.split("\n"):
+        brut = ligne.strip()
+        if not dans_table:
+            if brut.startswith("|") and all(c.lower() in brut.lower() for c in cles):
+                dans_table = True
+            continue
+        if re.match(r"^\|[-| :]+\|$", brut):
+            continue
+        if not brut.startswith("|"):
+            break
+        cellules = [c.strip() for c in brut.strip("|").split("|")]
+        if cellules and cellules[0]:
+            lignes.append(cellules)
+    return lignes
+
+
+def extract_stops(md: str) -> dict:
+    """Section « Stops et Alertes » → structure exploitable par le rendu."""
+    sec = _section_md(md, "Stops et Alertes")
+    if not sec:
+        return {}
+
+    resume = {}
+    m = re.search(r"Stops actifs\s*:\s*(\d+)\*\*.*?Franchis\s*:\s*(\d+)\*\*"
+                  r".*?Sans stop\s*:\s*(\d+)\*\*.*?alertes du jour\s*:\s*(\d+)", sec)
+    if m:
+        resume = {"actifs": int(m.group(1)), "franchis": int(m.group(2)),
+                  "sans_stop": int(m.group(3)), "alertes": int(m.group(4))}
+
+    alertes = []
+    if "ALERTES DU JOUR" in sec:
+        zone = sec.split("ALERTES DU JOUR", 1)[1]
+        for ligne in zone.split("\n"):
+            ligne = ligne.strip()
+            if ligne.startswith("- **"):
+                alertes.append(re.sub(r"\*\*", "", ligne[2:]).strip())
+            elif alertes and not ligne.startswith("-"):
+                break
+
+    stops = []
+    for c in _lignes_table(sec, ["Valeur", "Niveau", "Statut"]):
+        if len(c) < 8:
+            continue
+        stops.append({"nom": c[0], "compte": c[1], "type": c[2], "config": c[3],
+                      "niveau": c[4], "cloture": c[5], "distance": c[6],
+                      "statut": c[7]})
+
+    tailles = []
+    for c in _lignes_table(sec, ["Volatilit", "Taille sugg"]):
+        if len(c) < 8:
+            continue
+        tailles.append({"nom": c[0], "vol": c[1], "atr": c[2], "vq": c[3],
+                        "distance": c[4], "taille": c[5], "detenu": c[6],
+                        "ecart": c[7]})
+
+    entete = ""
+    m = re.search(r"Capital de r[eé]f[eé]rence[^\n]*", sec)
+    if m:
+        entete = re.sub(r"\*\*", "", m.group(0)).strip()
+
+    note = ""
+    m = re.search(r"Premi[eè]re [eé]valuation pour[^\n]*", sec)
+    if m:
+        note = re.sub(r"[*]", "", m.group(0)).strip()
+
+    return {"resume": resume, "alertes": alertes, "stops": stops,
+            "tailles": tailles, "entete_sizing": entete, "amorcage": note}
+
+
+def extract_repartition(md: str) -> list:
+    """Section « Repartition » → liste d'axes [{titre, entrees}]."""
+    sec = _section_md(md, "Repartition")
+    if not sec:
+        return []
+
+    axes, courant = [], None
+    dans_table = False
+    for ligne in sec.split("\n"):
+        brut = ligne.strip()
+        m = re.match(r"^\*\*(Par [^*]+)\*\*$", brut)
+        if m:
+            courant = {"titre": m.group(1).strip(), "entrees": []}
+            axes.append(courant)
+            dans_table = False
+            continue
+        if courant is None:
+            continue
+        if brut.startswith("| Poste"):
+            dans_table = True
+            continue
+        if re.match(r"^\|[-| :]+\|$", brut):
+            continue
+        if dans_table and brut.startswith("|"):
+            c = [x.strip() for x in brut.strip("|").split("|")]
+            if len(c) >= 3:
+                part = 0.0
+                mp = re.search(r"([\d.,]+)", c[2])
+                if mp:
+                    try:
+                        part = float(mp.group(1).replace(",", "."))
+                    except ValueError:
+                        part = 0.0
+                courant["entrees"].append({"libelle": c[0], "montant": c[1],
+                                           "part": part, "part_txt": c[2]})
+        elif dans_table:
+            dans_table = False
+    return [a for a in axes if a["entrees"]]
+
+
+stops_data  = extract_stops(md_content)
+repartition = extract_repartition(md_content)
+
+
+# ══════════════════════════════════════════════════════
+# RENDU — STOPS ET ALERTES
+# ══════════════════════════════════════════════════════
+
+_CLASSE_STATUT = {
+    "OK":            ("stop-ok",     "OK"),
+    "FRANCHI":       ("stop-ko",     "Franchi"),
+    "Aucun":         ("stop-none",   "Aucun"),
+    "Incalculable":  ("stop-warn",   "Incalculable"),
+}
+
+
+def _barre_distance(txt: str) -> str:
+    """Jauge de distance au stop, calquée sur le tableau du rapport.
+
+    La distance est bornée à 60% pour l'affichage : au-delà, la position est
+    tellement au-dessus de son stop que la longueur exacte de la barre
+    n'apprend plus rien, alors que l'écraser rendrait les petites distances
+    illisibles.
+    """
+    m = re.search(r"([+-]?[\d.,]+)", txt or "")
+    if not m:
+        return '<span class="dist-txt">—</span>'
+    try:
+        val = float(m.group(1).replace(",", "."))
+    except ValueError:
+        return '<span class="dist-txt">—</span>'
+
+    if val < 0:
+        return (f'<span class="dist-wrap"><span class="dist-rail">'
+                f'<span class="dist-fill dist-neg" style="width:6%"></span></span>'
+                f'<span class="dist-txt cell-neg">sous le stop</span></span>')
+    pct = min(val / 60.0 * 100.0, 100.0)
+    teinte = "dist-tight" if val < 8 else "dist-ok"
+    return (f'<span class="dist-wrap"><span class="dist-rail">'
+            f'<span class="dist-fill {teinte}" style="width:{pct:.0f}%"></span></span>'
+            f'<span class="dist-txt">{val:.1f}% au-dessus</span></span>')
+
+
+def build_stops_html() -> str:
+    if not stops_data or not stops_data.get("stops"):
+        return ""
+
+    res  = stops_data.get("resume") or {}
+    cartes = ""
+    for cle, libelle, classe in (("actifs", "Stops actifs", ""),
+                                 ("franchis", "Franchis", "kpi-alert"),
+                                 ("sans_stop", "Sans stop", ""),
+                                 ("alertes", "Alertes du jour", "kpi-alert")):
+        if cle not in res:
+            continue
+        val = res[cle]
+        cl = classe if (classe and val) else ""
+        cartes += (f'<div class="mini-card {cl}"><div class="mini-val">{val}</div>'
+                   f'<div class="mini-lbl">{libelle}</div></div>')
+
+    banniere = ""
+    if stops_data.get("alertes"):
+        items = "".join(f"<li>{a}</li>" for a in stops_data["alertes"])
+        banniere = (f'<div class="alert-box"><div class="alert-title">'
+                    f'⚠️ Alertes du jour</div><ul>{items}</ul></div>')
+
+    amorce = ""
+    if stops_data.get("amorcage"):
+        amorce = f'<p class="macro-note">{stops_data["amorcage"]}</p>'
+
+    rows = ""
+    for st in stops_data["stops"]:
+        cls, lib = _CLASSE_STATUT.get(st["statut"], ("stop-none", st["statut"]))
+        compte = st["compte"] if st["compte"] not in ("--", "—", "") else "—"
+        rows += (f'<tr><td><strong>{st["nom"]}</strong>'
+                 f'<div class="sub-lbl">{compte}</div></td>'
+                 f'<td><span class="type-tag">{st["type"]}</span></td>'
+                 f'<td class="cfg-cell">{st["config"]}</td>'
+                 f'<td class="cell-num">{st["niveau"]}</td>'
+                 f'<td class="cell-num">{st["cloture"]}</td>'
+                 f'<td>{_barre_distance(st["distance"])}</td>'
+                 f'<td><span class="badge {cls}">{lib}</span></td></tr>\n')
+
+    sizing = ""
+    if stops_data.get("tailles"):
+        trows = ""
+        for t in stops_data["tailles"]:
+            # La mention de bridage (« plafonné à 15 % du capital ») est
+            # une precision, pas une valeur : elle passe en seconde ligne pour
+            # ne pas etirer la colonne et pousser le tableau hors de l'ecran.
+            taille, _, precision = t["taille"].partition(" (")
+            cell_taille = taille
+            if precision:
+                cell_taille += f'<div class="sub-lbl">{precision.rstrip(")")}</div>'
+            trows += (f'<tr><td><strong>{t["nom"]}</strong></td>'
+                      f'<td>{t["vol"]}</td>'
+                      f'<td class="cell-num">{t["atr"]}</td>'
+                      f'<td class="cell-num">{t["vq"]}</td>'
+                      f'<td class="cell-num">{t["distance"]}</td>'
+                      f'<td class="cell-num">{cell_taille}</td>'
+                      f'<td class="cell-num">{t["detenu"]}</td>'
+                      f'<td class="cell-num">{t["ecart"]}</td></tr>\n')
+        sizing = f"""
+  <h3 class="macro-sub">🎯 Dimensionnement des positions</h3>
+  <p class="macro-note">{stops_data.get('entete_sizing', '')}</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Valeur</th><th>Volatilité an.</th><th>Amplitude/jour</th><th>VQ</th>
+        <th>Distance stop</th><th>Taille suggérée</th><th>Détenu</th><th>Écart</th></tr></thead>
+      <tbody>{trows}</tbody>
+    </table>
+  </div>
+  <p class="macro-note">
+    «&nbsp;Amplitude/jour&nbsp;» : de combien la valeur bouge en moyenne d'une
+    clôture à l'autre — la lecture concrète de la volatilité.<br>
+    Montant&nbsp;= (capital&nbsp;×&nbsp;risque&nbsp;par&nbsp;idée)&nbsp;÷&nbsp;distance au stop.
+    Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas
+    le même montant. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
+    budget de risque justifierait : positif, la ligne est plus grosse que le
+    risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
+  </p>"""
+
+    return f"""
+<section class="section-block" id="stops">
+  <h2 class="section-title">🛡️ Stops &amp; Alertes</h2>
+  {banniere}
+  <div class="mini-bar">{cartes}</div>
+  {amorce}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Position</th><th>Type</th><th>Configuration</th>
+        <th>Niveau</th><th>Clôture</th><th>Distance</th><th>Statut</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>
+  </div>
+  <p class="macro-note">
+    Un stop est franchi quand la <strong>clôture</strong> du jour passe sous le
+    niveau — pas le cours en séance, dont les à-coups produisent des sorties
+    inutiles. Une seule alerte par franchissement&nbsp;; le déclencheur se
+    ré-arme quand le cours repasse au-dessus. Les stops suiveurs et VQ montent
+    avec le cours et ne redescendent jamais.
+  </p>
+  {sizing}
+</section>"""
+
+
+# ══════════════════════════════════════════════════════
+# RENDU — RÉPARTITION MULTI-ACTIFS
+# ══════════════════════════════════════════════════════
+
+def build_repartition_html() -> str:
+    if not repartition:
+        return ""
+    blocs = ""
+    for axe in repartition:
+        lignes = ""
+        for e in axe["entrees"]:
+            lignes += (f'<div class="alloc-row">'
+                       f'<div class="alloc-head">'
+                       f'<span class="alloc-lbl" title="{e["libelle"]}">{e["libelle"]}</span>'
+                       f'<span class="alloc-chiffres">'
+                       f'<span class="alloc-part">{e["part_txt"]}</span>'
+                       f'<span class="alloc-val">{e["montant"]}</span>'
+                       f'</span></div>'
+                       f'<div class="alloc-rail">'
+                       f'<span class="alloc-fill" style="width:{min(e["part"],100):.1f}%"></span>'
+                       f'</div></div>')
+        blocs += (f'<div class="alloc-card"><h3 class="alloc-title">{axe["titre"]}</h3>'
+                  f'{lignes}</div>')
+    return f"""
+<section class="section-block" id="repartition">
+  <h2 class="section-title">🧭 Répartition</h2>
+  <div class="alloc-grid">{blocs}</div>
+  <p class="macro-note">
+    Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette
+    peut dépasser 100&nbsp;%. Les autres axes forment bien une partition.
+  </p>
+</section>"""
+
+
 def build_indices_html() -> str:
     if not indices and not bonds:
         return ""
@@ -1097,7 +1410,7 @@ tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .cell-pos { color: var(--green) !important; font-weight: 600; font-family: var(--font-mono); }
 .cell-neg { color: var(--red)   !important; font-weight: 600; font-family: var(--font-mono); }
-.cell-num { font-family: var(--font-mono); }
+.cell-num { font-family: var(--font-mono); white-space: nowrap; }
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .73rem; font-weight: 700; padding: 3px 10px;
@@ -1119,6 +1432,98 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 #archive-panel { display: none; margin-bottom: 8px; }
 #archive-panel.open { display: block; }
 hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+/* ════════════════════════════════════════════════════════════
+   STOPS & ALERTES  --  ajout v8
+   Aucune variable de couleur n'est redefinie ici : tout reprend les
+   jetons deja poses en haut du fichier (--bg #0d1117 en tete). Le fond
+   bleu de la page reste donc strictement inchange.
+   ════════════════════════════════════════════════════════════ */
+.alert-box {
+  background: var(--red-dim); border: 1px solid rgba(248,81,73,.35);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px;
+}
+.alert-title { color: var(--red); font-weight: 600; margin-bottom: 6px; }
+.hdr-alert {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 999px; text-decoration: none;
+  background: var(--red-dim); color: var(--red);
+  border: 1px solid rgba(248,81,73,.35);
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.alert-box ul { margin: 0; padding-left: 18px; }
+.alert-box li { color: var(--text); margin: 2px 0; }
+
+.mini-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px; margin-bottom: 18px;
+}
+.mini-card {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+}
+.mini-card.kpi-alert { border-color: rgba(248,81,73,.4); background: var(--red-dim); }
+.mini-card.kpi-alert .mini-val { color: var(--red); }
+.mini-val { font-family: var(--font-mono); font-size: 22px; font-weight: 600; }
+.mini-lbl {
+  color: var(--muted); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .06em; margin-top: 2px;
+}
+
+.sub-lbl { color: var(--muted); font-size: 11px; font-weight: 400; }
+.cfg-cell { color: var(--muted); font-size: 12px; }
+.type-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--muted); font-size: 11px; white-space: nowrap;
+}
+
+.stop-ok   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+.stop-ko   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,.35); }
+.stop-none { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+.stop-warn { background: var(--yellow-dim);color: var(--yellow);border: 1px solid rgba(210,153,34,.3); }
+
+.dist-wrap { display: block; min-width: 120px; }
+.dist-rail {
+  display: block; height: 5px; background: var(--faint);
+  border-radius: 999px; overflow: hidden;
+}
+.dist-fill { display: block; height: 100%; border-radius: 999px; }
+.dist-ok    { background: var(--green); }
+.dist-tight { background: var(--yellow); }
+.dist-neg   { background: var(--red); }
+.dist-txt   { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+
+/* ── Repartition ──────────────────────────────────────────── */
+.alloc-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.alloc-card {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+}
+.alloc-title {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin-bottom: 10px; font-weight: 600;
+}
+.alloc-row { margin: 9px 0; }
+.alloc-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 4px;
+}
+.alloc-lbl {
+  font-size: 13px; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.alloc-chiffres { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.alloc-part { font-family: var(--font-mono); font-size: 12.5px; color: var(--text); font-weight: 600; }
+.alloc-val  { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.alloc-rail { height: 6px; background: var(--faint); border-radius: 999px; overflow: hidden; }
+.alloc-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+@media (max-width: 560px) { .alloc-val { display: none; } }
+
 @media print {
   header, .header-actions, .archive-toggle, #archive-panel,
   .update-badge { display: none !important; }
@@ -1157,7 +1562,12 @@ JS = r"""
   var btn  = document.querySelector('[data-theme-toggle]');
   function sg(k){try{return localStorage.getItem(k);}catch(e){return null;}}
   function ss(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-  var theme = sg('theme') || (matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');
+  // Le theme sombre (fond bleu nuit #0d1117) est le theme PAR DEFAUT du
+  // rapport, quel que soit le reglage du systeme. Auparavant la page suivait
+  // prefers-color-scheme : ouverte depuis un appareil en mode clair, elle
+  // s'affichait sur fond blanc. Le bouton de bascule reste disponible et le
+  // choix explicite de l'utilisateur, lui, est memorise.
+  var theme = sg('theme') || 'dark';
   root.setAttribute('data-theme', theme);
   if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
   if(btn) btn.addEventListener('click', function(){
@@ -1258,6 +1668,19 @@ vm_val      = kpi["valeur_marche"]
 cout_val    = kpi["cout_total"]
 nb_pos      = str(len(positions))
 
+# Les entrees de navigation n'apparaissent que si la section existe : un
+# rapport d'avant la v8 ne doit pas afficher un lien vers une ancre absente.
+nav_stops = ('<a href="#stops">Stops</a>'
+             if stops_data and stops_data.get("stops") else "")
+nav_repartition = ('<a href="#repartition">Répartition</a>'
+                   if repartition else "")
+
+# Pastille d'alerte dans l'en-tete : le nombre de stops franchis. C'est
+# l'information qu'on veut voir sans faire defiler la page.
+_franchis = (stops_data.get("resume") or {}).get("franchis", 0) if stops_data else 0
+badge_alertes = (f'<a class="hdr-alert" href="#stops" title="Stops franchis">'
+                 f'⚠️ {_franchis}</a>') if _franchis else ""
+
 html_out = f"""<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
@@ -1278,10 +1701,13 @@ html_out = f"""<!DOCTYPE html>
         <span class="logo-icon">📊</span>
         <span class="logo-name"><span>Portfolio</span> Analyzer</span>
       </div>
-      <div class="header-meta">v6.3 · {report_date}</div>
+      <div class="header-meta">v8.0 · {report_date}</div>
+      {badge_alertes}
     </div>
     <nav class="header-nav">
       <a href="#macro">Macro</a>
+      {nav_stops}
+      {nav_repartition}
       <a href="#tendances">Tendances</a>
       <a href="#positions">Positions</a>
       <a href="#synthese">Synthèse</a>
@@ -1346,6 +1772,8 @@ html_out = f"""<!DOCTYPE html>
     </div>
 
     {build_indices_html()}
+    {build_stops_html()}
+    {build_repartition_html()}
     {build_combined_chart_html()}
     {build_positions_html()}
     {build_synthese_html()}
