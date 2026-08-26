@@ -237,15 +237,28 @@ class PortfolioLine(BaseModel):
 
     Un seul ticker suffit : api/load_portfolio.py en dérive les variantes
     attendues par chaque fournisseur de données.
+
+    Depuis la v8 la ligne peut décrire un actif NON COTÉ (livret, immobilier,
+    collection). Dans ce cas `ticker`, `quantity` et `buy_price` n'ont pas de
+    sens : seul `value` est renseigné. C'est pourquoi ces trois champs sont
+    devenus facultatifs — la validation réelle est faite par
+    api/load_portfolio.normaliser_ligne(), qui connaît la règle par classe
+    d'actif et renvoie un message d'erreur lisible.
     """
-    name:       str
-    ticker:     str
-    isin:       Optional[str] = ""
-    quantity:   float
-    buy_price:  float
-    market:     Optional[str] = "us"     # code de place, voir MARCHES
-    currency:   Optional[str] = None     # déduit de la place si absent
-    asset_type: Optional[str] = "action"
+    name:        str
+    ticker:      Optional[str] = None
+    isin:        Optional[str] = ""
+    quantity:    Optional[float] = None
+    buy_price:   Optional[float] = None
+    market:      Optional[str] = None    # code de place, voir MARCHES
+    currency:    Optional[str] = None    # déduit de la place si absent
+    asset_type:  Optional[str] = "action"
+    asset_class: Optional[str] = None    # action, etf, crypto, cash, immobilier…
+    account:     Optional[str] = ""      # compte / courtier détenteur
+    tags:        Optional[List[str]] = None
+    stop:        Optional[dict] = None   # {"type": "trailing", "value": 15}
+    value:       Optional[float] = None  # actifs non cotés : valeur actuelle
+    buy_value:   Optional[float] = None  # actifs non cotés : prix d'acquisition
 
 class WatchItem(BaseModel):
     name:   str
@@ -254,10 +267,16 @@ class WatchItem(BaseModel):
     sector: Optional[str] = ""
 
 class ProfileSettings(BaseModel):
-    broker:       Optional[str]  = "autre"
-    custom_fees:  Optional[dict] = None
-    indices:      Optional[List[str]] = None
-    watchlist:    Optional[List[WatchItem]] = None
+    broker:        Optional[str]  = "autre"
+    custom_fees:   Optional[dict] = None
+    indices:       Optional[List[str]] = None
+    watchlist:     Optional[List[WatchItem]] = None
+    # Réglages de risque (bornés par api/load_portfolio.normalize_profile)
+    risque_pct:    Optional[float] = None   # % du capital risqué par idée
+    poids_max_pct: Optional[float] = None   # plafond de poids par ligne
+    vol_cible_pct: Optional[float] = None   # volatilité visée par ligne
+    liquidites:    Optional[float] = None   # cash disponible pour de nouvelles entrées
+    stop_defaut:   Optional[dict]  = None   # stop appliqué aux lignes sans stop
 
 class PortfolioSave(BaseModel):
     lines:    List[PortfolioLine]
@@ -337,13 +356,29 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
     settings = data.settings.model_dump() if data.settings else {}
     if settings.get("watchlist"):
         settings["watchlist"] = [w for w in settings["watchlist"] if w.get("name")]
+    # Ne pas ecrire de reglage a None : sinon un enregistrement depuis
+    # l'interface ecraserait une valeur choisie a la main dans le JSON par un
+    # null, et la normalisation retomberait sur le defaut sans prevenir.
+    settings = {k: v for k, v in settings.items() if v is not None}
+
+    # CORRECTION : l'historique des ventes vit dans le meme fichier mais n'est
+    # PAS gere par l'interface. Sans cette reprise, chaque enregistrement du
+    # portefeuille effacait silencieusement toutes les plus-values realisees.
+    ancien = {}
+    if pfile.exists():
+        try:
+            ancien = json.loads(pfile.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            ancien = {}
 
     pfile.write_text(
         json.dumps({
             "username": username,
             "saved_at": datetime.now(timezone.utc).isoformat(),
             "settings": settings,
-            "lines":    [l.model_dump() for l in data.lines]
+            "closed":   ancien.get("closed", []),
+            "lines":    [{k: v for k, v in l.model_dump().items() if v is not None}
+                         for l in data.lines]
         }, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
@@ -375,6 +410,31 @@ def list_markets():
     from api.load_portfolio import MARCHES
     return [{"code": c, "label": f["label"], "devise": f["devise"],
              "suffixe": f["suffixe"]} for c, f in MARCHES.items()]
+
+
+@app.get("/api/asset-classes")
+def list_asset_classes():
+    """Classes d'actifs reconnues, pour alimenter le menu déroulant.
+
+    `manuel` dit à l'interface s'il faut demander un ticker et une quantité
+    (False) ou une simple valeur (True).
+    """
+    from api.load_portfolio import CLASSES_ACTIFS
+    return [{"code": c, "label": f["label"], "manuel": f["manuel"],
+             "place": f.get("place")}
+            for c, f in sorted(CLASSES_ACTIFS.items(), key=lambda kv: kv[1]["ordre"])]
+
+
+@app.get("/api/stop-types")
+def list_stop_types():
+    """Types de stop reconnus, avec leur libellé et le paramètre attendu."""
+    return [
+        {"code": "none",     "label": "Aucun",           "parametre": None},
+        {"code": "percent",  "label": "Pourcentage",     "parametre": "% sous le prix de revient"},
+        {"code": "absolute", "label": "Absolu",          "parametre": "prix plancher"},
+        {"code": "trailing", "label": "Suiveur",         "parametre": "% sous le plus haut"},
+        {"code": "vq",       "label": "VQ (volatilite)", "parametre": None},
+    ]
 
 
 @app.post("/api/analyze/{username}")
