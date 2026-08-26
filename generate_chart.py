@@ -70,6 +70,12 @@ def read_history():
                     "rec":         row["rec"],
                 })
             except Exception:
+                # Ligne inexploitable pour un graphique : c'est le cas, voulu,
+                # des actifs NON COTES (livret, immobilier, collection), qui
+                # sont ecrits dans l'historique avec un score vide. Leur
+                # valorisation est saisie a la main et ne varie pas d'un jour a
+                # l'autre : la tracer ajouterait une constante et ecraserait
+                # l'echelle des vraies variations de marche.
                 continue
     return rows
 
