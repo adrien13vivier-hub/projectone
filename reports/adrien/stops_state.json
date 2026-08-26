@@ -1,0 +1,18 @@
+{
+  "lignes": {
+    "ABNX.PA": {
+      "arme": true,
+      "hwm": null
+    },
+    "ACA.PA": {
+      "arme": true,
+      "hwm": null
+    },
+    "CRWV.US": {
+      "arme": true,
+      "hwm": null
+    }
+  },
+  "maj": "2026-08-26 14:31",
+  "schema": 1
+}
