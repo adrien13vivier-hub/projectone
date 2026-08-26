@@ -22,7 +22,7 @@ img{display:block;max-width:100%}
 .logo svg{color:var(--primary)}
 .topbar-right{display:flex;align-items:center;gap:.75rem}
 .badge-user{font-size:.8rem;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:.2rem .7rem}
-.main{flex:1;padding:2rem 1.5rem;max-width:1100px;margin:0 auto;width:100%}
+.main{flex:1;padding:2rem 1.5rem;max-width:1320px;margin:0 auto;width:100%}
 
 /* ── Cards ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow)}
@@ -58,6 +58,27 @@ img{display:block;max-width:100%}
 
 /* ── Table portefeuille ── */
 .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+/* Le tableau du portefeuille porte 12 colonnes depuis la v8. Plutot que de le
+   comprimer jusqu'a l'illisible, on lui donne une largeur minimale et on
+   assume le defilement horizontal — le conteneur .table-wrap le gere deja. */
+#panel-portfolio .pf-table{min-width:1150px}
+#panel-portfolio .pf-table input, #panel-portfolio .pf-table select{
+  min-width:0;width:100%;box-sizing:border-box;font-size:.82rem;padding:.35rem .45rem}
+#panel-portfolio .pf-table th{white-space:nowrap;font-size:.72rem}
+#panel-portfolio .pf-table td{padding:.4rem .35rem}
+#panel-portfolio .pf-table td:nth-child(1){min-width:120px}
+#panel-portfolio .pf-table td:nth-child(2){min-width:100px}
+#panel-portfolio .pf-table td:nth-child(3){min-width:82px}
+#panel-portfolio .pf-table td:nth-child(4){min-width:82px}
+#panel-portfolio .pf-table td:nth-child(5),
+#panel-portfolio .pf-table td:nth-child(6){min-width:100px}
+#panel-portfolio .pf-table td:nth-child(7){min-width:112px}
+#panel-portfolio .pf-table td:nth-child(8){min-width:98px}
+#panel-portfolio .pf-table td:nth-child(9){min-width:105px}
+#panel-portfolio .pf-table td:nth-child(10){min-width:100px}
+#panel-portfolio .pf-table td:nth-child(11){min-width:78px}
+#panel-portfolio .pf-table td:nth-child(12){min-width:44px;text-align:center}
+.scroll-hint{color:var(--muted);font-size:.75rem;margin:.4rem 0 0}
 table{width:100%;border-collapse:collapse;font-size:.82rem}
 th{background:var(--surface2);padding:.5rem .6rem;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
 td{padding:.45rem .6rem;border-bottom:1px solid var(--border);vertical-align:middle}
@@ -172,6 +193,39 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
         </div>
 
         <div style="margin-top:1.25rem">
+          <label style="margin:0 0 .5rem">Gestion du risque
+            <span style="color:var(--muted);font-weight:400">— pilote les stops et la taille des positions suggérée</span>
+          </label>
+          <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
+            <div class="form-group">
+              <label>Risque par idée (%)</label>
+              <input id="cfg-risque" type="number" min="0.05" max="10" step="0.05" value="1">
+              <small style="color:var(--muted);font-size:.75rem">Part du capital perdue si le stop part.</small>
+            </div>
+            <div class="form-group">
+              <label>Poids maximum par ligne (%)</label>
+              <input id="cfg-poidsmax" type="number" min="1" max="100" step="1" value="15">
+              <small style="color:var(--muted);font-size:.75rem">Plafond, quelle que soit la formule.</small>
+            </div>
+            <div class="form-group">
+              <label>Budget de volatilité (%)</label>
+              <input id="cfg-volcible" type="number" min="0.1" max="50" step="0.1" value="2">
+              <small style="color:var(--muted);font-size:.75rem">Utilisé pour les lignes sans stop.</small>
+            </div>
+            <div class="form-group">
+              <label>Liquidités disponibles (€)</label>
+              <input id="cfg-liquidites" type="number" min="0" step="1" placeholder="laisser vide si inconnu">
+              <small style="color:var(--muted);font-size:.75rem">Plafonne les tailles suggérées.</small>
+            </div>
+            <div class="form-group">
+              <label>Stop par défaut</label>
+              <select id="cfg-stopdefaut"></select>
+              <small style="color:var(--muted);font-size:.75rem">Appliqué aux lignes sans stop propre.</small>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.25rem">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
             <label style="margin:0">Watchlist <span style="color:var(--muted);font-weight:400">— valeurs suivies sans etre detenues</span></label>
             <button class="btn btn-ghost btn-sm" onclick="addWatch()">+ Valeur</button>
@@ -194,13 +248,15 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
           </div>
         </div>
         <div id="save-status"></div>
+        <p class="scroll-hint">Le tableau défile horizontalement : les colonnes
+          Compte, Étiquettes et Stop sont à droite.</p>
         <div class="table-wrap">
-          <table>
+          <table class="pf-table">
             <thead>
               <tr>
-                <th>Nom</th><th>Ticker</th><th>ISIN</th>
-                <th>Qté</th><th>Prix de revient</th><th>Place de cotation</th>
-                <th>Type</th><th></th>
+                <th>Nom</th><th>Classe</th><th>Ticker</th><th>ISIN</th>
+                <th>Qté / Valeur</th><th>Prix de revient</th><th>Place de cotation</th>
+                <th>Compte</th><th>Étiquettes</th><th>Stop</th><th>Param.</th><th></th>
               </tr>
             </thead>
             <tbody id="portfolio-tbody"></tbody>
@@ -208,6 +264,17 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
         </div>
         <div style="margin-top:.75rem">
           <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Ajouter une ligne</button>
+        </div>
+        <div class="info-box neutral" style="margin-top:1rem;font-size:.82rem">
+          <strong>Actifs non cotés</strong> — choisir la classe <em>Liquidités</em>,
+          <em>Immobilier</em>, <em>Collection</em> ou <em>Autre</em> : le ticker et la
+          place disparaissent, la colonne «&nbsp;Qté / Valeur&nbsp;» devient la valeur
+          actuelle en euros et «&nbsp;Prix de revient&nbsp;» le prix d'acquisition
+          (laisser vide si inconnu). Aucune requête n'est envoyée aux fournisseurs de
+          données pour ces lignes.<br>
+          <strong>Stops</strong> — <em>Pourcentage</em> et <em>Suiveur</em> attendent un
+          pourcentage, <em>Absolu</em> un prix plancher, <em>VQ</em> ne demande rien
+          (il est calculé par la volatilité). Les étiquettes se séparent par des virgules.
         </div>
       </div>
     </div>
@@ -387,14 +454,56 @@ async function loadSlotInfo(){
 let MARKETS = [{code:'us',label:'États-Unis (NYSE / Nasdaq)'}];
 let BROKERS = [{code:'autre',label:'Autre / personnalisé',note:''}];
 const INDICES_DISPO = ['S&P 500','CAC 40','Nikkei 225'];
-const TYPES = ['action','etf','obligation','crypto','autre'];
+// TYPES a ete remplace par CLASSES ci-dessous : la liste des classes vient
+// desormais du serveur (/api/asset-classes), qui est la seule source de verite.
+
+// Repli local : si le backend est une version anterieure et ne sert pas encore
+// /api/asset-classes ni /api/stop-types, l'interface reste utilisable.
+let CLASSES = [
+  {code:'action',    label:'Action',          manuel:false},
+  {code:'etf',       label:'ETF / Fonds',     manuel:false},
+  {code:'obligation',label:'Obligation',      manuel:false},
+  {code:'crypto',    label:'Crypto',          manuel:false, place:'crypto'},
+  {code:'metal',     label:'Métal précieux',  manuel:false},
+  {code:'cash',      label:'Liquidités',      manuel:true},
+  {code:'immobilier',label:'Immobilier',      manuel:true},
+  {code:'collection',label:'Collection',      manuel:true},
+  {code:'autre',     label:'Autre',           manuel:true}
+];
+let STOP_TYPES = [
+  {code:'none',    label:'Aucun',           parametre:null},
+  {code:'percent', label:'Pourcentage',     parametre:'% sous le prix de revient'},
+  {code:'absolute',label:'Absolu',          parametre:'prix plancher'},
+  {code:'trailing',label:'Suiveur',         parametre:'% sous le plus haut'},
+  {code:'vq',      label:'VQ (volatilité)', parametre:null}
+];
+
+function estManuel(code){
+  const c = CLASSES.find(x=>x.code===code);
+  return !!(c && c.manuel);
+}
+// Certaines classes n'ont qu'une seule place possible (la crypto n'existe que
+// sur le chemin .CC). On la force alors, et on verrouille le menu.
+function placeImposee(code){
+  const c = CLASSES.find(x=>x.code===code);
+  return (c && c.place) || null;
+}
+function stopSansParametre(code){
+  const t = STOP_TYPES.find(x=>x.code===code);
+  return !t || !t.parametre;
+}
 
 async function loadReferentiels(){
   try{ MARKETS = await api('GET','/api/markets'); }catch(e){ console.warn('Places indisponibles',e); }
   try{ BROKERS = await api('GET','/api/brokers'); }catch(e){ console.warn('Courtiers indisponibles',e); }
+  try{ CLASSES = await api('GET','/api/asset-classes'); }catch(e){ console.warn('Classes d\'actifs : repli local',e); }
+  try{ STOP_TYPES = await api('GET','/api/stop-types'); }catch(e){ console.warn('Types de stop : repli local',e); }
 
   const sel = document.getElementById('cfg-broker');
   sel.innerHTML = BROKERS.map(b=>`<option value="${b.code}">${b.label}</option>`).join('');
+
+  document.getElementById('cfg-stopdefaut').innerHTML =
+    STOP_TYPES.map(t=>`<option value="${t.code}">${t.label}</option>`).join('');
 
   document.getElementById('cfg-indices').innerHTML = INDICES_DISPO.map((n,i)=>
     `<label style="display:flex;align-items:center;gap:.35rem;font-weight:400;margin:0">
@@ -416,19 +525,80 @@ function mkSelect(opts,val,cls){
   }).join('')+'</select>';
 }
 
+function echapper(v){
+  return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+                             .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function mkRow(l={}){
   const tr=document.createElement('tr');
+  const classe = l.asset_class || l.asset_type || 'action';
+  const stop   = l.stop || {};
+  const tags   = Array.isArray(l.tags) ? l.tags.join(', ') : (l.tags || '');
+  // Une ligne non cotee stocke sa valeur dans `value` et son acquisition dans
+  // `buy_value` : on les affiche dans les memes colonnes que quantite et prix
+  // de revient, dont elles prennent la place.
+  const manuel = estManuel(classe);
+  const col5 = manuel ? (l.value ?? '')     : (l.quantity ?? '');
+  const col6 = manuel ? (l.buy_value ?? '') : (l.buy_price ?? '');
+
   tr.innerHTML=`
-    <td><input value="${l.name||''}" placeholder="Air Liquide"></td>
-    <td><input value="${l.ticker||l.ticker_eodhd||''}" placeholder="AI.PA ou AAPL"></td>
-    <td><input value="${l.isin||''}" placeholder="FR0000…"></td>
-    <td><input type="number" value="${l.quantity||''}" placeholder="10" min="0" step="any"></td>
-    <td><input type="number" value="${l.buy_price||''}" placeholder="150.00" min="0" step="0.01"></td>
-    <td>${mkSelect(MARKETS,l.market||'us')}</td>
-    <td>${mkSelect(TYPES,l.asset_type||'action')}</td>
+    <td><input value="${echapper(l.name)}" placeholder="Air Liquide"></td>
+    <td>${mkSelect(CLASSES,classe,'cls-sel')}</td>
+    <td><input class="c-ticker" value="${echapper(l.ticker||l.ticker_eodhd)}" placeholder="AI.PA ou AAPL"></td>
+    <td><input value="${echapper(l.isin)}" placeholder="FR0000…"></td>
+    <td><input class="c-qte" type="number" value="${col5}" placeholder="10" min="0" step="any"></td>
+    <td><input class="c-prix" type="number" value="${col6}" placeholder="150.00" min="0" step="any"></td>
+    <td class="c-place-cell">${mkSelect(MARKETS,l.market||'us','c-place')}</td>
+    <td><input value="${echapper(l.account)}" placeholder="PEA Bourso" style="min-width:120px"></td>
+    <td><input value="${echapper(tags)}" placeholder="dividende, socle" style="min-width:130px"></td>
+    <td>${mkSelect(STOP_TYPES,stop.type||'none','c-stoptype')}</td>
+    <td><input class="c-stopval" type="number" value="${stop.value ?? ''}" placeholder="15" min="0" step="any"></td>
     <td><button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer">✕</button></td>
   `;
+  const cls = tr.querySelector('.cls-sel');
+  const stp = tr.querySelector('.c-stoptype');
+  cls.addEventListener('change',()=>majLigne(tr));
+  stp.addEventListener('change',()=>majLigne(tr));
+  majLigne(tr);
   return tr;
+}
+
+// Adapte une ligne a sa classe d'actif et a son type de stop : desactiver un
+// champ sans objet vaut mieux que de le laisser saisissable et de l'ignorer en
+// silence a l'enregistrement.
+function majLigne(tr){
+  const classe = tr.querySelector('.cls-sel').value;
+  const manuel = estManuel(classe);
+  const tk = tr.querySelector('.c-ticker');
+  const pl = tr.querySelector('.c-place');
+  const qt = tr.querySelector('.c-qte');
+  const px = tr.querySelector('.c-prix');
+
+  const impose = placeImposee(classe);
+  if(impose){
+    const dispo = [...pl.options].some(o=>o.value===impose);
+    if(dispo) pl.value = impose;
+  }
+  tk.disabled = manuel; pl.disabled = manuel || !!impose;
+  tk.placeholder = manuel ? '—' : 'AI.PA ou AAPL';
+  qt.placeholder = manuel ? 'valeur actuelle (€)' : '10';
+  px.placeholder = manuel ? 'acquisition (€)'     : '150.00';
+  qt.title = manuel ? 'Valeur actuelle de l\'actif, en euros' : 'Quantité détenue';
+  px.title = manuel ? 'Prix d\'acquisition, en euros (laisser vide si inconnu)'
+                    : 'Prix de revient unitaire, en euros';
+  tk.style.opacity = manuel ? .45 : 1;
+  pl.style.opacity = pl.disabled ? .45 : 1;
+
+  const sv = tr.querySelector('.c-stopval');
+  const type = tr.querySelector('.c-stoptype').value;
+  const sansParam = stopSansParametre(type);
+  sv.disabled = sansParam;
+  sv.style.opacity = sansParam ? .45 : 1;
+  sv.placeholder = type==='absolute' ? 'prix plancher'
+                 : type==='none'     ? '—'
+                 : type==='vq'       ? 'auto'
+                 : '15';
 }
 
 function mkWatchRow(w={}){
@@ -455,6 +625,19 @@ async function loadPortfolio(){
     if(cfg.broker){ document.getElementById('cfg-broker').value=cfg.broker; }
     onBrokerChange();
 
+    const poser=(id,v,defaut)=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.value = (v===null||v===undefined||v==='') ? (defaut===undefined?'':defaut) : v;
+    };
+    poser('cfg-risque',     cfg.risque_pct,    1);
+    poser('cfg-poidsmax',   cfg.poids_max_pct, 15);
+    poser('cfg-volcible',   cfg.vol_cible_pct, 2);
+    poser('cfg-liquidites', cfg.liquidites,    '');
+    const sd = cfg.stop_defaut;
+    document.getElementById('cfg-stopdefaut').value =
+      (sd && (sd.type || sd)) ? (sd.type || sd) : 'none';
+
     if(Array.isArray(cfg.indices)){
       document.querySelectorAll('.idx-cb').forEach(cb=>{cb.checked=cfg.indices.includes(cb.value);});
     }
@@ -471,21 +654,56 @@ function addWatch(){
   document.getElementById('watch-tbody').appendChild(mkWatchRow());
 }
 
+function nombreOuNull(v){
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+
 function readLines(){
   const lines=[];
   document.querySelectorAll('#portfolio-tbody tr').forEach(tr=>{
-    const f=tr.querySelectorAll('input,select');
-    lines.push({
-      name:f[0].value.trim(),
-      ticker:f[1].value.trim().toUpperCase(),
-      isin:f[2].value.trim(),
-      quantity:parseFloat(f[3].value)||0,
-      buy_price:parseFloat(f[4].value)||0,
-      market:f[5].value,
-      asset_type:f[6].value
-    });
+    const c   = tr.querySelectorAll('td');
+    const nom = c[0].querySelector('input').value.trim();
+    if(!nom) return;
+
+    const classe  = tr.querySelector('.cls-sel').value;
+    const manuel  = estManuel(classe);
+    const qte     = nombreOuNull(tr.querySelector('.c-qte').value);
+    const prix    = nombreOuNull(tr.querySelector('.c-prix').value);
+    const type    = tr.querySelector('.c-stoptype').value;
+    const val     = nombreOuNull(tr.querySelector('.c-stopval').value);
+    const tags    = c[8].querySelector('input').value
+                      .split(',').map(t=>t.trim()).filter(Boolean);
+
+    const ligne = {
+      name: nom,
+      asset_class: classe,
+      isin: c[3].querySelector('input').value.trim(),
+      account: c[7].querySelector('input').value.trim(),
+      tags: tags
+    };
+
+    if(manuel){
+      ligne.value = qte;
+      if(prix !== null) ligne.buy_value = prix;
+    }else{
+      ligne.ticker    = tr.querySelector('.c-ticker').value.trim().toUpperCase();
+      ligne.market    = tr.querySelector('.c-place').value;
+      ligne.quantity  = qte;
+      ligne.buy_price = prix;
+    }
+
+    // Un stop « none » n'est pas envoye : le champ absent laisse jouer le stop
+    // par defaut du profil, ce qui n'est pas la meme chose que « pas de stop ».
+    if(type && type !== 'none'){
+      ligne.stop = stopSansParametre(type) ? {type:type} : {type:type, value:val};
+    }
+    lines.push(ligne);
   });
-  return lines.filter(l=>l.name&&l.ticker);
+  // Une ligne cotee sans ticker et une ligne manuelle sans valeur sont
+  // inexploitables : on les ecarte ici plutot que de laisser le serveur
+  // renvoyer une erreur pour une saisie manifestement incomplete.
+  return lines.filter(l => estManuel(l.asset_class) ? (l.value > 0) : !!l.ticker);
 }
 
 function readSettings(){
@@ -497,7 +715,16 @@ function readSettings(){
     if(w.name&&w.ticker) watchlist.push(w);
   });
   const indices=[...document.querySelectorAll('.idx-cb:checked')].map(cb=>cb.value);
-  return {broker:document.getElementById('cfg-broker').value, indices, watchlist};
+  const stopDef = document.getElementById('cfg-stopdefaut').value;
+  return {
+    broker: document.getElementById('cfg-broker').value,
+    indices, watchlist,
+    risque_pct:    nombreOuNull(document.getElementById('cfg-risque').value),
+    poids_max_pct: nombreOuNull(document.getElementById('cfg-poidsmax').value),
+    vol_cible_pct: nombreOuNull(document.getElementById('cfg-volcible').value),
+    liquidites:    nombreOuNull(document.getElementById('cfg-liquidites').value),
+    stop_defaut:   (stopDef && stopDef !== 'none') ? {type: stopDef} : null
+  };
 }
 
 async function savePortfolio(){
@@ -505,7 +732,7 @@ async function savePortfolio(){
   const settings=readSettings();
   const st=document.getElementById('save-status');
   if(!lines.length){
-    st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ Aucune ligne valide : il faut au minimum un nom et un ticker.</div>';
+    st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ Aucune ligne valide : une valeur cotée demande un nom et un ticker, un actif non coté un nom et une valeur.</div>';
     return;
   }
   try{
@@ -547,7 +774,10 @@ async function runAnalysis(){
         lnk.textContent=REPORT_URL;
       }
     } else {
-      result.innerHTML='<div class="info-box error" style="margin-top:.75rem">❌ Échec de l'analyse.</div>';
+      // CORRECTION : l'apostrophe de « l'analyse » fermait la chaine et
+      // provoquait une SyntaxError qui empechait TOUT le script de s'executer
+      // (connexion comprise). Chaine en guillemets doubles.
+      result.innerHTML = "<div class=\"info-box error\" style=\"margin-top:.75rem\">❌ Échec de l'analyse.</div>";
     }
     if(data.logs&&data.logs.length){
       logBox.style.display='';
