@@ -1,6 +1,113 @@
-# 📊 Portfolio Analyzer v5.1
+# 📊 Portfolio Analyzer v8.0
 
 Rapport quotidien automatisé à **16h00 Paris (CEST)** via GitHub Actions — 4 sources de données avec validation croisée et fallback en cascade.
+
+## Ce que fait le programme
+
+Un rapport quotidien qui répond à quatre questions, dans cet ordre :
+
+| Question | Section du rapport |
+|----------|--------------------|
+| Dans quel décor je navigue ? | **Contexte économique** — indices, taux 10 ans US/OAT, manchettes |
+| Est-ce qu'une position est sortie de sa zone ? | **Stops & Alertes** |
+| À quoi je suis exposé ? | **Répartition** — classe, devise, compte, étiquette |
+| Que valent mes titres, un par un ? | **Analyse par valeur** + **Synthèse** |
+
+---
+
+## Gestion du risque (v8)
+
+### Multi-actifs
+
+Le portefeuille n'est plus limité aux actions. Neuf classes, réparties en deux familles :
+
+| Famille | Classes | Cours |
+|---------|---------|-------|
+| **Cotées** | action, ETF, obligation, crypto, métal précieux | interrogé par API |
+| **Non cotées** | liquidités, immobilier, collection, autre | valeur saisie à la main |
+
+Une ligne non cotée ne consomme **aucun quota API** : elle n'a ni ticker ni
+historique, seulement une valeur (`value`) et, si on le souhaite, un prix
+d'acquisition (`buy_value`).
+
+Toutes les lignes acceptent en plus un **compte** (`account`) et des
+**étiquettes** libres (`tags`), qui deviennent deux axes de répartition.
+
+### Les quatre types de stop
+
+| Type | Paramètre | Niveau calculé | Monte avec le cours |
+|------|-----------|----------------|---------------------|
+| `percent` | un % | prix de revient − X % | non |
+| `absolute` | un prix | ce prix, tel quel | non |
+| `trailing` | un % | plus haut de clôture − X % | **oui** (cliquet) |
+| `vq` | aucun | plus haut de clôture − VQ % | **oui** (cliquet) |
+
+```json
+"stop": {"type": "trailing", "value": 15}
+"stop": {"type": "absolute", "value": 180, "devise": "USD"}
+"stop": "vq"
+```
+
+**Règle de franchissement** : la *clôture* du jour passe sous le niveau — pas
+le cours en séance, dont les à-coups produisent des sorties inutiles. **Une
+seule alerte par franchissement** ; le déclencheur se ré-arme quand le cours
+repasse au-dessus.
+
+**Le VQ n'est pas celui de VectorVest.** Celui-ci est propriétaire et sa
+formule n'est pas publique. Ce qui est implémenté ici est une transposition
+transparente, entièrement écrite dans `risk_engine.py` :
+
+```
+VQ % = borne( 0,65 × volatilité annualisée , 8 % , 40 % )
+```
+
+Empiriquement, une grande capitalisation stable ressort autour de 12-15 %, une
+valeur très volatile autour de 30 %, le bitcoin autour de 38 %.
+
+### Dimensionnement des positions
+
+```
+montant à engager = (capital × risque par idée) ÷ distance au stop
+```
+
+100 000 € de capital, 1 % de risque (1 000 €), stop à 20 % → 5 000 € de
+position. Si le stop part, on perd exactement le budget de risque. C'est ce qui
+rend une position volatile et une position calme **comparables** : on n'achète
+pas le même montant, on achète le même risque.
+
+Deux garde-fous : un plafond de poids par ligne (15 % par défaut) et le montant
+de liquidités disponibles, quand il est renseigné. Une ligne **sans stop**
+retombe sur un budget de volatilité (2 % par défaut) ; une ligne **déjà sous
+son stop** ne reçoit aucune taille — proposer d'y remettre de l'argent le jour
+où la règle dit d'en sortir n'aurait pas de sens.
+
+**Quel capital ?** Les valeurs cotées **plus** les liquidités. L'immobilier et
+les collections en sont exclus : risquer 1 % d'un patrimoine de 673 000 € dont
+480 000 d'immobilier reviendrait à mettre 6 730 € par idée sur un portefeuille
+boursier de 67 000 €. `settings.capital_reference` permet d'imposer une autre
+valeur.
+
+### Réglages du profil
+
+| Réglage | Défaut | Rôle |
+|---------|--------|------|
+| `risque_pct` | 1,0 | % du capital risqué par idée |
+| `poids_max_pct` | 15,0 | plafond de poids sur une ligne |
+| `vol_cible_pct` | 2,0 | volatilité qu'une ligne sans stop peut apporter |
+| `liquidites` | — | plafonne les tailles suggérées |
+| `stop_defaut` | — | stop appliqué aux lignes qui n'en déclarent pas |
+| `capital_reference` | — | force le capital de dimensionnement |
+
+### État des stops
+
+Les high-water marks et l'armement des alertes vivent dans
+`reports/<utilisateur>/stops_state.json`, commité par le workflow au même titre
+que le rapport. Sans ce fichier, un stop suiveur se recalculerait chaque jour
+depuis l'historique disponible et perdrait son cliquet. Un fichier absent ou
+corrompu n'est pas une erreur : les plus hauts repartent de l'historique connu,
+et la première évaluation d'une ligne est signalée comme telle dans le rapport.
+
+---
 
 ## Architecture des sources
 
@@ -32,7 +139,17 @@ Si deux sources retournent un écart > **2%** sur un même cours :
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
-### Secrets SMTP optionnels (envoi mail)
+### Secrets SMTP optionnels — alerte de franchissement de stop
+
+Sans ces secrets, **rien n'est envoyé** et ce n'est pas une erreur : l'alerte
+reste visible dans la section « Stops & Alertes » du rapport. Avec eux, un
+courriel part le jour où une position clôture sous son stop, et uniquement ce
+jour-là.
+
+Le port 465 (SMTPS) est recommandé. Sur un autre port, STARTTLS est exigé dès
+qu'un identifiant est fourni : le programme refuse d'envoyer un mot de passe en
+clair, quitte à ne pas envoyer l'alerte.
+
 
 | Nom | Description |
 |-----|-------------|
@@ -75,13 +192,48 @@ Si deux sources retournent un écart > **2%** sur un même cours :
 
 | Fichier | Description |
 |---------|-------------|
-| `reports/daily_report.md` | Rapport Markdown complet du jour |
+| `reports/<user>/daily_report.md` | Rapport Markdown complet du jour |
+| `reports/<user>/stops_state.json` | Plus hauts atteints + armement des alertes |
 | `reports/charts/*.png` | Graphiques de performance mensuels |
 | `reports/history.csv` | Historique des PnL quotidiens |
 | `docs/index.html` | Rapport HTML interactif (Cloudflare Pages) |
 | `cache/session_cache.json` | Cache fallback des derniers cours valides |
 
 ## Changelog
+
+### v8.0 — Multi-actifs, stops & alertes, dimensionnement
+- ✅ **Nouveau fichier `risk_engine.py`** : volatilité, VQ, quatre types de
+      stop avec cliquet, dimensionnement par le risque. Sans réseau, sans clé
+      API, avec sa propre batterie de tests (`python risk_engine.py`).
+- ✅ Modèle multi-actifs : 9 classes, dont 4 non cotées (liquidités,
+      immobilier, collection, autre) qui ne consomment aucun quota.
+- ✅ Crypto-actifs via EODHD (`BTC-USD.CC`), avec conversion USD → EUR.
+- ✅ Comptes et étiquettes libres sur chaque ligne.
+- ✅ Section **Stops & Alertes** et section **Répartition** dans le rapport
+      Markdown et dans la page HTML.
+- ✅ Alerte par courriel au franchissement, optionnelle et sans effet si les
+      secrets SMTP ne sont pas posés.
+- ✅ Interface de configuration : classe d'actif, compte, étiquettes, type de
+      stop et réglages de risque.
+
+**Corrections apportées au passage**
+- 🐛 **Devises étrangères** : toute valeur hors États-Unis était comptée comme
+      cotée en euro. Londres (GBP) et la Suisse (CHF) étaient donc surévaluées
+      d'environ 15 %. Le taux est désormais récupéré pour chaque devise, et un
+      taux introuvable est signalé au lieu d'être ignoré.
+- 🐛 **`interface.html` inutilisable** : une apostrophe non échappée dans
+      « Échec de l'analyse » fermait la chaîne JavaScript et provoquait une
+      `SyntaxError` qui empêchait *tout* le script de s'exécuter, connexion
+      comprise.
+- 🐛 **Plus-values réalisées effacées** : enregistrer le portefeuille depuis
+      l'interface réécrivait le fichier de profil sans le tableau `closed`.
+- 🐛 **Thème clair imposé** : la page suivait `prefers-color-scheme` et
+      s'affichait sur fond blanc depuis un appareil en mode clair. Le fond bleu
+      nuit est désormais le défaut ; le bouton de bascule reste disponible.
+
+### v7.4 (2026-08)
+- ✅ Contexte obligataire : taux 10 ans US (UST) et français (OAT), niveau,
+      variation du jour en points de base, tendance sur un mois, écart OAT-UST
 
 ### v5.1 (2026-05-13)
 - ✅ Assignation stricte des clés API par spécialité (AlphaVantage → forex, TwelveData → US, EODHD → EU/indices, Finnhub → sentiment/consensus)
