@@ -101,6 +101,19 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 
+# --- MOTEUR DE RISQUE --------------------------------------------------------
+# Import tolerant : si risk_engine.py est absent ou casse, le rapport quotidien
+# doit continuer de sortir SANS les sections de risque, plutot que d'echouer.
+# C'est une fonctionnalite ajoutee, pas une dependance vitale.
+try:
+    import risk_engine
+    RISK_OK = True
+    RISK_ERR = None
+except Exception as _e:                       # pragma: no cover
+    risk_engine = None
+    RISK_OK = False
+    RISK_ERR = str(_e)
+
 # --- LOGGING (cron-friendly : WARNING uniquement, pas de stdout INFO) --------
 logging.basicConfig(
     level=logging.WARNING,
@@ -142,6 +155,10 @@ USER         = "default"
 HISTORY_PATH = "reports/default/history.csv"
 CHARTS_DIR   = "reports/default/charts"
 REPORT_PATH  = "reports/default/daily_report.md"
+# Etat persistant des stops (high-water marks + armement des alertes).
+# Volontairement place sous reports/<user>/ : c'est un dossier que le workflow
+# GitHub commite deja, aucune modification du YAML n'est donc necessaire.
+STOPS_STATE_PATH = "reports/default/stops_state.json"
 
 
 def slugify(value: str) -> str:
@@ -152,11 +169,12 @@ def slugify(value: str) -> str:
 
 def set_user(username: str):
     """Bascule tous les chemins de sortie vers l'utilisateur indique."""
-    global USER, HISTORY_PATH, CHARTS_DIR, REPORT_PATH
+    global USER, HISTORY_PATH, CHARTS_DIR, REPORT_PATH, STOPS_STATE_PATH
     USER         = slugify(username)
     HISTORY_PATH = f"reports/{USER}/history.csv"
     CHARTS_DIR   = f"reports/{USER}/charts"
     REPORT_PATH  = f"reports/{USER}/daily_report.md"
+    STOPS_STATE_PATH = f"reports/{USER}/stops_state.json"
     os.makedirs(CHARTS_DIR, exist_ok=True)
     os.makedirs(f"docs/{USER}", exist_ok=True)
     _migrate_legacy_files()
@@ -232,19 +250,41 @@ INDICES = dict(DEFAULT_INDICES)
 DEFAULT_BROKERAGE = {
     "euronext": {"threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99},
     "us":       {"threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95},
+    "crypto":   {"threshold": 0,    "flat": 0.0,  "rate": 0.005,  "min": 0.0},
+    "manuel":   {"threshold": 0,    "flat": 0.0,  "rate": 0.0,    "min": 0.0},
 }
 BROKERAGE   = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
 BROKER_NAME = "Grille par defaut"
 
 PROFILE: dict = {}
 
+# Reglages de risque du profil courant, remplis par apply_profile().
+RISQUE: dict = {
+    "risque_pct":    1.0,     # % du capital risque par idee
+    "poids_max_pct": 15.0,    # plafond de poids sur une ligne
+    "vol_cible_pct": 2.0,     # volatilite qu'une ligne sans stop peut apporter
+    "liquidites":    None,    # cash disponible, si connu
+    "stop_defaut":   None,    # stop applique aux lignes qui n'en declarent pas
+}
+
 
 def apply_profile(profile: dict):
     """Charge un profil utilisateur dans l'etat global du module."""
     global PORTFOLIO, WATCHLIST, INDICES, BROKERAGE, BROKER_NAME, PROFILE, CLOSED
+    global RISQUE
 
     PROFILE   = profile or {}
     settings  = PROFILE.get("settings") or {}
+
+    # Les valeurs sont deja bornees par api/load_portfolio.normalize_profile ;
+    # les defauts ci-dessous ne servent qu'aux profils charges sans lui.
+    RISQUE = {
+        "risque_pct":    settings.get("risque_pct")    or 1.0,
+        "poids_max_pct": settings.get("poids_max_pct") or 15.0,
+        "vol_cible_pct": settings.get("vol_cible_pct") or 2.0,
+        "liquidites":    settings.get("liquidites"),
+        "stop_defaut":   settings.get("stop_defaut"),
+    }
 
     PORTFOLIO = PROFILE.get("lines") or []
     WATCHLIST = settings.get("watchlist") or []
@@ -269,7 +309,14 @@ def apply_profile(profile: dict):
 
 
 def calc_fee(amount: float, marche: str) -> float:
-    """Frais de courtage pour un montant donne, selon la grille du profil."""
+    """Frais de courtage pour un montant donne, selon la grille du profil.
+
+    Un livret, un appartement ou une montre de collection ne passent pas par un
+    carnet d'ordres : leur imputer un courtage fausserait la plus-value nette.
+    Le marche "manuel" retourne donc toujours zero.
+    """
+    if marche == "manuel":
+        return 0.0
     t = BROKERAGE.get(marche) or BROKERAGE.get("euronext") or DEFAULT_BROKERAGE["euronext"]
     flat  = float(t.get("flat", 0.0))
     rate  = float(t.get("rate", 0.0))
@@ -525,6 +572,96 @@ def td_fetch_batch(tickers: list) -> dict:
 
 
 # =============================================================================
+# CHANGE MULTI-DEVISES
+# =============================================================================
+# CORRECTION v8 -- BOGUE CORRIGE
+# ------------------------------
+# Jusqu'ici, TOUTE valeur hors Etats-Unis etait consideree comme cotee en euro
+# et renvoyee telle quelle. C'est vrai pour Paris, Amsterdam, Bruxelles,
+# Lisbonne, Milan, Francfort et Madrid. C'est FAUX pour Londres (GBP) et pour
+# la Suisse (CHF) : une action a 1200 GBX/GBP etait comptabilisee comme
+# 1200 EUR, soit une surevaluation d'environ 15%.
+#
+# Le taux est desormais recupere pour toute devise autre que l'euro. Quand il
+# reste introuvable, le cours est conserve MAIS accompagne d'un avertissement
+# explicite dans le rapport : mieux vaut un chiffre signale comme douteux
+# qu'un chiffre faux presente comme sur.
+
+def get_fx(devise: str, eur_usd: float, session_cache: dict) -> tuple:
+    """Combien vaut 1 unite de `devise` en euro. Retourne (taux, source).
+
+    Le dollar reutilise le taux deja obtenu par get_eur_usd() : il est
+    interroge une fois par run, sur la source la plus fiable (AlphaVantage).
+    Les autres devises passent par EODHD, avec memoisation dans le cache de
+    session comme partout ailleurs.
+    """
+    dev = str(devise or "EUR").strip().upper()
+    if dev in ("EUR", ""):
+        return 1.0, "identite"
+    if dev == "USD":
+        return eur_usd, "EUR/USD du run"
+
+    # Le penny sterling (GBX / GBp) vaut un centieme de livre. Certaines places
+    # londoniennes publient en pence : une ligne dont la valeur ressort 100 fois
+    # trop haute se corrige en ecrivant "currency": "GBX" sur la ligne.
+    if dev in ("GBX", "GBP.", "PENCE"):
+        taux_gbp, src = get_fx("GBP", eur_usd, session_cache)
+        return (None, src) if taux_gbp is None else (taux_gbp / 100.0, f"{src} / 100 (pence)")
+
+    cle = f"fx_{dev}"
+    if cle in _MEMO:
+        return _MEMO[cle]
+
+    resultat = (None, "indisponible")
+    if EODHD_KEY:
+        data, err = _get(f"{EOD_BASE}/real-time/{dev}EUR.FOREX",
+                         {"api_token": EODHD_KEY, "fmt": "json"}, "eodhd")
+        if data and not _is_quota_error(err):
+            brut = data.get("close") or data.get("previousClose")
+            try:
+                taux = float(brut)
+                if taux > 0:
+                    session_cache[cle] = taux
+                    resultat = (taux, "EODHD")
+            except (TypeError, ValueError):
+                pass
+
+    if resultat[0] is None and session_cache.get(cle):
+        # Un taux de change bouge de quelques dixiemes de pourcent par jour :
+        # celui de la veille reste largement exploitable.
+        resultat = (float(session_cache[cle]), "cache session")
+
+    _MEMO[cle] = resultat
+    return resultat
+
+
+def taux_ligne(asset: dict, eur_usd: float, session_cache: dict = None) -> float:
+    """Combien vaut 1 unite de cotation de cette ligne, en euro.
+
+    CORRECTION v8 -- SECOND BOGUE DE DEVISE, PLUS INSIDIEUX QUE LE PREMIER
+    ----------------------------------------------------------------------
+    Le cours du jour et l'HISTORIQUE etaient converti par des chemins
+    differents : le cours passait par eur_usd pour les valeurs americaines,
+    l'historique aussi -- mais pour tout le reste, l'historique etait pris tel
+    quel (fx = 1.0). Consequence pour un crypto-actif, publie en dollar mais
+    route hors du chemin "us" : le cours ressortait en euro et l'historique en
+    dollar. Le plus haut servant de reference au stop suiveur etait donc environ
+    16% trop haut, et le stop se declenchait beaucoup trop tot.
+
+    Une seule fonction calcule desormais ce taux, et les deux chemins
+    l'utilisent.
+    """
+    devise = str(asset.get("devise") or "").upper()
+    if not devise:
+        # Profil charge sans passer par api/load_portfolio : on retombe sur la
+        # devise usuelle du marche interne.
+        devise = "USD" if asset.get("marche") in ("us", "crypto") else "EUR"
+    cache = session_cache if isinstance(session_cache, dict) else session_cache_global
+    taux, _src = get_fx(devise, eur_usd, cache if isinstance(cache, dict) else {})
+    return 1.0 if taux is None else taux
+
+
+# =============================================================================
 # COURS (tous marches) -- Orchestrateur
 # =============================================================================
 
@@ -536,8 +673,12 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
     errors = []
     cache_key = f"price_{asset['ticker_eod']}"
 
-    if asset["marche"] == "us":
-        if TWELVEDATA_KEY:
+    # Les crypto-actifs suivent le meme chemin que les valeurs americaines :
+    # EODHD les publie en dollar (BTC-USD.CC), la conversion est identique.
+    # Leur ticker_td est None, l'etape TwelveData est donc silencieusement
+    # sautee et EODHD prend la main.
+    if asset["marche"] in ("us", "crypto"):
+        if TWELVEDATA_KEY and asset.get("ticker_td"):
             td_ticker = asset.get("ticker_td")
             td_raw    = td_prices.get(td_ticker) if td_ticker else None
             if td_raw and td_raw > 0:
@@ -577,7 +718,20 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
             if data and not _is_quota_error(err):
                 raw = data.get("close") or data.get("previousClose")
                 if raw and float(raw) > 0:
-                    return round(float(raw), 4), float(data.get("change_p", 0.0)), "EODHD", False, None
+                    devise = str(asset.get("devise") or "EUR").upper()
+                    taux, fx_src = get_fx(devise, eur_usd, session_cache)
+                    if taux is None:
+                        # On publie quand meme, mais le doute est ecrit noir sur
+                        # blanc a cote du chiffre.
+                        return (round(float(raw), 4), float(data.get("change_p", 0.0)),
+                                "EODHD", False,
+                                f"Cours en {devise} NON CONVERTI en euro "
+                                f"(taux {devise}/EUR indisponible)")
+                    note_fx = None if devise in ("EUR", "") else \
+                        f"converti depuis {devise} au taux {taux:.4f} ({fx_src})"
+                    return (round(float(raw) * taux, 4),
+                            float(data.get("change_p", 0.0)),
+                            "EODHD", False, note_fx)
                 errors.append("EODHD:cours nul")
             elif _is_quota_error(err):
                 errors.append("EODHD:quota atteint")
@@ -1014,6 +1168,10 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
     from_d    = str(date.today() - timedelta(days=days))
     to_d      = str(date.today())
     cache_key = f"hist_{asset['ticker_eod']}"
+    # Toutes les series sortent d'ici EN EURO, quelle que soit la place. C'est
+    # indispensable : le stop suiveur compare le cours du jour au plus haut de
+    # cette serie, les deux doivent etre dans la meme monnaie.
+    taux = taux_ligne(asset, eur_usd)
 
     if asset.get("marche") == "us":
         ticker_av = asset.get("ticker_av")
@@ -1033,7 +1191,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
                         continue
                     try:
                         dates.append(day_str[:10])
-                        closes.append(round(float(vals["4. close"]) * eur_usd, 4))
+                        closes.append(round(float(vals["4. close"]) * taux, 4))
                     except (ValueError, TypeError, KeyError):
                         pass
                 if len(dates) >= 2:
@@ -1043,7 +1201,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
             av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
 
         if EODHD_KEY:
-            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, eur_usd)
+            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, taux)
             if dates:
                 return dates, closes, f"EODHD (fallback AV:{av_err})", False, None
         else:
@@ -1068,7 +1226,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
 
     else:
         if EODHD_KEY:
-            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, 1.0)
+            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, taux)
             if dates:
                 return dates, closes, "EODHD", False, None
         else:
@@ -1105,9 +1263,10 @@ def _finnhub_candles(asset: dict, eur_usd: float, days: int) -> tuple:
             day_key = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
             daily[day_key] = cl
         dates  = sorted(daily.keys())
-        closes = [round(daily[k] * eur_usd, 4)
-                  if asset.get("marche") == "us" else round(daily[k], 4)
-                  for k in dates]
+        # Meme regle que partout : la serie sort en euro. On ne teste plus le
+        # marche, on applique le taux de la devise de cotation de la ligne.
+        taux   = taux_ligne(asset, eur_usd)
+        closes = [round(daily[k] * taux, 4) for k in dates]
         return dates, closes, "Finnhub", False, None
     err_str = "quota atteint" if _is_quota_error(err) else (err or "vide")
     return [], [], "Finnhub", False, err_str
@@ -1802,6 +1961,493 @@ def append_history(now: datetime, rows: list):
 
 
 # =============================================================================
+# REPARTITION MULTI-ACTIFS
+# =============================================================================
+
+def _nombre_simple(valeur):
+    """float() tolerant, utilise sur les valeurs venues du profil."""
+    if valeur is None or isinstance(valeur, bool):
+        return None
+    try:
+        v = float(valeur)
+    except (TypeError, ValueError):
+        return None
+    return None if v != v else v
+
+
+ORDRE_CLASSES = ["action", "etf", "obligation", "crypto", "metal",
+                 "cash", "immobilier", "collection", "autre"]
+
+LIBELLE_CLASSES = {
+    "action": "Actions", "etf": "ETF / Fonds", "obligation": "Obligations",
+    "crypto": "Crypto", "metal": "Métaux précieux", "cash": "Liquidités",
+    "immobilier": "Immobilier", "collection": "Collection", "autre": "Autre",
+}
+
+
+def calc_repartition(results: list, total_vm: float) -> dict:
+    """Ventile la valeur de marche selon quatre axes de lecture.
+
+    classe  : quel type d'actif -- la vue de risque la plus large
+    devise  : a quelle monnaie on est expose -- souvent le risque oublie
+    compte  : ou se trouvent les avoirs -- utile pour la fiscalite et le suivi
+    tag     : la grille de lecture personnelle de l'utilisateur
+
+    Un actif peut porter PLUSIEURS tags : la somme des poids par tag peut donc
+    depasser 100%. C'est voulu -- ce sont des etiquettes, pas une partition.
+    Les lignes sans tag sont regroupees sous « Sans etiquette » pour que le
+    total reste lisible.
+    """
+    def _vide():
+        return {"entrees": [], "total": round(total_vm or 0.0, 2)}
+
+    if not results or not total_vm:
+        return {"classe": _vide(), "devise": _vide(),
+                "compte": _vide(), "tag": _vide()}
+
+    par_classe, par_devise, par_compte, par_tag = {}, {}, {}, {}
+
+    for r in results:
+        a  = r["asset"]
+        vm = float(r.get("vm") or 0.0)
+        if vm <= 0:
+            continue
+
+        classe = a.get("asset_class") or "action"
+        par_classe[classe] = par_classe.get(classe, 0.0) + vm
+
+        devise = str(a.get("devise") or "EUR").upper()
+        par_devise[devise] = par_devise.get(devise, 0.0) + vm
+
+        compte = (a.get("account") or "").strip() or "Non affecté"
+        par_compte[compte] = par_compte.get(compte, 0.0) + vm
+
+        tags = a.get("tags") or []
+        if not tags:
+            par_tag["Sans étiquette"] = par_tag.get("Sans étiquette", 0.0) + vm
+        for t in tags:
+            par_tag[t] = par_tag.get(t, 0.0) + vm
+
+    def _formater(table: dict, libelles: dict = None, ordre: list = None) -> dict:
+        entrees = []
+        for cle, montant in table.items():
+            entrees.append({
+                "cle":     cle,
+                "libelle": (libelles or {}).get(cle, cle),
+                "montant": round(montant, 2),
+                "part":    round(montant / total_vm * 100, 2),
+            })
+        if ordre:
+            rang = {c: i for i, c in enumerate(ordre)}
+            entrees.sort(key=lambda e: (rang.get(e["cle"], 99), -e["montant"]))
+        else:
+            entrees.sort(key=lambda e: -e["montant"])
+        return {"entrees": entrees, "total": round(total_vm, 2)}
+
+    return {
+        "classe": _formater(par_classe, LIBELLE_CLASSES, ORDRE_CLASSES),
+        "devise": _formater(par_devise),
+        "compte": _formater(par_compte),
+        "tag":    _formater(par_tag),
+    }
+
+
+# =============================================================================
+# STOPS, ALERTES ET DIMENSIONNEMENT
+# =============================================================================
+
+def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
+                   eur_usd: float, aujourdhui: str, session_cache: dict = None) -> dict:
+    """Passe tout le portefeuille au moteur de risque.
+
+    Cette fonction est un ADAPTATEUR : elle traduit les structures internes de
+    l'analyseur vers le format attendu par risk_engine, appelle le moteur, puis
+    persiste l'etat des high-water marks. Aucun calcul de risque n'est fait
+    ici -- c'est ce qui permet de tester le moteur sans l'analyseur.
+
+    Elle ne leve jamais. Si risk_engine est absent ou echoue, on retourne une
+    structure vide et le rapport sort sans les sections de risque.
+    """
+    vide = {"disponible": False, "motif": RISK_ERR or "moteur indisponible",
+            "lignes": [], "resume": {"actifs": 0, "franchis": 0, "alertes": 0,
+                                     "sans_stop": 0, "total": 0},
+            "capital_ref": capital_ref, "reglages": dict(RISQUE)}
+
+    if not RISK_OK:
+        return vide
+
+    try:
+        etat = risk_engine.charger_etat(STOPS_STATE_PATH)
+
+        entrees = []
+        for r in results:
+            a = r["asset"]
+            # Les actifs non cotes n'ont ni cours de cloture ni historique :
+            # un stop suiveur n'a aucun sens sur un appartement. On les ecarte
+            # explicitement plutot que de les laisser produire un stop bancal.
+            if a.get("manuel"):
+                continue
+            cle = a.get("ticker_eod") or a.get("name")
+            d   = asset_data.get(cle) or {}
+            entrees.append({
+                "cle":    cle,
+                "nom":    a.get("name", cle),
+                "compte": a.get("account", ""),
+                "cours":  r.get("price_eur"),
+                "cout":   a.get("cost_eur"),
+                "closes": d.get("h_closes") or [],
+                "ligne":  a,
+                # Un stop absolu peut etre libelle en devise etrangere. Le
+                # taux vient de get_fx, memoise : aucun appel supplementaire.
+                "eur_par_devise": taux_ligne(a, eur_usd, session_cache),
+            })
+
+        sortie = risk_engine.evaluer_portefeuille(
+            entrees,
+            etat=etat,
+            capital=capital_ref,
+            reglages=RISQUE,
+            aujourdhui=aujourdhui,
+        )
+
+        if not risk_engine.sauver_etat(STOPS_STATE_PATH, sortie["etat"]):
+            _log.warning("Etat des stops non sauvegarde (%s) -- les high-water "
+                         "marks repartiront du plus haut connu au prochain run",
+                         STOPS_STATE_PATH)
+
+        # On rattache la valeur de marche a chaque ligne : le rendu en a besoin
+        # pour comparer la taille detenue a la taille suggeree.
+        vm_par_cle = {r["asset"].get("ticker_eod"): r.get("vm") for r in results}
+        for l in sortie["lignes"]:
+            l["vm"] = vm_par_cle.get(l["cle"])
+
+        return {
+            "disponible": True, "motif": None,
+            "lignes":  sortie["lignes"],
+            "resume":  sortie["resume"],
+            "capital_ref": capital_ref,
+            "reglages": dict(RISQUE),
+        }
+    except Exception as e:
+        _log.error("Moteur de risque en echec : %s -- rapport genere sans les "
+                   "sections de risque", e)
+        return {**vide, "motif": str(e)}
+
+
+# =============================================================================
+# ALERTE PAR COURRIEL
+# =============================================================================
+# Le rapport ne sert a rien s'il faut penser a l'ouvrir. Un franchissement de
+# stop est le seul evenement de ce programme qui merite d'interrompre la
+# journee : c'est le seul qui declenche un envoi.
+#
+# ENTIEREMENT OPTIONNEL. Sans les variables d'environnement ci-dessous, la
+# fonction ne fait rien et ne signale rien -- pas de secret configure n'est pas
+# une erreur, c'est un choix. Aucune exception ne remonte : un serveur SMTP
+# injoignable ne doit jamais faire echouer le rapport quotidien.
+
+MAIL_SERVER   = os.environ.get("MAIL_SERVER", "")
+MAIL_PORT     = os.environ.get("MAIL_PORT", "465")
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "")
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+MAIL_FROM     = os.environ.get("MAIL_FROM", "") or MAIL_USERNAME
+MAIL_TO       = os.environ.get("MAIL_TO", "")
+
+
+def mail_configure() -> bool:
+    return bool(MAIL_SERVER and MAIL_TO and MAIL_FROM)
+
+
+def corps_alerte(alertes: list, lien: str = "") -> tuple:
+    """(sujet, texte) du courriel d'alerte. Separe de l'envoi pour etre testable."""
+    n = len(alertes)
+    noms = ", ".join(a["nom"] for a in alertes[:3])
+    if n > 3:
+        noms += f" et {n - 3} autre(s)"
+    sujet = (f"[Portfolio] {n} stop{'s' if n > 1 else ''} franchi"
+             f"{'s' if n > 1 else ''} : {noms}")
+
+    lignes = [
+        (f"{n} position a clôturé sous son stop aujourd'hui." if n == 1
+         else f"{n} positions ont clôturé sous leur stop aujourd'hui."),
+        "",
+    ]
+    for a in alertes:
+        st = a.get("stop") or {}
+        lignes += [
+            f"- {a['nom']}" + (f" ({a['compte']})" if a.get("compte") else ""),
+            f"    clôture      : {a.get('cours')}",
+            f"    stop         : {st.get('niveau')}  ({st.get('description', '')})",
+            f"    type de stop : {st.get('type_label', '')}",
+            "",
+        ]
+    lignes += [
+        "Règle : le franchissement est constaté sur la CLÔTURE, pas en séance.",
+        "Une seule alerte par franchissement ; elle se ré-arme si le cours",
+        "repasse au-dessus du niveau.",
+        "",
+        "Ce message est une alerte de surveillance, pas un conseil de vente.",
+    ]
+    if lien:
+        lignes += ["", f"Rapport complet : {lien}"]
+    return sujet, "\n".join(lignes)
+
+
+def envoyer_alertes(risque: dict, lien: str = "") -> bool:
+    """Envoie le courriel d'alerte s'il y a lieu. Retourne True si envoye."""
+    if not risque or not risque.get("disponible"):
+        return False
+    alertes = [l for l in risque.get("lignes", []) if (l.get("stop") or {}).get("alerte")]
+    if not alertes:
+        return False
+    if not mail_configure():
+        _log.info("%d alerte(s) de stop -- envoi courriel non configure", len(alertes))
+        return False
+
+    try:
+        import smtplib
+        from email.message import EmailMessage
+
+        sujet, texte = corps_alerte(alertes, lien)
+        msg = EmailMessage()
+        msg["Subject"] = sujet
+        msg["From"]    = MAIL_FROM
+        msg["To"]      = MAIL_TO
+        msg.set_content(texte)
+
+        port = int(MAIL_PORT or 465)
+        if port == 465:
+            # 465 = SMTPS : le chiffrement est etabli avant tout dialogue.
+            with smtplib.SMTP_SSL(MAIL_SERVER, port, timeout=20) as serveur:
+                if MAIL_USERNAME:
+                    serveur.login(MAIL_USERNAME, MAIL_PASSWORD)
+                serveur.send_message(msg)
+        else:
+            with smtplib.SMTP(MAIL_SERVER, port, timeout=20) as serveur:
+                serveur.ehlo()
+                if serveur.has_extn("starttls"):
+                    serveur.starttls()
+                    serveur.ehlo()
+                elif MAIL_USERNAME:
+                    # Refus deliberé : sans TLS, s'authentifier revient a
+                    # envoyer le mot de passe en clair sur le reseau. Mieux
+                    # vaut pas d'alerte qu'un identifiant compromis.
+                    raise RuntimeError(
+                        f"{MAIL_SERVER}:{port} ne propose pas STARTTLS -- "
+                        f"envoi annule pour ne pas transmettre le mot de passe "
+                        f"en clair. Utiliser le port 465 (SMTPS).")
+                if MAIL_USERNAME:
+                    serveur.login(MAIL_USERNAME, MAIL_PASSWORD)
+                serveur.send_message(msg)
+
+        print(f"Alerte envoyee a {MAIL_TO} : {len(alertes)} stop(s) franchi(s)")
+        return True
+    except Exception as e:
+        # Un envoi rate n'invalide pas le rapport : l'alerte reste visible dans
+        # la section « Stops et Alertes ».
+        _log.error("Envoi de l'alerte impossible (%s) -- l'alerte reste dans le rapport", e)
+        return False
+
+
+# =============================================================================
+# BLOCS MARKDOWN -- RISQUE ET REPARTITION
+# =============================================================================
+# Ces deux fonctions ne produisent QUE du texte. Elles ne calculent rien et ne
+# lisent aucun etat global : on peut les appeler avec une structure de test et
+# comparer le rendu, ce qui est exactement ce que fait le harnais hors ligne.
+
+def _classe_vol(valeur) -> str:
+    """Etiquette de volatilite, deleguee au moteur quand il est present."""
+    if RISK_OK:
+        return risk_engine.classe_volatilite(valeur)
+    return ""
+
+
+def _md_nombre(valeur, decimales: int = 2, defaut: str = "--") -> str:
+    """Nombre formate avec espace fine comme separateur de milliers."""
+    v = _nombre_simple(valeur)
+    if v is None:
+        return defaut
+    return f"{v:,.{decimales}f}".replace(",", " ")
+
+
+ETIQUETTE_STATUT = {
+    "ok":            "OK",
+    "franchi":       "FRANCHI",
+    "aucun":         "Aucun",
+    "incalculable":  "Incalculable",
+}
+
+
+def bloc_md_stops(risque: dict) -> list:
+    """Section « Stops et Alertes » du rapport Markdown."""
+    if not risque or not risque.get("disponible"):
+        motif = (risque or {}).get("motif")
+        if not motif:
+            return []
+        return ["", "---", "", "## Stops et Alertes", "",
+                f"> Section indisponible : {motif}", ""]
+
+    lignes_r = risque.get("lignes") or []
+    if not lignes_r:
+        return []
+
+    res = risque.get("resume") or {}
+    reg = risque.get("reglages") or {}
+    out = ["", "---", "", "## Stops et Alertes", ""]
+
+    out += [
+        f"**Stops actifs : {res.get('actifs', 0)}** | "
+        f"**Franchis : {res.get('franchis', 0)}** | "
+        f"**Sans stop : {res.get('sans_stop', 0)}** | "
+        f"Nouvelles alertes du jour : {res.get('alertes', 0)}",
+        "",
+        "Règle de franchissement : la CLÔTURE du jour passe sous le niveau. "
+        "Une seule alerte par franchissement ; le déclencheur se ré-arme quand "
+        "le cours repasse au-dessus. Les stops suiveurs et VQ montent avec le "
+        "cours et ne redescendent jamais.",
+        "",
+    ]
+
+    # Alertes du jour, mises en avant avant le tableau.
+    alertes = [l for l in lignes_r if (l.get("stop") or {}).get("alerte")]
+    if alertes:
+        out += ["**ALERTES DU JOUR :**", ""]
+        for l in alertes:
+            st = l["stop"]
+            out.append(f"- **{l['nom']}** a clôturé à {_md_nombre(l.get('cours'))} EUR, "
+                       f"sous son stop {st.get('type_label', '')} de "
+                       f"{_md_nombre(st.get('niveau'))} EUR.")
+        out.append("")
+
+    # Amorcages : premier calcul d'une ligne, le high-water mark est reconstitue.
+    amorces = [l for l in lignes_r if (l.get("stop") or {}).get("amorcage")
+               and (l.get("stop") or {}).get("niveau") is not None]
+    if amorces:
+        out += [
+            "*Première évaluation pour : "
+            + ", ".join(l["nom"] for l in amorces)
+            + ". Le plus haut de référence a été reconstitué depuis l'historique "
+              "disponible ; un statut « franchi » dès ce premier passage décrit "
+              "donc une situation déjà en place, pas un événement du jour.*",
+            "",
+        ]
+
+    out += [
+        "| Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |",
+        "|--------|--------|------|---------------|--------|---------|----------|--------|",
+    ]
+    for l in lignes_r:
+        st = l.get("stop") or {}
+        statut = ETIQUETTE_STATUT.get(st.get("statut"), st.get("statut", "--"))
+        dist = st.get("distance_pct")
+        dist_s = "--" if dist is None else f"{dist:+.1f}%"
+        out.append(
+            f"| {l['nom']} | {l.get('compte') or '--'} "
+            f"| {st.get('type_label', '--')} | {st.get('description', '--')} "
+            f"| {_md_nombre(st.get('niveau'))} | {_md_nombre(l.get('cours'))} "
+            f"| {dist_s} | {statut} |"
+        )
+    out.append("")
+
+    # ── Dimensionnement ──────────────────────────────────────────────────────
+    out += [
+        "### Dimensionnement des positions",
+        "",
+        f"Capital de référence : **{_md_nombre(risque.get('capital_ref'))} EUR** "
+        f"(valeurs cotées + liquidités, hors actifs illiquides). "
+        f"Risque par idée : **{reg.get('risque_pct', 1.0):.4g} %**, soit "
+        f"**{_md_nombre((risque.get('capital_ref') or 0) * (reg.get('risque_pct', 1.0)) / 100)} EUR**. "
+        f"Plafond de poids par ligne : {reg.get('poids_max_pct', 15.0):.4g} %.",
+        "",
+        "Formule : montant = (capital x risque) / distance au stop. Deux valeurs "
+        "de volatilités différentes reçoivent ainsi le même risque, pas le même "
+        "montant.",
+        "",
+        "| Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop "
+        "| Taille suggeree | Detenu | Ecart |",
+        "|--------|----------------|----------------|-----|---------------"
+        "|-----------------|--------|-------|",
+    ]
+    for l in lignes_r:
+        vol = l.get("vol") or {}
+        t   = l.get("taille") or {}
+        st  = l.get("stop") or {}
+
+        if vol.get("vol_ann_pct") is None:
+            vol_s = "--"
+        else:
+            qualif = [_classe_vol(vol["vol_ann_pct"])]
+            if not vol.get("fiable"):
+                # Historique court : la volatilite est publiee, mais on dit
+                # sur quoi elle repose plutot que de la presenter comme sure.
+                qualif.append(f"{vol.get('n_obs', 0)} clotures")
+            vol_s = f"{vol['vol_ann_pct']:.1f} % ({', '.join(qualif)})"
+        atr_s = "--" if vol.get("atr_pct") is None else f"{vol['atr_pct']:.2f} %"
+        vq_s  = "--" if vol.get("vq_pct") is None else f"{vol['vq_pct']:.1f} %"
+        dist  = st.get("distance_pct")
+        dist_s = "--" if dist is None else f"{dist:.1f} %"
+
+        montant = t.get("montant")
+        if montant is None:
+            taille_s, ecart_s = "--", "--"
+        else:
+            taille_s = f"{_md_nombre(montant)} EUR"
+            if t.get("bride"):
+                taille_s += f" ({t['bride']})"
+            vm = _nombre_simple(l.get("vm"))
+            ecart_s = "--" if vm is None else f"{_md_nombre(vm - montant)} EUR"
+        out.append(
+            f"| {l['nom']} | {vol_s} | {atr_s} | {vq_s} | {dist_s} | {taille_s} "
+            f"| {_md_nombre(l.get('vm'))} EUR | {ecart_s} |"
+        )
+    out += [
+        "",
+        "*« Amplitude/jour » : de combien la valeur bouge en moyenne d'une "
+        "cloture a l'autre. C'est la lecture concrete de la volatilite.*",
+        "",
+        "*« Écart » = ce qui est détenu moins ce que le budget de risque "
+        "justifierait. Positif : la ligne est plus grosse que le risque accepté. "
+        "Ce n'est pas un ordre de vente, c'est un écart à expliquer.*",
+        "",
+    ]
+    return out
+
+
+def bloc_md_repartition(repartition: dict) -> list:
+    """Section « Repartition » du rapport Markdown."""
+    if not repartition:
+        return []
+    axes = [("classe", "Par classe d'actif"), ("devise", "Par devise"),
+            ("compte", "Par compte"), ("tag", "Par étiquette")]
+    if not any((repartition.get(a) or {}).get("entrees") for a, _ in axes):
+        return []
+
+    out = ["", "---", "", "## Repartition", ""]
+    for cle, titre in axes:
+        bloc_axe = repartition.get(cle) or {}
+        entrees  = bloc_axe.get("entrees") or []
+        if not entrees:
+            continue
+        # Un seul poste a 100% n'apprend rien : on n'encombre pas le rapport.
+        if len(entrees) == 1 and cle in ("devise", "compte", "tag"):
+            continue
+        out += [f"**{titre}**", "",
+                "| Poste | Montant | Part |",
+                "|-------|---------|------|"]
+        for e in entrees:
+            out.append(f"| {e['libelle']} | {_md_nombre(e['montant'])} EUR "
+                       f"| {e['part']:.1f}% |")
+        out.append("")
+    out += [
+        "*Un actif peut porter plusieurs étiquettes : la somme des parts par "
+        "étiquette peut dépasser 100 %.*",
+        "",
+    ]
+    return out
+
+
+# =============================================================================
 # HELPER PARALLELISATION
 # =============================================================================
 
@@ -1852,21 +2498,28 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     session_cache = shared_cache if shared_cache is not None else load_session_cache()
     session_cache_global = session_cache
 
+    # ── 0. Separation cotees / manuelles ─────────────────────────────────────
+    # Un livret, un appartement ou une montre n'ont ni ticker, ni cours, ni
+    # historique. Les exclure ICI, une fois, evite d'avoir a s'en souvenir dans
+    # chacune des dix etapes suivantes -- et surtout evite de bruler du quota
+    # API a interroger des tickers qui n'existent pas.
+    COTEES = [a for a in PORTFOLIO if not a.get("manuel")]
+
     # ── 1. EUR/USD ────────────────────────────────────────────────────────────
     eur_usd, eur_usd_src, eur_usd_cache, eur_usd_warn = get_eur_usd(session_cache)
     session_cache["eur_usd"] = eur_usd
 
     # ── 2. Cours US en batch (TwelveData) ─────────────────────────────────────
-    us_tickers = [a["ticker_td"] for a in PORTFOLIO if a.get("ticker_td")]
+    us_tickers = [a["ticker_td"] for a in COTEES if a.get("ticker_td")]
     us_tickers += [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
     td_prices = td_fetch_batch(list(set(filter(None, us_tickers)))) if TWELVEDATA_KEY else {}
 
     # ── 3. Cours par position + données parallèles ────────────────────────────
     # Seuls les tickers encore inconnus du memo sont interroges : c'est ici que
     # se joue la mutualisation entre utilisateurs.
-    a_faire_px = {a["ticker_eod"]: a for a in PORTFOLIO
+    a_faire_px = {a["ticker_eod"]: a for a in COTEES
                   if f"px:{a['ticker_eod']}" not in _MEMO}
-    a_faire_ad = {a["ticker_eod"]: a for a in PORTFOLIO
+    a_faire_ad = {a["ticker_eod"]: a for a in COTEES
                   if f"ad:{a['ticker_eod']}" not in _MEMO}
 
     if a_faire_px:
@@ -1904,8 +2557,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                         "fonda": {}, "fonda_src": "erreur",
                     }
 
-    prices     = {a["ticker_eod"]: _MEMO[f"px:{a['ticker_eod']}"] for a in PORTFOLIO}
-    asset_data = {a["ticker_eod"]: _MEMO[f"ad:{a['ticker_eod']}"] for a in PORTFOLIO}
+    prices     = {a["ticker_eod"]: _MEMO[f"px:{a['ticker_eod']}"] for a in COTEES}
+    asset_data = {a["ticker_eod"]: _MEMO[f"ad:{a['ticker_eod']}"] for a in COTEES}
 
     # ── 4. Indices macro ──────────────────────────────────────────────────────
     indices_data = {}
@@ -1965,7 +2618,47 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     assets_history = {}
 
     for asset in PORTFOLIO:
-        key      = asset["ticker_eod"]
+        key = asset["ticker_eod"]
+
+        # ── Actif NON COTE : la valeur vient de la saisie, pas d'une API ─────
+        # On produit un resultat au meme format que les autres pour que tout
+        # l'aval (totaux, repartition, stops, rendu HTML) le traite sans avoir
+        # a connaitre le cas particulier. Les champs d'analyse boursiere sont
+        # a None : un appartement n'a ni PER, ni consensus d'analystes, et
+        # inventer une valeur neutre reviendrait a mentir.
+        if asset.get("manuel"):
+            valeur   = float(asset.get("valeur_manuelle") or asset.get("cost_eur") or 0.0)
+            cout_m   = float(asset.get("cost_eur") or valeur)
+            pnl_m    = round(valeur - cout_m, 2)
+            pnl_m_pct = round(pnl_m / cout_m * 100, 2) if cout_m else 0.0
+
+            history_rows.append({
+                "date": now.strftime("%Y-%m-%d"), "time": now.strftime("%H:%M"),
+                "ticker": key, "name": asset["name"],
+                "price_eur": valeur, "cost_eur": cout_m, "qty": 1,
+                "vm": valeur, "pnl_brut": pnl_m, "pnl_brut_pct": pnl_m_pct,
+                "pnl_net": pnl_m, "pnl_net_pct": pnl_m_pct,
+                "score": "", "confiance": 0, "rec": "NON COTE",
+            })
+            sources_log[key] = {"cours": "Saisie manuelle"}
+            results.append({
+                "asset": asset, "price_eur": valeur, "chg_pct": 0.0,
+                "price_src": "Saisie manuelle", "vm": valeur,
+                "pnl_brut": pnl_m, "pnl_brut_pct": pnl_m_pct,
+                "pnl_net": pnl_m, "pnl_net_pct": pnl_m_pct,
+                "score": None, "confiance": 0.0, "detail": {}, "fonda": {},
+                "fonda_src": "sans objet",
+                "position": None, "rec": "NON COTE",
+                "just": (f"{asset.get('classe_label', 'Actif')} valorise a la main : "
+                         f"{valeur:,.2f} EUR. Aucune donnee de marche n'est "
+                         f"collectee pour cette ligne.").replace(",", " "),
+                "bull": None, "bear": None, "cs": None,
+                "cons_str": "N/D", "cons_src": "sans objet", "sent_src": "sans objet",
+                "hist_label": "N/D", "ret_1m": 0.0, "ret_3m": 0.0, "ret_6m": 0.0,
+                "h_src": "sans objet", "synthesis": "", "synth_src": "",
+            })
+            continue
+
         price_info = prices.get(key, (None, 0.0, "manquant", False, None))
         price_eur, chg_pct, price_src, price_cache, price_note = price_info
 
@@ -2033,7 +2726,10 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "rec":          rec,
         })
 
-        if price_cache and price_note:
+        # Toute note sur le cours remonte, qu'elle vienne du cache ou d'une
+        # conversion de devise : un chiffre accompagne d'une reserve doit
+        # toujours porter cette reserve jusqu'au rapport.
+        if price_note:
             cache_warns.append(f"{asset['name']} -- cours : {price_note}")
         if d.get("h_cache") and d.get("h_err"):
             cache_warns.append(f"{asset['name']} -- historique : {d['h_err']}")
@@ -2092,6 +2788,31 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     total_pnl_brut_pct = round(total_pnl_brut / total_cost * 100, 2) if total_cost else 0
     total_pnl_net  = round(sum(r["pnl_net"] for r in results), 2)
     total_pnl_net_pct = round(total_pnl_net / total_cost * 100, 2) if total_cost else 0
+
+    # ── 9 bis. Repartition multi-actifs ──────────────────────────────────────
+    repartition = calc_repartition(results, total_vm)
+
+    # ── 9 ter. Capital de reference pour le dimensionnement ──────────────────
+    # QUEL CAPITAL ? La question n'est pas anodine. Risquer 1% de 673 000 EUR
+    # dont 480 000 d'immobilier, c'est risquer 6 730 EUR par idee sur un
+    # portefeuille boursier de 67 000 EUR : un dixieme du portefeuille sur une
+    # seule ligne. Absurde.
+    #
+    # Le capital de reference retenu est donc le capital REELLEMENT MOBILISABLE
+    # en bourse : valeurs cotees + liquidites. L'immobilier, les collections et
+    # les autres actifs illiquides en sont exclus. Un profil peut imposer sa
+    # propre valeur via settings.capital_reference.
+    capital_ref = _nombre_simple(PROFILE.get("settings", {}).get("capital_reference"))
+    if capital_ref is None or capital_ref <= 0:
+        capital_ref = round(sum(
+            r["vm"] for r in results
+            if (not r["asset"].get("manuel")) or r["asset"].get("asset_class") == "cash"
+        ), 2)
+    capital_ref = capital_ref or total_vm
+
+    # ── 9 quater. Stops, alertes et dimensionnement ─────────────────────────
+    risque = evaluer_risque(results, asset_data, capital_ref, eur_usd,
+                            now.strftime("%Y-%m-%d"), session_cache)
 
     # ── 10. Graphique combiné ─────────────────────────────────────────────────
     chart_path   = os.path.join(CHARTS_DIR, "portfolio_combined.png")
@@ -2165,6 +2886,12 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         lines.append("")
         for n in macro_news:
             lines.append(f"- {n}")
+    # ── Stops et alertes ─────────────────────────────────────────────────────
+    lines += bloc_md_stops(risque)
+
+    # ── Repartition multi-actifs ─────────────────────────────────────────────
+    lines += bloc_md_repartition(repartition)
+
     lines += ["", "---", "", "## Analyse par Valeur", ""]
 
     for r in results:
@@ -2371,7 +3098,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
               f"**Courtier :** {BROKER_NAME}", ""]
 
     if cache_warns:
-        lines += ["", "## Avertissements Cache", ""]
+        lines += ["", "## Avertissements Donnees", ""]
         for w in cache_warns:
             lines.append(f"- ⚠️  {w}")
         lines.append("")
@@ -2382,6 +3109,19 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     report_path = REPORT_PATH
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+    # Alerte courriel APRES ecriture du rapport : si l'envoi echoue, le rapport
+    # est deja sur le disque et l'alerte y figure.
+    try:
+        lien_rapport_utilisateur = ""
+        try:
+            from api.load_portfolio import lien_rapport as _lien
+            lien_rapport_utilisateur = _lien(USER, creer=False)
+        except Exception:
+            pass
+        envoyer_alertes(risque, lien_rapport_utilisateur)
+    except Exception as e:
+        _log.error("Etape d'alerte ignoree : %s", e)
 
     print(f"Rapport généré : {report_path}")
     print(f"Quotas finaux  : {_quota_status()}")
