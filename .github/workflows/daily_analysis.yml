@@ -2,14 +2,28 @@
 # L'etat des stops (high-water marks) est ecrit dans reports/<user>/stops_state.json,
 # donc deja couvert par le « git add reports/ » de l'etape de commit : aucune
 # modification supplementaire n'est necessaire ici pour le persister.
-name: Daily Portfolio Report v8.0 (multi-actifs, stops & alertes)
+name: Daily Portfolio Report v8.0 (multi-actifs, stops & alertes) — 22h30 Paris
 
 on:
   schedule:
-    # Tir principal  : 14:00 UTC = 16:00 Paris (CEST)
-    - cron: "0 14 * * 1-5"
-    # Tir de rattrapage : 15:00 UTC = 17:00 Paris (CEST)
-    - cron: "0 15 * * 1-5"
+    # Objectif : 22h30 Paris, marches US et Euronext fermes.
+    #
+    # Le cron GitHub est en UTC et n'observe PAS l'heure d'ete. Un seul
+    # horaire ne peut donc pas donner 22h Paris toute l'annee :
+    #
+    #   20:30 UTC -> 22h30 Paris en ete (CEST)  | 21h30 Paris en hiver (CET)
+    #   21:30 UTC -> 23h30 Paris en ete         | 22h30 Paris en hiver
+    #
+    # On declare les deux creneaux et l'etape « Verifier le creneau » plus
+    # bas ecarte celui qui ne tombe pas sur 22h30 Paris. Sans ce filtre, le
+    # tir de 20:30 UTC partirait a 21h30 Paris en hiver, alors que la Bourse
+    # de New York est encore ouverte (elle ferme a 21:00 UTC).
+    #
+    # La demi-heure de decalage apres la cloche de New York laisse le temps
+    # aux prix d'enchere de cloture de se consolider : a 22h00 pile, on
+    # risquait de capter le dernier echange plutot que le cours officiel.
+    - cron: "30 20 * * 1-5"
+    - cron: "30 21 * * 1-5"
   workflow_dispatch:
 
 # ── Anti double-run : un seul job actif à la fois par jour ───────────────
@@ -43,6 +57,20 @@ jobs:
             echo "🖐️ Run manuel détecté — guard désactivé, analyse forcée."
             exit 0
           fi
+          # Deux crons UTC couvrent ete et hiver ; on ecarte celui qui ne
+          # tombe pas sur 22h30 Paris. Traite comme « deja fait » plutot que
+          # comme une erreur : le job se termine en vert, sans bruit.
+          # Le seuil porte sur l'HEURE seule : 22h30 -> 22, 21h30 -> 21.
+          PARIS_H=$(TZ=Europe/Paris date +%H)
+          echo "Heure Paris au declenchement : ${PARIS_H}h"
+          if [ "$PARIS_H" -lt 22 ]; then
+            echo "already_done=true" >> $GITHUB_OUTPUT
+            echo "⏭️  Creneau hors saison (${PARIS_H}h Paris) — marche US encore ouvert."
+            echo "    Le tir d'une heure plus tard prendra le relais."
+            exit 0
+          fi
+          echo "✅ Marches US et Euronext fermes."
+
           TODAY=$(date -u +'%Y-%m-%d')
           # Vérification dans history.csv (source de vérité principale)
           HISTORY_OK=false
