@@ -5,7 +5,7 @@ backend.py  v1.2
 Serveur FastAPI local — hébergement personnel, max 5 utilisateurs.
 
 Nouveautés v1.2 :
-  • Chaque utilisateur a un slot horaire : 16h00, 16h10, 16h20, 16h30, 16h40
+  • Chaque utilisateur a un slot horaire : 22h30, 22h35, 22h40, 22h45, 22h50
   • Un scheduler APScheduler déclenche automatiquement l'analyse au bon slot
   • À la création du compte, un lien Cloudflare Pages personnel est généré
     (sous-répertoire /report/<username>/index.html) et renvoyé dans la réponse
@@ -56,8 +56,32 @@ JWT_EXPIRE       = 60 * 8   # 8 heures
 # URL de base Cloudflare Pages — à adapter à ton projet
 CLOUDFLARE_BASE  = os.getenv("CLOUDFLARE_PAGES_URL", "https://projectone.pages.dev")
 
-# Slots horaires : 16h00, 16h10, … (un slot par position d'inscription)
-SLOT_MINUTES = [0, 10, 20, 30, 40]   # offset en minutes après 16h00 (heure Paris)
+# Heure d'analyse : 22h30 Paris, marches US et Euronext fermes.
+# Euronext ferme a 17h30 ; New York a 22h00 heure de Paris. La demi-heure
+# de marge laisse les prix d'enchere de cloture se consolider.
+ANALYSE_HEURE  = int(os.getenv("ANALYSE_HEURE",  "22"))
+ANALYSE_MINUTE = int(os.getenv("ANALYSE_MINUTE", "30"))
+
+# Les utilisateurs sont espaces de 5 minutes a partir de 22h30, pour etaler
+# les appels API plutot que de les lancer tous ensemble :
+# 22h30, 22h35, 22h40, 22h45, 22h50.
+SLOT_PAS_MINUTES = 5
+
+
+def creneau_utilisateur(slot_idx: int) -> tuple:
+    """(heure, minute) du creneau d'un utilisateur, heure de Paris.
+
+    Le calcul passe par un total en minutes puis retombe sur une heure :
+    au-dela de cinq inscrits, les creneaux debordent proprement sur l'heure
+    suivante au lieu de produire une minute invalide (22h65).
+    """
+    total  = ANALYSE_MINUTE + max(0, int(slot_idx)) * SLOT_PAS_MINUTES
+    heure  = (ANALYSE_HEURE + total // 60) % 24
+    return heure, total % 60
+
+
+# Conserve pour compatibilite : offsets en minutes apres ANALYSE_HEURE.
+SLOT_MINUTES = [ANALYSE_MINUTE + i * SLOT_PAS_MINUTES for i in range(5)]
 
 DATA_DIR.mkdir(exist_ok=True)
 PORTFOLIOS.mkdir(exist_ok=True)
@@ -207,9 +231,7 @@ def rebuild_scheduler():
     for row in rows:
         uname      = row["username"]
         slot_idx   = row["slot_index"]
-        offset_min = SLOT_MINUTES[slot_idx] if slot_idx < len(SLOT_MINUTES) else slot_idx * 10
-        hour       = 16
-        minute     = offset_min
+        hour, minute = creneau_utilisateur(slot_idx)
         scheduler.add_job(
             _scheduled_job,
             trigger=CronTrigger(hour=hour, minute=minute, timezone="Europe/Paris"),
@@ -217,7 +239,7 @@ def rebuild_scheduler():
             id=f"analyze_{uname}",
             replace_existing=True
         )
-        print(f"[Scheduler] Job enregistré : {uname} → 16h{minute:02d} heure Paris")
+        print(f"[Scheduler] Job enregistré : {uname} → {hour}h{minute:02d} heure Paris")
 
 scheduler.start()
 rebuild_scheduler()
@@ -304,10 +326,10 @@ def status_check():
     con.close()
     slots = []
     for r in rows:
-        offset = SLOT_MINUTES[r["slot_index"]] if r["slot_index"] < len(SLOT_MINUTES) else r["slot_index"] * 10
+        s_h, s_m = creneau_utilisateur(r["slot_index"])
         slots.append({
             "username":   r["username"],
-            "slot":       f"16h{offset:02d}",
+            "slot":       f"{s_h}h{s_m:02d}",
             "report_url": r["report_url"]
         })
     return {
@@ -457,12 +479,12 @@ def list_users(admin: dict = Depends(require_admin)):
     con.close()
     result = []
     for r in rows:
-        offset = SLOT_MINUTES[r["slot_index"]] if r["slot_index"] < len(SLOT_MINUTES) else r["slot_index"] * 10
+        s_h, s_m = creneau_utilisateur(r["slot_index"])
         result.append({
             "username":   r["username"],
             "role":       r["role"],
             "created_at": r["created_at"],
-            "slot":       f"16h{offset:02d} (Paris)",
+            "slot":       f"{s_h}h{s_m:02d} (Paris)",
             "report_url": r["report_url"]
         })
     return result
@@ -486,7 +508,7 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     # Attribution du slot libre suivant
     used_slots = [r[0] for r in con.execute("SELECT slot_index FROM users").fetchall()]
     slot_index = next((i for i in range(MAX_USERS) if i not in used_slots), nb)
-    offset_min = SLOT_MINUTES[slot_index] if slot_index < len(SLOT_MINUTES) else slot_index * 10
+    slot_h, slot_m = creneau_utilisateur(slot_index)
 
     # Adresse Cloudflare personnelle, batie sur un jeton aleatoire.
     # Le nom d'utilisateur n'apparait pas dans l'URL : un chemin devinable
@@ -519,16 +541,16 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     # Ajoute immédiatement le job au scheduler
     scheduler.add_job(
         _scheduled_job,
-        trigger=CronTrigger(hour=16, minute=offset_min, timezone="Europe/Paris"),
+        trigger=CronTrigger(hour=slot_h, minute=slot_m, timezone="Europe/Paris"),
         args=[data.username],
         id=f"analyze_{data.username}",
         replace_existing=True
     )
-    print(f"[Scheduler] Nouveau job : {data.username} → 16h{offset_min:02d} heure Paris")
+    print(f"[Scheduler] Nouveau job : {data.username} → {slot_h}h{slot_m:02d} heure Paris")
 
     return {
         "created":    data.username,
-        "slot":       f"16h{offset_min:02d} (heure Paris)",
+        "slot":       f"{slot_h}h{slot_m:02d} (heure Paris)",
         "report_url": report_url,
         "message":    ("Transmets cette adresse a l'utilisateur : elle vaut cle "
                        "d'acces a son rapport et n'est communiquee qu'une fois.")
