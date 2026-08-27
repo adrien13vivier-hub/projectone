@@ -951,70 +951,17 @@ def get_macro_news(n: int = 5) -> list:
 # SENTIMENT
 # =============================================================================
 
-def get_sentiment(asset: dict) -> tuple:
-    """Tonalite des titres d'actualite, SANS aucun appel API supplementaire.
+# Le sentiment de presse Bull/Bear a ete RETIRE (v8.1).
+#
+# Il reposait sur un comptage de mots-cles anglais dans les titres
+# d'actualite. Sur une dizaine de titres, ce comptage produisait des
+# valeurs extremes et instables -- 100/0 un jour, 0/100 le lendemain --
+# sans rapport fiable avec la realite. Il n'entrait deja plus dans la note
+# depuis la v7.3 ; l'afficher entretenait l'illusion d'une mesure.
+#
+# La synthese d'actualite (get_news_synthesis) reste en place : elle
+# resume ce que dit la presse au lieu de pretendre le quantifier.
 
-    On reutilise les articles deja recuperes pour la synthese. Aucune valeur
-    par defaut n'est inventee : sans article, on retourne (None, None), et
-    l'affichage indique franchement que la donnee manque.
-    """
-    news = _news_cache.get(asset["ticker_eod"]) or []
-    if not news:
-        return None, None, "aucun article"
-    bull, bear = _lexical_sentiment(news)
-    return bull, bear, "analyse lexicale des titres"
-
-# Negations et portee : "not strong" ne doit pas compter comme un signal
-# positif. _NEG_WINDOW est le nombre de mots suivants dont la polarite est
-# inversee apres une negation.
-_NEGATORS   = {"not", "no", "never", "without", "hardly", "barely", "scarcely",
-               "fails", "failed", "lacks", "unable"}
-_NEG_WINDOW = 3
-
-
-def _lexical_sentiment(news: list) -> tuple:
-    import re
-
-    bull_w = {
-        "growth", "buy", "bullish", "surge", "record", "beat", "strong",
-        "gain", "up", "rise", "soar", "profit", "positive", "upgrade",
-        "recovery", "rally", "outperform", "momentum", "boost",
-    }
-    bear_w = {
-        "loss", "sell", "bearish", "drop", "miss", "weak", "cut", "down",
-        "fall", "decline", "risk", "negative", "downgrade", "warn",
-        "crash", "default", "layoff", "slowdown", "recession",
-    }
-
-    raw_tokens = re.findall(r"[a-z']+", " ".join(news).lower())
-    b = s = neg_ttl = 0
-
-    for token in raw_tokens:
-        if token in _NEGATORS:
-            neg_ttl = _NEG_WINDOW
-            continue
-
-        is_bull = token in bull_w
-        is_bear = token in bear_w
-
-        if is_bull or is_bear:
-            if neg_ttl > 0:
-                s += 1 if is_bull else 0
-                b += 1 if is_bear else 0
-            else:
-                b += 1 if is_bull else 0
-                s += 1 if is_bear else 0
-            neg_ttl = 0
-        elif neg_ttl > 0:
-            neg_ttl -= 1
-
-    t = b + s or 1
-    return round(b / t * 100, 1), round(s / t * 100, 1)
-
-
-# =============================================================================
-# CONSENSUS
-# =============================================================================
 
 def get_consensus(asset: dict) -> tuple:
     if FINNHUB_KEY:
@@ -1555,17 +1502,15 @@ def score_risque(f: dict, dates: list, closes: list):
 
 # ── Agregation ──────────────────────────────────────────────────────────────
 
-# Le sentiment de presse a ete RETIRE de la note en v7.3.
+# Le sentiment de presse a ete retire de la note en v7.3, puis SUPPRIME
+# entierement en v8.1.
 #
-# Motif : les deux sources exploitables (AlphaVantage NEWS_SENTIMENT et
-# Finnhub news-sentiment) sont indisponibles ou payantes sur les offres
-# utilisees. En cas d'echec, get_sentiment() renvoyait 50/50, soit une note
-# de 5.0/10 CONSTANTE. Une constante ne discrimine rien : elle consommait du
-# quota et tirait mecaniquement chaque note vers le milieu.
-#
-# Bull/Bear reste calcule et affiche a titre indicatif, mais uniquement a
-# partir des titres d'actualite deja telecharges pour la synthese : cout API
-# nul, et aucune influence sur la note.
+# Les deux sources exploitables (AlphaVantage NEWS_SENTIMENT, Finnhub
+# news-sentiment) etant payantes sur les offres utilisees, le repli etait un
+# comptage de mots-cles anglais sur une dizaine de titres. Ce comptage
+# produisait des valeurs extremes et instables, sans rapport fiable avec la
+# realite. La synthese d'actualite le remplace : elle resume ce que dit la
+# presse au lieu de pretendre le quantifier.
 POIDS_NOTE = {
     "valorisation": 0.24,
     "sante":        0.19,
@@ -2454,13 +2399,12 @@ def bloc_md_repartition(repartition: dict) -> list:
 def _fetch_asset_data(asset: dict, eur_usd: float,
                       td_prices: dict, session_cache: dict) -> dict:
     news = get_company_news(asset, 2)
-    bull, bear, sent_src = get_sentiment(asset)
     cs, cons_str, cons_src = get_consensus(asset)
     h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
     synthesis, synth_src = get_news_synthesis(asset)
     fonda, fonda_src = get_fundamentals(asset)
     return {
-        "news": news, "bull": bull, "bear": bear, "sent_src": sent_src,
+        "news": news,
         "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
         "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
         "h_cache": h_cache, "h_err": h_err,
@@ -2549,7 +2493,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 except Exception as e:
                     _log.warning("Données %s : %s", a["ticker_eod"], e)
                     _MEMO[f"ad:{a['ticker_eod']}"] = {
-                    "news": [], "bull": 50.0, "bear": 50.0, "sent_src": "erreur",
+                    "news": [],
                     "cs": 5.0, "cons_str": "N/D", "cons_src": "erreur",
                     "h_dates": [], "h_closes": [], "h_src": "erreur",
                     "h_cache": False, "h_err": str(e),
@@ -2652,8 +2596,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 "just": (f"{asset.get('classe_label', 'Actif')} valorise a la main : "
                          f"{valeur:,.2f} EUR. Aucune donnee de marche n'est "
                          f"collectee pour cette ligne.").replace(",", " "),
-                "bull": None, "bear": None, "cs": None,
-                "cons_str": "N/D", "cons_src": "sans objet", "sent_src": "sans objet",
+                "cs": None,
+                "cons_str": "N/D", "cons_src": "sans objet",
                 "hist_label": "N/D", "ret_1m": 0.0, "ret_3m": 0.0, "ret_6m": 0.0,
                 "h_src": "sans objet", "synthesis": "", "synth_src": "",
             })
@@ -2691,7 +2635,6 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         # ── NOTE DU TITRE : independante du detenteur ────────────────────
         fonda = d.get("fonda") or {}
         sc_hist, hist_label, ret_1m, ret_3m, ret_6m = score_history(h_dates, h_closes)
-        bull = d.get("bull"); bear = d.get("bear")
         cs   = d.get("cs")
 
         composantes = {
@@ -2736,7 +2679,6 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
 
         sources_log[key] = {
             "cours":     price_src,
-            "sentiment": d.get("sent_src", "N/D"),
             "consensus": d.get("cons_src", "N/D"),
             "historique": d.get("h_src",   "N/D"),
             "synthese":  d.get("synth_src","N/D"),
@@ -2763,12 +2705,9 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "position":     score_position(price_eur, cost_eur, pnl_net_pct, 0.0),
             "rec":          rec,
             "just":         just,
-            "bull":         bull,
-            "bear":         bear,
             "cs":           cs,
             "cons_str":     d.get("cons_str", "N/D"),
             "cons_src":     d.get("cons_src", "N/D"),
-            "sent_src":     d.get("sent_src", "N/D"),
             "hist_label":   hist_label,
             "ret_1m":       ret_1m,
             "ret_3m":       ret_3m,
@@ -2978,14 +2917,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 lines.append(f"**Fondamentaux :** {' | '.join(morceaux)} "
                              f"*(source : {r.get('fonda_src', 'N/D')})*")
 
-        # Indicatif uniquement : ne compte plus dans la note depuis la v7.3.
-        if r.get("bull") is not None:
-            senti = (f"Bull {r['bull']:.0f}% / Bear {r['bear']:.0f}% "
-                     f"*(indicatif, hors note -- source : {r['sent_src']})*")
-        else:
-            senti = f"non disponible *({r.get('sent_src', 'n/d')})*"
         lines += [
-            f"**Tonalite presse :** {senti}",
             f"**Consensus analystes :** {r['cons_str']} *(source : {r['cons_src']})*",
             f"**Perf. historique :** 1M {ret_1m_s} | 3M {ret_3m_s} | 6M {ret_6m_s} -- {r['hist_label']} *(source : {r['h_src']})*",
             "",
