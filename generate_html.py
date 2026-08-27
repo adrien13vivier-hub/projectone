@@ -207,18 +207,6 @@ def extract_positions(md: str) -> list[dict]:
         confiance = (m_row.group(7) or "").strip()
         rec       = m_row.group(8).strip()
 
-        # "**Sentiment :** Bull 78% / Bear 22%" ou, depuis la v7.3,
-        # "**Tonalite presse :** Bull 78% / Bear 22%".
-        # L'ancien motif n'autorisait pas les `**` fermants apres le
-        # deux-points : il echouait donc TOUJOURS, et l'interface affichait
-        # un tiret depuis le depart.
-        m_sent = re.search(
-            r"(?:Sentiment|Tonalite presse|Tonalité presse)[^:]*:\**\s*"
-            r"Bull\s*([\d.]+)\s*%\s*/\s*Bear\s*([\d.]+)\s*%",
-            block)
-        bull = m_sent.group(1) if m_sent else ""
-        bear = m_sent.group(2) if m_sent else ""
-
         # Momentum : extrait depuis la ligne "Perf. historique :"
         # Format : Perf. historique : 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER
         m_perf = re.search(
@@ -275,7 +263,6 @@ def extract_positions(md: str) -> list[dict]:
             "score": score, "confiance": confiance, "rec": rec,
             "composantes": composantes, "fondamentaux": fondamentaux,
             "absentes": absentes,
-            "bull": bull, "bear": bear,
             "mom_label": mom_label,
             "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
             "synthesis": synthesis, "synth_src": synth_src,
@@ -936,14 +923,6 @@ def build_positions_html() -> str:
       {note_absente}
     </details>"""
 
-        # Tonalite : indicative, elle n'entre plus dans la note (v7.3).
-        if p.get("bull") and p.get("bear"):
-            senti_html = (f"🐂 Bull <strong>{p['bull']}%</strong> / "
-                          f"🐻 Bear <strong>{p['bear']}%</strong> "
-                          f"<span class='hors-note'>hors note</span>")
-        else:
-            senti_html = "<span style='color:var(--muted)'>non disponible</span>"
-
         synthesis_html = ""
         synth_text = p.get("synthesis", "").strip()
         if synth_text and "Aucune actualite" not in synth_text:
@@ -989,10 +968,6 @@ def build_positions_html() -> str:
   {detail_html}
 
   <div class="pos-details">
-    <div class="pos-detail-item">
-      <span class="detail-lbl">Tonalité presse</span>
-      <span>{senti_html}</span>
-    </div>
     <div class="pos-detail-item">
       <span class="detail-lbl">Momentum</span>
       <span>{mom_badge(p['mom_label'])}
