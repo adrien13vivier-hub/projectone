@@ -11,19 +11,23 @@ on:
     # Le cron GitHub est en UTC et n'observe PAS l'heure d'ete. Un seul
     # horaire ne peut donc pas donner 22h Paris toute l'annee :
     #
-    #   20:30 UTC -> 22h30 Paris en ete (CEST)  | 21h30 Paris en hiver (CET)
-    #   21:30 UTC -> 23h30 Paris en ete         | 22h30 Paris en hiver
+    #   20:37 UTC -> 22h37 Paris en ete (CEST)  | 21h37 Paris en hiver (CET)
+    #   21:37 UTC -> 23h37 Paris en ete         | 22h37 Paris en hiver
     #
     # On declare les deux creneaux et l'etape « Verifier le creneau » plus
     # bas ecarte celui qui ne tombe pas sur 22h30 Paris. Sans ce filtre, le
-    # tir de 20:30 UTC partirait a 21h30 Paris en hiver, alors que la Bourse
+    # tir de 20:37 UTC partirait a 21h37 Paris en hiver, alors que la Bourse
     # de New York est encore ouverte (elle ferme a 21:00 UTC).
     #
     # La demi-heure de decalage apres la cloche de New York laisse le temps
     # aux prix d'enchere de cloture de se consolider : a 22h00 pile, on
     # risquait de capter le dernier echange plutot que le cours officiel.
-    - cron: "30 20 * * 1-5"
-    - cron: "30 21 * * 1-5"
+    # Minute volontairement decalee (37 et non 00 ou 30). GitHub documente
+    # que les taches planifiees peuvent etre retardees, voire ABANDONNEES,
+    # quand trop de depots demandent le meme creneau. Les minutes rondes
+    # sont les plus encombrees ; une minute atypique reduit ce risque.
+    - cron: "37 20 * * 1-5"
+    - cron: "37 21 * * 1-5"
   workflow_dispatch:
 
 # ── Anti double-run : un seul job actif à la fois par jour ───────────────
@@ -62,7 +66,12 @@ jobs:
           # comme une erreur : le job se termine en vert, sans bruit.
           # Le seuil porte sur l'HEURE seule : 22h30 -> 22, 21h30 -> 21.
           PARIS_H=$(TZ=Europe/Paris date +%H)
-          echo "Heure Paris au declenchement : ${PARIS_H}h"
+          echo "--- Diagnostic de declenchement ---"
+          echo "  evenement    : ${{ github.event_name }}"
+          echo "  cron declare : ${{ github.event.schedule }}"
+          echo "  heure UTC    : $(date -u '+%Y-%m-%d %H:%M')"
+          echo "  heure Paris  : $(TZ=Europe/Paris date '+%Y-%m-%d %H:%M')"
+          echo "-----------------------------------"
           if [ "$PARIS_H" -lt 22 ]; then
             echo "already_done=true" >> $GITHUB_OUTPUT
             echo "⏭️  Creneau hors saison (${PARIS_H}h Paris) — marche US encore ouvert."
