@@ -368,7 +368,7 @@ def status_check():
         slots.append({
             "username":   r["username"],
             "slot":       f"{s_h}h{s_m:02d}",
-            "report_url": r["report_url"]
+            "report_url": lien_rapport(r["username"], CLOUDFLARE_BASE)
         })
     return {
         "status":   "ok",
@@ -416,7 +416,11 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
         "token_type":   "bearer",
         "username":     form.username,
         "role":         row["role"],
-        "report_url":   row["report_url"]
+        # Recalculee a chaque connexion, jamais relue depuis la base : la
+        # colonne report_url est un instantane fige a la creation du compte.
+        # Si CLOUDFLARE_PAGES_URL a ete renseigne apres coup, ou si le compte
+        # a ete renomme, cette colonne reste fausse indefiniment.
+        "report_url":   lien_rapport(form.username, CLOUDFLARE_BASE)
     }
 
 
@@ -733,7 +737,7 @@ def list_users(admin: dict = Depends(require_admin)):
             "role":       r["role"],
             "created_at": r["created_at"],
             "slot":       f"{s_h}h{s_m:02d} (Paris)",
-            "report_url": r["report_url"]
+            "report_url": lien_rapport(r["username"], CLOUDFLARE_BASE)
         })
     return result
 
