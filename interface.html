@@ -145,6 +145,34 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem" onclick="doLogin()">Se connecter</button>
     <div class="error-msg" id="login-err"></div>
+
+    <!-- Inscription autonome : affichee uniquement si le serveur l'autorise
+         (INSCRIPTION_LIBRE=1) et s'il reste une place. -->
+    <div id="zone-inscription" style="display:none;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+      <p style="font-size:.85rem;color:var(--muted);margin:0 0 .75rem">
+        Pas encore de compte ?
+        <a href="#" onclick="basculerInscription();return false" id="lien-inscription">Créer un compte</a>
+        <span id="places-restantes"></span>
+      </p>
+
+      <div id="form-inscription" style="display:none">
+        <div class="form-group">
+          <label>Identifiant souhaité</label>
+          <input id="reg-user" type="text" placeholder="prenom" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Mot de passe <span style="font-weight:400;color:var(--muted)">— 10 caractères minimum</span></label>
+          <input id="reg-pass" type="password" placeholder="••••••••••" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Confirmer le mot de passe</label>
+          <input id="reg-pass2" type="password" placeholder="••••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister()">Créer mon compte</button>
+        <div class="error-msg" id="reg-err"></div>
+        <div id="reg-ok" style="display:none"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -171,6 +199,7 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
     <nav class="tabs" id="nav-tabs">
       <button class="tab active" onclick="switchTab('portfolio',this)">📁 Portefeuille</button>
       <button class="tab" onclick="switchTab('analyse',this)">📊 Analyse</button>
+      <button class="tab" onclick="switchTab('compte',this)">👤 Mon compte</button>
       <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">⚙️ Utilisateurs</button>
     </nav>
 
@@ -279,6 +308,47 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
       </div>
     </div>
 
+    <!-- ── Mon compte ── -->
+    <div class="tab-panel" id="panel-compte">
+      <div class="card">
+        <div class="card-title">Changer mon mot de passe</div>
+        <div class="form-group">
+          <label>Mot de passe actuel</label>
+          <input id="pwd-ancien" type="password" autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label>Nouveau mot de passe <span style="font-weight:400;color:var(--muted)">— 10 caractères minimum</span></label>
+          <input id="pwd-nouveau" type="password" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Confirmer</label>
+          <input id="pwd-confirme" type="password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" onclick="changerMotDePasse()">Modifier le mot de passe</button>
+        <div id="pwd-res" style="margin-top:.75rem"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Changer mon identifiant</div>
+        <div class="info-box neutral" style="margin-bottom:1rem;font-size:.83rem">
+          Ton identifiant désigne aussi ton fichier de portefeuille et ton
+          dossier de rapports&nbsp;: tout est déplacé avec lui. Ton lien
+          Cloudflare, lui, ne change pas — inutile de le retransmettre.
+          Tu devras te reconnecter avec le nouveau nom.
+        </div>
+        <div class="form-group">
+          <label>Nouvel identifiant <span style="font-weight:400;color:var(--muted)">— lettres, chiffres et tirets</span></label>
+          <input id="nom-nouveau" type="text" placeholder="adrien">
+        </div>
+        <div class="form-group">
+          <label>Mot de passe (pour confirmer)</label>
+          <input id="nom-mdp" type="password" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" onclick="changerNom()">Changer mon identifiant</button>
+        <div id="nom-res" style="margin-top:.75rem"></div>
+      </div>
+    </div>
+
     <!-- ── Analyse ── -->
     <div class="tab-panel" id="panel-analyse">
       <div class="card">
@@ -362,6 +432,72 @@ function api(method,path,body){
 }
 
 // ── Login ──────────────────────────────────────────────────────────
+// Le serveur decide si l'inscription est ouverte : l'interface ne fait
+// qu'afficher ou masquer le formulaire selon sa reponse.
+async function verifierInscription(){
+  try{
+    const r = await fetch(BASE+'/api/inscription-ouverte');
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d.ouverte){
+      document.getElementById('zone-inscription').style.display='block';
+      document.getElementById('places-restantes').textContent =
+        ' ('+d.places_restantes+' place'+(d.places_restantes>1?'s':'')+' sur '+d.max+')';
+    }
+  }catch(e){ /* serveur injoignable : on laisse l'ecran de connexion seul */ }
+}
+
+function basculerInscription(){
+  const f=document.getElementById('form-inscription');
+  const ouvert = f.style.display!=='none';
+  f.style.display = ouvert ? 'none' : 'block';
+  document.getElementById('lien-inscription').textContent =
+    ouvert ? 'Créer un compte' : 'Annuler';
+}
+
+async function doRegister(){
+  const err=document.getElementById('reg-err');
+  const ok =document.getElementById('reg-ok');
+  err.textContent=''; ok.style.display='none';
+
+  const u=document.getElementById('reg-user').value.trim();
+  const p=document.getElementById('reg-pass').value;
+  const p2=document.getElementById('reg-pass2').value;
+
+  if(p!==p2){ err.textContent='Les deux mots de passe ne correspondent pas.'; return; }
+  if(p.length<10){ err.textContent='Le mot de passe doit faire au moins 10 caractères.'; return; }
+
+  try{
+    const r=await fetch(BASE+'/api/register',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:p})
+    });
+    const d=await r.json();
+    if(!r.ok){ err.textContent=d.detail||'Inscription refusée.'; return; }
+
+    // L'adresse du rapport vaut cle d'acces : elle doit etre lue et gardee
+    // maintenant, pas expediee dans un message qui disparait.
+    document.getElementById('form-inscription').style.display='none';
+    document.getElementById('lien-inscription').style.display='none';
+    ok.style.display='block';
+    ok.innerHTML =
+      '<div class="info-box success" style="margin-top:.75rem;text-align:left">'
+      +'<strong>Compte créé.</strong><br>Identifiant : <code>'+d.username+'</code><br>'
+      +'Analyse quotidienne à '+d.slot+'.</div>'
+      +'<div class="info-box neutral" style="margin-top:.6rem;text-align:left;font-size:.82rem">'
+      +'<strong>Note bien cette adresse</strong> — c\'est celle de ton rapport, '
+      +'et elle vaut mot de passe :<br>'
+      +'<a href="'+d.report_url+'" target="_blank" rel="noopener noreferrer" '
+      +'style="word-break:break-all">'+d.report_url+'</a><br>'
+      +'<button class="btn btn-ghost btn-sm" style="margin-top:.5rem" '
+      +'onclick="navigator.clipboard.writeText(\''+d.report_url+'\')">Copier</button>'
+      +'</div>'
+      +'<p style="font-size:.82rem;color:var(--muted);margin-top:.6rem">'
+      +'Connecte-toi ci-dessus pour saisir ton portefeuille. '
+      +'Ton rapport apparaîtra après la première analyse.</p>';
+  }catch(e){ err.textContent='Serveur injoignable.'; }
+}
+
 async function doLogin(){
   const u=document.getElementById('login-user').value.trim();
   const p=document.getElementById('login-pass').value;
@@ -422,6 +558,36 @@ async function copierLien(){
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────
+async function changerMotDePasse(){
+  const res=document.getElementById('pwd-res');
+  const a=document.getElementById('pwd-ancien').value;
+  const n=document.getElementById('pwd-nouveau').value;
+  const c=document.getElementById('pwd-confirme').value;
+  if(n!==c){ res.innerHTML='<div class="info-box error">❌ Les deux saisies ne correspondent pas.</div>'; return; }
+  try{
+    const r=await api('POST','/api/account/password',{ancien:a,nouveau:n});
+    res.innerHTML='<div class="info-box success">✅ '+r.message+'</div>';
+    ['pwd-ancien','pwd-nouveau','pwd-confirme'].forEach(i=>document.getElementById(i).value='');
+  }catch(e){ res.innerHTML='<div class="info-box error">❌ '+e.message+'</div>'; }
+}
+
+async function changerNom(){
+  const res=document.getElementById('nom-res');
+  const nv=document.getElementById('nom-nouveau').value.trim();
+  const mdp=document.getElementById('nom-mdp').value;
+  if(!nv){ res.innerHTML='<div class="info-box error">❌ Saisis un identifiant.</div>'; return; }
+  try{
+    const r=await api('POST','/api/account/username',{nouveau:nv,mot_de_passe:mdp});
+    let h='<div class="info-box success">✅ Identifiant changé : <strong>'+r.nouveau+'</strong></div>';
+    if(r.remarque) h+='<div class="info-box neutral" style="margin-top:.5rem">'+r.remarque+'</div>';
+    // Le jeton de session porte l'ancien nom : il n'est plus valable.
+    h+='<div class="info-box neutral" style="margin-top:.5rem">Tu vas être déconnecté. '
+      +'Reconnecte-toi avec <strong>'+r.nouveau+'</strong>.</div>';
+    res.innerHTML=h;
+    setTimeout(()=>{ logout(); }, 4000);
+  }catch(e){ res.innerHTML='<div class="info-box error">❌ '+e.message+'</div>'; }
+}
+
 function switchTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -742,8 +908,28 @@ async function savePortfolio(){
       html+='<div class="info-box error" style="margin-bottom:.75rem">⚠️ Lignes rejetées :<br>'
            +r.erreurs.map(e=>'• '+e).join('<br>')+'</div>';
     }
+    // La synchronisation GitHub decide si la configuration atteindra le
+    // rapport de demain. Un enregistrement local seul est un faux succes :
+    // on le dit franchement plutot que d'afficher une coche verte.
+    const sy = r.sync || {};
+    if(sy.ok){
+      html+='<div class="info-box success" style="margin-bottom:.75rem">'
+           +'\u2601\uFE0F Profil pousse sur GitHub ('+(sy.detail||'')+'). '
+           +'Il sera pris en compte au prochain rapport.</div>';
+    } else if(sy.etat==='non configure'){
+      html+='<div class="info-box neutral" style="margin-bottom:.75rem">'
+           +'\u26A0\uFE0F Enregistre <strong>en local uniquement</strong>. '
+           +'La synchronisation GitHub n\'est pas configuree : cette '
+           +'modification n\'apparaitra pas dans le rapport quotidien.</div>';
+    } else {
+      html+='<div class="info-box error" style="margin-bottom:.75rem">'
+           +'\u274C Synchronisation GitHub echouee ('+(sy.etat||'?')+') : '
+           +(sy.detail||'')+'<br>Le fichier est enregistre en local, mais le '
+           +'rapport quotidien ne le verra pas.</div>';
+    }
     st.innerHTML=html;
-    if(!r.erreurs||!r.erreurs.length) setTimeout(()=>st.innerHTML='',3000);
+    const toutVaBien = (!r.erreurs||!r.erreurs.length) && sy.ok;
+    if(toutVaBien) setTimeout(()=>st.innerHTML='',4000);
   }catch(e){
     st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ '+e.message+'</div>';
   }
@@ -853,6 +1039,10 @@ async function deleteUser(username){
     loadUsers();
   }catch(e){alert('Erreur : '+e.message);}
 }
+
+// Au chargement : demander au serveur si les inscriptions sont ouvertes.
+// Sans cet appel, le formulaire resterait invisible en permanence.
+verifierInscription();
 </script>
 </body>
 </html>
