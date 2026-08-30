@@ -93,6 +93,26 @@ ANALYSE_MINUTE = int(os.getenv("ANALYSE_MINUTE", "30"))
 # 22h30, 22h35, 22h40, 22h45, 22h50.
 SLOT_PAS_MINUTES = 5
 
+# Planification LOCALE des analyses, desactivee par defaut.
+#
+# Pourquoi par defaut a l'arret : l'analyse de reference est celle de GitHub
+# Actions, qui traite TOUS les profils dans un seul processus (--all-users).
+# Un memo partage y garantit qu'une valeur detenue par plusieurs utilisateurs
+# n'est interrogee qu'UNE fois.
+#
+# Un planificateur local produit l'inverse : un processus par utilisateur,
+# donc un memo qui repart de zero a chaque creneau. Mesure sur 5 profils
+# partageant 2 valeurs : 68 appels en groupe contre 120 en decale, soit
+# +76 %. AlphaVantage, plafonne a 25 par jour, passe de 7 a 11.
+#
+# S'y ajoute un risque plus grave : cette machine n'a pas les cles API. Un
+# planificateur actif y produirait chaque soir des rapports aux chiffres
+# faux, ecrits dans history.csv, sans aucun message d'erreur.
+#
+# Mettre PLANIFICATION_LOCALE=1 n'a de sens QUE si les quatre cles API sont
+# presentes sur cette machine, et en acceptant le surcout d'appels.
+PLANIFICATION_LOCALE = os.getenv("PLANIFICATION_LOCALE", "0") == "1"
+
 
 def creneau_utilisateur(slot_idx: int) -> tuple:
     """(heure, minute) du creneau d'un utilisateur, heure de Paris.
@@ -262,6 +282,28 @@ def _scheduled_job(username: str):
 def rebuild_scheduler():
     """Relit la BDD et synchronise les jobs APScheduler."""
     scheduler.remove_all_jobs()
+
+    if not PLANIFICATION_LOCALE:
+        print("[Scheduler] Planification locale desactivee.")
+        print("            L'analyse est produite par GitHub Actions a 22h37,")
+        print("            en un seul passage pour tous les profils.")
+        return
+
+    manquantes = [k for k, v in (("FINNHUB_API_KEY", os.getenv("FINNHUB_API_KEY")),
+                                 ("EODHD_API_KEY", os.getenv("EODHD_API_KEY")),
+                                 ("TWELVEDATA_API_KEY", os.getenv("TWELVEDATA_API_KEY")),
+                                 ("ALPHAVANTAGE_API_KEY", os.getenv("ALPHAVANTAGE_API_KEY")))
+                  if not v]
+    if manquantes:
+        # Sans cles, l'analyseur ne s'arrete pas : il produit des cours
+        # aberrants et les ecrit dans l'historique. Mieux vaut ne rien
+        # planifier que de corrompre les donnees en silence.
+        print(f"[Scheduler] Planification locale demandee mais cles absentes : "
+              f"{', '.join(manquantes)}")
+        print("            Aucun job enregistre : une analyse sans cles produirait")
+        print("            des chiffres faux et polluerait history.csv.")
+        return
+
     con = get_db()
     rows = con.execute("SELECT username, slot_index FROM users").fetchall()
     con.close()
@@ -844,9 +886,11 @@ def register(data: Inscription):
             id=f"analyse_{nom}", replace_existing=True,
         )
 
+    creneau = (f"{slot_h}h{slot_m:02d} (heure Paris)" if PLANIFICATION_LOCALE
+               else "22h37 (heure Paris), analyse groupee quotidienne")
     return {
         "username":   nom,
-        "slot":       f"{slot_h}h{slot_m:02d} (heure Paris)",
+        "slot":       creneau,
         "report_url": report_url,
         "sync":       sync,
         "message":    ("Compte cree. Conserve l'adresse de ton rapport : elle "
