@@ -91,7 +91,19 @@ ANALYSE_MINUTE = int(os.getenv("ANALYSE_MINUTE", "30"))
 # Les utilisateurs sont espaces de 5 minutes a partir de 22h30, pour etaler
 # les appels API plutot que de les lancer tous ensemble :
 # 22h30, 22h35, 22h40, 22h45, 22h50.
-SLOT_PAS_MINUTES = 5
+# Les creneaux decales ont ete SUPPRIMES.
+#
+# Chaque creneau etait un processus separe, donc un memo qui repartait de
+# zero : une valeur detenue par plusieurs utilisateurs etait reinterrogee
+# a chaque passage. Mesure sur 5 profils partageant 2 valeurs :
+#   groupe  :  68 appels
+#   decale  : 120 appels  (+76 %)
+# AlphaVantage, plafonne a 25 par jour, passait de 7 a 11.
+#
+# Tous les profils sont desormais traites en UN SEUL passage
+# (portfolio_analyzer.py --all-users), ou le memo partage garantit qu'un
+# ticker n'est interroge qu'une fois pour l'ensemble des utilisateurs.
+SLOT_PAS_MINUTES = 0
 
 # Planification LOCALE des analyses, desactivee par defaut.
 #
@@ -112,6 +124,11 @@ SLOT_PAS_MINUTES = 5
 # Mettre PLANIFICATION_LOCALE=1 n'a de sens QUE si les quatre cles API sont
 # presentes sur cette machine, et en acceptant le surcout d'appels.
 PLANIFICATION_LOCALE = os.getenv("PLANIFICATION_LOCALE", "0") == "1"
+
+# Heure unique d'analyse, identique pour tous. Sert uniquement a informer
+# l'utilisateur : l'execution reelle est declenchee par le planificateur
+# distant, en un seul passage groupe.
+HEURE_ANALYSE_GROUPEE = os.getenv("HEURE_ANALYSE_GROUPEE", "22h37")
 
 
 def creneau_utilisateur(slot_idx: int) -> tuple:
@@ -744,6 +761,8 @@ def changer_nom(data: ChangementNom, user: dict = Depends(current_user)):
         github_sync.supprimer_fichier(
             f"data/portfolios/portfolio_{ancien}.json",
             f"Compte {ancien} renomme en {nouveau}")
+        from api.load_portfolio import charger_liens as _cl
+        github_sync.pousser_liens(_cl())
     except Exception as e:
         sync = {"ok": False, "etat": "erreur", "detail": f"{type(e).__name__}: {e}"}
 
@@ -875,7 +894,16 @@ def register(data: Inscription):
     # ignorera ce nouvel utilisateur.
     try:
         from api import github_sync
+        from api.load_portfolio import charger_liens
         sync = github_sync.pousser_profil(nom, json.loads(pfile.read_text(encoding="utf-8")))
+        # Le jeton doit rejoindre le depot en meme temps que le profil.
+        # Sinon GitHub Actions, ne le trouvant pas, en genere un autre au
+        # moment de publier : l'adresse remise ici ne menerait nulle part.
+        liens = github_sync.pousser_liens(charger_liens())
+        if sync.get("ok") and not liens.get("ok"):
+            sync = {"ok": False, "etat": "jeton non publie",
+                    "detail": "Le profil est parti mais la table des liens non : "
+                              "l'adresse du rapport ne fonctionnera pas."}
     except Exception as e:
         sync = {"ok": False, "etat": "erreur", "detail": f"{type(e).__name__}: {e}"}
 
@@ -886,8 +914,9 @@ def register(data: Inscription):
             id=f"analyse_{nom}", replace_existing=True,
         )
 
-    creneau = (f"{slot_h}h{slot_m:02d} (heure Paris)" if PLANIFICATION_LOCALE
-               else "22h37 (heure Paris), analyse groupee quotidienne")
+    # Meme horaire pour tout le monde : l'analyse est groupee, ce qui divise
+    # le nombre d'appels aux fournisseurs de donnees.
+    creneau = f"{HEURE_ANALYSE_GROUPEE} (heure Paris), analyse groupee quotidienne"
     return {
         "username":   nom,
         "slot":       creneau,
@@ -1010,6 +1039,8 @@ def delete_user(username: str, admin: dict = Depends(require_admin)):
         table = charger_liens()
         table.pop(username.strip().lower(), None)
         enregistrer_liens(table)
+        from api import github_sync as _gs
+        _gs.pousser_liens(table)
     except Exception as e:
         print(f"[Suppression] Nettoyage partiel pour {username} : {e}")
     # Supprime le job scheduler
