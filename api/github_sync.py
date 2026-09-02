@@ -207,3 +207,16 @@ def supprimer_fichier(chemin: str, message: str) -> dict:
         return {"ok": False, "etat": "echec", "detail": f"HTTP {r.status_code}"}
     except requests.RequestException as e:
         return {"ok": False, "etat": "reseau", "detail": f"{type(e).__name__}"}
+
+
+def pousser_liens(table: dict) -> dict:
+    """Publie la table des jetons de rapport dans le depot.
+
+    Sans cela, le jeton genere ici reste local. GitHub Actions, ne le
+    trouvant pas, en fabrique un AUTRE au moment de publier le rapport :
+    l'adresse remise a l'utilisateur a l'inscription ne correspond alors a
+    aucune page. C'est la cause des liens qui ne donnent rien.
+    """
+    contenu = json.dumps(table, ensure_ascii=False, indent=2) + "\n"
+    return pousser_fichier("data/report_links.json", contenu,
+                           "Mise a jour des liens de rapport")
