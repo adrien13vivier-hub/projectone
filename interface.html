@@ -35,6 +35,28 @@ img{display:block;max-width:100%}
 .tab.active{background:var(--primary);color:#fff}
 .tab:hover:not(.active){background:var(--surface2);color:var(--text)}
 .tab-panel{display:none}.tab-panel.active{display:block}
+/* ── Mode d'emploi ────────────────────────────────────────────────────── */
+.doc{max-width:70ch}
+.doc h3{font-size:1.05rem;margin:0 0 .5rem}
+.doc h4{font-size:.95rem;margin:1.4rem 0 .35rem;color:var(--text)}
+.doc p{margin:.5rem 0;line-height:1.65;color:var(--muted)}
+.doc strong{color:var(--text)}
+.doc ul{margin:.5rem 0 .5rem 1.1rem;padding:0;color:var(--muted);line-height:1.6}
+.doc li{margin:.3rem 0}
+.doc code{background:var(--surface-2,rgba(127,127,127,.12));padding:.1rem .35rem;
+  border-radius:4px;font-size:.85em}
+.doc table{width:100%;border-collapse:collapse;margin:.6rem 0;font-size:.86rem}
+.doc th,.doc td{text-align:left;padding:.45rem .5rem;border-bottom:1px solid var(--border);
+  vertical-align:top}
+.doc th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;
+  letter-spacing:.04em}
+.doc .encadre{border-left:3px solid var(--accent,#2f7f8f);background:rgba(127,127,127,.06);
+  padding:.7rem .9rem;border-radius:0 var(--radius) var(--radius) 0;margin:.9rem 0}
+.doc .encadre p{margin:.25rem 0}
+.doc-sommaire{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.25rem}
+.doc-sommaire a{font-size:.8rem;padding:.3rem .65rem;border:1px solid var(--border);
+  border-radius:999px;text-decoration:none;color:var(--muted)}
+.doc-sommaire a:hover{color:var(--text);border-color:var(--muted)}
 
 /* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:var(--radius);font-size:.875rem;font-weight:600;transition:all .18s ease}
@@ -90,7 +112,6 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 .del-btn:hover{opacity:1;background:color-mix(in srgb,var(--error) 10%,transparent)}
 
 /* ── Logs ── */
-.log-box{background:#111;color:#d4e6c3;font-family:monospace;font-size:.78rem;border-radius:var(--radius);padding:1rem;max-height:320px;overflow-y:auto;white-space:pre-wrap;margin-top:1rem}
 
 /* ── Alert / Info boxes ── */
 .info-box{border-radius:var(--radius);padding:.9rem 1rem;font-size:.875rem;margin-bottom:1rem}
@@ -200,6 +221,7 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
       <button class="tab active" onclick="switchTab('portfolio',this)">📁 Portefeuille</button>
       <button class="tab" onclick="switchTab('analyse',this)">📊 Analyse</button>
       <button class="tab" onclick="switchTab('compte',this)">👤 Mon compte</button>
+      <button class="tab" onclick="switchTab('aide',this)">📖 Mode d'emploi</button>
       <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">⚙️ Utilisateurs</button>
     </nav>
 
@@ -352,14 +374,21 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
     <!-- ── Analyse ── -->
     <div class="tab-panel" id="panel-analyse">
       <div class="card">
-        <div class="card-title">Lancer l'analyse</div>
-        <div class="info-box neutral" id="slot-info">⏰ Chargement du planning…</div>
-        <p style="color:var(--muted);font-size:.875rem;margin-bottom:1rem">L'analyse est lancée automatiquement à votre horaire dédié. Vous pouvez aussi la déclencher manuellement ci-dessous.</p>
-        <button class="btn btn-primary" onclick="runAnalysis()" id="btn-analyze">
-          ▶ Lancer maintenant
-        </button>
-        <div id="analyze-result"></div>
-        <div class="log-box" id="log-box" style="display:none"></div>
+        <div class="card-title">Analyse quotidienne</div>
+        <div class="info-box neutral" id="slot-info">⏰ Chargement de l'horaire…</div>
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:0">
+          L'analyse part toute seule, du lundi au vendredi, une fois les marchés
+          américains fermés. Tous les portefeuilles sont traités en un seul
+          passage : c'est ce qui permet de n'interroger qu'une fois une valeur
+          détenue par plusieurs personnes, et de rester dans les quotas
+          gratuits des fournisseurs de données.
+        </p>
+        <p style="color:var(--muted);font-size:.875rem;margin-bottom:0;margin-top:.6rem">
+          Il n'y a pas de bouton pour la lancer à la main, et c'est volontaire :
+          une analyse déclenchée hors créneau consommerait le quota de la
+          journée pour tout le monde, et écrirait des cours de séance dans un
+          historique qui n'attend que des cours de clôture.
+        </p>
       </div>
 
       <div class="card" id="report-card" style="display:none">
@@ -376,9 +405,234 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
           Ne la publie pas et ne la transmets pas dans un groupe.
           En cas de fuite, demande à l'administrateur de la régénérer.
         </div>
-        <p style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">
-          Mise à jour automatique chaque jour ouvré, à ton créneau attribué.
+        <p style="margin-top:.75rem;font-size:.8rem;color:var(--muted)"
+           id="report-schedule-note">
+          Mise à jour automatique chaque jour ouvré, après la clôture américaine.
         </p>
+      </div>
+    </div>
+
+    <!-- ── Mode d'emploi ── -->
+    <div class="tab-panel" id="panel-aide">
+      <div class="card doc">
+        <div class="card-title">Mode d'emploi</div>
+
+        <div class="doc-sommaire">
+          <a href="#aide-quoi">À quoi ça sert</a>
+          <a href="#aide-compte">Compte &amp; connexion</a>
+          <a href="#aide-lien">Le lien du rapport</a>
+          <a href="#aide-saisie">Saisir son portefeuille</a>
+          <a href="#aide-stops">Les stops</a>
+          <a href="#aide-taille">Taille des positions</a>
+          <a href="#aide-horaire">Quand le rapport sort</a>
+          <a href="#aide-lecture">Lire le rapport</a>
+          <a href="#aide-limites">Ce que l'outil ne fait pas</a>
+          <a href="#aide-souci">En cas de souci</a>
+        </div>
+
+        <h4 id="aide-quoi">À quoi ça sert</h4>
+        <p>
+          Chaque soir, une fois les marchés fermés, le programme relève le cours
+          de chaque ligne de votre portefeuille, calcule ce que vous gagnez ou
+          perdez, note chaque titre, vérifie si une position est passée sous son
+          seuil de sortie, et publie tout cela sur une page web personnelle.
+        </p>
+        <p>
+          Vous n'avez rien à lancer. Vous saisissez votre portefeuille une fois
+          dans l'onglet <strong>Portefeuille</strong>, et vous consultez votre
+          page quand vous voulez.
+        </p>
+
+        <h4 id="aide-compte">Compte et connexion</h4>
+        <p>
+          Le service est limité à <strong>cinq comptes</strong>. À l'inscription,
+          choisissez un identifiant d'au moins 3 caractères et un mot de passe
+          d'au moins 10 caractères.
+        </p>
+        <div class="encadre">
+          <p><strong>L'identifiant est toujours ramené en minuscules.</strong>
+          Si vous vous inscrivez sous « Pierre33 », votre compte s'appelle
+          <code>pierre33</code>. Vous pouvez désormais vous connecter avec l'une
+          ou l'autre écriture, et les espaces en trop sont ignorés — ce n'était
+          pas le cas avant septembre 2026, où taper son nom avec une majuscule
+          renvoyait « Identifiants incorrects » sans autre explication.</p>
+        </div>
+        <p>
+          Après huit tentatives ratées, la connexion est bloquée cinq minutes.
+          Le mot de passe et l'identifiant se changent dans l'onglet
+          <strong>Mon compte</strong> ; changer d'identifiant renomme aussi
+          votre portefeuille et votre page de rapport.
+        </p>
+
+        <h4 id="aide-lien">Le lien de votre rapport</h4>
+        <p>
+          Votre rapport est publié à une adresse qui vous est propre, du type
+          <code>…/r/6e8c3c70ec602347/</code>. Le nom d'utilisateur n'y figure
+          pas : une adresse devinable exposerait le portefeuille des autres.
+        </p>
+        <div class="encadre">
+          <p><strong>Cette adresse vaut mot de passe.</strong> Elle ne demande
+          aucune connexion : toute personne qui l'obtient voit votre
+          portefeuille, montants compris. Ne la publiez pas, ne la mettez pas
+          dans un groupe. En cas de fuite, demandez à l'administrateur de la
+          régénérer — l'ancienne cesse alors de fonctionner.</p>
+        </div>
+        <p>
+          Le lien ne mène à une page qu'<em>après</em> la première analyse
+          suivant votre inscription. Avant cela, il est normal qu'il ne donne
+          rien.
+        </p>
+
+        <h4 id="aide-saisie">Saisir son portefeuille</h4>
+        <p>
+          Onglet <strong>Portefeuille</strong>, une ligne par actif. Le tableau
+          défile vers la droite : les colonnes Compte, Étiquettes et Stop sont
+          au bout.
+        </p>
+        <table>
+          <thead><tr><th>Colonne</th><th>Ce qu'on y met</th></tr></thead>
+          <tbody>
+            <tr><td>Classe</td><td>Action, ETF, Obligation, Crypto, Métal précieux — ou Liquidités, Immobilier, Collection, Autre pour ce qui n'est pas coté</td></tr>
+            <tr><td>Ticker</td><td>Le code de la valeur : <code>AI.PA</code>, <code>AAPL</code>, <code>BTC</code></td></tr>
+            <tr><td>Qté / Valeur</td><td>Le nombre de titres — ou, pour un actif non coté, sa valeur actuelle en euros</td></tr>
+            <tr><td>Prix de revient</td><td>Ce que vous avez payé par titre — ou le prix d'acquisition pour un actif non coté</td></tr>
+            <tr><td>Compte</td><td>Où l'actif est détenu (PEA, assurance-vie, Ledger…). Sert de regroupement dans le rapport</td></tr>
+            <tr><td>Étiquettes</td><td>Vos propres catégories, séparées par des virgules : <code>dividende, socle</code></td></tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>Actifs non cotés.</strong> Un livret, un appartement, une
+          montre : choisissez la classe correspondante et le ticker disparaît.
+          Ces lignes n'interrogent aucun fournisseur de données — elles ne
+          consomment donc rien — et apparaissent quand même dans la répartition
+          de votre patrimoine.
+        </p>
+        <p>
+          <strong>Crypto.</strong> Écrivez simplement <code>BTC</code> ou
+          <code>ETH</code> : la paire en dollar et la conversion en euros sont
+          gérées automatiquement.
+        </p>
+        <p>
+          N'oubliez pas <strong>Enregistrer</strong>. Le message qui suit vous
+          dit si la modification est bien partie vers le dépôt : tant qu'elle
+          n'y est pas, le rapport du lendemain ne la verra pas.
+        </p>
+
+        <h4 id="aide-stops">Les stops</h4>
+        <p>
+          Un stop est le niveau où vous décidez à l'avance de sortir. Le
+          programme ne vend rien : il surveille et il prévient.
+        </p>
+        <table>
+          <thead><tr><th>Type</th><th>Paramètre</th><th>Le niveau se calcule…</th></tr></thead>
+          <tbody>
+            <tr><td>Pourcentage</td><td>un %</td><td>sous votre prix de revient. Fixe.</td></tr>
+            <tr><td>Absolu</td><td>un prix</td><td>c'est ce prix, tel quel.</td></tr>
+            <tr><td>Suiveur</td><td>un %</td><td>sous le plus haut atteint. <strong>Monte avec le cours, ne redescend jamais.</strong></td></tr>
+            <tr><td>VQ</td><td>rien</td><td>comme le suiveur, mais le % est déduit de la nervosité du titre.</td></tr>
+            <tr><td>Aucun</td><td>rien</td><td>la ligne n'est pas surveillée.</td></tr>
+          </tbody>
+        </table>
+        <p>
+          <strong>Le franchissement se juge sur la clôture</strong>, pas sur le
+          cours en séance : un plongeon de milieu de journée qui se rattrape
+          avant la fermeture ne déclenche rien. Vous recevez
+          <strong>une alerte, une seule</strong>, par franchissement ; elle se
+          réarme si le cours repasse au-dessus.
+        </p>
+        <p>
+          Dans <strong>Mon profil → Gestion du risque</strong>, le
+          <em>stop par défaut</em> s'applique à toutes les lignes qui n'en
+          déclarent pas : mettre « VQ » là est la façon la plus rapide de
+          couvrir tout le portefeuille d'un coup.
+        </p>
+
+        <h4 id="aide-taille">Combien mettre sur une idée</h4>
+        <p>
+          Le rapport propose une taille de position à partir d'une seule règle :
+        </p>
+        <p style="text-align:center"><code>montant = (capital × risque par idée) ÷ distance au stop</code></p>
+        <p>
+          Avec 100 000 € et 1 % de risque, vous acceptez de perdre 1 000 € sur
+          une idée. Si votre stop est 20 % plus bas, vous mettez 5 000 € : si le
+          stop part, vous perdez exactement vos 1 000 €. C'est ce qui rend une
+          valeur nerveuse et une valeur calme comparables — on n'achète pas le
+          même montant, on achète le même risque.
+        </p>
+        <p>
+          Le <strong>capital de référence</strong> est la somme de vos valeurs
+          cotées et de vos liquidités. L'immobilier et les collections en sont
+          exclus : risquer 1 % d'un patrimoine dominé par un appartement
+          conduirait à des positions absurdes sur un portefeuille boursier bien
+          plus petit.
+        </p>
+        <p>
+          Une ligne <strong>déjà sous son stop</strong> ne reçoit aucune taille :
+          proposer d'y remettre de l'argent le jour où la règle dit d'en sortir
+          n'aurait pas de sens.
+        </p>
+
+        <h4 id="aide-horaire">Quand le rapport est produit</h4>
+        <p>
+          Une fois par jour, du <strong>lundi au vendredi</strong>, à l'heure
+          affichée dans l'onglet <strong>Analyse</strong> (heure de Paris). Le
+          créneau tombe après la clôture de New York, le temps que les prix de
+          clôture se consolident.
+        </p>
+        <p>
+          Tous les portefeuilles sont traités <strong>en un seul passage</strong>.
+          Une valeur détenue par plusieurs personnes n'est donc interrogée
+          qu'une fois — c'est ce qui permet de tenir dans les quotas gratuits
+          des fournisseurs de données.
+        </p>
+        <div class="encadre">
+          <p><strong>Il n'y a pas de bouton « lancer l'analyse », et c'est
+          voulu.</strong> Un lancement hors créneau consommerait le quota de la
+          journée pour tout le monde et enregistrerait des cours de séance dans
+          un historique qui n'attend que des clôtures. Un historique faussé ne
+          se répare pas.</p>
+        </div>
+
+        <h4 id="aide-lecture">Lire le rapport</h4>
+        <ul>
+          <li><strong>Contexte économique</strong> — indices, taux à 10 ans américain et français, manchettes. Le décor, pas un signal.</li>
+          <li><strong>Stops &amp; Alertes</strong> — où en est chaque position par rapport à son seuil de sortie. La première chose à regarder.</li>
+          <li><strong>Répartition</strong> — à quoi vous êtes exposé, par classe d'actif, par devise, par compte et par étiquette.</li>
+          <li><strong>Analyse par valeur</strong> — pour chaque titre : note sur 10, détail du calcul, fondamentaux, actualité.</li>
+          <li><strong>Synthèse</strong> — le tableau récapitulatif de tout le portefeuille.</li>
+        </ul>
+        <p>
+          Chaque note est accompagnée d'un <strong>indice de confiance</strong> :
+          une note de 8/10 calculée sur 40 % des critères disponibles ne vaut pas
+          une note de 8/10 calculée sur 95 %. Regardez toujours les deux.
+        </p>
+
+        <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
+        <ul>
+          <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
+          <li>Il ne prédit pas les cours. C'est un outil de hiérarchisation et d'alerte.</li>
+          <li>Les notes reposent sur des données publiques qui peuvent être incomplètes ou en retard ; quand une donnée manque, le rapport le dit au lieu de la remplacer par une valeur moyenne.</li>
+          <li>Ce n'est pas un conseil en investissement. Les décisions restent les vôtres.</li>
+        </ul>
+
+        <h4 id="aide-souci">En cas de souci</h4>
+        <table>
+          <thead><tr><th>Symptôme</th><th>Ce que ça veut dire</th></tr></thead>
+          <tbody>
+            <tr><td>« Identifiants incorrects » alors que le mot de passe est bon</td>
+                <td>Vérifiez qu'il n'y a pas d'espace avant ou après l'identifiant. La casse, elle, n'a plus d'importance.</td></tr>
+            <tr><td>« Trop de tentatives »</td>
+                <td>Huit échecs de suite. Attendez cinq minutes.</td></tr>
+            <tr><td>Le lien du rapport ne mène à rien</td>
+                <td>Aucune analyse n'a encore tourné depuis la création du compte. Attendez le prochain créneau.</td></tr>
+            <tr><td>Une ligne n'apparaît pas dans le rapport</td>
+                <td>Son cours n'a pas pu être récupéré — souvent un ticker ou une place de cotation erronés.</td></tr>
+            <tr><td>Le message d'enregistrement parle d'une synchronisation échouée</td>
+                <td>Votre saisie est bien enregistrée sur le serveur mais n'a pas rejoint le dépôt : le rapport de demain ne la verra pas. Signalez-le à l'administrateur.</td></tr>
+            <tr><td>Le rapport date de plusieurs jours</td>
+                <td>Une analyse a été manquée. L'onglet Analyse indique la date du dernier déclenchement.</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -596,21 +850,38 @@ function switchTab(name,btn){
   if(name==='admin') loadUsers();
 }
 
-// ── Slot info ──────────────────────────────────────────────────────
+// ── Horaire de l'analyse ───────────────────────────────────────────
+// L'heure vient du serveur et n'est plus ecrite en dur ici : c'est ce qui
+// garantit que la page ne peut pas annoncer une heure differente de celle du
+// declenchement reel. Les creneaux personnels espaces de 5 minutes ont ete
+// supprimes — l'analyse est groupee, tout le monde a le meme horaire.
 async function loadSlotInfo(){
+  const box=document.getElementById('slot-info');
   try{
     const data=await api('GET','/api/status');
-    const me=data.schedule&&data.schedule.find(s=>s.username===CURRENT_USER);
-    const box=document.getElementById('slot-info');
-    if(me){
+    const a=data.analyse||{};
+    const heure=a.heure
+      || (data.schedule&&data.schedule[0]&&data.schedule[0].slot)
+      || null;
+    if(heure){
       box.className='info-box success';
-      box.textContent='⏰ Votre analyse est planifiée chaque jour à '+me.slot+' (heure de Paris).';
+      box.textContent='⏰ Analyse quotidienne à '+heure+' (heure de Paris), '
+                     +'du lundi au vendredi, pour tous les portefeuilles à la fois.';
+      const note=document.getElementById('report-schedule-note');
+      if(note) note.textContent='Mise à jour automatique chaque jour ouvré à '
+                               +heure+' (heure de Paris).';
     } else {
       box.className='info-box warn';
-      box.textContent='⚠️ Aucun slot planifié trouvé pour ce compte.';
+      box.textContent='⚠️ Horaire d\'analyse introuvable.';
+    }
+    if(a.dernier_declenchement && a.dernier_declenchement.quand){
+      const d=a.dernier_declenchement;
+      box.textContent+=' — dernier déclenchement : '+d.quand
+                      +(d.ok?' (OK)':' (échec : '+(d.etat||'?')+')');
     }
   }catch(e){
-    document.getElementById('slot-info').textContent='Impossible de charger le planning.';
+    box.className='info-box warn';
+    box.textContent='Impossible de lire l\'horaire de l\'analyse.';
   }
 }
 
@@ -936,45 +1207,14 @@ async function savePortfolio(){
 }
 
 // ── Analyse ────────────────────────────────────────────────────────
-async function runAnalysis(){
-  const btn=document.getElementById('btn-analyze');
-  const result=document.getElementById('analyze-result');
-  const logBox=document.getElementById('log-box');
-  btn.disabled=true;btn.textContent='⏳ Analyse en cours…';
-  result.innerHTML='';
-  logBox.style.display='none';
-  try{
-    const data=await api('POST',`/api/analyze/${CURRENT_USER}`);
-    if(data.success){
-      result.innerHTML='<div class="info-box success" style="margin-top:.75rem">✅ Analyse terminée — '+data.lines_analyzed+' ligne(s).</div>';
-      // Lien rapport local
-      if(data.report_url){
-        result.innerHTML+=`<div class="report-link-box" style="margin-top:.75rem">🔗 Rapport local : <a href="${data.report_url}" target="_blank">${data.report_url}</a></div>`;
-      }
-      // Lien Cloudflare (persistant)
-      if(REPORT_URL){
-        const box=document.getElementById('report-card');
-        const lnk=document.getElementById('report-cf-link');
-        box.style.display='';
-        lnk.href=REPORT_URL;
-        lnk.textContent=REPORT_URL;
-      }
-    } else {
-      // CORRECTION : l'apostrophe de « l'analyse » fermait la chaine et
-      // provoquait une SyntaxError qui empechait TOUT le script de s'executer
-      // (connexion comprise). Chaine en guillemets doubles.
-      result.innerHTML = "<div class=\"info-box error\" style=\"margin-top:.75rem\">❌ Échec de l'analyse.</div>";
-    }
-    if(data.logs&&data.logs.length){
-      logBox.style.display='';
-      logBox.textContent=data.logs.map(l=>`[${l.step}] rc=${l.returncode} (${l.elapsed_s}s)\n${l.stdout||''}${l.stderr?'\nSTDERR: '+l.stderr:''}`).join('\n─────────────\n');
-    }
-  }catch(e){
-    result.innerHTML='<div class="info-box error" style="margin-top:.75rem">❌ '+e.message+'</div>';
-  } finally {
-    btn.disabled=false;btn.textContent='▶ Lancer maintenant';
-  }
-}
+// La fonction runAnalysis() a ete SUPPRIMEE avec son bouton.
+//
+// Pourquoi : une analyse lancee depuis cette machine tourne sans les cles
+// API — elle produit des cours faux et les ecrit dans history.csv, ou ils
+// restent. Elle consomme aussi le quota du jour, qui est partage entre tous
+// les comptes. L'adresse /api/analyze existe toujours cote serveur mais
+// repond desormais 403 avec l'explication : retirer un bouton ne ferme pas
+// une porte.
 
 // ── Admin ──────────────────────────────────────────────────────────
 async function loadUsers(){
