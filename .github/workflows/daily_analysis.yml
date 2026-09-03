@@ -2,37 +2,72 @@
 # L'etat des stops (high-water marks) est ecrit dans reports/<user>/stops_state.json,
 # donc deja couvert par le « git add reports/ » de l'etape de commit : aucune
 # modification supplementaire n'est necessaire ici pour le persister.
-name: Daily Portfolio Report v8.0 (multi-actifs, stops & alertes) — 22h30 Paris
+name: Analyse quotidienne du portefeuille — 22h37 Paris
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CE QUI A CHANGE EN v8.1, ET POURQUOI
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# LE SYMPTOME : plus aucun rapport depuis le 31 aout, alors que tous les runs
+# planifies apparaissaient EN VERT dans l'onglet Actions. Ils duraient 7 a
+# 16 secondes au lieu d'une minute.
+#
+# LA CAUSE : le garde-fou lisait l'heure de Paris AU MOMENT OU LE JOB DEMARRE
+# et ecartait le tir si cette heure etait inferieure a 22h. Or les taches
+# planifiees de GitHub Actions ne sont pas ponctuelles. Releve sur ce depot :
+#
+#     cron declare 20:37 UTC  ->  demarrages reels 22:48 et 22:49 UTC
+#     cron declare 21:37 UTC  ->  demarrages reels 23:31 et 23:32 UTC
+#
+# Soit plus de DEUX HEURES de retard, chaque jour. A 22:48 UTC il est 00h48 a
+# Paris : le test « heure < 22 » etait vrai, le job s'ecartait lui-meme, et il
+# le faisait en sortant en SUCCES — donc sans le moindre signal d'alerte.
+#
+# LA CORRECTION, en trois points :
+#
+#   1. On ne lit plus l'horloge pour decider. On lit `github.event.schedule`,
+#      c'est-a-dire QUEL cron a declare ce tir. Cette information est exacte
+#      quel que soit le retard de livraison.
+#
+#   2. Le choix entre les deux crons (ete / hiver) se fait sur le decalage
+#      horaire de Paris, calcule en Python, pas sur l'heure d'execution.
+#
+#   3. L'anti-doublon ne compare plus des dates de calendrier — fragiles quand
+#      un tir arrive apres minuit — mais un ECART DE TEMPS depuis le dernier
+#      rapport reussi. En dessous de DELAI_MINI_H heures, on ne refait rien.
+#
+# ET SURTOUT : le vrai top depart ne vient plus d'ici. Le serveur
+# projectone.antoineassocies.fr appelle GitHub a 22h37 pile (voir
+# api/github_sync.declencher_analyse). Les deux crons ci-dessous restent
+# declares en FILET DE SECURITE, pour le cas ou ce serveur serait eteint.
+# ═══════════════════════════════════════════════════════════════════════════
 
 on:
   schedule:
-    # Objectif : 22h30 Paris, marches US et Euronext fermes.
+    # Objectif : 22h37 Paris, marches US et Euronext fermes.
+    # New York ferme a 22h00 heure de Paris ; les 37 minutes de marge laissent
+    # les prix d'enchere de cloture se consolider.
     #
-    # Le cron GitHub est en UTC et n'observe PAS l'heure d'ete. Un seul
-    # horaire ne peut donc pas donner 22h Paris toute l'annee :
+    # Le cron GitHub est en UTC et n'observe PAS l'heure d'ete :
+    #   20:37 UTC -> 22h37 Paris en ETE (CEST, UTC+2)
+    #   21:37 UTC -> 22h37 Paris en HIVER (CET, UTC+1)
     #
-    #   20:37 UTC -> 22h37 Paris en ete (CEST)  | 21h37 Paris en hiver (CET)
-    #   21:37 UTC -> 23h37 Paris en ete         | 22h37 Paris en hiver
-    #
-    # On declare les deux creneaux et l'etape « Verifier le creneau » plus
-    # bas ecarte celui qui ne tombe pas sur 22h30 Paris. Sans ce filtre, le
-    # tir de 20:37 UTC partirait a 21h37 Paris en hiver, alors que la Bourse
-    # de New York est encore ouverte (elle ferme a 21:00 UTC).
-    #
-    # La demi-heure de decalage apres la cloche de New York laisse le temps
-    # aux prix d'enchere de cloture de se consolider : a 22h00 pile, on
-    # risquait de capter le dernier echange plutot que le cours officiel.
-    # Minute volontairement decalee (37 et non 00 ou 30). GitHub documente
-    # que les taches planifiees peuvent etre retardees, voire ABANDONNEES,
-    # quand trop de depots demandent le meme creneau. Les minutes rondes
-    # sont les plus encombrees ; une minute atypique reduit ce risque.
+    # Les deux sont declares ; l'etape « Filtrer la saison » garde celui qui
+    # correspond au decalage horaire du jour et ecarte l'autre.
     - cron: "37 20 * * 1-5"
     - cron: "37 21 * * 1-5"
   workflow_dispatch:
+    inputs:
+      forcer:
+        description: "Refaire l'analyse meme si un rapport recent existe"
+        type: boolean
+        default: false
 
-# ── Anti double-run : un seul job actif à la fois par jour ───────────────
+# ── Un seul job a la fois, tous declencheurs confondus ───────────────────
+# Le groupe ne depend PLUS du cron : sinon le tir de 20:37 et celui de 21:37
+# formaient deux groupes distincts et pouvaient tourner en meme temps.
 concurrency:
-  group: daily-report-${{ github.ref }}-${{ github.event.schedule || 'manual' }}
+  group: analyse-quotidienne-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -49,63 +84,108 @@ jobs:
         with:
           fetch-depth: 10
 
-      # ── 1. Guard anti-doublon CORRIGÉ ─────────────────────────────────
-      # CORRECTION : on vérifie history.csv ET .last_run pour éviter le cas
-      # où un run précédent a planté silencieusement (quota API atteint)
-      # sans mettre à jour history.csv → le guard bloquait à tort le run suivant.
-      - name: Check if report already generated today (schedule only)
+      # ── 1. Faut-il travailler ? ────────────────────────────────────────
+      - name: Decider s'il faut lancer l'analyse
         id: check_today
+        env:
+          EVENEMENT:  ${{ github.event_name }}
+          CRON:       ${{ github.event.schedule }}
+          FORCER:     ${{ github.event.inputs.forcer }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "already_done=false" >> $GITHUB_OUTPUT
-            echo "🖐️ Run manuel détecté — guard désactivé, analyse forcée."
-            exit 0
-          fi
-          # Deux crons UTC couvrent ete et hiver ; on ecarte celui qui ne
-          # tombe pas sur 22h30 Paris. Traite comme « deja fait » plutot que
-          # comme une erreur : le job se termine en vert, sans bruit.
-          # Le seuil porte sur l'HEURE seule : 22h30 -> 22, 21h30 -> 21.
-          PARIS_H=$(TZ=Europe/Paris date +%H)
-          echo "--- Diagnostic de declenchement ---"
-          echo "  evenement    : ${{ github.event_name }}"
-          echo "  cron declare : ${{ github.event.schedule }}"
-          echo "  heure UTC    : $(date -u '+%Y-%m-%d %H:%M')"
-          echo "  heure Paris  : $(TZ=Europe/Paris date '+%Y-%m-%d %H:%M')"
-          echo "-----------------------------------"
-          if [ "$PARIS_H" -lt 22 ]; then
-            echo "already_done=true" >> $GITHUB_OUTPUT
-            echo "⏭️  Creneau hors saison (${PARIS_H}h Paris) — marche US encore ouvert."
-            echo "    Le tir d'une heure plus tard prendra le relais."
-            exit 0
-          fi
-          echo "✅ Marches US et Euronext fermes."
+          set -euo pipefail
+          # Tout le raisonnement tient dans ce script Python : le shell ne sait
+          # pas faire de fuseaux horaires sans surprise, et c'est precisement
+          # ce qui a casse la version precedente.
+          python3 - <<'FIN' | tee decision.txt
+          import os, re, glob
+          from datetime import datetime, timezone, timedelta
+          try:
+              from zoneinfo import ZoneInfo
+              PARIS = ZoneInfo("Europe/Paris")
+          except Exception:
+              PARIS = None
 
-          TODAY=$(date -u +'%Y-%m-%d')
-          # Vérification dans history.csv (source de vérité principale)
-          HISTORY_OK=false
-          # Multi-utilisateur : on inspecte reports/<user>/history.csv
-          if ls reports/*/history.csv >/dev/null 2>&1 \
-             && grep -q "^$TODAY," reports/*/history.csv; then
-            HISTORY_OK=true
-          fi
-          # Vérification dans .last_run (backup)
-          LASTRUN_OK=false
-          if [ -f "reports/.last_run" ] && grep -q "^$TODAY" reports/.last_run; then
-            LASTRUN_OK=true
-          fi
-          # On considère "déjà fait" SEULEMENT si history.csv ET .last_run sont OK
-          # Cela évite le cas où history.csv a été mis à jour mais .last_run non (ou vice versa)
-          if $HISTORY_OK && $LASTRUN_OK; then
-            echo "already_done=true" >> $GITHUB_OUTPUT
-            echo "✅ Rapport confirmé dans history.csv ET .last_run pour $TODAY — tir de rattrapage ignoré."
-          else
-            echo "already_done=false" >> $GITHUB_OUTPUT
-            if ! $HISTORY_OK; then
-              echo "🚀 Aucune entrée pour $TODAY dans history.csv — démarrage de l'analyse."
-            else
-              echo "🚀 .last_run absent ou non mis à jour pour $TODAY — démarrage de l'analyse."
-            fi
-          fi
+          # Ecart minimal entre deux rapports. Couvre le cas ou le serveur a
+          # deja declenche a 22h37 et ou un cron retarde arrive dans la nuit.
+          DELAI_MINI_H = 12
+
+          evenement = os.environ.get("EVENEMENT", "")
+          cron      = (os.environ.get("CRON") or "").strip()
+          forcer    = str(os.environ.get("FORCER", "")).lower() == "true"
+
+          maintenant = datetime.now(timezone.utc)
+          heure_paris = maintenant.astimezone(PARIS) if PARIS else maintenant
+          decalage_h = (heure_paris.utcoffset().total_seconds() / 3600) if PARIS else 0
+
+          print("--- Diagnostic de declenchement ---")
+          print(f"  evenement       : {evenement}")
+          print(f"  cron declare    : {cron or '(aucun)'}")
+          print(f"  heure UTC       : {maintenant:%Y-%m-%d %H:%M}")
+          print(f"  heure Paris     : {heure_paris:%Y-%m-%d %H:%M} (UTC+{decalage_h:.0f})")
+
+          def sortir(lancer, motif):
+              print(f"  decision        : {'LANCER' if lancer else 'IGNORER'} — {motif}")
+              print("-----------------------------------")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write(f"already_done={'false' if lancer else 'true'}\n")
+                  f.write(f"motif={motif}\n")
+              raise SystemExit(0)
+
+          # ── Filtrer la saison ───────────────────────────────────────────
+          # Deux crons couvrent l'annee ; un seul correspond au decalage du
+          # jour. On ne regarde PAS l'heure d'execution : elle peut arriver
+          # avec des heures de retard sans que cela change quoi que ce soit.
+          if evenement == "schedule":
+              attendu = "37 20 * * 1-5" if decalage_h >= 2 else "37 21 * * 1-5"
+              if cron and cron != attendu:
+                  sortir(False, f"cron hors saison (attendu « {attendu} »)")
+
+          if forcer:
+              sortir(True, "forcage demande")
+
+          # ── Anti-doublon par ECART DE TEMPS ────────────────────────────
+          # Comparer des dates de calendrier ne marche pas : un tir retarde
+          # arrive apres minuit et change de jour sans avoir rien produit.
+          dernier = None
+          try:
+              with open("reports/.last_run", encoding="utf-8") as f:
+                  brut = f.read().strip()
+              m = re.match(r"(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})", brut)
+              if m:
+                  dernier = datetime.strptime(m.group(1).replace("T", " "),
+                                              "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+          except OSError:
+              pass
+
+          if dernier is None:
+              sortir(True, "aucun rapport anterieur enregistre")
+
+          ecart_h = (maintenant - dernier).total_seconds() / 3600
+          print(f"  dernier rapport : {dernier:%Y-%m-%d %H:%M} UTC "
+                f"(il y a {ecart_h:.1f} h)")
+
+          if ecart_h < DELAI_MINI_H:
+              sortir(False, f"rapport produit il y a {ecart_h:.1f} h "
+                            f"(moins de {DELAI_MINI_H} h)")
+
+          # Coherence : un rapport « recent » mais dont l'historique ne porte
+          # aucune trace signale un run precedent qui a plante en silence.
+          lignes = glob.glob("reports/*/history.csv")
+          print(f"  historiques     : {len(lignes)} fichier(s)")
+          sortir(True, f"dernier rapport il y a {ecart_h:.1f} h")
+          FIN
+
+      # ── 1 bis. Journal lisible dans le resume du run ───────────────────
+      - name: Resume
+        if: always()
+        run: |
+          {
+            echo "### Declenchement"
+            echo ""
+            echo '```'
+            cat decision.txt 2>/dev/null || echo "(pas de decision enregistree)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # ── 2. Python ──────────────────────────────────────────────────────
       - name: Set up Python 3.11
