@@ -1,9 +1,9 @@
 name: Keep-Alive
 # GitHub désactive les crons après 60 jours d'inactivité.
 # Ce workflow se lance chaque lundi pour maintenir le repo actif.
-# CORRECTION v2 : on déclenche aussi daily_analysis via workflow_dispatch
-# pour s'assurer qu'il reste activé (les commits seuls ne suffisent pas
-# à réactiver un workflow schedulé désactivé par GitHub).
+# Il se contente de maintenir l'activite du depot et de reactiver l'analyse
+# quotidienne si GitHub l'a desactivee. Il ne DECLENCHE plus l'analyse :
+# voir la note en fin de fichier.
 on:
   schedule:
     - cron: "0 7 * * 1"  # Chaque lundi à 07h00 UTC
@@ -28,33 +28,39 @@ jobs:
           git commit -m "💓 keep-alive $(date -u '+%Y-%m-%d')"
           git push
 
-      # CORRECTION : réactiver daily_analysis s'il a été désactivé par GitHub.
-      # GitHub désactive un workflow schedulé si aucun run ne s'est déclenché
-      # depuis 60 jours — les commits ne comptent PAS comme activité de workflow.
-      # On force un workflow_dispatch pour le "wake up".
-      - name: Re-enable daily_analysis workflow if needed
+      # Reactiver daily_analysis si GitHub l'a desactive.
+      # GitHub desactive un workflow planifie apres 60 jours sans activite ;
+      # les commits ne comptent PAS comme activite de workflow.
+      - name: Reactiver l'analyse quotidienne si besoin
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           REPO="${{ github.repository }}"
           WORKFLOW="daily_analysis.yml"
-          
-          # Vérifier l'état du workflow
+
           STATE=$(gh api repos/$REPO/actions/workflows/$WORKFLOW --jq '.state' 2>/dev/null || echo "unknown")
-          echo "État du workflow $WORKFLOW : $STATE"
-          
+          echo "Etat du workflow $WORKFLOW : $STATE"
+
           if [ "$STATE" = "disabled_inactivity" ] || [ "$STATE" = "disabled_manually" ]; then
-            echo "⚠️ Workflow $WORKFLOW désactivé ($STATE) — réactivation en cours..."
+            echo "Workflow desactive ($STATE) — reactivation."
             gh api repos/$REPO/actions/workflows/$WORKFLOW/enable -X PUT
-            echo "✅ Workflow $WORKFLOW réactivé."
+            echo "Reactive."
           else
-            echo "✅ Workflow $WORKFLOW actif ($STATE) — aucune action requise."
+            echo "Workflow actif ($STATE) — rien a faire."
           fi
-          
-          # Déclencher un run manuel pour s'assurer que tout fonctionne
-          # (uniquement le lundi pour ne pas doubler avec le cron daily)
-          DAY_OF_WEEK=$(date -u '+%u')
-          if [ "$DAY_OF_WEEK" = "1" ]; then
-            echo "📅 Lundi détecté — déclenchement workflow_dispatch sur daily_analysis..."
-            gh workflow run $WORKFLOW --repo $REPO 2>/dev/null && echo "✅ Déclenché." || echo "ℹ️ Déjà déclenché aujourd'hui ou erreur."
-          fi
+
+      # ── CE QUI A ETE RETIRE, ET POURQUOI ──────────────────────────────
+      # Ce workflow declenchait aussi l'analyse chaque lundi, via
+      # « gh workflow run daily_analysis.yml ».
+      #
+      # Il tourne a 07h00 UTC, soit 9h du matin a Paris : les bourses
+      # europeennes viennent d'ouvrir et New York n'a pas encore commence.
+      # L'analyse relevait donc des cours de SEANCE et les ecrivait dans
+      # history.csv, qui n'attend que des cours de CLOTURE. Le dernier
+      # rapport produit sur ce depot, le 31 aout a 16h30, vient de la : ce
+      # n'etait pas le rapport du soir, c'etait un releve de milieu de
+      # journee declenche par ce keep-alive.
+      #
+      # Le declenchement legitime vient desormais du serveur, a 22h37, avec
+      # les crons du workflow en filet de securite. Le keep-alive se
+      # contente de son role : maintenir le depot actif.
