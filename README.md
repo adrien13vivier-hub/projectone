@@ -1,4 +1,4 @@
-# 📊 Portfolio Analyzer v8.0
+# 📊 Portfolio Analyzer v8.1
 
 Rapport quotidien automatisé à **16h00 Paris (CEST)** via GitHub Actions — 4 sources de données avec validation croisée et fallback en cascade.
 
@@ -200,6 +200,62 @@ clair, quitte à ne pas envoyer l'alerte.
 | `cache/session_cache.json` | Cache fallback des derniers cours valides |
 
 ## Changelog
+
+### v8.1 — Le site : horaire, comptes, mode d'emploi
+
+**Pourquoi plus aucun rapport depuis le 31 août.** Les runs planifiés
+apparaissaient tous **en vert** dans l'onglet Actions — et ne produisaient
+rien, en 7 à 16 secondes au lieu d'une minute. Le garde-fou du workflow lisait
+l'heure de Paris *au moment où le job démarre*. Or GitHub livre ses tâches
+planifiées en retard : relevé sur ce dépôt, le cron de 20:37 UTC a démarré à
+22:48 et 22:49 UTC, celui de 21:37 UTC à 23:31 et 23:32 UTC — plus de deux
+heures, chaque jour. À 22:48 UTC il est 00h48 à Paris, le test « heure < 22 »
+était vrai, et le job s'écartait lui-même en sortant en succès.
+
+- ✅ Le garde-fou décide désormais à partir de `github.event.schedule` (quel
+      cron a déclaré le tir), information exacte quel que soit le retard, et
+      l'anti-doublon compare un **écart de temps** depuis le dernier rapport
+      plutôt que des dates de calendrier — fragiles quand un tir arrive après
+      minuit.
+- ✅ **Le vrai top départ vient du serveur**, qui appelle GitHub à 22h37 pile
+      (`api/github_sync.declencher_analyse`). L'analyse continue de tourner sur
+      GitHub, où vivent les clés API ; seul le déclenchement change de camp.
+      Les crons restent déclarés en filet de sécurité.
+- ✅ Le keep-alive ne déclenche plus l'analyse. Il tournait le lundi à 07h00
+      UTC, soit 9h du matin à Paris : il relevait des cours de **séance** et les
+      écrivait dans un historique qui n'attend que des cours de clôture. Le
+      rapport du 31 août à 16h30 venait de là.
+
+**Connexion et comptes**
+
+- 🐛 **On ne pouvait pas se reconnecter avec son propre identifiant.**
+      L'inscription normalise le nom (« Pete33 » → `pete33`) ; la connexion
+      interrogeait la base avec le texte brut. Taper son nom exactement comme à
+      l'inscription renvoyait « Identifiants incorrects », sans explication. Un
+      espace laissé par la saisie automatique d'un téléphone suffisait aussi.
+- 🐛 La limitation de tentatives portait sur le nom brut : changer la casse à
+      chaque essai repartait de zéro et permettait de tester des mots de passe
+      en boucle. Elle porte désormais sur le nom normalisé.
+- 🐛 **Les liens de rapport des nouveaux comptes ne menaient nulle part.** Les
+      jetons sont fabriqués par le serveur ; sans être publiés dans le dépôt,
+      GitHub Actions en générait d'autres au moment de publier. La table est
+      maintenant poussée à chaque inscription **et** rattrapée au démarrage du
+      service, pour les comptes déjà créés.
+
+**Interface**
+
+- ✅ Le bouton « Lancer maintenant » est retiré, et l'adresse `/api/analyze`
+      répond 403 : retirer un bouton ne ferme pas une porte. Une analyse lancée
+      depuis le serveur tourne sans les clés API, produit des cours faux et les
+      écrit définitivement dans l'historique.
+- ✅ Les créneaux étalés de 5 minutes (22h30, 22h35, 22h40…) ne sont plus
+      affichés nulle part : l'analyse est groupée, tout le monde a le même
+      horaire. L'heure affichée vient du serveur, donc elle ne peut plus mentir
+      sur l'heure réelle du déclenchement.
+- ✅ Nouvel onglet **Mode d'emploi** dans le site.
+- ✅ Nouvelle adresse `/api/version` : elle dit quelle version tourne
+      réellement sur la machine. Le doute avait coûté une semaine, deux
+      correctifs présents dans le dépôt n'étant pas actifs sur le serveur.
 
 ### v8.0 — Multi-actifs, stops & alertes, dimensionnement
 - ✅ **Nouveau fichier `risk_engine.py`** : volatilité, VQ, quatre types de
