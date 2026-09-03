@@ -82,13 +82,17 @@ JWT_EXPIRE       = 60 * 8   # 8 heures
 # URL de base Cloudflare Pages — à adapter à ton projet
 CLOUDFLARE_BASE  = os.getenv("CLOUDFLARE_PAGES_URL", "https://projectone.pages.dev")
 
-# Heure d'analyse : 22h30 Paris, marches US et Euronext fermes.
-# Euronext ferme a 17h30 ; New York a 22h00 heure de Paris. La demi-heure
-# de marge laisse les prix d'enchere de cloture se consolider.
+# Heure d'analyse : 22h37 Paris, marches US et Euronext fermes.
+# Euronext ferme a 17h30 ; New York a 22h00 heure de Paris. Les 37 minutes de
+# marge laissent les prix d'enchere de cloture se consolider.
+#
+# Minute volontairement atypique : GitHub documente que les taches planifiees
+# peuvent etre retardees quand trop de depots demandent le meme creneau, et
+# les minutes rondes sont les plus encombrees.
 ANALYSE_HEURE  = int(os.getenv("ANALYSE_HEURE",  "22"))
-ANALYSE_MINUTE = int(os.getenv("ANALYSE_MINUTE", "30"))
+ANALYSE_MINUTE = int(os.getenv("ANALYSE_MINUTE", "37"))
 
-# Les utilisateurs sont espaces de 5 minutes a partir de 22h30, pour etaler
+# Les utilisateurs etaient espaces de 5 minutes a partir de 22h30, pour etaler
 # les appels API plutot que de les lancer tous ensemble :
 # 22h30, 22h35, 22h40, 22h45, 22h50.
 # Les creneaux decales ont ete SUPPRIMES.
@@ -125,18 +129,43 @@ SLOT_PAS_MINUTES = 0
 # presentes sur cette machine, et en acceptant le surcout d'appels.
 PLANIFICATION_LOCALE = os.getenv("PLANIFICATION_LOCALE", "0") == "1"
 
-# Heure unique d'analyse, identique pour tous. Sert uniquement a informer
-# l'utilisateur : l'execution reelle est declenchee par le planificateur
-# distant, en un seul passage groupe.
-HEURE_ANALYSE_GROUPEE = os.getenv("HEURE_ANALYSE_GROUPEE", "22h37")
+# Heure unique d'analyse, identique pour tous. Sert a informer l'utilisateur
+# ET a programmer le declenchement : une seule source, donc l'affichage ne
+# peut plus mentir sur l'heure reelle. C'etait le cas jusqu'ici : la page
+# annoncait « 22h37 » pendant que /api/status renvoyait 22h30, 22h35, 22h40...
+HEURE_ANALYSE_GROUPEE = os.getenv(
+    "HEURE_ANALYSE_GROUPEE", f"{ANALYSE_HEURE}h{ANALYSE_MINUTE:02d}")
+
+# Declenchement de l'analyse a l'heure, depuis CETTE machine.
+#
+# POURQUOI. Les crons de GitHub Actions ne sont pas ponctuels. Sur ce depot,
+# les declenchements de 20h37 UTC sont arrives entre 22h48 et 23h32 UTC,
+# chaque jour, soit plus de deux heures de retard. Aucun reglage cote GitHub
+# n'y change quoi que ce soit.
+#
+# Cette machine est allumee en permanence et son horloge est juste. Elle
+# appelle donc GitHub a l'heure dite ; l'analyse continue de tourner chez
+# GitHub, ou vivent les cles API. Seul le top depart change de camp.
+#
+# Ne PAS confondre avec PLANIFICATION_LOCALE, qui ferait tourner l'analyse
+# ICI (un processus par utilisateur, sans les cles : des chiffres faux).
+DECLENCHEMENT_DISTANT = os.getenv("DECLENCHEMENT_DISTANT", "1") == "1"
+WORKFLOW_ANALYSE      = os.getenv("WORKFLOW_ANALYSE", "daily_analysis.yml")
+# Jours de declenchement : lundi-vendredi. Les bourses sont fermees le week-end.
+JOURS_ANALYSE         = os.getenv("JOURS_ANALYSE", "mon-fri")
 
 
 def creneau_utilisateur(slot_idx: int) -> tuple:
     """(heure, minute) du creneau d'un utilisateur, heure de Paris.
 
-    Le calcul passe par un total en minutes puis retombe sur une heure :
-    au-dela de cinq inscrits, les creneaux debordent proprement sur l'heure
-    suivante au lieu de produire une minute invalide (22h65).
+    RELIQUE. Avec SLOT_PAS_MINUTES = 0, cette fonction renvoie la meme heure
+    pour tout le monde : l'analyse est groupee. Elle n'est conservee que pour
+    la planification LOCALE (desactivee par defaut) et pour qu'un profil
+    ancien ne fasse pas planter le demarrage.
+
+    Ce qui s'affiche a l'utilisateur ne passe plus par ici mais par
+    HEURE_ANALYSE_GROUPEE : c'est ce qui garantit que la page n'annonce pas
+    une heure differente de celle du declenchement reel.
     """
     total  = ANALYSE_MINUTE + max(0, int(slot_idx)) * SLOT_PAS_MINUTES
     heure  = (ANALYSE_HEURE + total // 60) % 24
@@ -296,14 +325,101 @@ def _scheduled_job(username: str):
     status_str = "✅ OK" if result.get("success") else f"❌ Erreur: {result.get('error', '?')}"
     print(f"[Scheduler] {username} → {status_str}")
 
+def _sync_configure() -> bool:
+    """github_sync est-il utilisable ? Import tolerant : le module peut manquer."""
+    try:
+        from api import github_sync
+        return github_sync.est_configure()
+    except Exception:
+        return False
+
+
+def _publier_liens_rapport():
+    """Pousse data/report_links.json vers le depot. Ne leve jamais."""
+    try:
+        from api import github_sync
+        from api.load_portfolio import charger_liens
+        table = charger_liens()
+        if not table:
+            print("[Liens] Aucun jeton local a publier.")
+            return
+        res = github_sync.pousser_liens(table)
+        marque = "OK" if res.get("ok") else "ECHEC"
+        print(f"[Liens] Publication de {len(table)} jeton(s) : {marque} "
+              f"({res.get('etat')}) {res.get('detail', '')}")
+    except Exception as e:
+        print(f"[Liens] Publication impossible : {type(e).__name__}: {e}")
+
+
+def _declencher_analyse_distante():
+    """Demande a GitHub de lancer l'analyse. Appele par le planificateur.
+
+    Ne leve jamais : une panne reseau a 22h37 ne doit pas tuer le
+    planificateur, sinon le tir du lendemain ne partirait pas non plus.
+    """
+    horodatage = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M")
+    try:
+        from api import github_sync
+        res = github_sync.declencher_analyse(WORKFLOW_ANALYSE)
+    except Exception as e:
+        res = {"ok": False, "etat": "erreur", "detail": f"{type(e).__name__}: {e}"}
+
+    global _DERNIER_DECLENCHEMENT
+    _DERNIER_DECLENCHEMENT = {"quand": horodatage, **res}
+    marque = "OK" if res.get("ok") else "ECHEC"
+    print(f"[Analyse] {horodatage} — declenchement GitHub : {marque} "
+          f"({res.get('etat')}) {res.get('detail', '')}")
+
+
+# Dernier declenchement tente, expose par /api/status pour pouvoir verifier
+# depuis le site que le tir de la veille est bien parti.
+_DERNIER_DECLENCHEMENT: dict = {}
+
+
 def rebuild_scheduler():
     """Relit la BDD et synchronise les jobs APScheduler."""
     scheduler.remove_all_jobs()
 
+    # ── Declenchement a l'heure, depuis cette machine ──────────────────────
+    # Un seul job pour tout le monde : l'analyse est groupee cote GitHub.
+    if DECLENCHEMENT_DISTANT:
+        scheduler.add_job(
+            _declencher_analyse_distante,
+            trigger=CronTrigger(hour=ANALYSE_HEURE, minute=ANALYSE_MINUTE,
+                                day_of_week=JOURS_ANALYSE,
+                                timezone="Europe/Paris"),
+            id="declenchement_github",
+            replace_existing=True,
+            misfire_grace_time=3600,   # une coupure d'une heure ne perd pas le tir
+            coalesce=True,             # jamais deux tirs pour un seul retard
+        )
+        print(f"[Scheduler] Declenchement GitHub programme : "
+              f"{ANALYSE_HEURE}h{ANALYSE_MINUTE:02d} Paris, {JOURS_ANALYSE}.")
+        if not _sync_configure():
+            print("            ATTENTION : GITHUB_TOKEN/GITHUB_REPO absents, "
+                  "le declenchement echouera.")
+
+    # ── Rattrapage au demarrage : publier la table des jetons ──────────────
+    # Les jetons de rapport sont fabriques ICI et doivent exister dans le
+    # depot, sinon GitHub Actions en genere d'autres au moment de publier et
+    # les adresses remises aux utilisateurs ne menent nulle part. C'est
+    # exactement ce qui est arrive aux comptes crees apres adrien.
+    #
+    # Le correctif pousse la table a chaque inscription, mais les comptes
+    # deja crees restent orphelins : ce rattrapage les recupere, une fois,
+    # au demarrage du service. Differe de 20 secondes pour ne pas retarder
+    # l'ouverture du port.
+    scheduler.add_job(
+        _publier_liens_rapport,
+        trigger="date",
+        run_date=datetime.now(timezone.utc) + timedelta(seconds=20),
+        id="rattrapage_liens",
+        replace_existing=True,
+    )
+
     if not PLANIFICATION_LOCALE:
-        print("[Scheduler] Planification locale desactivee.")
-        print("            L'analyse est produite par GitHub Actions a 22h37,")
-        print("            en un seul passage pour tous les profils.")
+        print("[Scheduler] Planification locale desactivee (analyse executee "
+              "par GitHub Actions, en un seul passage pour tous les profils).")
         return
 
     manquantes = [k for k, v in (("FINNHUB_API_KEY", os.getenv("FINNHUB_API_KEY")),
@@ -415,18 +531,54 @@ def serve_interface():
     raise HTTPException(status_code=404, detail="interface.html introuvable")
 
 
+VERSION_APP = "8.1"
+
+
+@app.get("/api/version")
+def version_app():
+    """Version reellement en service sur CETTE machine.
+
+    Sert a repondre a une question simple et jusqu'ici sans reponse : le
+    fichier que je viens de corriger est-il celui qui tourne ? Le doute a
+    coute une semaine sur ce projet, ou deux correctifs presents dans le
+    depot n'etaient pas actifs sur le serveur.
+    """
+    import platform
+    try:
+        horodatage = datetime.fromtimestamp(
+            Path(__file__).stat().st_mtime, timezone.utc).isoformat()
+    except OSError:
+        horodatage = None
+    return {
+        "version":            VERSION_APP,
+        "fichier_backend":    str(Path(__file__)),
+        "modifie_le":         horodatage,
+        "python":             platform.python_version(),
+        "heure_analyse":      HEURE_ANALYSE_GROUPEE,
+        "etalement_creneaux": SLOT_PAS_MINUTES,
+        "declenchement_distant": DECLENCHEMENT_DISTANT,
+        "analyse_manuelle":   ANALYSE_MANUELLE_OUVERTE,
+        "inscription_libre":  INSCRIPTION_LIBRE,
+        "cloudflare_base":    CLOUDFLARE_BASE,
+    }
+
+
 @app.get("/api/status")
 def status_check():
     con = get_db()
     nb_users = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     rows = con.execute("SELECT username, slot_index, report_url FROM users ORDER BY slot_index").fetchall()
     con.close()
+    # Une seule heure pour tout le monde. Les creneaux etales de 5 minutes
+    # (22h30, 22h35, 22h40...) ont ete supprimes : l'analyse est GROUPEE,
+    # un seul passage traite tous les profils et mutualise les appels API.
+    # Cette liste conserve la cle "slot" pour ne pas casser une interface
+    # ancienne, mais elle vaut la meme chose sur toutes les lignes.
     slots = []
     for r in rows:
-        s_h, s_m = creneau_utilisateur(r["slot_index"])
         slots.append({
             "username":   r["username"],
-            "slot":       f"{s_h}h{s_m:02d}",
+            "slot":       HEURE_ANALYSE_GROUPEE,
             "report_url": lien_rapport(r["username"], CLOUDFLARE_BASE)
         })
     return {
@@ -434,6 +586,17 @@ def status_check():
         "users":    nb_users,
         "max_users": MAX_USERS,
         "time":     datetime.now(timezone.utc).isoformat(),
+        "analyse": {
+            "heure":     HEURE_ANALYSE_GROUPEE,
+            "fuseau":    "Europe/Paris",
+            "jours":     JOURS_ANALYSE,
+            "groupee":   True,
+            "declenchee_par": ("ce serveur (a l'heure), avec les crons GitHub "
+                               "en filet de securite"
+                               if DECLENCHEMENT_DISTANT
+                               else "les crons GitHub Actions uniquement"),
+            "dernier_declenchement": _DERNIER_DECLENCHEMENT or None,
+        },
         "schedule": slots
     }
 
@@ -458,28 +621,75 @@ def _verrou(cle: str, maximum: int = _MAX_TENTATIVES):
     _TENTATIVES[cle] = essais
 
 
+def _slug_utilisateur(brut: str) -> str:
+    """Identifiant sur : minuscules, lettres, chiffres, tirets.
+
+    Le nom devient un nom de fichier (portfolio_<nom>.json) et un dossier.
+    Laisser passer un point ou une barre oblique permettrait d'ecrire
+    ailleurs que dans data/portfolios/.
+    """
+    import re as _re2
+    net = _re2.sub(r"[^a-z0-9_-]+", "-", str(brut or "").strip().lower()).strip("-")
+    return net[:24]
+
+
+def _trouver_utilisateur(con, saisi: str):
+    """Retrouve un compte a partir de ce que l'utilisateur a tape.
+
+    CORRECTION — C'ETAIT LE BOGUE DE CONNEXION
+    ------------------------------------------
+    L'inscription normalise le nom (minuscules, espaces retires) : qui
+    s'inscrit sous « Pete33 » est enregistre « pete33 ». La connexion, elle,
+    interrogeait la base avec le texte brut. Se reconnecter en tapant son nom
+    exactement comme a l'inscription renvoyait donc « Identifiants
+    incorrects », sans aucun moyen de comprendre pourquoi. Un espace laisse
+    par la saisie automatique du telephone suffisait aussi.
+
+    On cherche desormais d'abord tel quel — pour ne pas casser un compte
+    ancien dont le nom stocke ne serait pas normalise — puis sur le nom
+    normalise.
+    """
+    brut = str(saisi or "")
+    row = con.execute(
+        "SELECT username, password_hash, role FROM users WHERE username=?",
+        (brut,)).fetchone()
+    if row:
+        return row
+    net = _slug_utilisateur(brut)
+    if net and net != brut:
+        return con.execute(
+            "SELECT username, password_hash, role FROM users WHERE username=?",
+            (net,)).fetchone()
+    return None
+
+
 @app.post("/api/login")
 def login(form: OAuth2PasswordRequestForm = Depends()):
-    _verrou(f"login:{form.username}")
+    # Le verrou porte sur le nom NORMALISE : sinon il suffisait de changer la
+    # casse a chaque essai pour repartir a zero et tester des mots de passe
+    # en boucle.
+    cle_verrou = f"login:{_slug_utilisateur(form.username)}"
+    _verrou(cle_verrou)
     con = get_db()
-    row = con.execute(
-        "SELECT password_hash, role, report_url FROM users WHERE username=?", (form.username,)
-    ).fetchone()
+    row = _trouver_utilisateur(con, form.username)
     con.close()
     if not row or not bcrypt.checkpw(form.password.encode(), row["password_hash"].encode()):
         raise HTTPException(status_code=401, detail="Identifiants incorrects")
-    _TENTATIVES.pop(f"login:{form.username}", None)
-    token = create_token(form.username, row["role"])
+    _TENTATIVES.pop(cle_verrou, None)
+    # A partir d'ici on n'utilise QUE le nom stocke en base : le jeton, les
+    # chemins de fichiers et les droits en dependent.
+    nom = row["username"]
+    token = create_token(nom, row["role"])
     return {
         "access_token": token,
         "token_type":   "bearer",
-        "username":     form.username,
+        "username":     nom,
         "role":         row["role"],
         # Recalculee a chaque connexion, jamais relue depuis la base : la
         # colonne report_url est un instantane fige a la creation du compte.
         # Si CLOUDFLARE_PAGES_URL a ete renseigne apres coup, ou si le compte
         # a ete renomme, cette colonne reste fausse indefiniment.
-        "report_url":   lien_rapport(form.username, CLOUDFLARE_BASE)
+        "report_url":   lien_rapport(nom, CLOUDFLARE_BASE)
     }
 
 
@@ -601,9 +811,28 @@ def list_stop_types():
     ]
 
 
+# Analyse manuelle : FERMEE.
+#
+# Le bouton a ete retire de l'interface, mais retirer un bouton ne ferme pas
+# une porte : l'adresse restait appelable directement. Or une analyse lancee
+# ICI tourne sans les cles API, produit des cours faux et les ecrit dans
+# history.csv — un historique corrompu ne se repare pas.
+#
+# La route est conservee plutot que supprimee, pour qu'un onglet reste ouvert
+# sur une ancienne version de la page recoive une explication au lieu d'un
+# « 404 » incomprehensible.
+ANALYSE_MANUELLE_OUVERTE = os.getenv("ANALYSE_MANUELLE_OUVERTE", "0") == "1"
+
+
 @app.post("/api/analyze/{username}")
 def trigger_analysis(username: str, user: dict = Depends(current_user)):
-    """Déclenche l'analyse manuellement (hors planning automatique)."""
+    """Analyse manuelle — desactivee."""
+    if not ANALYSE_MANUELLE_OUVERTE:
+        raise HTTPException(
+            status_code=403,
+            detail=(f"Le lancement manuel est desactive. L'analyse part "
+                    f"automatiquement a {HEURE_ANALYSE_GROUPEE} (heure de Paris), "
+                    f"du lundi au vendredi, pour tous les portefeuilles a la fois."))
     if user["sub"] != username and user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès interdit")
     result = run_analysis_for(username)
@@ -792,12 +1021,11 @@ def list_users(admin: dict = Depends(require_admin)):
     con.close()
     result = []
     for r in rows:
-        s_h, s_m = creneau_utilisateur(r["slot_index"])
         result.append({
             "username":   r["username"],
             "role":       r["role"],
             "created_at": r["created_at"],
-            "slot":       f"{s_h}h{s_m:02d} (Paris)",
+            "slot":       f"{HEURE_ANALYSE_GROUPEE} (Paris)",
             "report_url": lien_rapport(r["username"], CLOUDFLARE_BASE)
         })
     return result
@@ -806,18 +1034,6 @@ def list_users(admin: dict = Depends(require_admin)):
 class Inscription(BaseModel):
     username: str
     password: str
-
-
-def _slug_utilisateur(brut: str) -> str:
-    """Identifiant sur : minuscules, lettres, chiffres, tirets.
-
-    Le nom devient un nom de fichier (portfolio_<nom>.json) et un dossier.
-    Laisser passer un point ou une barre oblique permettrait d'ecrire
-    ailleurs que dans data/portfolios/.
-    """
-    import re as _re2
-    net = _re2.sub(r"[^a-z0-9_-]+", "-", str(brut or "").strip().lower()).strip("-")
-    return net[:24]
 
 
 @app.get("/api/inscription-ouverte")
