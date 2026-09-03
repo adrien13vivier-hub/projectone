@@ -27,9 +27,15 @@ CONFIGURATION
     GITHUB_BRANCH  "main" par défaut
 
 Le jeton doit être un **jeton d'accès personnel affiné** (fine-grained),
-restreint à CE SEUL dépôt, avec la permission « Contents : Read and write ».
-Rien d'autre. Un jeton classique donnant accès à tous tes dépôts n'a pas sa
-place sur une machine exposée.
+restreint à CE SEUL dépôt, avec deux permissions et pas une de plus :
+
+    Contents : Read and write   → pousser les profils et la table des jetons
+    Actions  : Read and write   → déclencher l'analyse de 22h37
+
+Un jeton classique donnant accès à tous tes dépôts n'a pas sa place sur une
+machine exposée. Si « Actions » manque, tout le reste continue de marcher :
+seul le déclenchement à l'heure est perdu, et les crons GitHub prennent le
+relais (à l'heure qu'ils veulent bien).
 
 SANS CONFIGURATION, RIEN NE CASSE
 ---------------------------------
@@ -207,6 +213,58 @@ def supprimer_fichier(chemin: str, message: str) -> dict:
         return {"ok": False, "etat": "echec", "detail": f"HTTP {r.status_code}"}
     except requests.RequestException as e:
         return {"ok": False, "etat": "reseau", "detail": f"{type(e).__name__}"}
+
+
+def declencher_analyse(workflow: str = "daily_analysis.yml",
+                       branche: str = None) -> dict:
+    """Demande a GitHub de lancer l'analyse MAINTENANT (workflow_dispatch).
+
+    POURQUOI CE DETOUR
+    ------------------
+    Les crons de GitHub Actions ne sont pas ponctuels. Sur ce depot, les
+    declenchements de 20h37 UTC sont arrives entre 22h48 et 23h32 UTC, soit
+    plus de deux heures de retard, tous les jours. Aucun reglage cote GitHub
+    ne corrige cela : la file d'attente des taches planifiees est partagee et
+    sans garantie de delai.
+
+    Cette machine, elle, est allumee en permanence et son horloge est juste.
+    Elle appelle donc GitHub a 22h37 pile. L'analyse continue de tourner chez
+    GitHub, ou vivent les cles API : seul le TOP DEPART change de camp.
+
+    Les crons restent declares dans le workflow comme filet de securite, au
+    cas ou cette machine serait eteinte. Le garde-fou anti-doublon du workflow
+    empeche les deux chemins de produire deux rapports le meme jour.
+    """
+    cfg = _config()
+    if not est_configure():
+        return {"ok": False, "etat": "non configure",
+                "detail": "GITHUB_TOKEN et GITHUB_REPO ne sont pas definis."}
+    ref = (branche or cfg["branch"])
+    try:
+        r = requests.post(
+            f"{API}/repos/{cfg['repo']}/actions/workflows/{workflow}/dispatches",
+            headers=_entetes(cfg["token"]),
+            data=json.dumps({"ref": ref}), timeout=TIMEOUT)
+        if r.status_code == 204:
+            return {"ok": True, "etat": "declenche",
+                    "detail": f"{workflow} lance sur {ref}"}
+        if r.status_code == 403:
+            return {"ok": False, "etat": "droits insuffisants",
+                    "detail": "Le jeton n'a pas la permission « Actions : "
+                              "Read and write » sur ce depot."}
+        if r.status_code == 404:
+            return {"ok": False, "etat": "introuvable",
+                    "detail": f"Workflow {workflow} absent, ou jeton sans acces "
+                              f"a {cfg['repo']}."}
+        if r.status_code == 422:
+            return {"ok": False, "etat": "refuse",
+                    "detail": "GitHub refuse le declenchement : le workflow doit "
+                              "declarer « workflow_dispatch » et exister sur la "
+                              "branche par defaut."}
+        return {"ok": False, "etat": "echec",
+                "detail": f"HTTP {r.status_code} : {r.text[:180]}"}
+    except requests.RequestException as e:
+        return {"ok": False, "etat": "reseau", "detail": f"{type(e).__name__}: {e}"}
 
 
 def pousser_liens(table: dict) -> dict:
