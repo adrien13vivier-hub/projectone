@@ -16,12 +16,34 @@ Trois raisons, dans l'ordre d'importance.
 Toutes les routes exigent une session ouverte (Depends(current_user)).
 Aucun visiteur non connecte n'atteint quoi que ce soit ici.
 
-Variables d'environnement lues au demarrage :
+Quatre reglages sont necessaires :
 
     ANALYSE_API_URL        adresse du service Analyse      (ex. https://xxx.up.railway.app)
     ANALYSE_API_KEY        sa cle de lecture
     SWINGHUNTER_API_URL    adresse du service swing-hunter
     SWINGHUNTER_API_KEY    sa cle de lecture
+
+Ils peuvent etre poses de deux facons, au choix :
+
+1. Un fichier `config_externe.json` place a cote de ce dossier `api/`,
+   c'est-a-dire dans /opt/portfolio/. C'est la methode la plus simple : elle
+   ne demande aucune manipulation de systemd, juste une copie de fichier —
+   le meme geste que pour deployer backend.py.
+
+       {
+         "ANALYSE_API_URL": "https://analyse-production-8156.up.railway.app",
+         "ANALYSE_API_KEY": "...",
+         "SWINGHUNTER_API_URL": "https://impartial-flow-production-dc00.up.railway.app",
+         "SWINGHUNTER_API_KEY": "..."
+       }
+
+   CE FICHIER CONTIENT DES SECRETS. Il ne doit jamais partir sur GitHub :
+   ajoute `config_externe.json` a ton .gitignore.
+
+2. Des variables d'environnement du meme nom. Elles ont la priorite sur le
+   fichier, ce qui permet de surcharger un reglage sans y toucher.
+
+Le chemin du fichier peut etre change par la variable EXTERNAL_CONFIG.
 
 Aucune n'est obligatoire au demarrage : un service non configure est
 simplement declare « non configure » par /api/external/sante, et ses routes
@@ -32,9 +54,11 @@ rapport quotidien de sortir.
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import requests
@@ -44,10 +68,56 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 # Reglages
 # ─────────────────────────────────────────────────────────────────────────────
 
-ANALYSE_URL = (os.getenv("ANALYSE_API_URL", "") or "").rstrip("/")
-ANALYSE_KEY = os.getenv("ANALYSE_API_KEY", "") or ""
-SWING_URL = (os.getenv("SWINGHUNTER_API_URL", "") or "").rstrip("/")
-SWING_KEY = os.getenv("SWINGHUNTER_API_KEY", "") or ""
+CHEMIN_CONFIG = Path(os.getenv("EXTERNAL_CONFIG")
+                     or (Path(__file__).resolve().parent.parent / "config_externe.json"))
+
+CLES_CONFIG = ("ANALYSE_API_URL", "ANALYSE_API_KEY",
+               "SWINGHUNTER_API_URL", "SWINGHUNTER_API_KEY")
+
+
+def _charger_config() -> Dict[str, str]:
+    """Lit config_externe.json s'il existe. N'echoue jamais bruyamment.
+
+    Un fichier absent est normal (les variables d'environnement peuvent
+    suffire). Un fichier illisible est signale dans le journal mais n'empeche
+    pas le demarrage : le rapport quotidien doit continuer a sortir meme si
+    cette passerelle est mal configuree.
+    """
+    try:
+        if not CHEMIN_CONFIG.is_file():
+            return {}
+        brut = json.loads(CHEMIN_CONFIG.read_text(encoding="utf-8"))
+        if not isinstance(brut, dict):
+            print(f"[externe] {CHEMIN_CONFIG} : attendu un objet JSON, ignore.")
+            return {}
+        return {k: str(v).strip() for k, v in brut.items()
+                if k in CLES_CONFIG and v not in (None, "")}
+    except json.JSONDecodeError as e:
+        print(f"[externe] {CHEMIN_CONFIG} illisible (JSON invalide ligne {e.lineno}). "
+              f"Les routes /api/external resteront fermees.")
+    except OSError as e:
+        print(f"[externe] {CHEMIN_CONFIG} illisible ({e.strerror}).")
+    return {}
+
+
+_CONF = _charger_config()
+
+
+def _reglage(nom: str) -> str:
+    """Variable d'environnement d'abord, fichier ensuite."""
+    return (os.getenv(nom) or _CONF.get(nom) or "").strip()
+
+
+ANALYSE_URL = _reglage("ANALYSE_API_URL").rstrip("/")
+ANALYSE_KEY = _reglage("ANALYSE_API_KEY")
+SWING_URL = _reglage("SWINGHUNTER_API_URL").rstrip("/")
+SWING_KEY = _reglage("SWINGHUNTER_API_KEY")
+
+if not (ANALYSE_URL and ANALYSE_KEY and SWING_URL and SWING_KEY):
+    manquants = [n for n in CLES_CONFIG if not _reglage(n)]
+    print(f"[externe] Reglages manquants : {', '.join(manquants)}. "
+          f"Cherche dans l'environnement puis dans {CHEMIN_CONFIG}. "
+          f"Les onglets Bot et Analyse afficheront « non configure ».")
 
 # Delais d'attente. Le premier chiffre est le temps pour etablir la connexion,
 # le second le temps pour recevoir la reponse. Une analyse ne bloque jamais
