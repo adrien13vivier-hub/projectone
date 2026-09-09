@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.0 -- 09/09/2026 00:57 (Paris)
+# Rapport de Portefeuille v7.0 -- 10/09/2026 00:44 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 4.78/10
-**EUR/USD :** 1 EUR = 1.1628 USD
+**Tendance : Baissiere** | Score macro : 3.79/10
+**EUR/USD :** 1 EUR = 1.1632 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.58% | 7 673.52 |
-| CAC 40 | ^ +0.14% | 8 317.98 |
+| S&P 500 | v -0.48% | 7 636.36 |
+| CAC 40 | v -1.94% | 8 156.67 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 4.81% | -- |
-| OAT 10 ans (FR) | -- | 4.26% | -- |
-| Ecart OAT - UST | -- | -54 pb | -- |
+| UST 10 ans (US) | -- | 4.80% | -- |
+| OAT 10 ans (FR) | -- | 4.25% | -- |
+| Ecart OAT - UST | -- | -55 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,21 +38,21 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| CoreWeave | -- | Aucun | Aucun stop défini | -- | 85.85 | -- | Aucun |
-| Credit Agricole SA | -- | Aucun | Aucun stop défini | -- | 18.68 | -- | Aucun |
-| Abionyx Pharma | -- | Aucun | Aucun stop défini | -- | 1.84 | -- | Aucun |
+| Credit Agricole SA | -- | Aucun | Aucun stop défini | -- | 18.49 | -- | Aucun |
+| CoreWeave | -- | Aucun | Aucun stop défini | -- | 81.62 | -- | Aucun |
+| Abionyx Pharma | -- | Aucun | Aucun stop défini | -- | 1.90 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **376.89 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **3.77 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **367.14 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **3.67 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| CoreWeave | 96.4 % (Extrême) | 2.96 % | 40.0 % | -- | 7.82 EUR (dimensionné par la volatilité) | 171.70 EUR | 163.88 EUR |
-| Credit Agricole SA | 21.1 % (Modérée) | 0.69 % | 13.7 % | -- | 35.76 EUR (dimensionné par la volatilité) | 186.75 EUR | 150.99 EUR |
-| Abionyx Pharma | 55.0 % (Extrême) | 1.42 % | 35.8 % | -- | 13.70 EUR (dimensionné par la volatilité) | 18.44 EUR | 4.74 EUR |
+| Credit Agricole SA | 21.1 % (Modérée) | 0.74 % | 13.7 % | -- | 34.87 EUR (dimensionné par la volatilité) | 184.90 EUR | 150.03 EUR |
+| CoreWeave | 99.0 % (Extrême) | 3.13 % | 40.0 % | -- | 7.42 EUR (dimensionné par la volatilité) | 163.24 EUR | 155.82 EUR |
+| Abionyx Pharma | 55.1 % (Extrême) | 1.41 % | 35.8 % | -- | 13.32 EUR (dimensionné par la volatilité) | 19.00 EUR | 5.68 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -67,14 +67,14 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 376.89 EUR | 100.0% |
+| Actions | 367.14 EUR | 100.0% |
 
 **Par devise**
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| EUR | 205.19 EUR | 54.4% |
-| USD | 171.70 EUR | 45.6% |
+| EUR | 203.90 EUR | 55.5% |
+| USD | 163.24 EUR | 44.5% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -83,42 +83,15 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ## Analyse par Valeur
 
-### CoreWeave `CRWV.US`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
-|-------|-----------|-----|----------|---------|------------------|---------|
-| 85.85 EUR | ^ +11.72% | 171.70 EUR | - -16.12 EUR (-8.6%) | - -30.02 EUR (-16.0%) | **7.18/10** (41%) | CONSERVER |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> Why CoreWeave Stock Soared 12% Today | Billionaire David Tepper Just Bought These 2 Artificial Intelligence (AI) Stocks That Wall Street Thinks Could Soar by 5… | CRWV Stock Takes a 13% Hit in 3 Months: Time to Buy, Hold or Bail Out?
-
-**Detail de la note :**
-
-| Composante | Note | Poids |
-|------------|------|-------|
-| Momentum | 8.7/10 | 51% |
-| Consensus | 7.1/10 | 37% |
-| Risque | 1.0/10 | 12% |
-
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
-
-**Consensus analystes :** SB:10 B:22 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +10.1% | 3M +4.4% | 6M +25.0% -- HAUSSIER *(source : EODHD (fallback AV:vide))*
-
-**Justification :** Note 7.2/10 (confiance 41%). Points forts : momentum 8.7, consensus analystes 7.1. Points faibles : profil de risque 1.0. Momentum HAUSSIER. Position : -30.02 EUR (-16.0%) apres frais. Note etablie sur une partie seulement des criteres.
-
----
-
 ### Credit Agricole SA `ACA.PA`
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 18.68 EUR | ^ +0.03% | 186.75 EUR | + +17.75 EUR (+10.5%) | + +13.77 EUR (+8.2%) | **5.98/10** (41%) | SURVEILLER |
+| 18.49 EUR | ^ +0.05% | 184.90 EUR | + +15.90 EUR (+9.4%) | + +11.92 EUR (+7.0%) | **5.98/10** (41%) | SURVEILLER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Are Investors Undervaluing Credit Agricole (CRARY) Right Now? | CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the… | Should Value Investors Buy Credit Agricole (CRARY) Stock?
+> Should Value Investors Buy Credit Agricole (CRARY) Stock? | Are Investors Undervaluing Credit Agricole (CRARY) Right Now? | CREDIT AGRICOLE SA: Crédit Agricole S.A. launches a Share Repurchase Program for up to 32 million ordinary shares of the…
 
 **Detail de la note :**
 
@@ -131,9 +104,36 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
 
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -4.7% | 3M +14.5% | 6M +20.9% -- NEUTRE *(source : EODHD)*
+**Perf. historique :** 1M -7.2% | 3M +13.8% | 6M +21.1% -- NEUTRE *(source : EODHD)*
 
-**Justification :** Note 6.0/10 (confiance 41%). Points forts : profil de risque 8.0. Momentum NEUTRE. Position : +13.77 EUR (+8.2%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.0/10 (confiance 41%). Points forts : profil de risque 8.0. Momentum NEUTRE. Position : +11.92 EUR (+7.0%) apres frais. Note etablie sur une partie seulement des criteres.
+
+---
+
+### CoreWeave `CRWV.US`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 81.62 EUR | v -4.90% | 163.24 EUR | - -24.58 EUR (-13.1%) | - -38.48 EUR (-20.5%) | **5.03/10** (41%) | SURVEILLER (en moins-value) |
+
+**Actualite recente :** *(source : RSS Yahoo Finance)*
+
+> CoreWeave struggling to keep up with demand for Nvidia chips, CEO says | CoreWeave CEO: America's data center backlash won't stop the AI build-out | AI industry needs 'effective' communication on data centers, CoreWeave CEO says
+
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Momentum | 4.5/10 | 51% |
+| Consensus | 7.1/10 | 37% |
+| Risque | 1.0/10 | 12% |
+
+*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
+
+**Consensus analystes :** SB:10 B:22 H:12 S:1 SS:1 *(source : Finnhub)*
+**Perf. historique :** 1M +7.7% | 3M -0.8% | 6M -18.8% -- NEUTRE *(source : AlphaVantage)*
+
+**Justification :** Note 5.0/10 (confiance 41%). Points forts : consensus analystes 7.1. Points faibles : momentum 4.5, profil de risque 1.0. Momentum NEUTRE. Position : -38.48 EUR (-20.5%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -141,7 +141,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.84 EUR | ^ +0.00% | 18.44 EUR | - -19.96 EUR (-52.0%) | - -23.94 EUR (-62.3%) | **2.13/10** (41%) | SORTIR |
+| 1.90 EUR | ^ +0.00% | 19.00 EUR | - -19.40 EUR (-50.5%) | - -23.38 EUR (-60.9%) | **2.24/10** (41%) | SORTIR |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -151,16 +151,16 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 0.0/10 | 51% |
+| Momentum | 0.2/10 | 51% |
 | Consensus | 5.0/10 | 37% |
 | Risque | 2.5/10 | 12% |
 
 *Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : HTTP 403.*
 
 **Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -6.3% | 3M -30.8% | 6M -44.3% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -1.0% | 3M -28.8% | 6M -40.9% -- BAISSIER *(source : EODHD)*
 
-**Justification :** Note 2.1/10 (confiance 41%). Points faibles : profil de risque 2.5, momentum 0.0. Momentum BAISSIER. Position : -23.94 EUR (-62.3%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 2.2/10 (confiance 41%). Points faibles : profil de risque 2.5, momentum 0.2. Momentum BAISSIER. Position : -23.38 EUR (-60.9%) apres frais. Note etablie sur une partie seulement des criteres.
 
 ---
 
@@ -181,10 +181,10 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| CoreWeave | 85.85 | 171.70 | -16.12 (-8.6%) | -30.02 (-16.0%) | 7.18/10 | 41% | CONSERVER |
-| Credit Agricole SA | 18.68 | 186.75 | +17.75 (+10.5%) | +13.77 (+8.2%) | 5.98/10 | 41% | SURVEILLER |
-| Abionyx Pharma | 1.84 | 18.44 | -19.96 (-52.0%) | -23.94 (-62.3%) | 2.13/10 | 41% | SORTIR |
-| **TOTAL** | — | **376.89** | **-18.33 (-4.6%)** | **-40.19 (-10.2%)** | — | — | — |
+| Credit Agricole SA | 18.49 | 184.90 | +15.90 (+9.4%) | +11.92 (+7.0%) | 5.98/10 | 41% | SURVEILLER |
+| CoreWeave | 81.62 | 163.24 | -24.58 (-13.1%) | -38.48 (-20.5%) | 5.03/10 | 41% | SURVEILLER (en moins-value) |
+| Abionyx Pharma | 1.90 | 19.00 | -19.40 (-50.5%) | -23.38 (-60.9%) | 2.24/10 | 41% | SORTIR |
+| **TOTAL** | — | **367.14** | **-28.08 (-7.1%)** | **-49.94 (-12.6%)** | — | — | — |
 
 ---
 
@@ -202,10 +202,10 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 - **CAC 40** : EODHD
 - **UST 10 ans (US)** : EODHD
 - **OAT 10 ans (FR)** : EODHD
-- **CRWV.US** : cours: EODHD, consensus: Finnhub, historique: EODHD (fallback AV:vide), synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
+- **CRWV.US** : cours: EODHD, consensus: Finnhub, historique: AlphaVantage, synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
 - **ACA.PA** : cours: EODHD, consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
 - **ABNX.PA** : cours: EODHD, consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: HTTP 403
 
-**Quotas API utilisés :** {'alphavantage': '2/20', 'twelvedata': '1/60', 'eodhd': '20/80', 'finnhub': '4/55'}
+**Quotas API utilisés :** {'alphavantage': '2/20', 'twelvedata': '1/60', 'eodhd': '19/80', 'finnhub': '4/55'}
 
 **Profil :** adrien | **Courtier :** BoursoBank
