@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio Analyzer</title>
-<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root,[data-theme="light"],[data-theme="dark"],[data-theme="nuit"]{--bg:#0a1729;--surface:#0f2138;--surface2:#152c47;--border:#23415f;--text:#e3ecf6;--muted:#93a9c0;--faint:#5f7793;--primary:#5aa9dd;--primary-h:#7cc0ec;--on-primary:#06182c;--success:#5cc98d;--error:#ff8fa3;--danger:#a8324c;--warn:#e8b06a;--radius:0.5rem;--shadow:0 4px 14px rgba(0,0,0,.35);--font:'Satoshi',sans-serif}
+:root,[data-theme="light"],[data-theme="dark"],[data-theme="nuit"]{--bg:#101416;--surface:#19201f;--surface2:#202927;--border:#2b3538;--text:#eef2f1;--muted:#8c9799;--faint:#6d787a;--primary:#4f9fb5;--primary-h:#6fb8cb;--on-primary:#0a1113;--mana:#3f8cff;--mana2:#2457b8;--halo:#3f8cff2e;--success:#4f9fb5;--error:#ed8068;--danger:#8d3a2c;--warn:#e0a052;--radius:0.5rem;--shadow:none;--font:'Manrope',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
 /* theme unique : bleu nuit */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -154,7 +156,7 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 .pastille.ko .point{background:var(--error)}
 .pastille.ko{color:var(--error)}
 
-.tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.75rem;margin-bottom:1.25rem}
+.tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.75rem;margin-bottom:1.25rem}
 .tuile{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:.9rem 1rem}
 .tuile .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .tuile .v{font-size:1.45rem;font-weight:650;margin-top:.15rem;line-height:1.2}
@@ -195,6 +197,167 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 .texte-ia h4{margin:1rem 0 .3rem;font-size:.92rem;color:var(--primary)}
 #panel-bot a,#panel-action a{color:var(--primary)}
 #panel-bot a:hover,#panel-action a:hover{color:var(--primary-h)}
+</style>
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   v10 — Direction visuelle reprise de la maquette ProjectOne.
+   Jetons, proportions et composants suivent le fichier fourni ;
+   ce qui n'y figurait pas est construit dans le meme esprit.
+   ════════════════════════════════════════════════════════════════════ */
+
+body{font:15px/1.45 var(--font);background:var(--bg);color:var(--text)}
+a,button{transition:.22s ease}
+
+/* ── Coquille : navigation a gauche ─────────────────────────────────── */
+.app{display:grid;grid-template-columns:225px minmax(0,1fr);min-height:100dvh}
+.side{border-right:1px solid var(--border);padding:26px 20px;position:sticky;
+  top:0;height:100dvh;background:var(--bg);display:flex;flex-direction:column}
+.brand{font-weight:800;font-size:17px;color:var(--text);text-decoration:none;letter-spacing:-.01em}
+.brand b{color:var(--primary)}
+.brand:hover{color:var(--text)}
+
+.tabs{display:grid;gap:5px;margin:80px 0 0;background:none;border:0;padding:0;border-radius:0}
+.tab{flex:none;text-align:left;padding:11px;border-radius:8px;font-size:14px;font-weight:500;
+  color:var(--muted);border-left:2px solid transparent;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.tab:hover:not(.active){background:var(--surface);color:#fff}
+.tab.active{background:var(--surface);color:var(--text);border-left:2px solid var(--primary)}
+
+.sidefoot{margin-top:auto;padding-top:28px;color:var(--muted);
+  font:11px/1.9 var(--mono);letter-spacing:.03em;text-transform:uppercase}
+.sidefoot .point{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--muted);margin-right:7px;vertical-align:baseline}
+.sidefoot .point.ok{background:var(--primary)}
+.sidefoot .point.ko{background:var(--error)}
+
+/* ── Barre du haut ──────────────────────────────────────────────────── */
+.mainwrap{min-width:0;display:flex;flex-direction:column}
+.top{height:68px;flex:none;border-bottom:1px solid var(--border);display:flex;
+  justify-content:flex-end;gap:14px;align-items:center;padding:0 5%}
+.rond{width:34px;height:34px;border:1px solid var(--border);border-radius:50%;
+  color:var(--muted);display:grid;place-items:center;font-size:15px;background:none;cursor:pointer}
+.rond:hover{color:#fff;border-color:var(--primary)}
+.badge-user{border:1px solid var(--border);border-radius:99px;padding:8px 12px;
+  font:12px var(--mono);color:var(--muted);background:none}
+.main{flex:1;width:100%;max-width:1450px;margin:0;padding:clamp(28px,5vw,68px)}
+
+/* ── Micro-typographie de la maquette ───────────────────────────────── */
+.kicker,.label{font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kicker i{display:inline-block;width:7px;height:7px;background:var(--primary);
+  border-radius:50%;margin-right:8px}
+
+/* ── Accueil : titre, chiffres, panneaux ────────────────────────────── */
+.hero{display:grid;grid-template-columns:1.5fr .6fr;gap:30px;align-items:end;margin-bottom:60px}
+.hero h1{font-size:clamp(44px,7vw,102px);line-height:.92;letter-spacing:-.08em;margin:25px 0 0;font-weight:800}
+.hero h1 em{color:var(--primary);font-style:normal}
+.copy{color:var(--muted);max-width:330px}
+.copy strong{display:block;color:var(--text);font-size:18px;line-height:1.2;margin-bottom:13px}
+.copy a{display:inline-block;margin-top:25px;border-bottom:1px solid var(--text);
+  padding-bottom:4px;color:var(--text);text-decoration:none}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--border);margin-bottom:20px}
+.metric{padding:17px 12px 17px 0;border-right:1px solid var(--border)}
+.metric:not(:first-child){padding-left:15px}
+.metric:last-child{border-right:0}
+.metric span{font:10px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.metric b{display:block;font:24px var(--mono);font-weight:400;margin-top:8px;letter-spacing:-.01em}
+.green{color:var(--primary)}
+
+.grid{display:grid;grid-template-columns:1.4fr .8fr .8fr;gap:14px}
+.panel{background:var(--surface);border-radius:14px;padding:21px;min-height:220px;
+  position:relative;overflow:hidden}
+.panel.dark{background:var(--surface2)}
+.tall{grid-row:span 2;min-height:455px}
+.panel .label,.panel h2,.panel p,.panel .bas{position:relative;z-index:1}
+.panel h2{font-size:27px;line-height:1;letter-spacing:-.06em;margin:16px 0;font-weight:700}
+.panel h2 small{font-size:15px;color:var(--muted);letter-spacing:0}
+.panel p{color:var(--muted);max-width:36ch;margin:0}
+.panel .bas{position:absolute;bottom:22px;left:21px;right:21px}
+.panel a.lien{border-bottom:1px solid var(--primary);padding-bottom:4px;
+  color:var(--text);text-decoration:none;display:inline-block}
+
+.holdings{display:grid;gap:10px;margin-top:20px;padding-bottom:48px}
+.holding{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:baseline;
+  border-top:1px solid #ffffff18;padding-top:10px;font-size:13px}
+.holding small{display:block;color:var(--muted);font:10px var(--mono)}
+.holding span{font-family:var(--mono);font-size:12px}
+.pill{font:10px var(--mono);padding:5px 7px;border-radius:5px;background:#ffffff10;white-space:nowrap}
+.up{color:var(--primary)}.down{color:var(--error)}
+
+.chart{position:absolute;bottom:23px;left:21px;right:21px;height:78px;display:flex;align-items:end;gap:5px;z-index:0}
+.bar{flex:1;background:#86c4d3;border-radius:4px 4px 0 0;min-height:3px}
+.bar:nth-child(3n){background:var(--primary)}
+.orbit{position:absolute;width:180px;height:180px;border:1px solid var(--primary);
+  border-radius:50%;right:-62px;bottom:-78px;pointer-events:none;z-index:0;opacity:.55}
+.orbit:after{content:'';position:absolute;width:8px;height:8px;background:var(--primary);
+  border-radius:50%;left:22px;top:21px}
+.jauge-plate{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.jauge-plate i{display:block;height:100%;background:var(--primary);border-radius:3px}
+
+.foot{margin-top:54px;border-top:1px solid var(--border);padding-top:13px;
+  color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:1rem}
+
+/* ── Les autres onglets, dans le meme esprit ────────────────────────── */
+.card{background:var(--surface);border:0;border-radius:14px;padding:21px;box-shadow:none}
+.card-title{font-size:27px;line-height:1;letter-spacing:-.06em;font-weight:700;margin:4px 0 18px}
+.tuile{background:var(--surface2);border:0;border-radius:11px;padding:15px}
+.tuile .k{font:10px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.tuile .v{font:24px var(--mono);font-weight:400;margin-top:8px;letter-spacing:-.01em}
+.pos{color:var(--primary)}.neg{color:var(--error)}
+.pastille{font:11px var(--mono);letter-spacing:.03em;background:#ffffff10;border-color:transparent}
+table{font-variant-numeric:tabular-nums}
+th{font:10px var(--mono)!important;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td{font-size:13px}
+.paire .k{font-size:13px}
+.paire .v{font-family:var(--mono);font-size:12px}
+.barre .val{font-family:var(--mono);font-size:11px}
+.guru .note{font-family:var(--mono)}
+.guru{background:var(--surface2);border-color:transparent;border-radius:11px}
+.courbe{background:var(--surface2);border:0;border-radius:11px}
+.recherche input{background:var(--surface2);border-color:var(--border);border-radius:7px}
+.message{background:var(--surface2);border-color:transparent;border-radius:8px}
+.doc code{background:#ffffff10}
+
+/* ── Boutons : lueur bleue au survol, comme la maquette ─────────────── */
+.btn{border-radius:7px}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary:hover,.btn-ghost:hover,.copy a:hover,.panel a.lien:hover{
+  background:var(--mana);border-color:var(--mana);color:#fff;
+  box-shadow:0 0 0 3px #3f8cff2e,0 7px 18px #3f8cff38;transform:translateY(-1px)}
+.btn-primary:active,.btn-ghost:active,.copy a:active,.panel a.lien:active{
+  background:var(--mana2);transform:translateY(0)}
+
+/* ── Connexion ──────────────────────────────────────────────────────── */
+.login-card{background:var(--surface);border:0;border-radius:16px;padding:34px}
+.login-card h1{letter-spacing:-.05em;font-size:31px;line-height:1}
+
+@media(max-width:850px){
+  .app{display:block}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border);padding:18px 20px}
+  .tabs{display:flex;flex-direction:row;gap:5px;margin:22px -20px 0;padding:0 20px 4px;
+    overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{border-left:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0}
+  .tab.active{border-left:0;border-bottom:2px solid var(--primary)}
+  .sidefoot{display:none}
+  .top{height:58px;padding:0 20px}
+  .main{padding:30px 16px}
+  .hero{grid-template-columns:1fr;margin-bottom:40px}
+  .grid{grid-template-columns:1fr 1fr}
+  .tall{grid-row:auto;min-height:420px}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric:nth-child(2){border-right:0}
+  .metric:nth-child(-n+2){border-bottom:1px solid var(--border)}
+}
+@media(max-width:560px){
+  .hero h1{font-size:50px}
+  .grid{grid-template-columns:1fr}
+  .panel{min-height:210px}
+  .tall{min-height:430px}
+  .holding{font-size:12px;gap:7px}
+  .foot{display:block}
+  .foot span{display:block;margin-top:8px}
+}
 </style>
 </head>
 <body>
@@ -252,23 +415,11 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 
 <!-- ════ APP ════ -->
 <div class="app" id="app-screen" style="display:none">
-  <header class="topbar">
-    <div class="logo">
-      <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
-        <path d="M9 27 L18 9 L27 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M12 22h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      Portfolio Analyzer
-    </div>
-    <div class="topbar-right">
-      <span class="badge-user" id="badge-user">—</span>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnexion</button>
-    </div>
-  </header>
-
-  <main class="main">
+  <aside class="side">
+    <a class="brand" href="#" onclick="allerOnglet('accueil');return false">PROJECT<b>ONE</b></a>
     <nav class="tabs" id="nav-tabs">
-      <button class="tab active" onclick="switchTab('portfolio',this)">📁 Portefeuille</button>
+      <button class="tab active" onclick="switchTab('accueil',this)">◈ Vue d'ensemble</button>
+      <button class="tab" onclick="switchTab('portfolio',this)">📁 Portefeuille</button>
       <button class="tab" onclick="switchTab('analyse',this)">📊 Analyse</button>
       <button class="tab" onclick="switchTab('compte',this)">👤 Mon compte</button>
       <button class="tab" onclick="switchTab('aide',this)">📖 Mode d'emploi</button>
@@ -276,9 +427,90 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
       <button class="tab" onclick="switchTab('action',this)">🔍 Analyse d'action</button>
       <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">⚙️ Utilisateurs</button>
     </nav>
+    <div class="sidefoot" id="pied-lateral">
+      Système<br>
+      <span class="point" id="pied-point"></span><span id="pied-etat">Rapport quotidien</span><br><br>
+      &copy; 2026 ProjectOne
+    </div>
+  </aside>
+
+  <div class="mainwrap">
+  <header class="top">
+    <button class="rond" title="Rafraichir" aria-label="Rafraichir"
+            onclick="rafraichir(this)">&#8635;</button>
+    <span class="badge-user" id="badge-user">&mdash;</span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Déconnexion</button>
+  </header>
+
+  <main class="main">
+
+
+    <!-- ── Vue d'ensemble (v10) ── -->
+    <div class="tab-panel active" id="panel-accueil">
+      <section class="hero">
+        <div>
+          <div class="kicker"><i></i><span id="acc-kicker">Tableau de bord</span></div>
+          <h1>Décider avec<br><em>plus de recul.</em></h1>
+        </div>
+        <div class="copy">
+          <strong>ProjectOne transforme vos données de marché en décisions lisibles.</strong>
+          <span>Voir l'essentiel avant d'agir, sans bruit ni promesse inutile.</span>
+          <br><a href="#" onclick="allerOnglet('portfolio');return false">Voir le portefeuille ↘</a>
+        </div>
+      </section>
+
+      <section class="metrics" id="acc-metrics"></section>
+
+      <section class="grid">
+        <article class="panel dark tall">
+          <div class="label">01 / portefeuille</div>
+          <h2>Ce qui compte,<br>maintenant.</h2>
+          <p>Vos plus grosses lignes, au montant investi. Ouvrez l'onglet
+             Portefeuille pour les modifier.</p>
+          <div class="holdings" id="acc-lignes"></div>
+          <a href="#" class="lien bas" style="right:auto"
+             onclick="allerOnglet('portfolio');return false">Ouvrir le détail ↗</a>
+        </article>
+
+        <article class="panel">
+          <div class="label">02 / répartition</div>
+          <h2 id="acc-repart-titre">—</h2>
+          <p id="acc-repart-texte">Chargement…</p>
+          <div class="chart" id="acc-chart"></div>
+        </article>
+
+        <article class="panel">
+          <div class="label">03 / point d'attention</div>
+          <h2 id="acc-attention-titre">—</h2>
+          <p id="acc-attention-texte">Chargement…</p>
+          <span class="pill bas" id="acc-attention-pill" style="right:auto">—</span>
+          <div class="orbit"></div>
+        </article>
+
+        <article class="panel">
+          <div class="label">04 / rapport</div>
+          <h2 style="font-size:23px" id="acc-rapport-titre">—</h2>
+          <p id="acc-rapport-texte">Chargement…</p>
+          <a href="#" class="lien bas" id="acc-rapport-lien" style="right:auto"
+             target="_blank" rel="noopener">Lire le rapport ↗</a>
+        </article>
+
+        <article class="panel">
+          <div class="label">05 / liquidités</div>
+          <h2 style="font-size:23px" id="acc-cash-titre">—</h2>
+          <p id="acc-cash-texte">Chargement…</p>
+          <div class="jauge-plate bas"><i id="acc-cash-jauge" style="width:0"></i></div>
+        </article>
+      </section>
+
+      <div class="foot">
+        <span>ProjectOne · L'interface de suivi de votre portefeuille.</span>
+        <span id="acc-sync">—</span>
+      </div>
+    </div>
 
     <!-- ── Portefeuille ── -->
-    <div class="tab-panel active" id="panel-portfolio">
+    <div class="tab-panel" id="panel-portfolio">
 
       <!-- Reglages du profil : courtier, indices suivis, watchlist -->
       <div class="card">
@@ -478,6 +710,8 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
           <a href="#aide-taille">Taille des positions</a>
           <a href="#aide-horaire">Quand le rapport sort</a>
           <a href="#aide-lecture">Lire le rapport</a>
+          <a href="#aide-bot">Le bot de trading</a>
+          <a href="#aide-action">Analyser une action</a>
           <a href="#aide-limites">Ce que l'outil ne fait pas</a>
           <a href="#aide-souci">En cas de souci</a>
         </div>
@@ -659,6 +893,90 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
           une note de 8/10 calculée sur 95 %. Regardez toujours les deux.
         </p>
 
+        <h4 id="aide-bot">Le bot de trading</h4>
+        <p>
+          L'onglet <b>Bot de trading</b> montre un portefeuille fictif géré par un
+          programme automatique, indépendant du vôtre. Il choisit ses titres, les
+          achète, les revend, et tient ses comptes. Vous le regardez : vous n'agissez
+          jamais dessus. Il n'y a aucun bouton pour passer un ordre, et il n'y en aura
+          pas — ce serait un autre métier.
+        </p>
+        <p>
+          Les six tuiles du haut résument sa situation : le capital atteint, l'écart
+          depuis son point de départ, le gain cumulé, la part de trades gagnants, le
+          nombre de positions en cours et le nombre de trades déjà clôturés. La courbe
+          en dessous retrace le capital dans le temps ; la ligne pointillée marque le
+          capital de départ, donc tout ce qui passe au-dessus est du gain.
+        </p>
+        <p>
+          Les positions sont regroupées par <b>stratégie</b> — le programme en fait
+          tourner plusieurs, chacune avec sa logique. Deux titres achetés par des
+          stratégies différentes apparaissent dans deux tableaux séparés, c'est
+          normal.
+        </p>
+        <p>
+          Dans les trades fermés, la colonne <b>Motif</b> dit pourquoi la position a
+          été soldée :
+        </p>
+        <ul>
+          <li><b>Objectif atteint</b> — le cours a touché la cible visée.</li>
+          <li><b>Stop touché</b> — la perte a atteint la limite fixée à l'achat.</li>
+          <li><b>Stop suiveur</b> — le titre montait, le stop remontait derrière lui,
+            et le repli l'a déclenché. C'est un gain sécurisé, pas un échec.</li>
+        </ul>
+        <div class="encadre">
+          <b>Deux pastilles en haut de page</b> indiquent si les services répondent.
+          Vertes, tout va bien. Rouges, le programme est momentanément injoignable —
+          la page vous le dit au lieu de rester vide. Ça n'a aucun effet sur votre
+          portefeuille ni sur votre rapport quotidien.
+        </div>
+
+        <h4 id="aide-action">Analyser une action</h4>
+        <p>
+          L'onglet <b>Analyse d'action</b> examine un titre à la demande, y compris un
+          titre que vous ne détenez pas. Tapez son code — <code>AAPL</code>,
+          <code>MSFT</code>, <code>MC.PA</code> pour une valeur parisienne — et
+          patientez. Le calcul prend <b>10 à 60 secondes</b> : il récupère les cours,
+          lit les publications de la société, les actualités, et interroge une
+          intelligence artificielle. La page vous montre le temps qui passe.
+        </p>
+        <p>
+          Le résultat est conservé <b>une heure</b>. Redemander le même titre dans
+          l'heure est instantané.
+        </p>
+        <p>Ce que vous obtenez, dans l'ordre :</p>
+        <ul>
+          <li><b>Une note sur 100</b> et un verdict court, calculés à partir de cinq
+            analyses distinctes. Le pourcentage à droite de chaque barre est le
+            <i>poids</i> de ce critère dans la note finale : le fondamental pèse près
+            d'un tiers, la macro un dixième.</li>
+          <li><b>Valorisation</b> — quatre estimations de ce que le titre « vaut »,
+            obtenues par quatre méthodes différentes. Elles divergent souvent
+            beaucoup, et cette divergence est en soi une information : quand elles
+            s'accordent, la conclusion est plus solide.</li>
+          <li><b>Analyse technique</b> — ce que dit le graphique : tendance, moyennes,
+            support, résistance, volatilité.</li>
+          <li><b>Fondamental</b> — la santé de l'entreprise : rentabilité, marges,
+            dette, croissance, dividende.</li>
+          <li><b>Sentiment</b> — ce que pensent les analystes et la presse, et ce que
+            font les dirigeants de leurs propres actions.</li>
+          <li><b>Contexte économique</b> — l'environnement dans lequel le titre évolue :
+            volatilité générale, taux, dollar, performance de son secteur.</li>
+          <li><b>Onze investisseurs</b> — la même société notée selon les critères de
+            onze grands noms, de Graham à Soros. Cliquez sur un nom pour voir le
+            détail de sa notation. Leurs avis se contredisent volontairement : c'est
+            l'écart entre eux qui est instructif.</li>
+          <li><b>Lecture d'ensemble</b> — un texte rédigé par une intelligence
+            artificielle à partir des chiffres ci-dessus.</li>
+        </ul>
+        <div class="encadre">
+          <b>Ce n'est pas un conseil d'investissement.</b> C'est une mise en forme de
+          données publiques selon des règles fixes. Une note de 88 sur 100 ne dit pas
+          qu'il faut acheter : elle dit que sur les critères retenus, ce titre coche
+          beaucoup de cases. Le texte de l'IA peut se tromper, et il ne connaît que ce
+          que les chiffres lui ont montré.
+        </div>
+
         <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
         <ul>
           <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
@@ -681,6 +999,12 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
                 <td>Son cours n'a pas pu être récupéré — souvent un ticker ou une place de cotation erronés.</td></tr>
             <tr><td>Le message d'enregistrement parle d'une synchronisation échouée</td>
                 <td>Votre saisie est bien enregistrée sur le serveur mais n'a pas rejoint le dépôt : le rapport de demain ne la verra pas. Signalez-le à l'administrateur.</td></tr>
+            <tr><td>Les pastilles de l'onglet Bot sont rouges</td>
+                <td>Le programme distant ne répond pas. Sans effet sur votre portefeuille ni sur votre rapport. Réessayez plus tard.</td></tr>
+            <tr><td>« Non configuré » à la place des données du bot</td>
+                <td>Les adresses des services ne sont pas renseignées sur le serveur. C'est un réglage d'administrateur.</td></tr>
+            <tr><td>Une analyse d'action reste bloquee</td>
+                <td>Au-delà de deux minutes et demie, la page abandonne. Le calcul continue souvent de son côté : redemandez le même titre une minute plus tard, il sortira du cache.</td></tr>
             <tr><td>Le rapport date de plusieurs jours</td>
                 <td>Une analyse a été manquée. L'onglet Analyse indique la date du dernier déclenchement.</td></tr>
           </tbody>
@@ -753,6 +1077,7 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
       </div>
     </div>
   </main>
+  </div>
 </div>
 
 <script>
@@ -870,6 +1195,8 @@ function doLogout(){
 
 // ── App init ───────────────────────────────────────────────────────
 function showApp(){
+  majPiedLateral();
+  chargerAccueil(true);
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
   document.getElementById('badge-user').textContent=CURRENT_USER+(USER_ROLE==='admin'?' (admin)':'');
@@ -934,6 +1261,7 @@ function switchTab(name,btn){
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
   if(name==='admin') loadUsers();
+  if(name==='accueil') chargerAccueil();
   if(name==='bot')   chargerBot();
   if(name==='action') chargerEtatServices('action-etat');
 }
@@ -1760,6 +2088,193 @@ function actualites(sent){
         ? '<a href="'+esc(lien)+'" target="_blank" rel="noopener">'+esc(titre)+'</a>'
         : esc(titre))+'</li>';
     }).join('')+'</ul>';
+}
+
+// ── Pied de la barre laterale : fraicheur du rapport ───────────────────
+
+async function majPiedLateral(){
+  const pt=document.getElementById('pied-point');
+  const tx=document.getElementById('pied-etat');
+  if(!pt||!tx) return;
+  try{
+    const s=await api('GET','/api/status');
+    const d=s.analyse&&s.analyse.dernier_declenchement;
+    if(d&&d.quand){
+      const q=new Date(String(d.quand).replace(' ','T'));
+      const jours=(Date.now()-q.getTime())/86400000;
+      pt.className='point '+(jours<=1.5?'ok':'ko');
+      tx.textContent=jours<=1.5?'Rapport à jour':'Rapport du '+jour(d.quand);
+    }else{
+      pt.className='point';
+      tx.textContent='Rapport quotidien · '+((s.analyse&&s.analyse.heure)||'—');
+    }
+  }catch(e){
+    pt.className='point ko';
+    tx.textContent='Serveur injoignable';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v10 — Vue d'ensemble
+//
+// Tout ce qui est affiche ici est calcule a partir de ce que vous avez
+// saisi. Rien n'est estime : les montants sont des montants investis,
+// au prix de revient, pas des valeurs de marche — celles-la sont dans
+// le rapport quotidien, qui dispose des cours.
+// ═══════════════════════════════════════════════════════════════════
+
+function allerOnglet(nom){
+  const b=[...document.querySelectorAll('.tab')]
+    .find(t=>(t.getAttribute('onclick')||'').includes("'"+nom+"'"));
+  if(b) switchTab(nom,b);
+}
+
+function montantLigne(l){
+  if(l.value!==null&&l.value!==undefined&&l.value!=='') return Number(l.value)||0;
+  const q=Number(l.quantity)||0, p=Number(l.buy_price)||0;
+  return q*p;
+}
+
+let ACCUEIL_CHARGE=0;
+
+async function chargerAccueil(force){
+  if(!force && Date.now()-ACCUEIL_CHARGE < 15000) return;
+  ACCUEIL_CHARGE=Date.now();
+
+  let pf=null, st=null;
+  try{ pf=await api('GET','/api/portfolio/'+encodeURIComponent(CURRENT_USER)); }catch(e){}
+  try{ st=await api('GET','/api/status'); }catch(e){}
+
+  const lignes=(pf&&pf.lines)||[];
+  const reglages=(pf&&pf.settings)||{};
+
+  const cotees=lignes.filter(l=>l.asset_class!=='cash');
+  const investi=cotees.reduce((s,l)=>s+montantLigne(l),0);
+  const cashLignes=lignes.filter(l=>l.asset_class==='cash')
+                         .reduce((s,l)=>s+montantLigne(l),0);
+  const cash=(Number(reglages.liquidites)||0)+cashLignes;
+  const total=investi+cash;
+
+  // ── Bandeau de chiffres ────────────────────────────────────────────
+  const classes={};
+  cotees.forEach(l=>{ const c=l.asset_class||'autre';
+                      classes[c]=(classes[c]||0)+montantLigne(l); });
+  const nbClasses=Object.keys(classes).length;
+
+  document.getElementById('acc-metrics').innerHTML=[
+    ["Montant investi", nb(investi,0)+" €", ""],
+    ["Lignes suivies",  nb(cotees.length,0), ""],
+    ["Liquidités",      nb(cash,0)+" €", ""],
+    ["Classes d'actifs", nb(nbClasses,0), "green"]
+  ].map(m=>'<div class="metric"><span>'+esc(m[0])+'</span>'+
+           '<b class="'+m[2]+'">'+esc(m[1])+'</b></div>').join('');
+
+  const d=st&&st.time?new Date(st.time):new Date();
+  document.getElementById('acc-kicker').textContent=
+    "Tableau de bord · "+d.toLocaleDateString('fr-FR',
+      {day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('acc-sync').textContent=
+    "Dernière synchronisation : "+d.toLocaleString('fr-FR',
+      {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // ── 01 / les plus grosses lignes ──────────────────────────────────
+  const boite=document.getElementById('acc-lignes');
+  const tri=cotees.slice().sort((a,b)=>montantLigne(b)-montantLigne(a)).slice(0,4);
+  if(!tri.length){
+    boite.innerHTML='<div class="vide" style="padding-top:10px">'+
+      "Aucune ligne saisie pour l'instant.</div>";
+  }else{
+    boite.innerHTML=tri.map(l=>{
+      const m=montantLigne(l);
+      const part=investi?(m/investi)*100:0;
+      const detail=[l.ticker||l.asset_class||'', l.quantity?nb(l.quantity,Number(l.quantity)<1?4:0)+' titres':null]
+                    .filter(Boolean).join(' · ');
+      return '<div class="holding">'+
+        '<div>'+esc(l.name||l.ticker||'—')+'<small>'+esc(detail)+'</small></div>'+
+        '<span>'+nb(m,0)+'</span>'+
+        '<span class="pill '+(part>=25?'down':'up')+'">'+nb(part,1)+' %</span></div>';
+    }).join('');
+  }
+
+  // ── 02 / repartition par classe ───────────────────────────────────
+  const noms={action:"Actions",etf:"ETF",obligation:"Obligations",crypto:"Crypto",
+              metal:"Métaux",immobilier:"Immobilier",collection:"Collections",
+              autre:"Autre",cash:"Liquidités"};
+  const parts=Object.keys(classes).map(c=>({c,m:classes[c]}))
+                    .sort((a,b)=>b.m-a.m);
+  const maxi=parts.length?parts[0].m:0;
+  document.getElementById('acc-chart').innerHTML=
+    parts.slice(0,10).map(p=>'<i class="bar" title="'+esc(noms[p.c]||p.c)+'" '+
+      'style="height:'+(maxi?Math.max(4,(p.m/maxi)*100):4)+'%"></i>').join('')
+    || '<i class="bar" style="height:4%"></i>';
+  document.getElementById('acc-repart-titre').textContent=
+    nbClasses ? nbClasses+(nbClasses>1?" classes":" classe") : "—";
+  document.getElementById('acc-repart-texte').textContent= parts.length
+    ? (noms[parts[0].c]||parts[0].c)+" · "+
+      nb(investi?(parts[0].m/investi)*100:0,0)+" % de l'investi"
+    : "Rien à répartir.";
+
+  // ── 03 / point d'attention ────────────────────────────────────────
+  const t1=document.getElementById('acc-attention-titre');
+  const t2=document.getElementById('acc-attention-texte');
+  const pl=document.getElementById('acc-attention-pill');
+  if(!tri.length){
+    t1.innerHTML="Saisir vos<br>premières lignes.";
+    t2.textContent="L'onglet Portefeuille attend votre saisie.";
+    pl.textContent="À faire";
+  }else{
+    const deux=tri.slice(0,2).reduce((s,l)=>s+montantLigne(l),0);
+    const partDeux=investi?(deux/investi)*100:0;
+    const plafond=Number(reglages.poids_max_pct)||15;
+    const grosse=investi?(montantLigne(tri[0])/investi)*100:0;
+    if(grosse>plafond){
+      t1.innerHTML="Réduire la<br>concentration.";
+      t2.textContent=(tri[0].name||tri[0].ticker)+" pèse "+nb(grosse,0)+
+        " % de l'investi.";
+      pl.textContent="À examiner";
+    }else{
+      t1.innerHTML="Répartition<br>sous contrôle.";
+      t2.textContent="Vos deux plus grosses lignes font "+nb(partDeux,0)+
+        " % de l'investi.";
+      pl.textContent="Rien à signaler";
+    }
+  }
+
+  // ── 04 / rapport ──────────────────────────────────────────────────
+  const rt=document.getElementById('acc-rapport-titre');
+  const rp=document.getElementById('acc-rapport-texte');
+  const rl=document.getElementById('acc-rapport-lien');
+  const dd=st&&st.analyse&&st.analyse.dernier_declenchement;
+  if(dd&&dd.quand){
+    rt.innerHTML="Publié le<br>"+esc(jour(String(dd.quand).replace(' ','T')))+".";
+  }else{
+    rt.innerHTML="Chaque jour<br>à "+esc((st&&st.analyse&&st.analyse.heure)||"22h37")+".";
+  }
+  rp.textContent=cotees.length+" ligne"+(cotees.length>1?"s":"")+
+    " analysée"+(cotees.length>1?"s":"")+" · jours ouvrés";
+  if(REPORT_URL){ rl.href=REPORT_URL; rl.style.display=''; }
+  else{ rl.style.display='none'; }
+
+  // ── 05 / liquidites ───────────────────────────────────────────────
+  const part=total?(cash/total)*100:0;
+  document.getElementById('acc-cash-titre').innerHTML=
+    nb(cash,0)+' <small>EUR</small>';
+  document.getElementById('acc-cash-texte').textContent=
+    nb(part,1)+" % de l'ensemble";
+  document.getElementById('acc-cash-jauge').style.width=
+    Math.max(0,Math.min(100,part))+"%";
+}
+
+function rafraichir(btn){
+  if(btn){ btn.style.transform='rotate(360deg)';
+           setTimeout(()=>{btn.style.transform='';},400); }
+  majPiedLateral();
+  const actif=document.querySelector('.tab-panel.active');
+  const nom=actif?actif.id.replace('panel-',''):'accueil';
+  if(nom==='accueil') chargerAccueil(true);
+  else if(nom==='bot') chargerBot(true);
+  else if(nom==='analyse') loadSlotInfo();
+  else if(nom==='portfolio') loadPortfolio();
 }
 
 verifierInscription();
