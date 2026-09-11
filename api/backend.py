@@ -1265,3 +1265,21 @@ def delete_user(username: str, admin: dict = Depends(require_admin)):
         scheduler.remove_job(job_id)
         print(f"[Scheduler] Job supprimé : {username}")
     return {"deleted": username}
+
+# ---------------------------------------------------------------------------
+# Passerelle vers les services externes (analyse d'action, bot de trading).
+#
+# api/external.py definit neuf routes sous /api/external/, toutes protegees
+# par current_user. Sans ces deux lignes, le module est du code mort : les
+# onglets « Bot de trading » et « Analyse d'action » de l'interface
+# interrogent des adresses qui repondent 404.
+#
+# L'import est tolerant : si le fichier de configuration des services est
+# absent, le reste du backend continue de fonctionner normalement.
+# ---------------------------------------------------------------------------
+try:
+    from api.external import construire_routeur as _routeur_externe
+    app.include_router(_routeur_externe(current_user))
+    print("[External] Passerelle analyse + bot activee.")
+except Exception as _e:
+    print(f"[External] Passerelle non activee : {type(_e).__name__}: {_e}")
