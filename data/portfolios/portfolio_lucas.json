@@ -1,0 +1,14 @@
+{
+  "username": "lucas",
+  "saved_at": "2026-09-12T13:44:37.147311+00:00",
+  "settings": {
+    "broker": "autre",
+    "indices": [
+      "S&P 500",
+      "CAC 40"
+    ],
+    "watchlist": []
+  },
+  "lines": [],
+  "closed": []
+}
