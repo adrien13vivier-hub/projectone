@@ -209,7 +209,8 @@ body{font:15px/1.45 var(--font);background:var(--bg);color:var(--text)}
 a,button{transition:.22s ease}
 
 /* ── Coquille : navigation a gauche ─────────────────────────────────── */
-.app{display:grid;grid-template-columns:225px minmax(0,1fr);min-height:100dvh}
+.app{display:grid;grid-template-columns:225px minmax(0,1fr);min-height:100dvh;
+  flex-direction:row}   /* ceinture : la regle d'origine met column */
 .side{border-right:1px solid var(--border);padding:26px 20px;position:sticky;
   top:0;height:100dvh;background:var(--bg);display:flex;flex-direction:column}
 .brand{font-weight:800;font-size:17px;color:var(--text);text-decoration:none;letter-spacing:-.01em}
@@ -1198,7 +1199,7 @@ function showApp(){
   majPiedLateral();
   chargerAccueil(true);
   document.getElementById('login-screen').style.display='none';
-  document.getElementById('app-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='';
   document.getElementById('badge-user').textContent=CURRENT_USER+(USER_ROLE==='admin'?' (admin)':'');
   if(USER_ROLE==='admin') document.getElementById('tab-admin').style.display='';
   loadPortfolio();
