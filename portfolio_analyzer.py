@@ -1015,38 +1015,198 @@ def _f(valeur):
         return None
 
 
-def get_fundamentals(asset: dict) -> tuple:
-    """Ratios fondamentaux via EODHD. Retourne (dict, source).
+# =============================================================================
+# YAHOO FINANCE — acces direct, sans cle
+# =============================================================================
+# EODHD renvoie HTTP 403 sur /fundamentals : l'endpoint n'est pas inclus dans
+# l'abonnement utilise. Valorisation, sante financiere et croissance — 59 % du
+# poids de la note — restaient donc introuvables, d'ou une confiance bloquee
+# a 41 %.
+#
+# Yahoo publie ces memes ratios gratuitement et couvre Euronext comme les
+# places asiatiques. Il n'y a AUCUNE cle a demander. En revanche, depuis 2023,
+# ses endpoints exigent une poignee de main en deux temps :
+#
+#   1. visiter fc.yahoo.com pour obtenir des cookies de session
+#   2. demander un "crumb" a /v1/test/getcrumb, AVEC CES COOKIES et SANS
+#      l'en-tete Accept: application/json — cet endpoint precis repond 406
+#      si on le lui envoie, contrairement a tous les autres
+#
+# Sauter l'une des deux etapes donne un crumb accepte en apparence mais
+# refuse a l'appel suivant (401 Invalid Crumb).
+#
+# Tout est fait avec `requests`, deja present : aucune dependance nouvelle,
+# donc rien a installer sur le serveur ni dans le workflow.
 
-    Les actifs sans comptes d'entreprise (ETF, obligations, crypto) sont
-    ecartes d'emblee : interroger l'API pour eux gaspille du quota.
+YH_FC      = "https://fc.yahoo.com"
+YH_CRUMB   = "https://query1.finance.yahoo.com/v1/test/getcrumb"
+YH_SUMMARY = "https://query2.finance.yahoo.com/v10/finance/quoteSummary"
+
+# Yahoo limite par ADRESSE IP. Une session reutilisee sur tout le run evite de
+# refaire la poignee de main a chaque titre, ce qui compte beaucoup sur les
+# machines partagees d'un service d'integration continue.
+_yh = {"session": None, "crumb": None}
+_yh_lock = threading.Lock()
+
+
+def _yahoo_poignee(force: bool = False):
+    """Etablit (ou renouvelle) la session Yahoo. Retourne le crumb ou None."""
+    with _yh_lock:
+        if _yh["crumb"] and not force:
+            return _yh["crumb"]
+
+        entetes = {
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                           "Chrome/122.0 Safari/537.36"),
+        }
+        try:
+            sess = requests.Session()
+            sess.headers.update(entetes)
+            # Etape 1 : recuperer les cookies. Yahoo repond souvent 404 ici,
+            # c'est sans importance : seuls les cookies nous interessent.
+            try:
+                sess.get(YH_FC, timeout=10)
+            except requests.RequestException:
+                pass
+            # Etape 2 : le crumb. Pas d'en-tete Accept JSON, sinon 406.
+            r = sess.get(YH_CRUMB, timeout=10)
+            crumb = (r.text or "").strip()
+            if r.status_code != 200 or not crumb or len(crumb) > 40 or "<" in crumb:
+                _yh["session"], _yh["crumb"] = None, None
+                return None
+            _yh["session"], _yh["crumb"] = sess, crumb
+            return crumb
+        except requests.RequestException:
+            _yh["session"], _yh["crumb"] = None, None
+            return None
+
+
+def _yahoo_summary(symbole: str) -> tuple:
+    """Modules quoteSummary d'un titre. Retourne (dict, motif_si_echec)."""
+    modules = "defaultKeyStatistics,financialData,summaryDetail"
+
+    for tentative in (1, 2):
+        crumb = _yahoo_poignee(force=(tentative == 2))
+        if not crumb:
+            return {}, "poignee de main impossible"
+        try:
+            r = _yh["session"].get(
+                f"{YH_SUMMARY}/{symbole}",
+                params={"modules": modules, "corsDomain": "finance.yahoo.com",
+                        "formatted": "false", "crumb": crumb},
+                timeout=15)
+        except requests.RequestException as e:
+            return {}, f"{type(e).__name__}"
+
+        if r.status_code == 401 and tentative == 1:
+            continue                      # crumb perime : on refait la poignee
+        if r.status_code == 429:
+            # Limitation par IP. Inutile d'insister dans le meme run.
+            return {}, "429 (limite de debit Yahoo)"
+        if r.status_code != 200:
+            return {}, f"HTTP {r.status_code}"
+
+        try:
+            res = (r.json().get("quoteSummary") or {}).get("result") or []
+        except ValueError:
+            return {}, "reponse non-JSON"
+        if not res:
+            return {}, "ticker inconnu"
+
+        fusion = {}
+        for bloc in res[0].values():
+            if isinstance(bloc, dict):
+                fusion.update(bloc)
+        return fusion, ""
+
+    return {}, "401 apres renouvellement du crumb"
+
+
+def _yv(d: dict, *cles):
+    """Premiere valeur numerique exploitable parmi plusieurs cles possibles.
+
+    Avec formatted=false Yahoo renvoie des nombres bruts, mais certains champs
+    reviennent parfois sous la forme {"raw": 1.23}. On accepte les deux.
     """
-    if str(asset.get("asset_type", "action")).lower() in ("etf", "obligation", "crypto"):
-        return {}, f"non applicable ({asset.get('asset_type')})"
+    for c in cles:
+        v = d.get(c)
+        if isinstance(v, dict):
+            v = v.get("raw")
+        if v in (None, "", {}):
+            continue
+        try:
+            f = float(v)
+            if f == f:
+                return f
+        except (ValueError, TypeError):
+            continue
+    return None
 
+
+def _fonda_yahoo(ticker_yf: str) -> tuple:
+    """Ratios fondamentaux via Yahoo Finance."""
+    if not ticker_yf:
+        return {}, "ticker absent"
+
+    brut, motif = _yahoo_summary(ticker_yf)
+    if not brut:
+        return {}, motif or "vide"
+
+    ratios = {
+        # Valorisation
+        "per":         _yv(brut, "trailingPE"),
+        "per_fwd":     _yv(brut, "forwardPE"),
+        "peg":         _yv(brut, "pegRatio", "trailingPegRatio"),
+        "ev_ebitda":   _yv(brut, "enterpriseToEbitda"),
+        "p_book":      _yv(brut, "priceToBook"),
+        "p_sales":     _yv(brut, "priceToSalesTrailing12Months"),
+        # Sante financiere
+        "marge_nette": _yv(brut, "profitMargins"),
+        "marge_ope":   _yv(brut, "operatingMargins"),
+        "roe":         _yv(brut, "returnOnEquity"),
+        "roa":         _yv(brut, "returnOnAssets"),
+        # Croissance
+        "croiss_ca":   _yv(brut, "revenueGrowth"),
+        "croiss_ben":  _yv(brut, "earningsGrowth", "earningsQuarterlyGrowth"),
+        # Risque
+        "beta":        _yv(brut, "beta"),
+        "haut_52s":    _yv(brut, "fiftyTwoWeekHigh"),
+        "bas_52s":     _yv(brut, "fiftyTwoWeekLow"),
+        # Divers
+        "dividende":   _yv(brut, "dividendYield"),
+        "bpa":         _yv(brut, "trailingEps"),
+    }
+    ratios = {k: v for k, v in ratios.items() if v is not None}
+    return (ratios, "Yahoo Finance") if ratios else ({}, "aucun ratio")
+
+
+def _f(valeur):
+    """Conversion tolerante en float. None plutot que 0 si absent, pour ne pas
+    confondre 'donnee manquante' et 'valeur nulle'."""
+    if valeur in (None, "", "NA", "N/A", "None", "-"):
+        return None
+    try:
+        v = float(valeur)
+        return None if v != v else v
+    except (ValueError, TypeError):
+        return None
+
+
+def _fonda_eodhd(ticker_eod: str) -> tuple:
+    """Ratios via EODHD. Renvoie 403 si l'abonnement n'inclut pas le flux
+    Fundamentals — conserve en repli au cas ou l'offre changerait."""
     if not EODHD_KEY:
         return {}, "cle absente"
 
-    # Pas de parametre `filter` : selon les cas EODHD renvoie alors soit les
-    # sections demandees imbriquees, soit leur contenu APLATI a la racine.
-    # Ce comportement variable vidait silencieusement tous les ratios --
-    # valorisation, sante et croissance passaient a None, soit 55% du poids
-    # de la note. On recupere donc le document complet et on lit les
-    # sections nous-memes, avec repli sur une lecture a plat.
-    data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
-                     {"api_token": EODHD_KEY, "fmt": "json"},
-                     "eodhd")
-
-    if not isinstance(data, dict) or not data:
+    data, err = _get(f"{EOD_BASE}/fundamentals/{ticker_eod}",
+                     {"api_token": EODHD_KEY, "fmt": "json"}, "eodhd")
+    if not isinstance(data, dict) or not data or _is_quota_error(err):
         return {}, ("quota atteint" if _is_quota_error(err) else (err or "vide"))
-    if _is_quota_error(err):
-        return {}, "quota atteint"
 
     hi = data.get("Highlights") or {}
-    va = data.get("Valuation")  or {}
+    va = data.get("Valuation") or {}
     te = data.get("Technicals") or {}
-
-    # Repli : reponse aplatie (les cles usuelles sont a la racine).
     if not hi and not va and not te:
         if any(k in data for k in ("PERatio", "ProfitMargin", "MarketCapitalization")):
             hi = va = te = data
@@ -1054,32 +1214,59 @@ def get_fundamentals(asset: dict) -> tuple:
             return {}, "structure inattendue"
 
     ratios = {
-        # Valorisation
-        "per":         _f(hi.get("PERatio")) or _f(va.get("TrailingPE")),
-        "per_fwd":     _f(va.get("ForwardPE")),
-        "peg":         _f(hi.get("PEGRatio")),
-        "ev_ebitda":   _f(va.get("EnterpriseValueEbitda")),
-        "p_book":      _f(va.get("PriceBookMRQ")),
-        "p_sales":     _f(va.get("PriceSalesTTM")),
-        # Rentabilite
+        "per": _f(hi.get("PERatio")) or _f(va.get("TrailingPE")),
+        "per_fwd": _f(va.get("ForwardPE")), "peg": _f(hi.get("PEGRatio")),
+        "ev_ebitda": _f(va.get("EnterpriseValueEbitda")),
+        "p_book": _f(va.get("PriceBookMRQ")), "p_sales": _f(va.get("PriceSalesTTM")),
         "marge_nette": _f(hi.get("ProfitMargin")),
-        "marge_ope":   _f(hi.get("OperatingMarginTTM")),
-        "roe":         _f(hi.get("ReturnOnEquityTTM")),
-        "roa":         _f(hi.get("ReturnOnAssetsTTM")),
-        # Croissance
-        "croiss_ca":   _f(hi.get("QuarterlyRevenueGrowthYOY")),
-        "croiss_ben":  _f(hi.get("QuarterlyEarningsGrowthYOY")),
-        # Risque
-        "beta":        _f(te.get("Beta")),
-        "haut_52s":    _f(te.get("52WeekHigh")),
-        "bas_52s":     _f(te.get("52WeekLow")),
-        # Divers
-        "dividende":   _f(hi.get("DividendYield")),
-        "bpa":         _f(hi.get("EarningsShare")),
+        "marge_ope": _f(hi.get("OperatingMarginTTM")),
+        "roe": _f(hi.get("ReturnOnEquityTTM")), "roa": _f(hi.get("ReturnOnAssetsTTM")),
+        "croiss_ca": _f(hi.get("QuarterlyRevenueGrowthYOY")),
+        "croiss_ben": _f(hi.get("QuarterlyEarningsGrowthYOY")),
+        "beta": _f(te.get("Beta")), "haut_52s": _f(te.get("52WeekHigh")),
+        "bas_52s": _f(te.get("52WeekLow")), "dividende": _f(hi.get("DividendYield")),
+        "bpa": _f(hi.get("EarningsShare")),
     }
-
     ratios = {k: v for k, v in ratios.items() if v is not None}
     return (ratios, "EODHD") if ratios else ({}, "aucun ratio exploitable")
+
+
+def get_fundamentals(asset: dict) -> tuple:
+    """Ratios fondamentaux. Yahoo en source principale, EODHD en repli.
+
+    Les deux sources sont FUSIONNEES : si Yahoo rend dix ratios sur douze,
+    EODHD complete les deux manquants au lieu d'etre ignore. La source
+    affichee liste celles qui ont reellement contribue, pour que le rapport
+    reste verifiable.
+
+    Toutes les valeurs sont conservees en PROPORTION (0.18 pour 18 %) ; la
+    conversion en pourcentage se fait une seule fois, dans la notation.
+    """
+    if str(asset.get("asset_type", "action")).lower() in ("etf", "obligation", "crypto"):
+        return {}, f"non applicable ({asset.get('asset_type')})"
+
+    fusion, sources, motifs = {}, [], []
+    for nom, appel in (("Yahoo", lambda: _fonda_yahoo(asset.get("ticker_yf"))),
+                       ("EODHD", lambda: _fonda_eodhd(asset["ticker_eod"]))):
+        try:
+            ratios, src = appel()
+        except Exception as e:
+            ratios, src = {}, f"{type(e).__name__}"
+        if ratios:
+            nouveaux = {k: v for k, v in ratios.items() if k not in fusion}
+            if nouveaux:
+                fusion.update(nouveaux)
+                sources.append(src)
+        else:
+            motifs.append(f"{nom}:{src}")
+        # Les trois composantes manquantes sont couvertes : inutile
+        # d'interroger une source de plus et de consommer du quota.
+        if all(k in fusion for k in ("per", "marge_nette", "croiss_ca")):
+            break
+
+    if fusion:
+        return fusion, " + ".join(sources)
+    return {}, " / ".join(motifs) or "indisponible"
 
 
 # =============================================================================
@@ -1325,21 +1512,21 @@ def score_sante(f: dict):
 
     mn = f.get("marge_nette")
     if mn is not None:
-        pct = mn * 100 if abs(mn) <= 1 else mn
+        pct = mn * 100
         notes.append(_palier(pct, [(25, 10), (15, 8.5), (10, 7),
                                    (5, 5.5), (0, 3.5), (-float("inf"), 1)]))
         poids.append(2.5)
 
     mo = f.get("marge_ope")
     if mo is not None:
-        pct = mo * 100 if abs(mo) <= 1 else mo
+        pct = mo * 100
         notes.append(_palier(pct, [(30, 10), (20, 8.5), (12, 7),
                                    (6, 5.5), (0, 3.5), (-float("inf"), 1)]))
         poids.append(2.0)
 
     roe = f.get("roe")
     if roe is not None:
-        pct = roe * 100 if abs(roe) <= 1 else roe
+        pct = roe * 100
         # Un ROE tres eleve peut venir d'un fort endettement plutot que
         # d'une rentabilite reelle : on ne recompense pas au-dela de 40%.
         notes.append(10.0 if 20 <= pct <= 40 else
@@ -1349,7 +1536,7 @@ def score_sante(f: dict):
 
     roa = f.get("roa")
     if roa is not None:
-        pct = roa * 100 if abs(roa) <= 1 else roa
+        pct = roa * 100
         notes.append(_palier(pct, [(12, 10), (8, 8.5), (5, 7),
                                    (2, 5.5), (0, 4), (-float("inf"), 1.5)]))
         poids.append(1.5)
@@ -1367,14 +1554,14 @@ def score_croissance(f: dict):
 
     ca = f.get("croiss_ca")
     if ca is not None:
-        pct = ca * 100 if abs(ca) <= 1 else ca
+        pct = ca * 100
         notes.append(_palier(pct, [(30, 10), (20, 9), (12, 7.5), (6, 6),
                                    (0, 4.5), (-10, 2.5), (-float("inf"), 1)]))
         poids.append(3.0)
 
     ben = f.get("croiss_ben")
     if ben is not None:
-        pct = ben * 100 if abs(ben) <= 1 else ben
+        pct = ben * 100
         notes.append(_palier(pct, [(40, 10), (25, 9), (15, 7.5), (5, 6),
                                    (0, 4.5), (-20, 2.5), (-float("inf"), 1)]))
         poids.append(2.0)
@@ -2910,7 +3097,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 v = f_r.get(cle)
                 if v is None:
                     continue
-                if suffixe == "%" and abs(v) <= 1:
+                if suffixe == "%":
                     v *= 100
                 morceaux.append(f"{lib} {v:.1f}{suffixe}")
             if morceaux:
