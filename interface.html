@@ -1512,12 +1512,24 @@ function nombreOuNull(v){
   return isNaN(n) ? null : n;
 }
 
+let LIGNES_IGNOREES=[];
+
 function readLines(){
   const lines=[];
-  document.querySelectorAll('#portfolio-tbody tr').forEach(tr=>{
+  LIGNES_IGNOREES=[];
+  document.querySelectorAll('#portfolio-tbody tr').forEach((tr,rang)=>{
     const c   = tr.querySelectorAll('td');
-    const nom = c[0].querySelector('input').value.trim();
-    if(!nom) return;
+    let nom = c[0].querySelector('input').value.trim();
+    const tkBrut = (tr.querySelector('.c-ticker')
+                    ? tr.querySelector('.c-ticker').value : '').trim().toUpperCase();
+    // Le ticker fait office de nom : saisir « AAPL » et rien d'autre suffit.
+    if(!nom && tkBrut) nom = tkBrut;
+    if(!nom){
+      if(c[0].querySelector('input').value || tkBrut
+         || tr.querySelector('.c-qte').value || tr.querySelector('.c-prix').value)
+        LIGNES_IGNOREES.push("ligne " + (rang + 1) + " : il manque un nom ou un ticker");
+      return;
+    }
 
     const classe  = tr.querySelector('.cls-sel').value;
     const manuel  = estManuel(classe);
@@ -1556,7 +1568,14 @@ function readLines(){
   // Une ligne cotee sans ticker et une ligne manuelle sans valeur sont
   // inexploitables : on les ecarte ici plutot que de laisser le serveur
   // renvoyer une erreur pour une saisie manifestement incomplete.
-  return lines.filter(l => estManuel(l.asset_class) ? (l.value > 0) : !!l.ticker);
+  return lines.filter(l => {
+    const ok = estManuel(l.asset_class) ? (l.value > 0) : !!l.ticker;
+    if(!ok) LIGNES_IGNOREES.push(
+      estManuel(l.asset_class)
+        ? ("« " + l.name + " » : un actif non coté demande une valeur en euros")
+        : ("« " + l.name + " » : il manque le ticker"));
+    return ok;
+  });
 }
 
 function readSettings(){
@@ -1565,7 +1584,11 @@ function readSettings(){
     const f=tr.querySelectorAll('input,select');
     const w={name:f[0].value.trim(),ticker:f[1].value.trim().toUpperCase(),
              market:f[2].value,sector:f[3].value.trim()};
-    if(w.name&&w.ticker) watchlist.push(w);
+    // Meme regle que pour les lignes : le ticker seul suffit.
+    if(!w.name && w.ticker) w.name = w.ticker;
+    if(w.name && w.ticker) watchlist.push(w);
+    else if(w.name || w.ticker)
+      LIGNES_IGNOREES.push("valeur suivie « " + (w.name || w.ticker) + " » : il manque le ticker");
   });
   const indices=[...document.querySelectorAll('.idx-cb:checked')].map(cb=>cb.value);
   const stopDef = document.getElementById('cfg-stopdefaut').value;
@@ -1582,15 +1605,23 @@ function readSettings(){
 
 async function savePortfolio(){
   const lines=readLines();
-  const settings=readSettings();
+  const settings=readSettings();   // peut completer LIGNES_IGNOREES
+  const ignorees=LIGNES_IGNOREES.slice();
+  const avertir = ignorees.length
+    ? ('<div class="info-box error" style="margin-bottom:.75rem">'
+       + '⚠️ ' + ignorees.length + ' saisie(s) non enregistrée(s) :<br>'
+       + ignorees.map(m=>'• '+m).join('<br>') + '</div>')
+    : '';
   const st=document.getElementById('save-status');
   if(!lines.length){
-    st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ Aucune ligne valide : une valeur cotée demande un nom et un ticker, un actif non coté un nom et une valeur.</div>';
+    st.innerHTML = avertir ||
+      '<div class="info-box error" style="margin-bottom:.75rem">❌ Aucune ligne à enregistrer. '
+      + 'Une valeur cotée demande au minimum un ticker ; un actif non coté, un nom et une valeur.</div>';
     return;
   }
   try{
     const r=await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines,settings});
-    let html='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>';
+    let html='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>' + avertir;
     if(r.erreurs&&r.erreurs.length){
       html+='<div class="info-box error" style="margin-bottom:.75rem">⚠️ Lignes rejetées :<br>'
            +r.erreurs.map(e=>'• '+e).join('<br>')+'</div>';
@@ -1615,7 +1646,7 @@ async function savePortfolio(){
            +'rapport quotidien ne le verra pas.</div>';
     }
     st.innerHTML=html;
-    const toutVaBien = (!r.erreurs||!r.erreurs.length) && sy.ok;
+    const toutVaBien = (!r.erreurs||!r.erreurs.length) && sy.ok && !ignorees.length;
     if(toutVaBien) setTimeout(()=>st.innerHTML='',4000);
   }catch(e){
     st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ '+e.message+'</div>';
