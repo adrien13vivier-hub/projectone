@@ -1,0 +1,9 @@
+# Dependances de developpement uniquement -- jamais installees par le
+# workflow GitHub Actions (qui n'utilise que requirements.txt). A installer
+# en local pour lancer la suite de tests :
+#
+#   pip install -r requirements-dev.txt
+#   pytest
+#
+-r requirements.txt
+pytest
