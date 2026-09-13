@@ -571,8 +571,21 @@ def extract_stops(md: str) -> dict:
     if m:
         note = re.sub(r"[*]", "", m.group(0)).strip()
 
+    # Exposition correlee : soit une table de groupes, soit un message
+    # "aucun regroupement" -- jamais les deux.
+    expo_groupes, expo_msg = [], ""
+    for c in _lignes_table(sec, ["Groupe", "Poids"]):
+        if len(c) < 3:
+            continue
+        expo_groupes.append({"groupe": c[0], "poids": c[1], "alerte": c[2]})
+    if not expo_groupes:
+        m = re.search(r"Aucun regroupement[^\n]*", sec)
+        if m:
+            expo_msg = re.sub(r"[*]", "", m.group(0)).strip()
+
     return {"resume": resume, "alertes": alertes, "stops": stops,
-            "tailles": tailles, "entete_sizing": entete, "amorcage": note}
+            "tailles": tailles, "entete_sizing": entete, "amorcage": note,
+            "expo_groupes": expo_groupes, "expo_msg": expo_msg}
 
 
 def extract_repartition(md: str) -> list:
@@ -737,6 +750,33 @@ def build_stops_html() -> str:
     risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
   </p>"""
 
+    expo_html = ""
+    if stops_data.get("expo_groupes"):
+        erows = ""
+        for g in stops_data["expo_groupes"]:
+            cls = "kpi-alert" if "Oui" in g["alerte"] else ""
+            erows += (f'<tr><td>{g["groupe"]}</td>'
+                      f'<td class="cell-num">{g["poids"]}</td>'
+                      f'<td><span class="badge {cls}">{g["alerte"]}</span></td></tr>\n')
+        expo_html = f"""
+  <h3 class="macro-sub">🔗 Exposition corrélée</h3>
+  <p class="macro-note">
+    Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
+    prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
+    laisse penser. Un signal d'attention basé sur le passé récent, pas une
+    prévision.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Groupe</th><th>Poids cumulé</th><th>Alerte</th></tr></thead>
+      <tbody>{erows}</tbody>
+    </table>
+  </div>"""
+    elif stops_data.get("expo_msg"):
+        expo_html = f"""
+  <h3 class="macro-sub">🔗 Exposition corrélée</h3>
+  <p class="macro-note">{stops_data["expo_msg"]}</p>"""
+
     return f"""
 <section class="section-block" id="stops">
   <h2 class="section-title">🛡️ Stops &amp; Alertes</h2>
@@ -758,6 +798,7 @@ def build_stops_html() -> str:
     avec le cours et ne redescendent jamais.
   </p>
   {sizing}
+  {expo_html}
 </section>"""
 
 
