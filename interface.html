@@ -197,6 +197,28 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 .texte-ia h4{margin:1rem 0 .3rem;font-size:.92rem;color:var(--primary)}
 #panel-bot a,#panel-action a{color:var(--primary)}
 #panel-bot a:hover,#panel-action a:hover{color:var(--primary-h)}
+
+/* ── v11 : vente d'un titre ─────────────────────────────────────────── */
+#dlg-vente{border:0;border-radius:14px;padding:24px;max-width:640px;width:calc(100% - 2rem);
+  margin:auto;background:var(--surface);color:var(--text);font:inherit}
+#dlg-vente::backdrop{background:rgba(0,0,0,.62)}
+.dlg-grille{display:grid;grid-template-columns:1fr 1fr;gap:.9rem 1.1rem}
+.dlg-grille label{display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;font-weight:600}
+.dlg-grille input{padding:.5rem .6rem;border-radius:7px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);font:inherit}
+.dlg-grille input:focus{outline:none;border-color:var(--primary)}
+.dlg-grille small{font-weight:400;color:var(--muted);font-size:.72rem;line-height:1.35}
+.dlg-grille .lib{display:block;line-height:1.3}
+.dlg-grille .lib b{font-weight:600;color:var(--primary)}
+.apercu{margin-top:1.1rem;padding:.75rem .9rem;border-radius:8px;background:var(--surface2);
+  font:12px var(--mono);color:var(--muted);line-height:1.7}
+.apercu b{color:var(--text);font-weight:400}
+.dlg-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.3rem}
+.btn-vendu{font:10px var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--border);border-radius:6px;padding:.3rem .5rem;color:var(--muted);
+  background:none;cursor:pointer;white-space:nowrap}
+.btn-vendu:hover{border-color:var(--primary);color:var(--text)}
+@media(max-width:620px){.dlg-grille{grid-template-columns:1fr}}
 </style>
 <style>
 /* ════════════════════════════════════════════════════════════════════
@@ -513,6 +535,17 @@ td{font-size:13px}
     <!-- ── Portefeuille ── -->
     <div class="tab-panel" id="panel-portfolio">
 
+      <!-- ── Ventes realisees (v11) ── -->
+      <div class="card" style="margin-top:1.25rem">
+        <div class="label">registre</div>
+        <div class="card-title">Ventes réalisées</div>
+        <p class="muted" style="font-size:.82rem;margin:-.6rem 0 1rem">
+          Une ligne vendue disparaît du portefeuille, et le gain qu'elle a
+          produit avec elle. Ce registre en garde la trace, et le rapport
+          quotidien en calcule la plus-value nette de frais.
+        </p>
+        <div id="ventes-liste"></div>
+      </div>
       <!-- Reglages du profil : courtier, indices suivis, watchlist -->
       <div class="card">
         <div class="card-title">Mon profil</div>
@@ -711,6 +744,7 @@ td{font-size:13px}
           <a href="#aide-taille">Taille des positions</a>
           <a href="#aide-horaire">Quand le rapport sort</a>
           <a href="#aide-lecture">Lire le rapport</a>
+          <a href="#aide-vente">Vendre un titre</a>
           <a href="#aide-bot">Le bot de trading</a>
           <a href="#aide-action">Analyser une action</a>
           <a href="#aide-limites">Ce que l'outil ne fait pas</a>
@@ -978,6 +1012,37 @@ td{font-size:13px}
           que les chiffres lui ont montré.
         </div>
 
+        <h4 id="aide-vente">Vendre un titre</h4>
+        <p>
+          Chaque ligne du portefeuille porte un bouton <b>Vendu</b>. Il ouvre une
+          fenêtre qui demande la quantité vendue, le prix de vente, le prix de
+          revient en euros et la date. Un aperçu affiche la plus-value avant
+          que vous validiez.
+        </p>
+        <ul>
+          <li><b>Vente totale</b> — la ligne quitte le portefeuille et rejoint le
+            registre des ventes réalisées, juste en dessous du tableau.</li>
+          <li><b>Vente partielle</b> — indiquez une quantité inférieure : le reste
+            demeure en portefeuille, et seule la part vendue est enregistrée.</li>
+          <li><b>Titre en devise</b> — un champ supplémentaire demande le taux du
+            jour de la vente. Il est <i>figé</i> à cette date, parce que le gain de
+            change fait partie du résultat : le recalculer plus tard avec un autre
+            taux fausserait la plus-value.</li>
+        </ul>
+        <div class="encadre">
+          <b>Pourquoi ne pas simplement supprimer la ligne ?</b> Parce que le
+          rapport photographie le portefeuille à l'instant T : une ligne effacée
+          emporte avec elle le gain qu'elle a produit. Le registre conserve cette
+          trace, et le rapport quotidien en calcule la plus-value <b>nette</b>, frais
+          d'achat et de vente déduits selon la grille de votre courtier. Les montants
+          affichés dans le registre, eux, sont bruts de frais.
+        </div>
+        <p>
+          Le bouton refuse les biens non cotés — un appartement ou une collection
+          ne passe pas par un carnet d'ordres. Pour ceux-là, corrigez la valeur de
+          la ligne ou supprimez-la.
+        </p>
+
         <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
         <ul>
           <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
@@ -1050,6 +1115,7 @@ td{font-size:13px}
           Une analyse complète prend 10 à 60 secondes. Le résultat est gardé
           une heure : redemander le même titre dans l'heure est immédiat.
         </p>
+        <div class="etat-services" id="action-etat"></div>
         <div class="recherche">
           <input id="action-ticker" placeholder="AAPL, MSFT, MC.PA…" maxlength="12"
                  autocomplete="off" spellcheck="false">
@@ -1079,6 +1145,47 @@ td{font-size:13px}
     </div>
   </main>
   </div>
+
+<dialog id="dlg-vente">
+  <form method="dialog" id="form-vente">
+    <div class="label">enregistrer une vente</div>
+    <h3 id="dlg-titre" style="margin:.5rem 0 1.1rem;font-size:22px;letter-spacing:-.04em">—</h3>
+
+    <div class="dlg-grille">
+      <label><span class="lib">Quantité vendue</span>
+        <input id="v-qte" type="number" min="0" step="any" required oninput="majApercuVente()">
+        <small id="v-qte-aide">—</small>
+      </label>
+      <label><span class="lib">Prix de vente unitaire <b id="v-dev-vente">(EUR)</b></span>
+        <input id="v-prix" type="number" min="0" step="any" required oninput="majApercuVente()">
+        <small>Tel qu'inscrit sur votre avis d'opéré.</small>
+      </label>
+      <label id="v-bloc-taux" hidden><span class="lib">Taux <b id="v-dev-taux">USD</b> → EUR le jour de la vente</span>
+        <input id="v-taux" type="number" min="0" step="any" value="1" oninput="majApercuVente()">
+        <small>Le gain de change fait partie du résultat : ce taux est figé ici.</small>
+      </label>
+      <label><span class="lib">Prix de revient unitaire, en euros</span>
+        <input id="v-revient" type="number" min="0" step="any" required oninput="majApercuVente()">
+        <small id="v-revient-aide">Ce que vous aviez payé par titre.</small>
+      </label>
+      <label><span class="lib">Date de vente</span>
+        <input id="v-date" type="date" required>
+      </label>
+      <label><span class="lib">Note <span class="muted" style="font-weight:400">— facultatif</span></span>
+        <input id="v-note" type="text" placeholder="objectif atteint, stop touché…">
+      </label>
+    </div>
+
+    <div id="v-apercu" class="apercu">—</div>
+    <div id="v-erreur" class="message erreur" style="display:none;margin-top:.75rem"></div>
+
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-ghost" onclick="fermerVente()">Annuler</button>
+      <button type="button" class="btn btn-primary" onclick="validerVente()">Enregistrer la vente</button>
+    </div>
+  </form>
+</dialog>
+
 </div>
 
 <script>
@@ -1408,7 +1515,9 @@ function mkRow(l={}){
     <td><input value="${echapper(tags)}" placeholder="dividende, socle" style="min-width:130px"></td>
     <td>${mkSelect(STOP_TYPES,stop.type||'none','c-stoptype')}</td>
     <td><input class="c-stopval" type="number" value="${stop.value ?? ''}" placeholder="15" min="0" step="any"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer">✕</button></td>
+    <td style="white-space:nowrap">
+      <button class="btn-vendu" onclick="ouvrirVente(this)" title="Enregistrer une vente">Vendu</button>
+      <button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer la ligne">✕</button></td>
   `;
   const cls = tr.querySelector('.cls-sel');
   const stp = tr.querySelector('.c-stoptype');
@@ -1495,6 +1604,10 @@ async function loadPortfolio(){
     if(Array.isArray(cfg.indices)){
       document.querySelectorAll('.idx-cb').forEach(cb=>{cb.checked=cfg.indices.includes(cb.value);});
     }
+    // Le registre des ventes arrive dans le meme fichier que les lignes.
+    VENTES = Array.isArray(data.closed) ? data.closed : [];
+    afficherVentes();
+
     const wt=document.getElementById('watch-tbody');
     wt.innerHTML='';
     (cfg.watchlist||[]).forEach(w=>wt.appendChild(mkWatchRow(w)));
@@ -1621,7 +1734,7 @@ async function savePortfolio(){
     return;
   }
   try{
-    const r=await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines,settings});
+    const r=await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines,settings,closed:VENTES});
     let html='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>' + avertir;
     if(r.erreurs&&r.erreurs.length){
       html+='<div class="info-box error" style="margin-bottom:.75rem">⚠️ Lignes rejetées :<br>'
@@ -1920,10 +2033,6 @@ function dessinerCourbe(points,initial){
 // ── Onglet analyse d'action ────────────────────────────────────────
 
 let ANALYSE_EN_COURS=false;
-
-async function ouvrirAnalyseAction(){
-  await chargerEtatServices('action-etat-placeholder');
-}
 
 async function lancerAnalyseAction(){
   if(ANALYSE_EN_COURS) return;
@@ -2307,6 +2416,200 @@ function rafraichir(btn){
   else if(nom==='bot') chargerBot(true);
   else if(nom==='analyse') loadSlotInfo();
   else if(nom==='portfolio') loadPortfolio();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v11 — Vendre un titre
+//
+// Le rapport photographie le portefeuille a l'instant T : une ligne
+// vendue en disparait, et le gain qu'elle a produit avec elle. On tient
+// donc un registre separe, `closed`, que portfolio_analyzer relit pour
+// calculer les plus-values realisees, frais d'aller-retour compris.
+// ═══════════════════════════════════════════════════════════════════
+
+let VENTES = [];          // registre charge depuis le serveur
+let VENTE_EN_COURS = null; // {tr, nom, ticker, qteDetenue, devise, marche}
+
+function infosPlace(code){
+  const m = (MARKETS || []).find(x => x.code === code) || {};
+  return {devise: m.devise || 'EUR', marche: m.marche || 'euronext'};
+}
+
+function ouvrirVente(bouton){
+  const tr = bouton.closest('tr');
+  const c = tr.querySelectorAll('td');
+  const nom = c[0].querySelector('input').value.trim();
+  const tk = (tr.querySelector('.c-ticker') ? tr.querySelector('.c-ticker').value : '').trim().toUpperCase();
+  const classe = tr.querySelector('.cls-sel').value;
+
+  if(estManuel(classe)){
+    alert("Cette ligne n'est pas un titre coté : pour un bien non coté, "
+        + "corrigez sa valeur ou supprimez la ligne.");
+    return;
+  }
+  const qte = Number(tr.querySelector('.c-qte').value) || 0;
+  if(qte <= 0){ alert("Indiquez d'abord la quantité détenue."); return; }
+  if(!nom && !tk){ alert("Cette ligne n'a ni nom ni ticker."); return; }
+
+  const place = tr.querySelector('.c-place') ? tr.querySelector('.c-place').value : 'us';
+  const inf = infosPlace(place);
+  VENTE_EN_COURS = {tr, nom: nom || tk, ticker: tk, qteDetenue: qte,
+                    devise: inf.devise, marche: inf.marche};
+
+  document.getElementById('dlg-titre').textContent =
+    VENTE_EN_COURS.nom + (tk ? '  ·  ' + tk : '');
+  document.getElementById('v-qte').value = qte;
+  document.getElementById('v-qte').max = qte;
+  document.getElementById('v-qte-aide').textContent =
+    'Vous en détenez ' + nb(qte, qte < 1 ? 4 : 0) + '. Une quantité inférieure garde le reste en portefeuille.';
+  document.getElementById('v-dev-vente').textContent = '(' + inf.devise + ')';
+  document.getElementById('v-prix').value = '';
+  document.getElementById('v-revient').value = tr.querySelector('.c-prix').value || '';
+
+  const horsEuro = inf.devise !== 'EUR';
+  document.getElementById('v-bloc-taux').hidden = !horsEuro;
+  document.getElementById('v-dev-taux').textContent = inf.devise;
+  document.getElementById('v-taux').value = 1;
+  document.getElementById('v-revient-aide').textContent = horsEuro
+    ? "Ce que vous aviez payé par titre, converti en euros au taux du jour de l'achat."
+    : "Ce que vous aviez payé par titre.";
+
+  document.getElementById('v-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('v-note').value = '';
+  document.getElementById('v-erreur').style.display = 'none';
+  majApercuVente();
+  document.getElementById('dlg-vente').showModal();
+}
+
+function fermerVente(){
+  document.getElementById('dlg-vente').close();
+  VENTE_EN_COURS = null;
+}
+
+function lireFormulaireVente(){
+  return {
+    qte:     Number(document.getElementById('v-qte').value),
+    prix:    Number(document.getElementById('v-prix').value),
+    taux:    Number(document.getElementById('v-taux').value) || 1,
+    revient: Number(document.getElementById('v-revient').value),
+    date:    document.getElementById('v-date').value,
+    note:    document.getElementById('v-note').value.trim()
+  };
+}
+
+function majApercuVente(){
+  const el = document.getElementById('v-apercu');
+  if(!VENTE_EN_COURS || !el) return;
+  const f = lireFormulaireVente();
+  if(!(f.qte > 0) || !(f.prix > 0) || !(f.revient > 0)){
+    el.innerHTML = "Renseignez la quantité, le prix de vente et le prix de revient "
+                 + "pour voir le résultat de l'opération.";
+    return;
+  }
+  const achat = f.revient * f.qte;
+  const produit = f.prix * f.qte * f.taux;
+  const pv = produit - achat;
+  const pct = achat ? (pv / achat) * 100 : 0;
+  const reste = VENTE_EN_COURS.qteDetenue - f.qte;
+  el.innerHTML =
+    'Montant investi <b>' + nb(achat, 2) + ' €</b> · produit brut <b>' + nb(produit, 2) + ' €</b><br>'
+    + 'Plus-value brute <b class="' + signe(pv) + '">' + (pv > 0 ? '+' : '') + nb(pv, 2) + ' € ('
+    + pct.toFixed(2) + ' %)</b><br>'
+    + (reste > 0
+        ? 'Il restera <b>' + nb(reste, reste < 1 ? 4 : 0) + '</b> titre(s) en portefeuille.'
+        : 'La ligne sera retirée du portefeuille.')
+    + '<br><span style="opacity:.75">Les frais d\'achat et de vente sont déduits par le '
+    + 'rapport quotidien, selon la grille de votre courtier.</span>';
+}
+
+function validerVente(){
+  if(!VENTE_EN_COURS) return;
+  const f = lireFormulaireVente();
+  const err = document.getElementById('v-erreur');
+  const dire = m => { err.textContent = m; err.style.display = ''; };
+
+  if(!(f.qte > 0))                       return dire("La quantité vendue doit être supérieure à zéro.");
+  if(f.qte > VENTE_EN_COURS.qteDetenue)  return dire("Vous ne pouvez pas vendre plus que ce que vous détenez ("
+                                                     + nb(VENTE_EN_COURS.qteDetenue, 4) + ").");
+  if(!(f.prix > 0))                      return dire("Le prix de vente doit être supérieur à zéro.");
+  if(!(f.revient > 0))                   return dire("Le prix de revient doit être supérieur à zéro.");
+  if(!(f.taux > 0))                      return dire("Le taux de change doit être supérieur à zéro.");
+  if(!f.date)                            return dire("Indiquez la date de la vente.");
+
+  VENTES.push({
+    name:          VENTE_EN_COURS.nom,
+    ticker:        VENTE_EN_COURS.ticker,
+    qty:           f.qte,
+    buy_price_eur: f.revient,
+    sell_price:    f.prix,
+    sell_currency: VENTE_EN_COURS.devise,
+    fx_at_sale:    f.taux,
+    sell_date:     f.date,
+    marche:        VENTE_EN_COURS.marche,
+    note:          f.note
+  });
+
+  const reste = VENTE_EN_COURS.qteDetenue - f.qte;
+  if(reste > 0) VENTE_EN_COURS.tr.querySelector('.c-qte').value = reste;
+  else          VENTE_EN_COURS.tr.remove();
+
+  fermerVente();
+  afficherVentes();
+  savePortfolio();      // on enregistre tout de suite : une vente ne se perd pas
+}
+
+function supprimerVente(i){
+  const v = VENTES[i];
+  if(!v) return;
+  if(!confirm("Retirer la vente de « " + v.name + " » du "
+              + (v.sell_date || '?') + " ? La ligne ne reviendra pas dans le "
+              + "portefeuille : il faudra la ressaisir.")) return;
+  VENTES.splice(i, 1);
+  afficherVentes();
+  savePortfolio();
+}
+
+function afficherVentes(){
+  const box = document.getElementById('ventes-liste');
+  if(!box) return;
+  if(!VENTES.length){
+    box.innerHTML = '<div class="vide">Aucune vente enregistrée pour l\'instant. '
+                  + 'Le bouton « Vendu » de chaque ligne du portefeuille sert à en ajouter une.</div>';
+    return;
+  }
+  let totalAchat = 0, totalProduit = 0;
+  const lignes = VENTES.map((v, i) => {
+    const achat = Number(v.buy_price_eur) * Number(v.qty);
+    const produit = Number(v.sell_price) * Number(v.qty) * (Number(v.fx_at_sale) || 1);
+    const pv = produit - achat;
+    totalAchat += achat; totalProduit += produit;
+    return '<tr><td>' + esc(v.name) + (v.ticker ? '<br><span style="color:var(--muted);font-size:.72rem">'
+             + esc(v.ticker) + '</span>' : '') + '</td>'
+      + '<td style="text-align:right">' + nb(v.qty, Number(v.qty) < 1 ? 4 : 0) + '</td>'
+      + '<td style="text-align:right">' + nb(v.buy_price_eur, 2) + '</td>'
+      + '<td style="text-align:right">' + nb(v.sell_price, 2)
+             + (v.sell_currency && v.sell_currency !== 'EUR'
+                ? ' <span style="color:var(--muted)">' + esc(v.sell_currency) + '</span>' : '') + '</td>'
+      + '<td style="text-align:right" class="' + signe(pv) + '">'
+             + (pv > 0 ? '+' : '') + nb(pv, 2) + '</td>'
+      + '<td style="text-align:right">' + jour(v.sell_date) + '</td>'
+      + '<td>' + esc(v.note || '') + '</td>'
+      + '<td><button class="del-btn" title="Retirer cette vente" '
+             + 'onclick="supprimerVente(' + i + ')">✕</button></td></tr>';
+  }).join('');
+
+  const pvTot = totalProduit - totalAchat;
+  box.innerHTML = '<div class="table-wrap"><table><thead><tr>'
+    + '<th>Titre</th><th style="text-align:right">Qté</th>'
+    + '<th style="text-align:right">Revient €</th><th style="text-align:right">Vente</th>'
+    + '<th style="text-align:right">PV brute €</th><th style="text-align:right">Date</th>'
+    + '<th>Note</th><th></th></tr></thead><tbody>' + lignes + '</tbody></table></div>'
+    + '<div class="apercu" style="margin-top:.9rem">'
+    + VENTES.length + ' opération(s) · investi <b>' + nb(totalAchat, 2) + ' €</b> · '
+    + 'produit <b>' + nb(totalProduit, 2) + ' €</b> · plus-value brute <b class="' + signe(pvTot) + '">'
+    + (pvTot > 0 ? '+' : '') + nb(pvTot, 2) + ' €</b><br>'
+    + '<span style="opacity:.75">Brut de frais. Le rapport quotidien en déduit le courtage '
+    + 'aller-retour et publie la plus-value nette.</span></div>';
 }
 
 verifierInscription();
