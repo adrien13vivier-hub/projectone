@@ -1572,23 +1572,9 @@ def score_croissance(f: dict):
 
 
 # ── Momentum ────────────────────────────────────────────────────────────────
-
-def _parse_serie(dates: list, closes: list) -> list:
-    """(date, cours) triee. Tolere "YYYY-MM-DD" et "YYYY-MM" (ancien cache)."""
-    serie = []
-    for d, c in zip(dates or [], closes or []):
-        try:
-            s = str(d)
-            iso = s + "-01" if len(s) == 7 else s[:10]
-            dt = datetime.strptime(iso, "%Y-%m-%d")
-            v = float(c)
-            if v > 0:
-                serie.append((dt, v))
-        except Exception:
-            continue
-    serie.sort(key=lambda x: x[0])
-    return serie
-
+# NOTE : _parse_serie() est definie plus haut (section NOTATION). Elle etait
+# dupliquee ici a l'identique -- doublon supprime, aucun changement de
+# comportement.
 
 def score_history(dates: list, closes: list) -> tuple:
     """Momentum, AVEC penalite de surchauffe.
@@ -2203,7 +2189,8 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
     vide = {"disponible": False, "motif": RISK_ERR or "moteur indisponible",
             "lignes": [], "resume": {"actifs": 0, "franchis": 0, "alertes": 0,
                                      "sans_stop": 0, "total": 0},
-            "capital_ref": capital_ref, "reglages": dict(RISQUE)}
+            "capital_ref": capital_ref, "reglages": dict(RISQUE),
+            "exposition_correlee": []}
 
     if not RISK_OK:
         return vide
@@ -2253,12 +2240,31 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
         for l in sortie["lignes"]:
             l["vm"] = vm_par_cle.get(l["cle"])
 
+        # Exposition correlee : le plafond de poids ne voit qu'une ligne a la
+        # fois. On lui fournit le poids ACTUEL (vm / capital), pas la taille
+        # suggeree par dimensionner() -- c'est bien de ce qui est deja detenu
+        # qu'on veut savoir si ca bouge ensemble.
+        closes_par_cle = {e["cle"]: e["closes"] for e in entrees}
+        candidats = []
+        if capital_ref:
+            for l in sortie["lignes"]:
+                vm = _nombre_simple(l.get("vm"))
+                if vm is None:
+                    continue
+                candidats.append({
+                    "nom":       l.get("nom"),
+                    "closes":    closes_par_cle.get(l["cle"]) or [],
+                    "poids_pct": vm / capital_ref * 100.0,
+                })
+        exposition_correlee = risk_engine.exposition_correlee(candidats)
+
         return {
             "disponible": True, "motif": None,
             "lignes":  sortie["lignes"],
             "resume":  sortie["resume"],
             "capital_ref": capital_ref,
             "reglages": dict(RISQUE),
+            "exposition_correlee": exposition_correlee,
         }
     except Exception as e:
         _log.error("Moteur de risque en echec : %s -- rapport genere sans les "
@@ -2541,6 +2547,51 @@ def bloc_md_stops(risque: dict) -> list:
         "*« Écart » = ce qui est détenu moins ce que le budget de risque "
         "justifierait. Positif : la ligne est plus grosse que le risque accepté. "
         "Ce n'est pas un ordre de vente, c'est un écart à expliquer.*",
+        "",
+    ]
+
+    out += bloc_md_exposition_correlee(risque.get("exposition_correlee") or [])
+    return out
+
+
+def bloc_md_exposition_correlee(groupes: list) -> list:
+    """Sous-section « Exposition corrélée » (dans Stops et Alertes).
+
+    Le plafond de poids par ligne ne voit pas les positions qui bougent
+    ensemble : cette sous-section regroupe les lignes dont les rendements
+    quotidiens sont corrélés au-delà du seuil (0.7 par défaut), sur
+    l'historique déjà récupéré pour la volatilité -- aucun appel API de plus.
+
+    Un groupe sans dépassement du seuil d'alerte reste affiché : savoir que
+    deux lignes bougent ensemble est utile même sous le seuil.
+    """
+    out = ["", "### Exposition corrélée", ""]
+    if not groupes:
+        out += [
+            "Aucun regroupement de lignes fortement corrélées (seuil "
+            f"{risk_engine.CORRELATION_SEUIL:.2f}) détecté sur l'historique "
+            "disponible. *Ceci ne garantit rien sur la corrélation future : "
+            "seul le passé récent est mesuré.*",
+            "",
+        ]
+        return out
+
+    out += [
+        "Lignes dont les mouvements quotidiens sont fortement corrélés entre "
+        "eux -- prises ensemble, elles pèsent plus qu'un plafond de poids par "
+        "ligne ne le laisse penser. Un signal d'attention, pas une prévision.",
+        "",
+        "| Groupe | Poids cumulé | Alerte |",
+        "|--------|--------------|--------|",
+    ]
+    for g in groupes:
+        alerte_s = "⚠️ Oui" if g.get("alerte") else "Non"
+        out.append(f"| {', '.join(g.get('lignes') or [])} "
+                   f"| {_md_nombre(g.get('poids_pct'))} % | {alerte_s} |")
+    out += [
+        "",
+        f"*Seuil de corrélation : {risk_engine.CORRELATION_SEUIL:.2f}. Seuil "
+        f"d'alerte sur le poids cumulé : {risk_engine.EXPOSITION_ALERTE_PCT:.4g} %.*",
         "",
     ]
     return out
