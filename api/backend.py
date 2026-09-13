@@ -513,9 +513,36 @@ class ProfileSettings(BaseModel):
     stop_defaut:   Optional[dict]  = None   # stop appliqué aux lignes sans stop
     capital_reference: Optional[float] = None  # force le capital de dimensionnement
 
+class VenteRealisee(BaseModel):
+    """Une position soldee, conservee hors du portefeuille courant.
+
+    Le rapport photographie le portefeuille a l'instant T : une ligne vendue
+    en disparait, et le gain qu'elle a produit avec elle. Ce registre en garde
+    la trace, et portfolio_analyzer.compute_closed_trades() le lit tel quel.
+
+    `buy_price_eur` est un prix de revient EN EUROS ; `sell_price` est exprime
+    dans `sell_currency` et converti par `fx_at_sale`, taux FIGE au jour de la
+    vente. Le gain de change fait partie du resultat : le recalculer avec un
+    taux posterieur le fausserait.
+    """
+    name:          str
+    ticker:        Optional[str] = ""
+    qty:           float
+    buy_price_eur: float
+    sell_price:    float
+    sell_currency: Optional[str] = "EUR"
+    fx_at_sale:    Optional[float] = 1.0
+    sell_date:     Optional[str] = ""
+    marche:        Optional[str] = "euronext"
+    note:          Optional[str] = ""
+
+
 class PortfolioSave(BaseModel):
     lines:    List[PortfolioLine]
     settings: Optional[ProfileSettings] = None
+    # Absent => on conserve le registre existant. Present => il remplace
+    # l'ancien : c'est ce qui permet de corriger ou supprimer une vente.
+    closed:   Optional[List[VenteRealisee]] = None
 
 class UserCreate(BaseModel):
     username: str
@@ -731,7 +758,11 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
             "username": username,
             "saved_at": datetime.now(timezone.utc).isoformat(),
             "settings": settings,
-            "closed":   ancien.get("closed", []),
+            # Sans cette reprise, chaque enregistrement du portefeuille
+            # effacait silencieusement toutes les plus-values realisees.
+            "closed":   ([v.model_dump() for v in data.closed]
+                         if data.closed is not None
+                         else ancien.get("closed", [])),
             "lines":    [{k: v for k, v in l.model_dump().items() if v is not None}
                          for l in data.lines]
         }, ensure_ascii=False, indent=2),
@@ -783,7 +814,8 @@ def list_markets():
     """Places de cotation reconnues, pour alimenter le menu déroulant."""
     from api.load_portfolio import MARCHES
     return [{"code": c, "label": f["label"], "devise": f["devise"],
-             "suffixe": f["suffixe"]} for c, f in MARCHES.items()]
+             "suffixe": f["suffixe"], "marche": f.get("marche", "euronext")}
+            for c, f in MARCHES.items()]
 
 
 @app.get("/api/asset-classes")
