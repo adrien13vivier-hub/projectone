@@ -639,6 +639,136 @@ def dimensionner_par_volatilite(capital: float,
 
 
 # =============================================================================
+# EXPOSITION CORRELEE -- concentration au-dela de la ligne individuelle
+# =============================================================================
+# Le plafond de poids (POIDS_MAX_PCT) protege contre UNE ligne qui derape. Il
+# ne voit rien quand plusieurs lignes, chacune sous le plafond, bougent
+# ENSEMBLE : trois positions a 12% chacune sur des valeurs tech americaines
+# tres correlees se comportent, un jour de panique, comme une seule ligne a
+# 36%. Cette section detecte ces regroupements a partir des historiques de
+# cloture deja recuperes pour le calcul de volatilite -- aucune donnee, aucun
+# appel API supplementaire.
+#
+# METHODE, ET SES LIMITES ASSUMEES :
+#   - Correlation de Pearson sur les rendements quotidiens, alignes sur leurs
+#     N derniers points communs (les historiques n'ont pas tous la meme
+#     longueur selon la date d'entree en portefeuille).
+#   - Deux lignes sont "reliees" au-dela d'un seuil (0.7 par defaut) ; les
+#     groupes sont les composantes connexes du graphe ainsi forme.
+#   - Ce n'est PAS une classification sectorielle ni un modele de risque
+#     factoriel : une correlation passee ne garantit rien sur la correlation
+#     future, et deux titres peuvent se decoreler brutalement (l'un publie un
+#     resultat, pas l'autre). C'est un signal d'attention, pas une prevision.
+#   - En dessous de CORRELATION_MIN_OBS rendements communs, la paire est
+#     ignoree plutot que de publier un chiffre instable.
+
+CORRELATION_MIN_OBS  = 20     # rendements communs minimum pour une correlation publiee
+CORRELATION_SEUIL    = 0.70   # au-dela, deux lignes sont considerees comme "ensemble"
+EXPOSITION_ALERTE_PCT = 25.0  # poids cumule d'un groupe correle qui declenche l'alerte
+
+
+def _rendements(closes: list) -> list:
+    """Rendements quotidiens arithmetiques, dans l'ordre chronologique recu."""
+    serie = _series_propre(closes)
+    return [(serie[i] / serie[i - 1]) - 1.0
+            for i in range(1, len(serie)) if serie[i - 1] > 0]
+
+
+def correlation(closes_a: list, closes_b: list,
+                min_obs: int = CORRELATION_MIN_OBS) -> float:
+    """Coefficient de correlation de Pearson entre deux series de rendements.
+
+    Aligne les deux series sur leurs `min_obs`-et-plus derniers rendements
+    COMMUNS (memes N derniers points de chaque serie, pas necessairement les
+    memes dates -- ce module ne recoit que des cloture, pas des dates).
+    Retourne None sous `min_obs` points, ou si l'une des deux series est
+    constante (ecart-type nul : la correlation n'est alors pas definie).
+    """
+    ra, rb = _rendements(closes_a), _rendements(closes_b)
+    n = min(len(ra), len(rb))
+    if n < min_obs:
+        return None
+    ra, rb = ra[-n:], rb[-n:]
+
+    moy_a = sum(ra) / n
+    moy_b = sum(rb) / n
+    cov   = sum((ra[i] - moy_a) * (rb[i] - moy_b) for i in range(n)) / n
+    var_a = sum((x - moy_a) ** 2 for x in ra) / n
+    var_b = sum((x - moy_b) ** 2 for x in rb) / n
+    if var_a <= 0 or var_b <= 0:
+        return None
+
+    r = cov / ((var_a ** 0.5) * (var_b ** 0.5))
+    return _borner(r, -1.0, 1.0)   # arrondis flottants : jamais hors [-1, 1]
+
+
+def exposition_correlee(lignes: list,
+                        seuil: float = CORRELATION_SEUIL,
+                        alerte_pct: float = EXPOSITION_ALERTE_PCT) -> list:
+    """Regroupe les lignes dont les rendements sont fortement correles.
+
+    `lignes` : liste de dicts avec au moins
+        nom        libelle affiche
+        closes     historique de clotures
+        poids_pct  poids ACTUEL dans le portefeuille (vm / capital x 100) --
+                   PAS la taille suggeree par dimensionner(). Une ligne sans
+                   poids connu ou sans historique suffisant est ecartee : on
+                   ne peut pas l'accuser d'etre correlee sans donnees.
+
+    Retourne une liste de groupes, poids cumule decroissant :
+        {"lignes": [noms...], "poids_pct": total, "alerte": bool}
+    Un groupe compte au moins deux lignes ; une ligne isolee n'apparait pas.
+
+    Complexite O(n^2) en nombre de lignes cotees -- largement suffisant pour
+    un portefeuille personnel (quelques dizaines de lignes au plus).
+    """
+    candidats = [l for l in (lignes or [])
+                if _nombre(l.get("poids_pct"))
+                and len(_series_propre(l.get("closes"))) >= CORRELATION_MIN_OBS + 1]
+    n = len(candidats)
+    if n < 2:
+        return []
+
+    # Union-find : eviter de reconstruire les groupes par un parcours O(n^3).
+    parent = list(range(n))
+
+    def trouver(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def unir(i, j):
+        ri, rj = trouver(i), trouver(j)
+        if ri != rj:
+            parent[ri] = rj
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            c = correlation(candidats[i].get("closes"), candidats[j].get("closes"))
+            if c is not None and c >= seuil:
+                unir(i, j)
+
+    membres_par_groupe = {}
+    for i in range(n):
+        membres_par_groupe.setdefault(trouver(i), []).append(i)
+
+    groupes = []
+    for membres in membres_par_groupe.values():
+        if len(membres) < 2:
+            continue
+        poids_total = sum(_nombre(candidats[i]["poids_pct"]) or 0.0 for i in membres)
+        groupes.append({
+            "lignes":    [candidats[i].get("nom") or "?" for i in membres],
+            "poids_pct": round(poids_total, 2),
+            "alerte":    poids_total >= alerte_pct,
+        })
+
+    groupes.sort(key=lambda g: g["poids_pct"], reverse=True)
+    return groupes
+
+
+# =============================================================================
 # ORCHESTRATION
 # =============================================================================
 
@@ -964,6 +1094,47 @@ def _autotest() -> int:
     res3 = evaluer_portefeuille([{"cle": "X", "cours": "abc", "ligne": {"stop": "vq"}}],
                                 capital=100000)
     verifie("ligne malformee isolee", len(res3["lignes"]) == 1)
+
+    # -- Exposition correlee --------------------------------------------------
+    base = [100.0]
+    for i in range(30):
+        base.append(base[-1] * (1 + (0.01 if i % 3 else -0.02)))
+    correlee = [v * 2.5 for v in base]        # memes rendements -> correlation = 1
+    inverse = [200.0]
+    for i in range(1, len(base)):
+        r = base[i] / base[i - 1] - 1.0
+        inverse.append(inverse[-1] * (1 - r))  # rendements opposes -> correlation = -1
+
+    c_pos = correlation(base, correlee)
+    c_neg = correlation(base, inverse)
+    verifie("correlation parfaite ~ +1", c_pos is not None and c_pos > 0.999, str(c_pos))
+    verifie("correlation opposee ~ -1", c_neg is not None and c_neg < -0.999, str(c_neg))
+    verifie("correlation donnees insuffisantes -> None",
+            correlation(base[:10], correlee[:10]) is None)
+    verifie("correlation serie constante -> None",
+            correlation(base, [42.0] * len(base)) is None)
+
+    groupes = exposition_correlee([
+        {"nom": "A", "closes": base,     "poids_pct": 15.0},
+        {"nom": "B", "closes": correlee, "poids_pct": 14.0},
+        {"nom": "C", "closes": inverse,  "poids_pct": 20.0},
+    ])
+    verifie("un seul groupe correle forme (A+B, C exclu)", len(groupes) == 1, str(groupes))
+    verifie("poids cumule du groupe = somme des membres",
+            groupes and groupes[0]["poids_pct"] == 29.0, str(groupes))
+    verifie("alerte declenchee au-dela du seuil",
+            groupes and groupes[0]["alerte"] is True, str(groupes))
+    verifie("groupe trie par poids decroissant (implicite, un seul groupe ici)",
+            groupes and set(groupes[0]["lignes"]) == {"A", "B"}, str(groupes))
+
+    verifie("moins de deux lignes exploitables -> aucun groupe",
+            exposition_correlee([{"nom": "Seul", "closes": base, "poids_pct": 10}]) == [])
+    verifie("ligne sans poids connu ecartee du calcul",
+            exposition_correlee([
+                {"nom": "A", "closes": base,     "poids_pct": 15.0},
+                {"nom": "B", "closes": correlee, "poids_pct": None},
+            ]) == [])
+    verifie("portefeuille vide -> aucun groupe", exposition_correlee([]) == [])
 
     # -- Persistance ---------------------------------------------------------
     import tempfile
