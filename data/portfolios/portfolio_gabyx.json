@@ -1,0 +1,14 @@
+{
+  "username": "gabyx",
+  "saved_at": "2026-09-13T20:47:07.270440+00:00",
+  "settings": {
+    "broker": "autre",
+    "indices": [
+      "S&P 500",
+      "CAC 40"
+    ],
+    "watchlist": []
+  },
+  "lines": [],
+  "closed": []
+}
