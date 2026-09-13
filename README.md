@@ -107,6 +107,29 @@ depuis l'historique disponible et perdrait son cliquet. Un fichier absent ou
 corrompu n'est pas une erreur : les plus hauts repartent de l'historique connu,
 et la première évaluation d'une ligne est signalée comme telle dans le rapport.
 
+### Exposition corrélée (v8.2)
+
+Le plafond de poids par ligne (`poids_max_pct`) protège contre **une** ligne
+qui dérape. Il ne voit rien quand plusieurs lignes, chacune sous le plafond,
+bougent **ensemble** : trois positions à 12 % chacune sur des valeurs tech
+américaines très corrélées se comportent, un jour de panique, comme une seule
+ligne à 36 %.
+
+`risk_engine.exposition_correlee()` regroupe les lignes dont les rendements
+quotidiens sont corrélés au-delà d'un seuil (0,70 par défaut), à partir des
+historiques déjà récupérés pour la volatilité — **aucun appel API
+supplémentaire**. Un groupe dont le poids cumulé dépasse `EXPOSITION_ALERTE_PCT`
+(25 % par défaut) est signalé dans une nouvelle sous-section **Exposition
+corrélée**, à l'intérieur de « Stops et Alertes » (rapport Markdown et page
+HTML).
+
+Limites assumées : une corrélation de Pearson sur l'historique disponible
+n'est pas une classification sectorielle, et une corrélation passée ne
+garantit rien sur la corrélation future — deux titres peuvent se décorréler
+brutalement (l'un publie un résultat, pas l'autre). C'est un signal
+d'attention, pas une prévision. En dessous de 21 clôtures communes, une paire
+n'est pas évaluée plutôt que de publier un chiffre instable.
+
 ---
 
 ## Architecture des sources
@@ -199,7 +222,71 @@ clair, quitte à ne pas envoyer l'alerte.
 | `docs/index.html` | Rapport HTML interactif (Cloudflare Pages) |
 | `cache/session_cache.json` | Cache fallback des derniers cours valides |
 
+## Tests & vérification
+
+```bash
+# Moteur de risque seul, sans dependance -- doit passer partout, tout le temps
+python risk_engine.py
+
+# Suite pytest (fonctions pures de risk_engine.py et portfolio_analyzer.py)
+pip install -r requirements-dev.txt
+pytest
+
+# Le score du jour predit-il vraiment la performance a venir ?
+python backtest_score.py --user adrien
+python backtest_score.py --all-users --horizon 14
+```
+
+`backtest_score.py` compare, pour chaque valeur et chaque jour passé, le score
+publié à la performance réellement observée `--horizon` jours plus tard
+(`reports/<user>/history.csv` en contient déjà tout l'historique). Il ne
+corrige rien : il mesure si l'algorithme de décision a raison, ce qu'aucun
+autre outil du projet ne faisait jusqu'ici. En dessous de 5 paires
+score/performance exploitables, il le dit plutôt que de publier une
+corrélation instable calculée sur un échantillon minuscule.
+
 ## Changelog
+
+### v8.2 — Exposition corrélée, backtest du score, tests automatisés
+
+**Pourquoi.** La gestion du risque protégeait déjà chaque ligne prise
+séparément (stops, plafond de poids, dimensionnement), mais rien ne
+regardait les lignes ensemble, rien ne vérifiait que le score qui pilote
+toutes ces décisions prédit quoi que ce soit, et une seule fonction
+(`risk_engine.py`) avait des tests. Trois trous, trois correctifs :
+
+- ✅ **Nouveau : exposition corrélée**
+      (`risk_engine.correlation()` / `exposition_correlee()`). Regroupe les
+      lignes dont les rendements quotidiens sont corrélés au-delà de 0,70,
+      à partir des historiques déjà en mémoire — zéro appel API de plus.
+      Un groupe dont le poids cumulé dépasse 25 % du portefeuille est signalé
+      dans une nouvelle sous-section du rapport (Markdown et HTML). Voir
+      « Gestion du risque » plus haut pour les limites assumées de la
+      méthode.
+- ✅ **Nouveau : `backtest_score.py`.** Corrèle le score publié un jour donné
+      à la performance réellement observée ensuite. Premier résultat sur
+      l'historique actuel (269 paires, horizon 30 jours) : corrélation quasi
+      nulle (-0,04), et les lignes notées ACHAT FORT/MODÉRÉ ont même fait
+      **moins bien** que GARDER/À ÉVITER sur la période mesurée. Ce n'est pas
+      une condamnation de l'algorithme — l'échantillon reste petit et la
+      période courte — mais c'est exactement le genre de signal qu'aucun
+      outil ne remontait avant. À suivre dans le temps, pas à interpréter
+      sur une seule mesure.
+- ✅ **Nouveau : suite `pytest`** (`tests/test_risk_engine.py`,
+      `tests/test_portfolio_analyzer.py`, 45 tests) couvrant volatilité,
+      les quatre types de stop et leur cliquet, le dimensionnement, la
+      nouvelle exposition corrélée, et les fonctions de notation
+      (`note_titre`, `score_history`, paliers). `risk_engine.py` gardait déjà
+      son autotest interne (`python risk_engine.py`, 79 vérifications) —
+      inchangé, ces tests s'y ajoutent sans le remplacer.
+- 🐛 **Doublon supprimé** : `_parse_serie()` était définie deux fois, à
+      l'identique, dans `portfolio_analyzer.py`. Aucun changement de
+      comportement (la seconde définition écrasait silencieusement la
+      première) ; un test (`test_parse_serie_nest_plus_dupliquee...`) évite
+      que ça revienne.
+
+**Non traité dans cette passe, par choix explicite** : l'axe « alerte par un
+canal plus rapide qu'un email » (Telegram/Discord) reste pour plus tard.
 
 ### v8.1 — Le site : horaire, comptes, mode d'emploi
 
