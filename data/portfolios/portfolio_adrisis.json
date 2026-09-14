@@ -1,6 +1,6 @@
 {
   "username": "adrisis",
-  "saved_at": "2026-09-14T18:25:41.803831+00:00",
+  "saved_at": "2026-09-14T18:26:34.436355+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -64,7 +64,7 @@
       "buy_price": 6.48,
       "market": "euronext_paris",
       "asset_type": "action",
-      "asset_class": "action",
+      "asset_class": "etf",
       "account": "PEA CA",
       "tags": [
         "etf"
