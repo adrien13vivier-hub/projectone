@@ -1,6 +1,6 @@
 {
   "username": "adrisis",
-  "saved_at": "2026-09-14T18:22:57.557151+00:00",
+  "saved_at": "2026-09-14T18:25:40.272535+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -18,8 +18,8 @@
       "name": "MSCI WORLD",
       "ticker": "WPEA",
       "isin": "IE0002XZSHO1",
-      "quantity": 92.0,
-      "buy_price": 6.7,
+      "quantity": 30.0,
+      "buy_price": 6.77,
       "market": "euronext_paris",
       "asset_type": "action",
       "asset_class": "etf",
@@ -33,10 +33,38 @@
       "ticker": "PSP5",
       "isin": "FR0011871128",
       "quantity": 2.0,
-      "buy_price": 57.9,
+      "buy_price": 57.87,
       "market": "euronext_paris",
       "asset_type": "action",
       "asset_class": "etf",
+      "account": "PEA CA",
+      "tags": [
+        "etf"
+      ]
+    },
+    {
+      "name": "MSCI WORLD",
+      "ticker": "WPEA",
+      "isin": "IE0002XZSHO1",
+      "quantity": 60.0,
+      "buy_price": 6.59,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "etf",
+      "account": "PEA CA",
+      "tags": [
+        "etf"
+      ]
+    },
+    {
+      "name": "MSCI WORLD",
+      "ticker": "WPEA",
+      "isin": "IE0002XZSHO1",
+      "quantity": 2.0,
+      "buy_price": 6.48,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
       "account": "PEA CA",
       "tags": [
         "etf"
