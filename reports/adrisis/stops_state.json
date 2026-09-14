@@ -1,14 +1,10 @@
 {
   "lignes": {
-    "ABNX.PA": {
+    "PSP5.PA": {
       "arme": true,
       "hwm": null
     },
-    "ACA.PA": {
-      "arme": true,
-      "hwm": null
-    },
-    "CRWV.US": {
+    "WPEA.PA": {
       "arme": true,
       "hwm": null
     }

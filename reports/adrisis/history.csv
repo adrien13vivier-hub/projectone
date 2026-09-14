@@ -1,0 +1,5 @@
+date,time,ticker,name,price_eur,cost_eur,qty,vm,pnl_brut,pnl_brut_pct,pnl_net,pnl_net_pct,score,confiance,rec
+2026-09-15,01:25,WPEA.PA,MSCI WORLD,6.921,6.77,30.0,207.63,4.53,2.23,0.55,0.27,5.8,41.0,SURVEILLER
+2026-09-15,01:25,PSP5.PA,S&P500,58.01,57.87,2.0,116.02,0.28,0.24,-3.7,-3.2,5.8,41.0,SURVEILLER (en moins-value)
+2026-09-15,01:25,WPEA.PA,MSCI WORLD,6.921,6.59,60.0,415.26,19.86,5.02,15.88,4.02,5.8,41.0,SURVEILLER
+2026-09-15,01:25,WPEA.PA,MSCI WORLD,6.921,6.48,2.0,13.84,0.88,6.79,-3.1,-23.92,5.8,41.0,SURVEILLER (en moins-value)
