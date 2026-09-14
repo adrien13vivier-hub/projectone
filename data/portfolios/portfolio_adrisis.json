@@ -1,14 +1,32 @@
 {
   "username": "adrisis",
-  "saved_at": "2026-09-14T18:11:07.692444+00:00",
+  "saved_at": "2026-09-14T18:21:53.669768+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": []
+    "watchlist": [],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0
   },
-  "lines": [],
-  "closed": []
+  "closed": [],
+  "lines": [
+    {
+      "name": "MSCI WORLD",
+      "ticker": "WPEA",
+      "isin": "IE0002XZSHO1",
+      "quantity": 92.0,
+      "buy_price": 6.7,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "PEA CA",
+      "tags": [
+        "etf"
+      ]
+    }
+  ]
 }
