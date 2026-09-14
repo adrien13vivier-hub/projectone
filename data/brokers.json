@@ -3,72 +3,324 @@
     "label": "BoursoBank",
     "note": "Tarif Découverte. Ordre <= 500 EUR : 1,99 EUR fixe, au-dela 0,60 %.",
     "fees": {
-      "euronext": { "threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99 },
-      "us":       { "threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95 }
+      "euronext": {
+        "threshold": 500,
+        "flat": 1.99,
+        "rate": 0.006,
+        "min": 1.99
+      },
+      "us": {
+        "threshold": 6000,
+        "flat": 6.95,
+        "rate": 0.0012,
+        "min": 6.95
+      }
     }
   },
   "trade_republic": {
     "label": "Trade Republic",
     "note": "1 EUR de frais externes par ordre, quel que soit le montant.",
     "fees": {
-      "euronext": { "threshold": 0, "flat": 1.0, "rate": 0.0, "min": 1.0 },
-      "us":       { "threshold": 0, "flat": 1.0, "rate": 0.0, "min": 1.0 }
+      "euronext": {
+        "threshold": 0,
+        "flat": 1.0,
+        "rate": 0.0,
+        "min": 1.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 1.0,
+        "rate": 0.0,
+        "min": 1.0
+      }
     }
   },
   "degiro": {
     "label": "DEGIRO",
     "note": "Frais de traitement 1 EUR + courtage variable selon la place.",
     "fees": {
-      "euronext": { "threshold": 0, "flat": 2.0,  "rate": 0.0,    "min": 2.0 },
-      "us":       { "threshold": 0, "flat": 2.0,  "rate": 0.0,    "min": 2.0 }
+      "euronext": {
+        "threshold": 0,
+        "flat": 2.0,
+        "rate": 0.0,
+        "min": 2.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 2.0,
+        "rate": 0.0,
+        "min": 2.0
+      }
     }
   },
   "bourse_direct": {
     "label": "Bourse Direct",
     "note": "Tarif Optimum Euronext.",
     "fees": {
-      "euronext": { "threshold": 500,  "flat": 0.99, "rate": 0.0009, "min": 0.99 },
-      "us":       { "threshold": 1000, "flat": 9.9,  "rate": 0.0035, "min": 9.9 }
+      "euronext": {
+        "threshold": 500,
+        "flat": 0.99,
+        "rate": 0.0009,
+        "min": 0.99
+      },
+      "us": {
+        "threshold": 1000,
+        "flat": 9.9,
+        "rate": 0.0035,
+        "min": 9.9
+      }
     }
   },
   "fortuneo": {
     "label": "Fortuneo",
     "note": "Tarif Optimum.",
     "fees": {
-      "euronext": { "threshold": 500,  "flat": 1.95, "rate": 0.0035, "min": 1.95 },
-      "us":       { "threshold": 2000, "flat": 9.5,  "rate": 0.0035, "min": 9.5 }
+      "euronext": {
+        "threshold": 500,
+        "flat": 1.95,
+        "rate": 0.0035,
+        "min": 1.95
+      },
+      "us": {
+        "threshold": 2000,
+        "flat": 9.5,
+        "rate": 0.0035,
+        "min": 9.5
+      }
     }
   },
   "saxo": {
     "label": "Saxo Banque",
     "note": "Offre Classic.",
     "fees": {
-      "euronext": { "threshold": 0, "flat": 2.0, "rate": 0.0008, "min": 2.0 },
-      "us":       { "threshold": 0, "flat": 1.0, "rate": 0.0008, "min": 1.0 }
+      "euronext": {
+        "threshold": 0,
+        "flat": 2.0,
+        "rate": 0.0008,
+        "min": 2.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 1.0,
+        "rate": 0.0008,
+        "min": 1.0
+      }
     }
   },
   "interactive_brokers": {
     "label": "Interactive Brokers",
     "note": "Tarif Fixed, minimums par place.",
     "fees": {
-      "euronext": { "threshold": 0, "flat": 1.25, "rate": 0.0005, "min": 1.25 },
-      "us":       { "threshold": 0, "flat": 1.0,  "rate": 0.0005, "min": 1.0 }
+      "euronext": {
+        "threshold": 0,
+        "flat": 1.25,
+        "rate": 0.0005,
+        "min": 1.25
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 1.0,
+        "rate": 0.0005,
+        "min": 1.0
+      }
+    }
+  },
+  "xtb": {
+    "label": "XTB",
+    "note": "0 € de commission jusqu'a 100 000 € d'ordres par mois, puis 0,20 % (minimum 10 €). La grille ci-dessous suppose que vous restez sous ce plafond, ce qui est le cas de la quasi-totalite des particuliers.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0,
+        "min": 0.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0,
+        "min": 0.0
+      }
+    }
+  },
+  "scalable_capital": {
+    "label": "Scalable Capital",
+    "note": "0,99 € par ordre. Gratuit via un plan d'investissement programme.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.99,
+        "rate": 0.0,
+        "min": 0.99
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.99,
+        "rate": 0.0,
+        "min": 0.99
+      }
+    }
+  },
+  "revolut": {
+    "label": "Revolut",
+    "note": "0,25 % du montant. Un ordre gratuit par mois selon la formule, non modelise ici.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0025,
+        "min": 0.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0025,
+        "min": 0.0
+      }
+    }
+  },
+  "etoro": {
+    "label": "eToro",
+    "note": "1 $ par ordre sur actions, compte ici comme 1 €. Les frais de change ne sont pas inclus.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 1.0,
+        "rate": 0.0,
+        "min": 1.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 1.0,
+        "rate": 0.0,
+        "min": 1.0
+      }
+    }
+  },
+  "freedom24": {
+    "label": "Freedom24",
+    "note": "2 € par ordre, plus 0,02 € par titre. La part par titre n'est pas modelisee : le cout reel est un peu superieur sur les gros volumes.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 2.0,
+        "rate": 0.0,
+        "min": 2.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 2.0,
+        "rate": 0.0,
+        "min": 2.0
+      }
+    }
+  },
+  "ig": {
+    "label": "IG",
+    "note": "Aucune commission affichee sur les actions. La remuneration passe par l'ecart entre le prix d'achat et de vente, invisible ici : le cout reel n'est donc pas nul.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0,
+        "min": 0.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0,
+        "min": 0.0
+      }
+    }
+  },
+  "credit_agricole": {
+    "label": "Credit Agricole — Investore Integral",
+    "note": "Bareme par paliers : 0,48 % jusqu'a 500 €, 0,18 % jusqu'a 1 000 €, 0,12 % au-dela. Approxime ici en deux paliers. Des frais de garde annuels s'appliquent en dessous de 12 ordres par an.",
+    "fees": {
+      "euronext": {
+        "threshold": 1000,
+        "flat": 1.8,
+        "rate": 0.0012,
+        "min": 1.8
+      },
+      "us": {
+        "threshold": 1000,
+        "flat": 1.8,
+        "rate": 0.0012,
+        "min": 1.8
+      }
+    }
+  },
+  "credit_mutuel": {
+    "label": "Credit Mutuel",
+    "note": "0,50 % du montant, plafonne a 19,90 € au-dela de 4 000 €. Le plafond n'est pas modelise : au-dessus de 4 000 €, le cout reel est inferieur a celui affiche.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.005,
+        "min": 0.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.005,
+        "min": 0.0
+      }
+    }
+  },
+  "banque_traditionnelle": {
+    "label": "Banque traditionnelle (BNP, SG, LCL, Caisse d'Epargne…)",
+    "note": "Les reseaux bancaires classiques facturent entre 0,50 % et 1,20 %. 0,50 % est retenu ici, soit le plafond reglementaire pour un ordre passe en ligne. Passe par un conseiller, c'est davantage. Verifiez votre brochure tarifaire et corrigez si besoin.",
+    "fees": {
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.005,
+        "min": 5.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.005,
+        "min": 5.0
+      }
     }
   },
   "autre": {
     "label": "Autre / personnalisé",
     "note": "Grille neutre. Saisir custom_fees dans le profil pour l'ajuster.",
     "fees": {
-      "euronext": { "threshold": 500,  "flat": 1.99, "rate": 0.006,  "min": 1.99 },
-      "us":       { "threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95 }
+      "euronext": {
+        "threshold": 500,
+        "flat": 1.99,
+        "rate": 0.006,
+        "min": 1.99
+      },
+      "us": {
+        "threshold": 6000,
+        "flat": 6.95,
+        "rate": 0.0012,
+        "min": 6.95
+      }
     }
   },
   "sans_frais": {
     "label": "Aucun frais (simulation)",
     "note": "Pour analyser la performance brute, sans friction de courtage.",
     "fees": {
-      "euronext": { "threshold": 0, "flat": 0.0, "rate": 0.0, "min": 0.0 },
-      "us":       { "threshold": 0, "flat": 0.0, "rate": 0.0, "min": 0.0 }
+      "euronext": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0,
+        "min": 0.0
+      },
+      "us": {
+        "threshold": 0,
+        "flat": 0.0,
+        "rate": 0.0,
+        "min": 0.0
+      }
     }
   }
 }
