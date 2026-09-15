@@ -1,0 +1,17 @@
+{
+  "name": "ProjectOne — suivi de portefeuille",
+  "short_name": "ProjectOne",
+  "description": "Aide a la decision pour le suivi de portefeuille. La decision finale revient au titulaire du compte.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101416",
+  "theme_color": "#101416",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
