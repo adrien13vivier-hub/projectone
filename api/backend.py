@@ -28,7 +28,7 @@ import json, os, subprocess, sys, time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Body
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -48,7 +48,7 @@ ANALYZER         = ROOT / "portfolio_analyzer.py"
 GEN_HTML         = ROOT / "generate_html.py"
 GEN_CHART        = ROOT / "generate_chart.py"
 GEN_PORTAL       = ROOT / "generate_portal.py"
-MAX_USERS        = 5
+MAX_USERS        = int(os.getenv("MAX_USERS", "10"))
 JWT_SECRET       = os.getenv("JWT_SECRET", "")
 
 # Exposition publique : autorise l'inscription libre. Tant que cette variable
@@ -62,20 +62,38 @@ ADMIN_PASSWORD   = os.getenv("ADMIN_PASSWORD", "")
 _DEFAUTS_INTERDITS = {"", "changeme-secret-local", "secret", "changeme"}
 
 if JWT_SECRET in _DEFAUTS_INTERDITS:
-    if INSCRIPTION_LIBRE:
-        # Le secret signe les jetons de session. Une valeur par defaut est
-        # publique : n'importe qui pourrait forger un jeton « role: admin »
-        # sans connaitre le moindre mot de passe. Inacceptable des lors que
-        # le service est joignable depuis l'exterieur.
+    # Le secret signe les jetons de session. Une valeur par defaut est PUBLIQUE :
+    # elle figure dans ce fichier, donc sur GitHub. N'importe qui pourrait forger
+    # un jeton « role: admin » sans connaitre le moindre mot de passe.
+    #
+    # L'ancienne version ne refusait ce cas que si INSCRIPTION_LIBRE=1. C'etait
+    # insuffisant : le site est joignable depuis l'exterieur quelle que soit
+    # l'ouverture des inscriptions. Plutot que d'empecher le demarrage — ce qui
+    # mettrait le site hors service le jour d'une mise a jour — on fabrique une
+    # cle au hasard au premier lancement et on la conserve, comme pour les cles
+    # de notification. Rien a definir, et aucune valeur connue d'avance.
+    import secrets as _secrets
+    _CHEMIN_SECRET = DATA_DIR / "jwt_secret.txt"
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        if _CHEMIN_SECRET.exists():
+            JWT_SECRET = _CHEMIN_SECRET.read_text(encoding="utf-8").strip()
+        if JWT_SECRET in _DEFAUTS_INTERDITS:
+            JWT_SECRET = _secrets.token_hex(32)
+            _CHEMIN_SECRET.write_text(JWT_SECRET, encoding="utf-8")
+            try:
+                os.chmod(_CHEMIN_SECRET, 0o600)
+            except OSError:
+                pass
+            print(f"[SECURITE] JWT_SECRET non defini : une cle a ete generee dans "
+                  f"{_CHEMIN_SECRET}. Les sessions ouvertes devront etre refaites "
+                  f"une fois. Ce fichier ne doit jamais partir sur GitHub.")
+    except OSError as _e:
         raise RuntimeError(
-            "JWT_SECRET absent ou laisse a sa valeur par defaut alors que "
-            "INSCRIPTION_LIBRE=1. Genere une cle et relance :\n"
-            "  python -c \"import secrets;print(secrets.token_hex(32))\"\n"
-            "puis definis JWT_SECRET avec cette valeur."
+            f"JWT_SECRET n'est pas defini et la cle de secours n'a pas pu etre "
+            f"ecrite dans {DATA_DIR} ({_e}). Definis JWT_SECRET toi-meme :\n"
+            '  python -c "import secrets;print(secrets.token_hex(32))"'
         )
-    JWT_SECRET = "changeme-secret-local"
-    print("[SECURITE] JWT_SECRET non defini : valeur de developpement utilisee.")
-    print("           Acceptable en local uniquement. Ne PAS exposer ce service.")
 JWT_ALG          = "HS256"
 JWT_EXPIRE       = 60 * 8   # 8 heures
 
@@ -91,6 +109,19 @@ CLOUDFLARE_BASE  = os.getenv("CLOUDFLARE_PAGES_URL", "https://projectone.pages.d
 # les minutes rondes sont les plus encombrees.
 ANALYSE_HEURE  = int(os.getenv("ANALYSE_HEURE",  "22"))
 ANALYSE_MINUTE = int(os.getenv("ANALYSE_MINUTE", "37"))
+
+# D'OU VIENT L'HEURE AFFICHEE.
+# Le site a longtemps annonce 22h30 alors que le code prevoit 22h37, sans
+# qu'on puisse savoir pourquoi : une variable d'environnement posee sur la
+# machine ecrasait la valeur, en silence. On trace desormais la provenance,
+# et /api/version la publie.
+_SOURCES_HORAIRE = [n for n in ("ANALYSE_HEURE", "ANALYSE_MINUTE",
+                                "HEURE_ANALYSE_GROUPEE")
+                    if os.getenv(n)]
+if _SOURCES_HORAIRE:
+    print(f"[Horaire] Valeur(s) imposee(s) par l'environnement : "
+          f"{', '.join(_SOURCES_HORAIRE)}. Sans elles, l'analyse serait "
+          f"programmee a 22h37.")
 
 # Les utilisateurs etaient espaces de 5 minutes a partir de 22h30, pour etaler
 # les appels API plutot que de les lancer tous ensemble :
@@ -203,6 +234,19 @@ def init_db():
         con.execute("ALTER TABLE users ADD COLUMN slot_index INTEGER NOT NULL DEFAULT 0")
     if "report_url" not in cols:
         con.execute("ALTER TABLE users ADD COLUMN report_url TEXT NOT NULL DEFAULT ''")
+    # Abonnements aux notifications. Un utilisateur peut en avoir plusieurs :
+    # un par appareil, et l'iPhone en cree un nouveau a chaque reinstallation
+    # du raccourci. L'adresse (endpoint) est l'identifiant unique.
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS push_subs (
+            endpoint   TEXT PRIMARY KEY,
+            username   TEXT NOT NULL,
+            p256dh     TEXT NOT NULL,
+            auth       TEXT NOT NULL,
+            appareil   TEXT NOT NULL DEFAULT '',
+            cree_le    TEXT NOT NULL
+        )
+    """)
     con.commit()
     # Compte admin par défaut si la table est vide
     if not con.execute("SELECT 1 FROM users").fetchone():
@@ -316,6 +360,99 @@ def run_analysis_for(username: str) -> dict:
         "logs": logs
     }
 
+# ── Notifications Web Push ───────────────────────────────────────────
+#
+# Le chiffrement et la signature vivent dans api/push.py, ecrits avec la
+# seule bibliotheque `cryptography` pour eviter une compilation a
+# l'installation. Ici on ne gere que les abonnements et l'envoi groupe.
+#
+# RAPPEL IPHONE : la notification n'arrive que si le site a ete ajoute a
+# l'ecran d'accueil. Depuis un onglet Safari, Apple refuse l'autorisation
+# sans message. Aucun code ne contourne cela.
+PUSH_SUJET = os.getenv("PUSH_SUJET", "mailto:admin@localhost")
+VAPID_PATH = DATA_DIR / "vapid.json"
+
+try:
+    from api import push as _push
+    _CLES_PUSH = _push.ClesVapid.charger_ou_creer(VAPID_PATH) if _push.DISPONIBLE else None
+except Exception as _e:
+    _push, _CLES_PUSH = None, None
+    print(f"[push] Module indisponible : {type(_e).__name__}: {_e}")
+
+
+def etat_push() -> dict:
+    """Ce que le serveur sait faire en matiere de notifications."""
+    if _push is None:
+        return {"disponible": False,
+                "motif": "module api/push.py absent ou illisible"}
+    if not _push.DISPONIBLE:
+        return {"disponible": False,
+                "motif": f"bibliotheque cryptography absente ({_push.MOTIF_INDISPO}). "
+                         f"Installer avec : pip install cryptography"}
+    if _CLES_PUSH is None:
+        return {"disponible": False, "motif": "cles VAPID non initialisees"}
+    return {"disponible": True, "cle_publique": _CLES_PUSH.publique_b64}
+
+
+def _abonnements(username: str = None) -> list:
+    con = get_db()
+    if username:
+        rows = con.execute("SELECT * FROM push_subs WHERE username=?",
+                           (username,)).fetchall()
+    else:
+        rows = con.execute("SELECT * FROM push_subs").fetchall()
+    con.close()
+    return [dict(r) for r in rows]
+
+
+def _oublier_abonnement(endpoint: str) -> None:
+    con = get_db()
+    con.execute("DELETE FROM push_subs WHERE endpoint=?", (endpoint,))
+    con.commit()
+    con.close()
+
+
+def notifier(username: str, titre: str, corps: str, url: str = "/") -> dict:
+    """Notifie tous les appareils d'un utilisateur. Ne leve jamais.
+
+    Un abonnement que le service declare perime est supprime sur-le-champ :
+    sinon on le reessaierait chaque soir, indefiniment.
+    """
+    etat = etat_push()
+    if not etat.get("disponible"):
+        return {"envoyes": 0, "echecs": 0, "motif": etat.get("motif")}
+
+    message = {"titre": titre, "corps": corps, "url": url,
+               "quand": datetime.now(timezone.utc).astimezone().strftime("%H:%M")}
+    envoyes = echecs = 0
+    for ab in _abonnements(username):
+        r = _push.envoyer(ab, message, _CLES_PUSH, PUSH_SUJET)
+        if r.ok:
+            envoyes += 1
+        else:
+            echecs += 1
+            if r.perime:
+                _oublier_abonnement(ab["endpoint"])
+                print(f"[push] Abonnement perime retire pour {username}.")
+            else:
+                print(f"[push] Echec vers {username} : {r.code} {r.detail[:120]}")
+    return {"envoyes": envoyes, "echecs": echecs}
+
+
+def notifier_tous(titre: str, corps: str, url: str = "/") -> dict:
+    """Meme chose, pour tous les comptes ayant un abonnement."""
+    total = {"envoyes": 0, "echecs": 0}
+    vus = {a["username"] for a in _abonnements()}
+    for u in vus:
+        r = notifier(u, titre, corps, url)
+        total["envoyes"] += r.get("envoyes", 0)
+        total["echecs"] += r.get("echecs", 0)
+    if vus:
+        print(f"[push] {titre} -> {total['envoyes']} envoi(s), "
+              f"{total['echecs']} echec(s) sur {len(vus)} compte(s).")
+    return total
+
+
 # ── Scheduler APScheduler ────────────────────────────────────────────
 scheduler = BackgroundScheduler(timezone="Europe/Paris")
 
@@ -366,6 +503,15 @@ def _declencher_analyse_distante():
 
     global _DERNIER_DECLENCHEMENT
     _DERNIER_DECLENCHEMENT = {"quand": horodatage, **res}
+    _ecrire_dernier_declenchement(_DERNIER_DECLENCHEMENT)
+
+    # Une notification par abonne : c'est le seul moment ou le serveur sait
+    # avec certitude qu'il se passe quelque chose.
+    if res.get("ok"):
+        notifier_tous("Analyse lancee",
+                      f"L'analyse de ce soir est partie a {horodatage[-5:]}. "
+                      f"Le rapport sera pret dans quelques minutes.",
+                      "/")
     marque = "OK" if res.get("ok") else "ECHEC"
     print(f"[Analyse] {horodatage} — declenchement GitHub : {marque} "
           f"({res.get('etat')}) {res.get('detail', '')}")
@@ -373,7 +519,30 @@ def _declencher_analyse_distante():
 
 # Dernier declenchement tente, expose par /api/status pour pouvoir verifier
 # depuis le site que le tir de la veille est bien parti.
-_DERNIER_DECLENCHEMENT: dict = {}
+#
+# CONSERVE SUR DISQUE. Tant qu'il ne vivait qu'en memoire, un redemarrage du
+# service le remettait a zero : /api/status affichait « null » en permanence,
+# et il devenait impossible de savoir si le declenchement de 22h37 avait
+# fonctionne la veille. C'est exactement le doute qu'on cherchait a lever.
+DECLENCHEMENT_PATH = DATA_DIR / "dernier_declenchement.json"
+
+
+def _lire_dernier_declenchement() -> dict:
+    try:
+        return json.loads(DECLENCHEMENT_PATH.read_text(encoding="utf-8")) or {}
+    except (FileNotFoundError, ValueError, OSError):
+        return {}
+
+
+def _ecrire_dernier_declenchement(valeur: dict) -> None:
+    try:
+        DECLENCHEMENT_PATH.write_text(
+            json.dumps(valeur, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as e:
+        print(f"[Analyse] Trace du declenchement non ecrite : {e}")
+
+
+_DERNIER_DECLENCHEMENT: dict = _lire_dernier_declenchement()
 
 
 def rebuild_scheduler():
@@ -582,12 +751,130 @@ def version_app():
         "modifie_le":         horodatage,
         "python":             platform.python_version(),
         "heure_analyse":      HEURE_ANALYSE_GROUPEE,
+        "heure_source":       (", ".join(_SOURCES_HORAIRE)
+                               if _SOURCES_HORAIRE else "valeur par defaut du code"),
+        "max_users":          MAX_USERS,
+        "push":               etat_push(),
         "etalement_creneaux": SLOT_PAS_MINUTES,
         "declenchement_distant": DECLENCHEMENT_DISTANT,
         "analyse_manuelle":   ANALYSE_MANUELLE_OUVERTE,
         "inscription_libre":  INSCRIPTION_LIBRE,
         "cloudflare_base":    CLOUDFLARE_BASE,
     }
+
+
+# ── Fichiers exiges par iOS pour une application installee ───────────
+#
+# Apple ne delivre de notification que si le site a ete ajoute a l'ecran
+# d'accueil. Pour cela il lui faut un manifeste et des icones, et le
+# travailleur de service doit etre servi depuis la RACINE du site, sinon sa
+# portee ne couvre pas les pages.
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def manifeste():
+    f = ROOT / "manifest.webmanifest"
+    if f.exists():
+        return FileResponse(str(f), media_type="application/manifest+json")
+    raise HTTPException(status_code=404, detail="manifest.webmanifest introuvable")
+
+
+@app.get("/sw.js", include_in_schema=False)
+def travailleur_de_service():
+    f = ROOT / "sw.js"
+    if f.exists():
+        # Pas de cache : un travailleur de service fige est tres penible a
+        # remplacer une fois installe sur un telephone.
+        return FileResponse(str(f), media_type="application/javascript",
+                            headers={"Cache-Control": "no-cache"})
+    raise HTTPException(status_code=404, detail="sw.js introuvable")
+
+
+@app.get("/icone-{taille}.png", include_in_schema=False)
+def icone(taille: str):
+    if taille not in ("180", "192", "512"):
+        raise HTTPException(status_code=404, detail="Taille inconnue")
+    f = ROOT / f"icone-{taille}.png"
+    if f.exists():
+        return FileResponse(str(f), media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icone introuvable")
+
+
+# ── Abonnements aux notifications ────────────────────────────────────
+
+class DesabonnementPush(BaseModel):
+    endpoint: str = ""
+
+
+class AbonnementPush(BaseModel):
+    endpoint: str
+    p256dh:   str
+    auth:     str
+    appareil: Optional[str] = ""
+
+
+@app.get("/api/push/cle-publique")
+def push_cle_publique(user: dict = Depends(current_user)):
+    """Ce que le navigateur doit connaitre pour s'abonner."""
+    etat = etat_push()
+    etat["abonnements"] = len(_abonnements(user["sub"]))
+    return etat
+
+
+@app.post("/api/push/abonnement", status_code=201)
+def push_abonner(data: AbonnementPush, user: dict = Depends(current_user)):
+    if not etat_push().get("disponible"):
+        raise HTTPException(status_code=503,
+                            detail=etat_push().get("motif", "Notifications indisponibles"))
+    con = get_db()
+    con.execute(
+        "INSERT INTO push_subs (endpoint, username, p256dh, auth, appareil, cree_le) "
+        "VALUES (?,?,?,?,?,?) "
+        "ON CONFLICT(endpoint) DO UPDATE SET username=excluded.username, "
+        "p256dh=excluded.p256dh, auth=excluded.auth, appareil=excluded.appareil",
+        (data.endpoint, user["sub"], data.p256dh, data.auth,
+         (data.appareil or "")[:120], datetime.now(timezone.utc).isoformat()))
+    con.commit()
+    con.close()
+    return {"ok": True, "abonnements": len(_abonnements(user["sub"]))}
+
+
+@app.delete("/api/push/abonnement")
+def push_desabonner(corps: Optional[DesabonnementPush] = Body(default=None),
+                    endpoint: str = "", user: dict = Depends(current_user)):
+    """Desabonne UN appareil, celui dont l'adresse est fournie.
+
+    L'adresse passe par le corps de la requete et non par l'URL : c'est un
+    identifiant d'appareil, il n'a rien a faire dans un journal de serveur.
+    Sans adresse, on retombe sur l'ancien comportement — tous les appareils —
+    ce qui reste utile pour repartir de zero.
+    """
+    cible = ((corps.endpoint if corps else "") or endpoint or "").strip()
+    con = get_db()
+    if cible:
+        con.execute("DELETE FROM push_subs WHERE endpoint=? AND username=?",
+                    (cible, user["sub"]))
+    else:
+        con.execute("DELETE FROM push_subs WHERE username=?", (user["sub"],))
+    con.commit()
+    con.close()
+    return {"ok": True, "abonnements": len(_abonnements(user["sub"]))}
+
+
+@app.post("/api/push/test")
+def push_test(user: dict = Depends(current_user)):
+    """Envoie une notification a soi-meme, pour verifier toute la chaine."""
+    _verrou(f"push:{user['sub']}", maximum=10)
+    if not _abonnements(user["sub"]):
+        raise HTTPException(
+            status_code=400,
+            detail="Aucun appareil abonne. Activez d'abord les notifications.")
+    r = notifier(user["sub"], "ProjectOne",
+                 "Notification de test : la chaine fonctionne.", "/")
+    if not r.get("envoyes"):
+        raise HTTPException(
+            status_code=502,
+            detail=("Aucun envoi n'a abouti. " + str(r.get("motif") or "")).strip())
+    return r
 
 
 @app.get("/api/status")
@@ -622,7 +909,12 @@ def status_check():
                                "en filet de securite"
                                if DECLENCHEMENT_DISTANT
                                else "les crons GitHub Actions uniquement"),
-            "dernier_declenchement": _DERNIER_DECLENCHEMENT or None,
+            # On relit le fichier plutot que la variable en memoire : si
+            # l'analyse a ete lancee par un autre processus (cron GitHub,
+            # second worker uvicorn), la variable de CELUI-CI n'en sait rien
+            # et la page afficherait « null » alors que tout a fonctionne.
+            "dernier_declenchement": (_lire_dernier_declenchement()
+                                      or _DERNIER_DECLENCHEMENT or None),
         },
         "schedule": slots
     }
