@@ -996,7 +996,13 @@ def get_consensus(asset: dict) -> tuple:
     else:
         eod_err = "cle absente"
 
-    return (5.0, "N/D", f"Neutre par defaut (Finnhub:{fh_err}, EODHD:{eod_err})")
+    # ANCIEN COMPORTEMENT : on renvoyait 5.0, « neutre par defaut ». Cette
+    # valeur inventee entrait dans la note ET comptait comme un critere
+    # disponible : elle remontait la confiance affichee tout en tirant la note
+    # vers le milieu. Le reste du fichier applique deja la regle inverse pour
+    # les actifs non cotes (« inventer une valeur neutre reviendrait a
+    # mentir ») : on l'applique ici aussi.
+    return (None, "N/D", f"indisponible (Finnhub:{fh_err}, EODHD:{eod_err})")
 
 
 # =============================================================================
@@ -1693,26 +1699,68 @@ POIDS_NOTE = {
     "risque":       0.05,
 }
 
+# ── APPLICABLE N'EST PAS DISPONIBLE (v14) ───────────────────────────────────
+#
+# LE SYMPTOME : le profil adrisis affichait 41 % de confiance en permanence,
+# et on a longtemps cru a une panne de la source de fondamentaux.
+#
+# LA CAUSE : ce profil ne contient que des ETF. Un ETF n'a ni PER, ni marge
+# nette, ni croissance du chiffre d'affaires — ce ne sont pas des donnees
+# manquantes, ce sont des grandeurs qui N'EXISTENT PAS pour ce type d'actif.
+# L'ancien calcul mettait dans le meme sac « la source n'a pas repondu » et
+# « la question n'a pas de sens ici », et sortait 41 % dans les deux cas.
+#
+# Trois etats, donc, et non deux :
+#   - applicable et disponible   -> compte au numerateur et au denominateur
+#   - applicable mais manquante  -> compte au denominateur seul (la confiance
+#                                   baisse, c'est le but : il y a un defaut)
+#   - non applicable             -> sort des deux (aucun defaut a signaler),
+#                                   mais reste ENUMEREE dans le rapport.
+#
+# Consequence a garder en tete : un ETF peut afficher 100 % de confiance sur
+# deux criteres seulement. C'est exact, et c'est pour cela que le nombre de
+# criteres retenus est publie a cote — et que recommend() refuse de trancher
+# en dessous de trois.
+CRITERES_ENTREPRISE = ("valorisation", "sante", "croissance", "consensus")
 
-def note_titre(composantes: dict) -> tuple:
-    """Agrege les composantes disponibles en une note sur 10.
+NON_APPLICABLES = {
+    "etf":        CRITERES_ENTREPRISE,
+    "obligation": CRITERES_ENTREPRISE,
+    "crypto":     CRITERES_ENTREPRISE,
+    "metal":      CRITERES_ENTREPRISE,
+}
 
-    Les composantes absentes (None) sont exclues et les poids restants
-    renormalises. Retourne (note, confiance_%, detail).
 
-    La confiance est la part des poids effectivement couverts. Elle doit
-    accompagner la note partout ou celle-ci est affichee : 8.5/10 a 35% de
-    confiance ne se lit pas comme 8.5/10 a 90%.
+def criteres_applicables(classe: str) -> set:
+    """Les criteres qui ont un sens pour cette classe d'actif."""
+    hors = set(NON_APPLICABLES.get(str(classe or "action").lower(), ()))
+    return {k for k in POIDS_NOTE if k not in hors}
+
+
+def note_titre(composantes: dict, classe: str = "action") -> tuple:
+    """Agrege les composantes en une note sur 10.
+
+    Retourne (note, confiance_%, detail, non_applicables, manquants).
+
+    La confiance est la part des poids APPLICABLES qui ont effectivement pu
+    etre calcules. Elle doit accompagner la note partout ou celle-ci est
+    affichee : 8.5/10 a 35 % de confiance ne se lit pas comme 8.5/10 a 90 %.
     """
-    dispo = {k: v for k, v in composantes.items()
-             if v is not None and k in POIDS_NOTE}
-    if not dispo:
-        return None, 0.0, {}
+    applicables = criteres_applicables(classe)
+    non_appl = sorted(k for k in POIDS_NOTE if k not in applicables)
 
-    poids_total = sum(POIDS_NOTE[k] for k in dispo)
-    note = sum(v * POIDS_NOTE[k] for k, v in dispo.items()) / poids_total
-    confiance = round(poids_total / sum(POIDS_NOTE.values()) * 100, 1)
-    return round(note, 2), confiance, dispo
+    dispo = {k: v for k, v in composantes.items()
+             if v is not None and k in applicables}
+    manquants = sorted(k for k in applicables if composantes.get(k) is None)
+
+    if not dispo:
+        return None, 0.0, {}, non_appl, manquants
+
+    poids_dispo = sum(POIDS_NOTE[k] for k in dispo)
+    poids_appl = sum(POIDS_NOTE[k] for k in applicables)
+    note = sum(v * POIDS_NOTE[k] for k, v in dispo.items()) / poids_dispo
+    confiance = round(poids_dispo / poids_appl * 100, 1)
+    return round(note, 2), confiance, dispo, non_appl, manquants
 
 
 def score_position(price_eur, cost_eur, pnl_net_pct, poids_pct):
@@ -1804,15 +1852,23 @@ def score_macro(indices_data):
     return round(max(0.0, min(10.0, 5.0 + sum(chgs) / len(chgs))), 2) if chgs else 5.0
 
 
-def recommend(note, confiance: float = 100.0, pnl_net_pct: float = 0.0):
+def recommend(note, confiance: float = 100.0, pnl_net_pct: float = 0.0,
+              nb_criteres: int = 6):
     """Recommandation croisant qualite du titre et situation du detenteur."""
     if note is None:
         return "DONNEES INSUFFISANTES"
 
-    # En dessous de 40% de confiance, la note repose sur trop peu de criteres
-    # pour fonder une recommandation tranchee.
+    # En dessous de 40 % de confiance, la note repose sur une part trop faible
+    # des criteres APPLICABLES pour fonder une recommandation tranchee.
     if confiance < 40:
         return "A EXAMINER (donnees partielles)"
+
+    # Deuxieme garde-fou, ajoute en v14. Depuis que la confiance se calcule
+    # sur les criteres applicables, un ETF peut atteindre 100 % avec deux
+    # criteres seulement — momentum et risque. Le pourcentage est exact, mais
+    # deux criteres ne suffisent pas a dire « RENFORCER » ou « SORTIR ».
+    if nb_criteres < 3:
+        return "A EXAMINER (peu de criteres)"
 
     if note >= 7.5:
         return "RENFORCER"
@@ -1827,7 +1883,8 @@ def recommend(note, confiance: float = 100.0, pnl_net_pct: float = 0.0):
 
 
 def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
-                  note, confiance, hist_label, macro_score):
+                  note, confiance, hist_label, macro_score,
+                  non_applicables=(), manquants=(), classe_label="Actif"):
     """Explique la note en citant les composantes qui l'ont faite bouger."""
     if note is None:
         return "Donnees insuffisantes pour etablir une note."
@@ -1847,7 +1904,19 @@ def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
         p.append("Points faibles : " + ", ".join(faibles) + ".")
     p.append(f"Momentum {hist_label}.")
     p.append(f"Position : {net_pnl_eur:+.2f} EUR ({net_pnl_pct:+.1f}%) apres frais.")
-    if confiance < 60:
+
+    # Les deux phrases qui suivent disent des choses DIFFERENTES et ne doivent
+    # pas etre confondues : l'une constate qu'une question n'a pas de sens
+    # pour cet actif, l'autre qu'une reponse attendue n'est pas arrivee.
+    if non_applicables:
+        p.append(f"{len(non_applicables)} critere(s) sans objet pour un actif "
+                 f"de type {str(classe_label).lower()} ("
+                 + ", ".join(libelles.get(k, k) for k in non_applicables)
+                 + ") : ils sont exclus du calcul, pas comptes comme manquants.")
+    if manquants:
+        p.append("Critere(s) attendu(s) mais non obtenu(s) : "
+                 + ", ".join(libelles.get(k, k) for k in manquants) + ".")
+    elif confiance < 60:
         p.append("Note etablie sur une partie seulement des criteres.")
     return " ".join(p)
 
@@ -2732,7 +2801,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                     _log.warning("Données %s : %s", a["ticker_eod"], e)
                     _MEMO[f"ad:{a['ticker_eod']}"] = {
                     "news": [],
-                    "cs": 5.0, "cons_str": "N/D", "cons_src": "erreur",
+                    "cs": None, "cons_str": "N/D", "cons_src": "erreur",
                     "h_dates": [], "h_closes": [], "h_src": "erreur",
                     "h_cache": False, "h_err": str(e),
                         "synthesis": "Données indisponibles.", "synth_src": "",
@@ -2829,6 +2898,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 "pnl_brut": pnl_m, "pnl_brut_pct": pnl_m_pct,
                 "pnl_net": pnl_m, "pnl_net_pct": pnl_m_pct,
                 "score": None, "confiance": 0.0, "detail": {}, "fonda": {},
+                "non_appl": sorted(POIDS_NOTE), "manquants": [],
+                "classe_label": asset.get("classe_label", "Actif"),
                 "fonda_src": "sans objet",
                 "position": None, "rec": "NON COTE",
                 "just": (f"{asset.get('classe_label', 'Actif')} valorise a la main : "
@@ -2883,11 +2954,15 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "consensus":    cs,
             "risque":       score_risque(fonda, h_dates, h_closes),
         }
-        total_score, confiance, detail = note_titre(composantes)
+        classe_actif = asset.get("asset_class") or asset.get("asset_type") or "action"
+        total_score, confiance, detail, non_appl, manquants = note_titre(
+            composantes, classe_actif)
 
-        rec  = recommend(total_score, confiance, pnl_net_pct)
+        rec  = recommend(total_score, confiance, pnl_net_pct, len(detail))
         just = justification(asset["name"], pnl_net, pnl_net_pct, detail,
-                             total_score, confiance, hist_label, macro_score)
+                             total_score, confiance, hist_label, macro_score,
+                             non_appl, manquants,
+                             asset.get("classe_label") or classe_actif)
 
         history_rows.append({
             "date":         now.strftime("%Y-%m-%d"),
@@ -2938,6 +3013,12 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "score":        total_score,
             "confiance":    confiance,
             "detail":       detail,
+            # Deux listes distinctes, parce que ce sont deux situations
+            # distinctes : « la question n'a pas de sens pour cet actif » et
+            # « la reponse n'est pas arrivee ». Le rapport les affiche a part.
+            "non_appl":     non_appl,
+            "manquants":    manquants,
+            "classe_label": asset.get("classe_label") or classe_actif,
             "fonda":        fonda,
             "fonda_src":    d.get("fonda_src", "N/D"),
             "position":     score_position(price_eur, cost_eur, pnl_net_pct, 0.0),
@@ -3121,16 +3202,31 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                 if cle in detail:
                     part = POIDS_NOTE[cle] / poids_dispo * 100
                     lines.append(f"| {libelles[cle]} | {detail[cle]:.1f}/10 | {part:.0f}% |")
-            absentes = [libelles[k] for k in POIDS_NOTE if k not in detail]
             lines.append("")
-            if absentes:
+
+            # DEUX PHRASES, DEUX SENS. Les melanger etait le defaut corrige en
+            # v14 : un ETF affichait « non disponible : valorisation, sante,
+            # croissance » comme s'il s'agissait d'une panne, alors que ces
+            # grandeurs n'existent pas pour un ETF.
+            non_appl = [libelles[k] for k in POIDS_NOTE if k in (r.get("non_appl") or [])]
+            manquants = [libelles[k] for k in POIDS_NOTE if k in (r.get("manquants") or [])]
+
+            if non_appl:
+                lines.append(f"*Sans objet pour un actif de type "
+                             f"{str(r.get('classe_label', 'actif')).lower()} : "
+                             f"{', '.join(non_appl)}. Ces criteres n'existent pas "
+                             f"pour ce type d'actif : ils sont exclus du calcul et "
+                             f"ne font PAS baisser l'indice de confiance.*")
+                lines.append("")
+            if manquants:
                 motif = r.get("fonda_src", "")
                 precision = ""
                 if motif and any(a in ("Valorisation", "Sante financiere", "Croissance")
-                                 for a in absentes):
+                                 for a in manquants):
                     precision = f" Motif cote fondamentaux : {motif}."
-                lines.append(f"*Non disponible : {', '.join(absentes)} "
-                             f"-- poids redistribues sur les composantes ci-dessus."
+                lines.append(f"*Attendu mais non obtenu : {', '.join(manquants)} "
+                             f"-- poids redistribues sur les composantes ci-dessus. "
+                             f"C'est ce qui fait baisser l'indice de confiance."
                              f"{precision}*")
                 lines.append("")
 
