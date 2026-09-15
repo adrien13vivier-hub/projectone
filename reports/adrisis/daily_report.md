@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.0 -- 15/09/2026 01:25 (Paris)
+# Rapport de Portefeuille v7.0 -- 16/09/2026 01:09 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 4.38/10
-**EUR/USD :** 1 EUR = 1.1554 USD
+**Tendance : Neutre** | Score macro : 4.61/10
+**EUR/USD :** 1 EUR = 1.154 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.48% | 7 619.98 |
-| CAC 40 | v -0.76% | 8 117.78 |
+| S&P 500 | v -0.45% | 7 585.73 |
+| CAC 40 | v -0.34% | 8 090.28 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 4.99% | -- |
-| OAT 10 ans (FR) | -- | 4.50% | -- |
-| Ecart OAT - UST | -- | -49 pb | -- |
+| UST 10 ans (US) | -- | 5.04% | -- |
+| OAT 10 ans (FR) | -- | 4.54% | -- |
+| Ecart OAT - UST | -- | -50 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,23 +38,23 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 6.92 | -- | Aucun |
-| S&P500 | PEA CA | Aucun | Aucun stop défini | -- | 58.01 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 6.92 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 6.92 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 6.89 | -- | Aucun |
+| S&P500 | PEA CA | Aucun | Aucun stop défini | -- | 57.76 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 6.89 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 6.89 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **752.75 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **7.53 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **749.68 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **7.50 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| MSCI WORLD | 10.9 % (Faible) | 0.46 % | 8.0 % | -- | 112.91 EUR (dimensionné par la volatilité) | 13.84 EUR | -99.07 EUR |
-| S&P500 | 11.2 % (Faible) | 0.51 % | 8.0 % | -- | 112.91 EUR (dimensionné par la volatilité) | 116.02 EUR | 3.11 EUR |
-| MSCI WORLD | 10.9 % (Faible) | 0.46 % | 8.0 % | -- | 112.91 EUR (dimensionné par la volatilité) | 13.84 EUR | -99.07 EUR |
-| MSCI WORLD | 10.9 % (Faible) | 0.46 % | 8.0 % | -- | 112.91 EUR (dimensionné par la volatilité) | 13.84 EUR | -99.07 EUR |
+| MSCI WORLD | 10.7 % (Faible) | 0.49 % | 8.0 % | -- | 112.45 EUR (dimensionné par la volatilité) | 13.79 EUR | -98.66 EUR |
+| S&P500 | 11.0 % (Faible) | 0.53 % | 8.0 % | -- | 112.45 EUR (dimensionné par la volatilité) | 115.52 EUR | 3.07 EUR |
+| MSCI WORLD | 10.7 % (Faible) | 0.49 % | 8.0 % | -- | 112.45 EUR (dimensionné par la volatilité) | 13.79 EUR | -98.66 EUR |
+| MSCI WORLD | 10.7 % (Faible) | 0.49 % | 8.0 % | -- | 112.45 EUR (dimensionné par la volatilité) | 13.79 EUR | -98.66 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -80,7 +80,7 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| ETF / Fonds | 752.75 EUR | 100.0% |
+| ETF / Fonds | 749.68 EUR | 100.0% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -93,22 +93,21 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 6.92 EUR | v -0.29% | 207.63 EUR | + +4.53 EUR (+2.2%) | + +0.55 EUR (+0.3%) | **5.8/10** (41%) | SURVEILLER |
+| 6.89 EUR | v -0.55% | 206.79 EUR | + +3.69 EUR (+1.8%) | - -0.29 EUR (-0.1%) | **6.27/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 5.5/10 | 51% |
-| Consensus | 5.0/10 | 37% |
-| Risque | 9.5/10 | 12% |
+| Momentum | 5.5/10 | 81% |
+| Risque | 9.5/10 | 19% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : non applicable (etf).*
+*Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
-**Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -1.9% | 3M +1.8% | 6M +13.1% -- NEUTRE *(source : EODHD)*
+**Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
+**Perf. historique :** 1M -2.4% | 3M +1.2% | 6M +14.4% -- NEUTRE *(source : EODHD)*
 
-**Justification :** Note 5.8/10 (confiance 41%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : +0.55 EUR (+0.3%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.3/10 (confiance 100%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : -0.29 EUR (-0.1%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -116,22 +115,21 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 58.01 EUR | ^ +0.00% | 116.02 EUR | + +0.28 EUR (+0.2%) | - -3.70 EUR (-3.2%) | **5.8/10** (41%) | SURVEILLER (en moins-value) |
+| 57.76 EUR | v -0.43% | 115.52 EUR | - -0.22 EUR (-0.2%) | - -4.20 EUR (-3.6%) | **6.27/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 5.5/10 | 51% |
-| Consensus | 5.0/10 | 37% |
-| Risque | 9.5/10 | 12% |
+| Momentum | 5.5/10 | 81% |
+| Risque | 9.5/10 | 19% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : non applicable (etf).*
+*Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
-**Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -1.7% | 3M +1.7% | 6M +14.3% -- NEUTRE *(source : EODHD)*
+**Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
+**Perf. historique :** 1M -2.1% | 3M +1.5% | 6M +15.4% -- NEUTRE *(source : EODHD)*
 
-**Justification :** Note 5.8/10 (confiance 41%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : -3.70 EUR (-3.2%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.3/10 (confiance 100%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : -4.20 EUR (-3.6%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -139,22 +137,21 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 6.92 EUR | v -0.29% | 415.26 EUR | + +19.86 EUR (+5.0%) | + +15.88 EUR (+4.0%) | **5.8/10** (41%) | SURVEILLER |
+| 6.89 EUR | v -0.55% | 413.58 EUR | + +18.18 EUR (+4.6%) | + +14.20 EUR (+3.6%) | **6.27/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 5.5/10 | 51% |
-| Consensus | 5.0/10 | 37% |
-| Risque | 9.5/10 | 12% |
+| Momentum | 5.5/10 | 81% |
+| Risque | 9.5/10 | 19% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : non applicable (etf).*
+*Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
-**Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -1.9% | 3M +1.8% | 6M +13.1% -- NEUTRE *(source : EODHD)*
+**Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
+**Perf. historique :** 1M -2.4% | 3M +1.2% | 6M +14.4% -- NEUTRE *(source : EODHD)*
 
-**Justification :** Note 5.8/10 (confiance 41%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : +15.88 EUR (+4.0%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.3/10 (confiance 100%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : +14.20 EUR (+3.6%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -162,22 +159,21 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 6.92 EUR | v -0.29% | 13.84 EUR | + +0.88 EUR (+6.8%) | - -3.10 EUR (-23.9%) | **5.8/10** (41%) | SURVEILLER (en moins-value) |
+| 6.89 EUR | v -0.55% | 13.79 EUR | + +0.83 EUR (+6.4%) | - -3.15 EUR (-24.3%) | **6.27/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 5.5/10 | 51% |
-| Consensus | 5.0/10 | 37% |
-| Risque | 9.5/10 | 12% |
+| Momentum | 5.5/10 | 81% |
+| Risque | 9.5/10 | 19% |
 
-*Non disponible : Valorisation, Sante financiere, Croissance -- poids redistribues sur les composantes ci-dessus. Motif cote fondamentaux : non applicable (etf).*
+*Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
-**Consensus analystes :** N/D *(source : Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -1.9% | 3M +1.8% | 6M +13.1% -- NEUTRE *(source : EODHD)*
+**Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
+**Perf. historique :** 1M -2.4% | 3M +1.2% | 6M +14.4% -- NEUTRE *(source : EODHD)*
 
-**Justification :** Note 5.8/10 (confiance 41%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : -3.10 EUR (-23.9%) apres frais. Note etablie sur une partie seulement des criteres.
+**Justification :** Note 6.3/10 (confiance 100%). Points forts : profil de risque 9.5. Momentum NEUTRE. Position : -3.15 EUR (-24.3%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -185,11 +181,11 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| MSCI WORLD | 6.92 | 207.63 | +4.53 (+2.2%) | +0.55 (+0.3%) | 5.8/10 | 41% | SURVEILLER |
-| S&P500 | 58.01 | 116.02 | +0.28 (+0.2%) | -3.70 (-3.2%) | 5.8/10 | 41% | SURVEILLER (en moins-value) |
-| MSCI WORLD | 6.92 | 415.26 | +19.86 (+5.0%) | +15.88 (+4.0%) | 5.8/10 | 41% | SURVEILLER |
-| MSCI WORLD | 6.92 | 13.84 | +0.88 (+6.8%) | -3.10 (-23.9%) | 5.8/10 | 41% | SURVEILLER (en moins-value) |
-| **TOTAL** | — | **752.75** | **+25.55 (+3.5%)** | **+9.63 (+1.3%)** | — | — | — |
+| MSCI WORLD | 6.89 | 206.79 | +3.69 (+1.8%) | -0.29 (-0.1%) | 6.27/10 | 100% | A EXAMINER (peu de criteres) |
+| S&P500 | 57.76 | 115.52 | -0.22 (-0.2%) | -4.20 (-3.6%) | 6.27/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 6.89 | 413.58 | +18.18 (+4.6%) | +14.20 (+3.6%) | 6.27/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 6.89 | 13.79 | +0.83 (+6.4%) | -3.15 (-24.3%) | 6.27/10 | 100% | A EXAMINER (peu de criteres) |
+| **TOTAL** | — | **749.68** | **+22.48 (+3.1%)** | **+6.56 (+0.9%)** | — | — | — |
 
 ---
 
@@ -207,9 +203,9 @@ Lignes dont les mouvements quotidiens sont fortement corrélés entre eux -- pri
 - **CAC 40** : EODHD
 - **UST 10 ans (US)** : EODHD
 - **OAT 10 ans (FR)** : EODHD
-- **WPEA.PA** : cours: EODHD, consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo vide, fondamentaux: non applicable (etf)
-- **PSP5.PA** : cours: EODHD, consensus: Neutre par defaut (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo vide, fondamentaux: non applicable (etf)
+- **WPEA.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo vide, fondamentaux: non applicable (etf)
+- **PSP5.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo vide, fondamentaux: non applicable (etf)
 
-**Quotas API utilisés :** {'alphavantage': '3/20', 'twelvedata': '1/60', 'eodhd': '29/80', 'finnhub': '6/55'}
+**Quotas API utilisés :** {'alphavantage': '3/20', 'twelvedata': '1/60', 'eodhd': '30/80', 'finnhub': '6/55'}
 
 **Profil :** adrisis | **Courtier :** Autre / personnalisé
