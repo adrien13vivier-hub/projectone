@@ -211,6 +211,8 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 #dlg-vente::backdrop{background:rgba(0,0,0,.62)}
 .dlg-grille{display:grid;grid-template-columns:1fr 1fr;gap:.9rem 1.1rem}
 .dlg-grille label{display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;font-weight:600}
+.dlg-grille label[hidden]{display:none}
+.btn-renfort:hover{border-color:var(--success);color:var(--text)}
 .dlg-grille input{padding:.5rem .6rem;border-radius:7px;border:1px solid var(--border);
   background:var(--surface2);color:var(--text);font:inherit}
 .dlg-grille input:focus{outline:none;border-color:var(--primary)}
@@ -802,6 +804,8 @@ td{font-size:13px}
           <a href="#aide-vente">Vendre un titre</a>
           <a href="#aide-bot">Le bot de trading</a>
           <a href="#aide-action">Analyser une action</a>
+          <a href="#aide-pru">Racheter un titre</a>
+          <a href="#aide-confiance">L'indice de confiance</a>
           <a href="#aide-notifs">Notifications iPhone</a>
           <a href="#aide-limites">Ce que l'outil ne fait pas</a>
           <a href="#aide-souci">En cas de souci</a>
@@ -1192,6 +1196,90 @@ td{font-size:13px}
           serveurs d'Apple, et ce qui n'est pas indispensable n'a rien à y faire.
           Il faut <b>iOS 16.4 ou plus récent</b>.
         </div>
+        <h4 id="aide-pru">Racheter un titre, et le prix de revient moyen</h4>
+        <p>
+          Acheter deux fois la même action ne crée pas deux lignes. Chaque ligne
+          du portefeuille porte un bouton <b>Racheté</b>, à côté de
+          <b>Vendu</b> : il demande la quantité, le prix unitaire et la date, et
+          met la ligne à jour. La quantité s'additionne, et le prix de revient
+          devient la <b>moyenne pondérée</b> de vos achats — exactement ce
+          qu'affiche le relevé de votre courtier.
+        </p>
+        <div class="encadre">
+          <b>Pondérée, pas simple.</b> Acheter 1 action à 100 € puis 99 à 10 €
+          donne un prix de revient de <b>10,90 €</b>, pas de 55 €. Chaque prix
+          compte à hauteur du nombre de titres achetés à ce prix-là. C'est aussi
+          la méthode retenue par l'administration fiscale française pour un
+          compte-titres : le chiffre affiché ici et celui que vous déclarerez
+          reposent sur le même calcul.
+        </div>
+        <p>
+          Un aperçu montre le nouveau prix de revient <i>avant</i> que vous
+          validiez, et vous dit s'il monte ou s'il baisse. La fenêtre liste aussi
+          les achats déjà enregistrés sur la ligne, avec leurs dates : le prix
+          moyen n'est jamais un chiffre sorti de nulle part.
+        </p>
+        <ul>
+          <li><b>Titre en devise</b> — un champ demande le taux du jour de
+            l'achat. Le prix de revient est un montant en euros, figé à cette
+            date.</li>
+          <li><b>Vente partielle</b> — le prix de revient ne bouge pas. C'est
+            normal : dans cette méthode, chaque titre porte exactement le même
+            coût, donc en vendre une partie ne change pas le coût des autres.</li>
+          <li><b>Deux enveloppes</b> — un même titre détenu sur un PEA et sur un
+            CTO reste sur deux lignes. Ce sont deux fiscalités différentes, les
+            confondre fausserait les deux. Idem pour deux places de cotation.</li>
+        </ul>
+        <p>
+          Si vous aviez déjà plusieurs lignes du même titre, elles sont
+          <b>regroupées au premier enregistrement</b>, et un message vous dit
+          lesquelles et à quel prix moyen. Une ligne ne disparaît jamais en
+          silence.
+        </p>
+        <div class="encadre">
+          <b>Si vous corrigez une quantité ou un prix à la main</b> dans le
+          tableau, le détail des achats ne correspond plus à la ligne. Le
+          programme vous le dit et repart de ce qui est affiché : vous perdez
+          l'historique des achats précédents, mais le prix de revient affiché,
+          lui, ne change pas tout seul.
+        </div>
+
+        <h4 id="aide-confiance">L'indice de confiance, et les ETF</h4>
+        <p>
+          Chaque note est accompagnée d'un <b>indice de confiance</b> : la part
+          des critères qui ont réellement pu être calculés. Une note de 8,5 sur
+          10 à 40 % de confiance ne se lit pas comme la même note à 95 %.
+        </p>
+        <p>
+          La note repose sur six critères : valorisation, santé financière,
+          croissance, momentum, consensus des analystes et profil de risque. Un
+          critère peut manquer pour <b>deux raisons très différentes</b>, et le
+          programme ne les confond plus :
+        </p>
+        <ul>
+          <li><b>Sans objet</b> — la question n'a pas de sens pour cet actif. Un
+            ETF n'a ni PER, ni marge nette, ni croissance du chiffre d'affaires :
+            il ne possède pas une entreprise, il en suit des centaines. Ces
+            critères sont écartés du calcul et <b>ne font pas baisser la
+            confiance</b>, mais ils sont énumérés dans le rapport.</li>
+          <li><b>Attendu mais non obtenu</b> — la donnée existe, elle n'est pas
+            arrivée : fournisseur en panne, quota épuisé, titre trop peu suivi.
+            Là, la confiance baisse, et c'est le but.</li>
+        </ul>
+        <div class="encadre">
+          <b>Pourquoi un ETF peut afficher 100 % sur deux critères seulement.</b>
+          Le pourcentage dit quelle part de ce qui <i>pouvait</i> être calculé
+          l'a été, pas combien de critères ont servi. Les deux informations sont
+          affichées ensemble. Et tant qu'il y a moins de trois critères, le
+          programme refuse de trancher : il écrit « à examiner » plutôt que
+          « renforcer » ou « sortir ».
+        </div>
+        <p>
+          Un changement lié : quand le consensus des analystes est introuvable,
+          il n'est plus remplacé par une note neutre de 5 sur 10. Cette valeur
+          inventée gonflait la confiance affichée tout en tirant la note vers le
+          milieu. Un critère absent est désormais déclaré absent.
+        </p>
         <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
         <ul>
           <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
@@ -1214,6 +1302,12 @@ td{font-size:13px}
                 <td>Son cours n'a pas pu être récupéré — souvent un ticker ou une place de cotation erronés.</td></tr>
             <tr><td>Le message d'enregistrement parle d'une synchronisation échouée</td>
                 <td>Votre saisie est bien enregistrée sur le serveur mais n'a pas rejoint le dépôt : le rapport de demain ne la verra pas. Signalez-le à l'administrateur.</td></tr>
+            <tr><td>Une ligne a disparu du portefeuille après enregistrement</td>
+                <td>Elle a été regroupée avec une autre ligne du même titre, au prix de revient moyen. Le message au-dessus du tableau dit laquelle et à quel prix. Rien n'est perdu : le détail de chaque achat est conservé.</td></tr>
+            <tr><td>« Le détail des achats ne correspondait plus »</td>
+                <td>La quantité ou le prix de revient ont été corrigés à la main dans le tableau. Le programme repart de ce qui est affiché plutôt que d'un historique périmé. Le prix de revient affiché, lui, ne change pas.</td></tr>
+            <tr><td>Un ETF affiche peu de critères mais 100 % de confiance</td>
+                <td>Normal. Un ETF n'a ni PER, ni marges, ni croissance : ces critères sont sans objet, pas manquants. Le rapport les énumère à part.</td></tr>
             <tr><td>Pas de bouton d'activation des notifications sur iPhone</td>
                 <td>Le site n'a pas été ajouté à l'écran d'accueil. Safari → Partager → Sur l'écran d'accueil, puis rouvrez depuis la nouvelle icône. Apple n'autorise pas les notifications depuis un simple onglet.</td></tr>
             <tr><td>« Le serveur n'est pas prêt » dans la carte Notifications</td>
@@ -1686,9 +1780,13 @@ function mkRow(l={}){
     <td>${mkSelect(STOP_TYPES,stop.type||'none','c-stoptype')}</td>
     <td><input class="c-stopval" type="number" value="${stop.value ?? ''}" placeholder="15" min="0" step="any"></td>
     <td style="white-space:nowrap">
+      <button class="btn-vendu btn-renfort" onclick="ouvrirRenfort(this)" title="J'ai racheté ce titre">Racheté</button>
       <button class="btn-vendu" onclick="ouvrirVente(this)" title="Enregistrer une vente">Vendu</button>
       <button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer la ligne">✕</button></td>
   `;
+  // Le détail des achats est porté par la ligne elle-même : il doit
+  // survivre à un rechargement et repartir au serveur intact.
+  tr.dataset.achats = JSON.stringify(l.achats || []);
   const cls = tr.querySelector('.cls-sel');
   const stp = tr.querySelector('.c-stoptype');
   cls.addEventListener('change',()=>majLigne(tr));
@@ -1840,6 +1938,8 @@ function readLines(){
       ligne.market    = tr.querySelector('.c-place').value;
       ligne.quantity  = qte;
       ligne.buy_price = prix;
+      const ach = lireAchats(tr);
+      if(ach.length) ligne.achats = ach;
     }
 
     // Un stop « none » n'est pas envoye : le champ absent laisse jouer le stop
@@ -1905,7 +2005,19 @@ async function savePortfolio(){
   }
   try{
     const r=await api('POST',`/api/portfolio/${CURRENT_USER}`,{lines,settings,closed:VENTES});
-    let html='<div class="info-box success" style="margin-bottom:.75rem">✅ '+lines.length+' ligne(s) enregistrée(s).</div>' + avertir;
+    const nbEnreg = (r.saved !== undefined) ? r.saved : lines.length;
+    let html='<div class="info-box success" style="margin-bottom:.75rem">✅ '+nbEnreg+' ligne(s) enregistrée(s).</div>' + avertir;
+    // Le serveur regroupe les lignes d'un même titre au prix de revient moyen.
+    // Une ligne qui disparaît sans explication est inquiétante : on dit ce qui
+    // a été regroupé, et ce message-là ne s'efface pas tout seul.
+    if(r.regroupements && r.regroupements.length){
+      html += '<div class="info-box neutral" style="margin-bottom:.75rem">'
+            + '🧮 Lignes regroupées au prix de revient moyen :<br>'
+            + r.regroupements.map(function(m){ return '• ' + esc(m); }).join('<br>')
+            + '<br><span style="opacity:.8">Un même titre tient sur une seule '
+            + 'ligne, comme sur un relevé de courtier. Le détail de chaque achat '
+            + 'est conservé.</span></div>';
+    }
     if(r.erreurs&&r.erreurs.length){
       html+='<div class="info-box error" style="margin-bottom:.75rem">⚠️ Lignes rejetées :<br>'
            +r.erreurs.map(e=>'• '+e).join('<br>')+'</div>';
@@ -1930,8 +2042,12 @@ async function savePortfolio(){
            +'rapport quotidien ne le verra pas.</div>';
     }
     st.innerHTML=html;
-    const toutVaBien = (!r.erreurs||!r.erreurs.length) && sy.ok && !ignorees.length;
+    const toutVaBien = (!r.erreurs||!r.erreurs.length) && sy.ok && !ignorees.length
+                       && !(r.regroupements && r.regroupements.length);
     if(toutVaBien) setTimeout(()=>st.innerHTML='',4000);
+    // Le tableau affiche encore les anciennes lignes : on le recharge pour
+    // qu'il montre ce qui a réellement été enregistré.
+    if(r.regroupements && r.regroupements.length) await loadPortfolio();
   }catch(e){
     st.innerHTML='<div class="info-box error" style="margin-bottom:.75rem">❌ '+e.message+'</div>';
   }
@@ -2721,7 +2837,10 @@ function validerVente(){
   });
 
   const reste = VENTE_EN_COURS.qteDetenue - f.qte;
-  if(reste > 0) VENTE_EN_COURS.tr.querySelector('.c-qte').value = reste;
+  if(reste > 0){
+    VENTE_EN_COURS.tr.querySelector('.c-qte').value = reste;
+    recalerAchats(VENTE_EN_COURS.tr, reste);
+  }
   else          VENTE_EN_COURS.tr.remove();
 
   fermerVente();
@@ -2851,6 +2970,223 @@ function afficherStrategies(sourcesActives){
   + "suiveur qui remonte quand le cours monte.<br>"
   + '<span style="opacity:.75">Ces descriptions expliquent l\'intention de '
   + "chaque stratégie. Elles ne disent pas qu'elle fonctionne.</span></div>";
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// v14 — RENFORCER UNE POSITION, ET LE PRIX DE REVIENT MOYEN
+//
+// Acheter deux fois le meme titre ne doit pas produire deux lignes. Une
+// plateforme de bourse affiche une position, une quantite et un prix de
+// revient moyen : c'est ce que fait ce bloc.
+//
+// Le detail de chaque achat est conserve dans un attribut de la ligne du
+// tableau (data-achats) et repart au serveur avec le reste. Sans lui, le
+// prix de revient moyen serait un chiffre qu'on ne pourrait ni verifier ni
+// annuler.
+// ═══════════════════════════════════════════════════════════════════
+
+let RENFORT_EN_COURS = null;   // {tr, nom, ticker, qteDetenue, pru, devise}
+
+function lireAchats(tr){
+  try{ return JSON.parse(tr.dataset.achats || '[]'); }
+  catch(e){ return []; }
+}
+function ecrireAchats(tr, achats){
+  tr.dataset.achats = JSON.stringify(achats || []);
+}
+
+// Quantite totale et prix de revient unitaire moyen.
+// La moyenne est PONDEREE PAR LES QUANTITES : 1 titre a 100 EUR puis 99 a
+// 10 EUR font un PRU de 10,90 EUR, pas de 55 EUR.
+function calculPru(achats){
+  let q = 0, total = 0;
+  (achats || []).forEach(a => {
+    const qa = Number(a.qte) || 0, pa = Number(a.prix) || 0;
+    if(qa > 0 && pa > 0){ q += qa; total += qa * pa; }
+  });
+  return q > 0 ? {qte: q, pru: total / q} : {qte: 0, pru: 0};
+}
+
+// Le detail doit toujours totaliser la quantite detenue. Apres une vente
+// partielle, la quantite baisse : chaque achat est reduit au prorata, ce qui
+// laisse le PRU inchange — dans cette methode, chaque titre porte le meme
+// cout, donc en vendre une partie ne change pas le cout des autres.
+function recalerAchats(tr, qteVoulue){
+  const achats = lireAchats(tr);
+  if(!achats.length) return;
+  const {qte} = calculPru(achats);
+  if(!(qte > 0) || !(qteVoulue > 0)){ ecrireAchats(tr, []); return; }
+  if(Math.abs(qte - qteVoulue) < 1e-9) return;
+  const f = qteVoulue / qte;
+  ecrireAchats(tr, achats.map(a => ({...a, qte: Number(a.qte) * f})));
+}
+
+// Le detail et les deux chiffres affiches doivent raconter la meme histoire.
+// Si l'utilisateur a corrige la quantite ou le prix a la main dans le tableau,
+// le detail ne decrit plus la position : on le remet a zero et on repart de ce
+// qui est affiche. Mieux vaut perdre l'historique des achats que laisser un
+// prix de revient changer tout seul sous les yeux de l'utilisateur.
+function detailCoherent(achats, qte, pru){
+  if(!achats || !achats.length) return false;
+  const c = calculPru(achats);
+  if(!(c.qte > 0)) return false;
+  const ecartQte = Math.abs(c.qte - qte) / Math.max(qte, 1e-9);
+  const ecartPru = pru > 0 ? Math.abs(c.pru - pru) / pru : 1;
+  return ecartQte < 1e-6 && ecartPru < 1e-4;
+}
+
+function achatsUtilisables(tr, qte, pru){
+  const achats = lireAchats(tr);
+  if(detailCoherent(achats, qte, pru)) return {achats, reinitialise: false};
+  if(qte > 0 && pru > 0)
+    return {achats: [{qte: qte, prix: pru, date: ''}], reinitialise: !!achats.length};
+  return {achats: [], reinitialise: !!achats.length};
+}
+
+function ouvrirRenfort(bouton){
+  const tr = bouton.closest('tr');
+  const c = tr.querySelectorAll('td');
+  const nom = c[0].querySelector('input').value.trim();
+  const tk = (tr.querySelector('.c-ticker') ? tr.querySelector('.c-ticker').value : '')
+             .trim().toUpperCase();
+  const classe = tr.querySelector('.cls-sel').value;
+
+  if(estManuel(classe)){
+    alert("Cette ligne n'est pas un titre coté : pour un bien non coté, "
+        + "corrigez directement sa valeur.");
+    return;
+  }
+  if(!nom && !tk){ alert("Cette ligne n'a ni nom ni ticker."); return; }
+
+  const qte = Number(tr.querySelector('.c-qte').value) || 0;
+  const pru = Number(tr.querySelector('.c-prix').value) || 0;
+  const place = tr.querySelector('.c-place') ? tr.querySelector('.c-place').value : 'us';
+  const inf = infosPlace(place);
+
+  RENFORT_EN_COURS = {tr, nom: nom || tk, ticker: tk, qteDetenue: qte,
+                      pru: pru, devise: inf.devise};
+
+  document.getElementById('r-titre').textContent =
+    RENFORT_EN_COURS.nom + (tk ? '  ·  ' + tk : '');
+  document.getElementById('r-qte').value = '';
+  document.getElementById('r-qte-aide').textContent = qte > 0
+    ? 'Vous en détenez déjà ' + nb(qte, qte < 1 ? 4 : 0)
+      + (pru > 0 ? ' à ' + nb(pru, 4) + ' EUR de prix de revient.' : '.')
+    : "Première position sur ce titre.";
+  document.getElementById('r-prix').value = '';
+  document.getElementById('r-dev-achat').textContent = '(' + inf.devise + ')';
+
+  const horsEuro = inf.devise !== 'EUR';
+  document.getElementById('r-bloc-taux').hidden = !horsEuro;
+  document.getElementById('r-dev-taux').textContent = inf.devise;
+  document.getElementById('r-taux').value = 1;
+
+  document.getElementById('r-date').value = new Date().toISOString().slice(0, 10);
+  const err0 = document.getElementById('r-erreur');
+  const etat = achatsUtilisables(tr, qte, pru);
+  RENFORT_EN_COURS.achats = etat.achats;
+  if(etat.reinitialise){
+    err0.textContent = "Le détail des achats ne correspondait plus à la quantité "
+      + "ou au prix affichés — la ligne a dû être corrigée à la main. La position "
+      + "actuelle est reprise comme un achat unique ; l'historique antérieur est "
+      + "perdu, mais le prix de revient affiché, lui, ne change pas.";
+    err0.style.display = '';
+  }else{
+    err0.style.display = 'none';
+  }
+  afficherHistoriqueAchats(tr, etat.achats);
+  majApercuRenfort();
+  document.getElementById('dlg-renfort').showModal();
+}
+
+function fermerRenfort(){
+  document.getElementById('dlg-renfort').close();
+  RENFORT_EN_COURS = null;
+}
+
+function afficherHistoriqueAchats(tr, achats){
+  const el = document.getElementById('r-histo');
+  if(!el) return;
+  achats = achats || lireAchats(tr);
+  if(!achats.length){ el.innerHTML = ''; return; }
+  const lignes = achats.map(a =>
+    '<tr><td>' + esc(a.date || '—') + '</td>'
+    + '<td style="text-align:right">' + nb(Number(a.qte), 4) + '</td>'
+    + '<td style="text-align:right">' + nb(Number(a.prix), 4) + ' EUR</td></tr>').join('');
+  el.innerHTML = '<div class="label" style="margin-bottom:.4rem">achats déjà enregistrés</div>'
+    + '<div class="table-wrap"><table><thead><tr><th>Date</th>'
+    + '<th style="text-align:right">Qté</th>'
+    + '<th style="text-align:right">Prix unitaire</th></tr></thead><tbody>'
+    + lignes + '</tbody></table></div>';
+}
+
+function lireFormulaireRenfort(){
+  return {
+    qte:  Number(document.getElementById('r-qte').value),
+    prix: Number(document.getElementById('r-prix').value),
+    taux: Number(document.getElementById('r-taux').value) || 1,
+    date: document.getElementById('r-date').value
+  };
+}
+
+function majApercuRenfort(){
+  const el = document.getElementById('r-apercu');
+  if(!RENFORT_EN_COURS || !el) return;
+  const f = lireFormulaireRenfort();
+  if(!(f.qte > 0) || !(f.prix > 0)){
+    el.innerHTML = "Renseignez la quantité achetée et le prix unitaire pour voir "
+                 + "le nouveau prix de revient.";
+    return;
+  }
+  const prixEur = f.prix * f.taux;
+  const q0 = RENFORT_EN_COURS.qteDetenue, p0 = RENFORT_EN_COURS.pru;
+  const qte = q0 + f.qte;
+  const pru = (q0 * p0 + f.qte * prixEur) / qte;
+  const sens = p0 > 0 ? (pru > p0 ? 'remonte' : pru < p0 ? 'baisse' : 'ne bouge pas') : '';
+
+  el.innerHTML =
+      'Achat : <b>' + nb(f.qte, 4) + '</b> × <b>' + nb(prixEur, 4) + ' EUR</b>'
+    + ' = <b>' + nb(f.qte * prixEur, 2) + ' EUR</b>'
+    + (f.taux !== 1 ? ' <span style="opacity:.7">(' + nb(f.prix, 4) + ' '
+        + esc(RENFORT_EN_COURS.devise) + ' × ' + nb(f.taux, 4) + ')</span>' : '')
+    + '<br>Position après achat : <b>' + nb(qte, 4) + '</b> titres'
+    + '<br>Prix de revient moyen : <b>' + nb(pru, 4) + ' EUR</b>'
+    + (p0 > 0 ? ' <span style="opacity:.7">(il ' + sens + ', il était de '
+        + nb(p0, 4) + ')</span>' : '');
+}
+
+function validerRenfort(){
+  if(!RENFORT_EN_COURS) return;
+  const f = lireFormulaireRenfort();
+  const err = document.getElementById('r-erreur');
+  const dire = m => { err.textContent = m; err.style.display = ''; };
+  err.style.display = 'none';
+
+  if(!(f.qte > 0))  return dire("Indiquez une quantité supérieure à zéro.");
+  if(!(f.prix > 0)) return dire("Indiquez le prix d'achat unitaire.");
+  if(!(f.taux > 0)) return dire("Le taux de change doit être supérieur à zéro.");
+  if(!f.date)       return dire("Indiquez la date de l'achat.");
+
+  const tr = RENFORT_EN_COURS.tr;
+  const prixEur = f.prix * f.taux;
+
+  // Le detail retenu a l'ouverture de la fenetre : soit celui de la ligne,
+  // soit la position actuelle ramenee a un achat unique. Sans cela, le renfort
+  // effacerait le prix de revient d'origine au lieu de s'y ajouter.
+  const achats = (RENFORT_EN_COURS.achats || []).slice();
+  achats.push({qte: f.qte, prix: prixEur, date: f.date});
+
+  const {qte, pru} = calculPru(achats);
+  ecrireAchats(tr, achats);
+  tr.querySelector('.c-qte').value = Number(qte.toFixed(8));
+  tr.querySelector('.c-prix').value = Number(pru.toFixed(6));
+
+  fermerRenfort();
+  const st = document.getElementById('save-status');
+  if(st) st.innerHTML = '<div class="info-box">Achat enregistré sur la ligne : '
+    + nb(qte, 4) + ' titres au prix de revient moyen de ' + nb(pru, 4)
+    + ' EUR. <b>Cliquez sur Enregistrer</b> pour le conserver.</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -3124,5 +3460,44 @@ async function desactiverNotifications(bouton){
 
 verifierInscription();
 </script>
+<dialog id="dlg-renfort">
+  <form method="dialog" id="form-renfort">
+    <div class="label">j'ai racheté ce titre</div>
+    <h3 id="r-titre" style="margin:.5rem 0 .4rem;font-size:22px;letter-spacing:-.04em">—</h3>
+    <p class="muted" style="font-size:.82rem;margin:0 0 1.1rem;max-width:62ch">
+      Acheter le même titre une seconde fois ne crée pas une seconde ligne :
+      le prix de revient devient la <b>moyenne pondérée</b> de vos achats, comme
+      sur votre relevé de courtier.
+    </p>
+
+    <div class="dlg-grille">
+      <label><span class="lib">Quantité achetée</span>
+        <input id="r-qte" type="number" min="0" step="any" required oninput="majApercuRenfort()">
+        <small id="r-qte-aide">—</small>
+      </label>
+      <label><span class="lib">Prix d'achat unitaire <b id="r-dev-achat">(EUR)</b></span>
+        <input id="r-prix" type="number" min="0" step="any" required oninput="majApercuRenfort()">
+        <small>Tel qu'inscrit sur votre avis d'opéré, hors frais.</small>
+      </label>
+      <label id="r-bloc-taux" hidden><span class="lib">Taux <b id="r-dev-taux">USD</b> → EUR le jour de l'achat</span>
+        <input id="r-taux" type="number" min="0" step="any" value="1" oninput="majApercuRenfort()">
+        <small>Figé à cette date : le prix de revient est un montant en euros.</small>
+      </label>
+      <label><span class="lib">Date d'achat</span>
+        <input id="r-date" type="date" required>
+      </label>
+    </div>
+
+    <div id="r-apercu" class="apercu">—</div>
+    <div id="r-histo" style="margin-top:.85rem"></div>
+    <div id="r-erreur" class="message erreur" style="display:none;margin-top:.75rem"></div>
+
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-ghost" onclick="fermerRenfort()">Annuler</button>
+      <button type="button" class="btn btn-primary" onclick="validerRenfort()">Enregistrer l'achat</button>
+    </div>
+  </form>
+</dialog>
+
 </body>
 </html>
