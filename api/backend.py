@@ -662,6 +662,129 @@ class PortfolioLine(BaseModel):
     stop:        Optional[dict] = None   # {"type": "trailing", "value": 15}
     value:       Optional[float] = None  # actifs non cotés : valeur actuelle
     buy_value:   Optional[float] = None  # actifs non cotés : prix d'acquisition
+    # v14 — PRIX DE REVIENT UNITAIRE MOYEN (PRU).
+    # `quantity` et `buy_price` restent les valeurs qui comptent : quantité
+    # totale et PRU. `achats` n'est que la trace de ce qui les a produits,
+    # pour que le PRU soit vérifiable et qu'un renfort soit annulable.
+    # Une ligne sans `achats` reste parfaitement valide : tous les profils
+    # existants sont dans ce cas.
+    achats:      Optional[List[dict]] = None   # [{qte, prix, date}]
+
+def _pru(achats: list) -> tuple:
+    """Quantité totale et prix de revient unitaire moyen.
+
+    Le PRU est la moyenne des prix PONDÉRÉE PAR LES QUANTITÉS, pas la moyenne
+    des prix. Acheter 1 action à 100 € puis 99 à 10 € donne un PRU de 10,90 €,
+    pas de 55 €. C'est aussi la méthode que retient l'administration fiscale
+    française pour un compte-titres, donc la plus-value calculée ici et celle
+    qui sera déclarée reposent sur le même chiffre.
+    """
+    qte = sum(float(a.get("qte") or 0) for a in achats)
+    if qte <= 0:
+        return 0.0, 0.0
+    total = sum(float(a.get("qte") or 0) * float(a.get("prix") or 0) for a in achats)
+    return round(qte, 8), round(total / qte, 6)
+
+
+def fusionner_lignes(lignes: list) -> tuple:
+    """Regroupe les lignes d'un même titre en une seule, au PRU.
+
+    POURQUOI. Une plateforme de bourse n'affiche jamais trois lignes WPEA
+    parce qu'on a acheté trois fois : elle affiche une position, une quantité
+    et un prix de revient moyen. Ici, les achats successifs restaient côte à
+    côte, chacun avec son prix — donc trois plus-values partielles au lieu
+    d'une, et un poids de ligne sous-évalué face au plafond de concentration.
+
+    Deux lignes fusionnent si elles désignent le même titre SUR LA MÊME PLACE
+    et dans le même compte. Deux lignes d'un même titre détenues sur un PEA et
+    sur un CTO restent séparées : ce sont deux enveloppes fiscales, les
+    confondre fausserait les deux.
+
+    Les actifs non cotés ne fusionnent jamais : deux livrets du même nom sont
+    deux livrets.
+
+    Retourne (lignes fusionnées, journal lisible de ce qui a été regroupé).
+    """
+    MANUELLES = {"cash", "immobilier", "collection", "autre"}
+    groupes, ordre, intactes = {}, [], []
+
+    for ligne in lignes:
+        classe = str(ligne.get("asset_class") or ligne.get("asset_type") or "action").lower()
+        ticker = str(ligne.get("ticker") or "").strip().upper()
+        if classe in MANUELLES or not ticker:
+            intactes.append(ligne)
+            continue
+        cle = (ticker,
+               str(ligne.get("market") or "").strip().lower(),
+               str(ligne.get("account") or "").strip().lower())
+        if cle not in groupes:
+            groupes[cle] = []
+            ordre.append(cle)
+        groupes[cle].append(ligne)
+
+    sortie, journal = [], []
+    for cle in ordre:
+        membres = groupes[cle]
+
+        # Le détail des achats : celui déjà enregistré, sinon la ligne
+        # elle-même vaut pour un achat unique.
+        achats = []
+        for m in membres:
+            detail = m.get("achats") or []
+            valides = [a for a in detail
+                       if float(a.get("qte") or 0) > 0 and float(a.get("prix") or 0) > 0]
+            qte_ligne = float(m.get("quantity") or 0)
+
+            if valides:
+                somme = sum(float(a["qte"]) for a in valides)
+                # LE PIEGE A EVITER. Apres une vente partielle, `quantity` a
+                # baisse mais le detail des achats, lui, n'a pas bouge. Sans
+                # ce recalage, le prochain regroupement ressusciterait la
+                # quantite vendue. On fait donc foi a `quantity` et on reduit
+                # chaque achat au prorata : le PRU est inchange, puisque dans
+                # cette methode chaque titre porte exactement le meme cout.
+                if qte_ligne > 0 and abs(somme - qte_ligne) > max(1e-6, somme * 1e-9):
+                    facteur = qte_ligne / somme
+                    valides = [{**a, "qte": round(float(a["qte"]) * facteur, 8)}
+                               for a in valides]
+                achats.extend(valides)
+            elif qte_ligne > 0 and (m.get("buy_price") or 0) > 0:
+                achats.append({"qte": qte_ligne,
+                               "prix": float(m["buy_price"]),
+                               "date": str(m.get("achat_date") or "")})
+
+        if len(membres) == 1 and len(achats) <= 1 and not membres[0].get("achats"):
+            sortie.append(membres[0])          # rien à fusionner ni à recaler
+            continue
+
+        qte, pru = _pru(achats)
+        if qte <= 0:
+            sortie.extend(membres)             # données inexploitables : on ne touche à rien
+            continue
+
+        base = dict(membres[0])
+        base["quantity"] = qte
+        base["buy_price"] = pru
+        base["achats"] = achats
+        # Les étiquettes des lignes regroupées sont réunies, sans doublon :
+        # une étiquette posée sur le second achat serait sinon perdue.
+        etiquettes = []
+        for m in membres:
+            for t in (m.get("tags") or []):
+                if t not in etiquettes:
+                    etiquettes.append(t)
+        if etiquettes:
+            base["tags"] = etiquettes
+        sortie.append(base)
+
+        if len(membres) > 1:
+            journal.append(
+                f"{base.get('name') or cle[0]} : {len(membres)} lignes regroupées "
+                f"en une seule — {qte:g} titres au prix de revient moyen "
+                f"de {pru:.4f} EUR")
+
+    return sortie + intactes, journal
+
 
 class WatchItem(BaseModel):
     name:   str
@@ -1045,6 +1168,16 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
         except (ValueError, OSError):
             ancien = {}
 
+    brutes = [{k: v for k, v in l.model_dump().items() if v is not None}
+              for l in data.lines]
+
+    # v14 — REGROUPEMENT AU PRU. Fait ici, cote serveur, et non dans la page :
+    # ainsi un profil corrige a la main dans le JSON, ou enregistre depuis une
+    # version ancienne de l'interface, est traite de la meme facon. Le journal
+    # remonte a l'interface pour que l'utilisateur voie ce qui a ete regroupe
+    # plutot que de decouvrir une ligne en moins sans explication.
+    lignes, regroupements = fusionner_lignes(brutes)
+
     pfile.write_text(
         json.dumps({
             "username": username,
@@ -1055,8 +1188,7 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
             "closed":   ([v.model_dump() for v in data.closed]
                          if data.closed is not None
                          else ancien.get("closed", [])),
-            "lines":    [{k: v for k, v in l.model_dump().items() if v is not None}
-                         for l in data.lines]
+            "lines":    lignes
         }, ensure_ascii=False, indent=2),
         encoding="utf-8"
     )
@@ -1081,8 +1213,9 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
     except Exception as e:
         sync = {"ok": False, "etat": "erreur", "detail": f"{type(e).__name__}: {e}"}
 
-    return {"saved": len(data.lines), "file": str(pfile),
-            "erreurs": erreurs, "sync": sync}
+    return {"saved": len(lignes), "file": str(pfile),
+            "erreurs": erreurs, "sync": sync,
+            "regroupements": regroupements}
 
 
 @app.get("/api/sync-status")
@@ -1559,36 +1692,118 @@ def rotate_link(username: str, admin: dict = Depends(require_admin)):
 
 @app.delete("/api/users/{username}")
 def delete_user(username: str, admin: dict = Depends(require_admin)):
+    """Supprime un compte et TOUTES ses traces, ici comme sur le depot.
+
+    DEFAUT CORRIGE EN v14. L'ancienne version effacait les fichiers locaux et
+    s'arretait la. Or l'analyse quotidienne ne tourne pas sur ce serveur :
+    elle tourne dans une GitHub Action, qui lit `data/portfolios/*.json`
+    DEPUIS LE DEPOT. Un profil supprime ici mais reste la-bas continuait donc
+    d'etre analyse chaque soir, et le portefeuille d'une personne partie
+    restait visible dans le depot.
+
+    Trois emplacements distants sont concernes, et aucun n'etait traite :
+      - data/portfolios/portfolio_<nom>.json  (le profil lui-meme)
+      - reports/<nom>/                        (donnees de travail : history.csv…)
+      - docs/r/<jeton>/                       (le rapport publie)
+
+    La suppression locale reste prioritaire : elle est faite d'abord, et une
+    panne reseau du cote GitHub ne la remet pas en cause. Le detail du menage
+    distant est renvoye a l'interface plutot que tu.
+    """
     if username == "admin":
         raise HTTPException(status_code=400, detail="Impossible de supprimer le compte admin")
     con = get_db()
     con.execute("DELETE FROM users WHERE username=?", (username,))
     con.commit()
     con.close()
-    # Supprime le portefeuille
+
+    menage = {"local": [], "depot": [], "echecs": []}
+
+    # ── 1. Local ───────────────────────────────────────────────────────────
+    import shutil as _shutil
     pfile = PORTFOLIOS / f"portfolio_{username}.json"
     if pfile.exists():
         pfile.unlink()
-    # Retire le rapport publie et le jeton associe
+        menage["local"].append("profil")
+
+    dossier_docs = None
     try:
-        import shutil as _shutil
-        from api.load_portfolio import charger_liens, enregistrer_liens, dossier_rapport as _dr
-        dossier = ROOT / _dr(username, creer=False)
-        if dossier.exists():
-            _shutil.rmtree(dossier)
+        from api.load_portfolio import dossier_rapport as _dr
+        dossier_docs = _dr(username, creer=False)
+        chemin_docs = ROOT / dossier_docs
+        if chemin_docs.exists():
+            _shutil.rmtree(chemin_docs)
+            menage["local"].append("rapport publie")
+    except Exception as e:
+        menage["echecs"].append(f"rapport local : {type(e).__name__}")
+
+    dossier_travail = ROOT / "reports" / username
+    if dossier_travail.exists():
+        try:
+            _shutil.rmtree(dossier_travail)
+            menage["local"].append("donnees de travail")
+        except OSError as e:
+            menage["echecs"].append(f"reports/ local : {e}")
+
+    # ── 2. Table des jetons ────────────────────────────────────────────────
+    table = None
+    try:
+        from api.load_portfolio import charger_liens, enregistrer_liens
         table = charger_liens()
         table.pop(username.strip().lower(), None)
         enregistrer_liens(table)
-        from api import github_sync as _gs
-        _gs.pousser_liens(table)
+        menage["local"].append("jeton de rapport")
     except Exception as e:
-        print(f"[Suppression] Nettoyage partiel pour {username} : {e}")
-    # Supprime le job scheduler
+        menage["echecs"].append(f"table des jetons : {type(e).__name__}")
+
+    # ── 3. Depot GitHub — c'est ce qui manquait ────────────────────────────
+    try:
+        from api import github_sync as _gs
+        if not _gs.est_configure():
+            menage["depot"] = ["non configure"]
+        else:
+            r = _gs.supprimer_fichier(
+                f"data/portfolios/portfolio_{username}.json",
+                f"Compte {username} supprime")
+            menage["depot"].append(f"profil: {r.get('etat')}")
+            if not r.get("ok"):
+                menage["echecs"].append(f"profil distant : {r.get('detail', r.get('etat'))}")
+
+            r = _gs.supprimer_dossier(f"reports/{username}",
+                                      f"Compte {username} supprime")
+            menage["depot"].append(f"reports/: {r.get('etat')} "
+                                   f"({r.get('supprimes', 0)} fichier(s))")
+            if not r.get("ok"):
+                menage["echecs"].append("reports/ distant")
+
+            if dossier_docs:
+                r = _gs.supprimer_dossier(dossier_docs,
+                                          f"Compte {username} supprime")
+                menage["depot"].append(f"rapport publie: {r.get('etat')} "
+                                       f"({r.get('supprimes', 0)} fichier(s))")
+                if not r.get("ok"):
+                    menage["echecs"].append("rapport publie distant")
+
+            if table is not None:
+                _gs.pousser_liens(table)
+                menage["depot"].append("table des jetons: poussee")
+    except Exception as e:
+        menage["echecs"].append(f"depot : {type(e).__name__}: {e}")
+
+    # ── 4. Planificateur ───────────────────────────────────────────────────
     job_id = f"analyze_{username}"
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
         print(f"[Scheduler] Job supprimé : {username}")
-    return {"deleted": username}
+
+    if menage["echecs"]:
+        print(f"[Suppression] {username} : menage PARTIEL — {menage['echecs']}")
+    else:
+        print(f"[Suppression] {username} : menage complet "
+              f"(local: {menage['local']}, depot: {menage['depot']})")
+
+    return {"deleted": username, "menage": menage,
+            "complet": not menage["echecs"]}
 
 # ---------------------------------------------------------------------------
 # Passerelle vers les services externes (analyse d'action, bot de trading).
