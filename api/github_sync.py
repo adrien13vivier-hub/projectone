@@ -215,6 +215,66 @@ def supprimer_fichier(chemin: str, message: str) -> dict:
         return {"ok": False, "etat": "reseau", "detail": f"{type(e).__name__}"}
 
 
+def supprimer_dossier(chemin: str, message: str, profondeur: int = 0) -> dict:
+    """Retire un dossier entier du depot, fichier par fichier.
+
+    L'API Contents de GitHub ne sait pas supprimer un dossier d'un coup : il
+    faut lister son contenu et supprimer chaque fichier avec son `sha`. On
+    descend dans les sous-dossiers (les rapports contiennent un dossier
+    `charts/`), avec une limite de profondeur par simple prudence.
+
+    Ne leve jamais. Retourne le nombre de fichiers reellement retires.
+    """
+    cfg = _config()
+    if not est_configure():
+        return {"ok": False, "etat": "non configure", "supprimes": 0}
+    if profondeur > 4:
+        return {"ok": False, "etat": "trop profond", "supprimes": 0}
+
+    try:
+        r = requests.get(f"{API}/repos/{cfg['repo']}/contents/{chemin}",
+                         headers=_entetes(cfg["token"]),
+                         params={"ref": cfg["branch"]}, timeout=TIMEOUT)
+        if r.status_code == 404:
+            return {"ok": True, "etat": "deja absent", "supprimes": 0}
+        if r.status_code != 200:
+            return {"ok": False, "etat": "echec",
+                    "detail": f"HTTP {r.status_code}", "supprimes": 0}
+        entrees = r.json()
+        if not isinstance(entrees, list):
+            # Le chemin designe un fichier, pas un dossier.
+            res = supprimer_fichier(chemin, message)
+            return {**res, "supprimes": 1 if res.get("ok") else 0}
+    except requests.RequestException as e:
+        return {"ok": False, "etat": "reseau", "detail": f"{type(e).__name__}",
+                "supprimes": 0}
+
+    supprimes, echecs = 0, []
+    for e in entrees:
+        if e.get("type") == "dir":
+            sous = supprimer_dossier(e["path"], message, profondeur + 1)
+            supprimes += sous.get("supprimes", 0)
+            if not sous.get("ok"):
+                echecs.append(e["path"])
+            continue
+        try:
+            rd = requests.delete(
+                f"{API}/repos/{cfg['repo']}/contents/{e['path']}",
+                headers=_entetes(cfg["token"]),
+                data=json.dumps({"message": message, "sha": e["sha"],
+                                 "branch": cfg["branch"]}),
+                timeout=TIMEOUT)
+            if rd.status_code == 200:
+                supprimes += 1
+            else:
+                echecs.append(e["path"])
+        except requests.RequestException:
+            echecs.append(e["path"])
+
+    return {"ok": not echecs, "etat": "supprime" if not echecs else "partiel",
+            "supprimes": supprimes, "echecs": echecs}
+
+
 def declencher_analyse(workflow: str = "daily_analysis.yml",
                        branche: str = None) -> dict:
     """Demande a GitHub de lancer l'analyse MAINTENANT (workflow_dispatch).
