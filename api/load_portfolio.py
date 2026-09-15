@@ -419,6 +419,10 @@ def normaliser_ligne(ligne: dict, index: int = 0) -> dict:
         "tags":        normaliser_tags(ligne.get("tags") or ligne.get("etiquettes")),
         "stop":        normaliser_stop(ligne.get("stop")),
         "isin":        str(ligne.get("isin", "")).strip(),
+        # v14 : le detail des achats voyage avec la ligne, pour que le rapport
+        # puisse montrer d'ou vient le prix de revient moyen.
+        "achats":      [a for a in (ligne.get("achats") or [])
+                        if isinstance(a, dict)],
     }
 
     # ── Chemin MANUEL : livret, immobilier, collection, autre ───────────────
