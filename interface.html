@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio Analyzer</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#101416">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ProjectOne">
+<link rel="apple-touch-icon" href="/icone-180.png">
+<link rel="icon" href="/icone-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -219,6 +226,17 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
   background:none;cursor:pointer;white-space:nowrap}
 .btn-vendu:hover{border-color:var(--primary);color:var(--text)}
 @media(max-width:620px){.dlg-grille{grid-template-columns:1fr}}
+
+/* ── v12 : avertissement d'aide a la decision ───────────────────────── */
+.avertissement{margin-top:40px;border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;background:var(--surface)}
+.avertissement .label{margin-bottom:.85rem}
+.avertissement p{margin:0 0 .7rem;font-size:.88rem;line-height:1.6;color:var(--muted);
+  max-width:80ch}
+.avertissement p:last-child{margin-bottom:0}
+.avertissement b{color:var(--text);font-weight:700}
+.avertissement .fine{font-size:.78rem;opacity:.85;padding-top:.6rem;
+  border-top:1px solid var(--border);margin-top:.9rem}
 </style>
 <style>
 /* ════════════════════════════════════════════════════════════════════
@@ -526,8 +544,29 @@ td{font-size:13px}
         </article>
       </section>
 
+      <section class="avertissement">
+        <div class="label">ce que ProjectOne est, et ce qu'il n'est pas</div>
+        <p>
+          <b>ProjectOne est une aide à la décision. Rien de plus.</b>
+          Il rassemble des données publiques, les met en forme et applique des
+          règles fixes. Il ne connaît ni votre situation, ni vos projets, ni
+          votre tolérance au risque.
+        </p>
+        <p>
+          Une note, un verdict, un stop suggéré ou une taille de position ne
+          sont <b>ni un conseil en investissement, ni une recommandation
+          d'achat ou de vente</b>. La décision finale appartient entièrement au
+          titulaire du compte, qui en assume seul les conséquences.
+        </p>
+        <p class="fine">
+          Les données peuvent être incomplètes, retardées ou fausses. Les
+          calculs reposent sur des hypothèses discutables, expliquées dans le
+          mode d'emploi. Investir comporte un risque de perte en capital.
+        </p>
+      </section>
+
       <div class="foot">
-        <span>ProjectOne · L'interface de suivi de votre portefeuille.</span>
+        <span>ProjectOne · Aide a la decision. La decision reste la votre.</span>
         <span id="acc-sync">—</span>
       </div>
     </div>
@@ -651,6 +690,21 @@ td{font-size:13px}
     <!-- ── Mon compte ── -->
     <div class="tab-panel" id="panel-compte">
       <div class="card">
+        <div class="label">iphone</div>
+        <div class="card-title">Notifications</div>
+        <p class="muted" style="font-size:.84rem;margin:-.6rem 0 1.1rem;max-width:60ch">
+          Être prévenu quand l'analyse du soir part, sans avoir à ouvrir le
+          site. Sur iPhone, Apple impose une condition : le site doit avoir été
+          ajouté à l'écran d'accueil. Depuis un onglet Safari, la demande est
+          refusée sans message — ce n'est pas un réglage, aucun contournement
+          n'existe.
+        </p>
+        <div id="notif-etat"></div>
+        <div id="notif-actions" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem"></div>
+        <div id="notif-res" style="margin-top:.85rem"></div>
+      </div>
+
+      <div class="card">
         <div class="card-title">Changer mon mot de passe</div>
         <div class="form-group">
           <label>Mot de passe actuel</label>
@@ -737,6 +791,7 @@ td{font-size:13px}
 
         <div class="doc-sommaire">
           <a href="#aide-quoi">À quoi ça sert</a>
+          <a href="#aide-nature">Aide à la décision</a>
           <a href="#aide-compte">Compte &amp; connexion</a>
           <a href="#aide-lien">Le lien du rapport</a>
           <a href="#aide-saisie">Saisir son portefeuille</a>
@@ -747,6 +802,7 @@ td{font-size:13px}
           <a href="#aide-vente">Vendre un titre</a>
           <a href="#aide-bot">Le bot de trading</a>
           <a href="#aide-action">Analyser une action</a>
+          <a href="#aide-notifs">Notifications iPhone</a>
           <a href="#aide-limites">Ce que l'outil ne fait pas</a>
           <a href="#aide-souci">En cas de souci</a>
         </div>
@@ -928,6 +984,36 @@ td{font-size:13px}
           une note de 8/10 calculée sur 95 %. Regardez toujours les deux.
         </p>
 
+        <h4 id="aide-nature">Ce que ProjectOne est, et ce qu'il n'est pas</h4>
+        <div class="encadre">
+          <b>ProjectOne est une aide à la décision. Rien de plus.</b> Il
+          rassemble des données publiques, les met en forme et applique des
+          règles fixes, toujours les mêmes. Il ne connaît ni votre situation
+          patrimoniale, ni vos projets, ni ce que vous êtes prêt à perdre.
+        </div>
+        <p>
+          Une note sur 10 ou sur 100, un verdict, un stop suggéré, une taille de
+          position : rien de tout cela n'est un conseil en investissement ni une
+          recommandation d'acheter ou de vendre. <b>La décision finale revient
+          au titulaire du compte, qui en assume seul les conséquences.</b>
+        </p>
+        <p>
+          Trois limites qu'il vaut mieux connaître :
+        </p>
+        <ul>
+          <li>Les données viennent de fournisseurs extérieurs. Elles peuvent être
+            incomplètes, en retard, ou fausses — l'indice de confiance affiché à
+            côté de chaque note dit justement quelle part des critères a
+            réellement pu être calculée.</li>
+          <li>Les seuils retenus sont généralistes. Un PER de 40 ne veut pas dire
+            la même chose pour un éditeur de logiciels et pour une banque.</li>
+          <li>Aucune formule ne prédit les rendements futurs. Cet outil hiérarchise
+            et alerte ; il ne devine pas.</li>
+        </ul>
+        <p>
+          Investir comporte un risque de perte en capital.
+        </p>
+
         <h4 id="aide-bot">Le bot de trading</h4>
         <p>
           L'onglet <b>Bot de trading</b> montre un portefeuille fictif géré par un
@@ -1043,6 +1129,69 @@ td{font-size:13px}
           la ligne ou supprimez-la.
         </p>
 
+        <h4 id="aide-notifs">Les notifications sur iPhone</h4>
+        <p>
+          L'onglet <b>Mon compte</b> propose d'être prévenu sur votre téléphone
+          quand l'analyse du soir part, sans avoir à ouvrir le site. C'est une
+          notification comme une autre : elle arrive sur l'écran verrouillé, et
+          la toucher ouvre ProjectOne.
+        </p>
+        <div class="encadre">
+          <b>Apple impose une condition, et elle n'est pas contournable :</b> le
+          site doit avoir été <b>ajouté à l'écran d'accueil</b>. Depuis un onglet
+          Safari ordinaire, la demande d'autorisation est refusée
+          instantanément, sans le moindre message. Ce n'est pas un réglage à
+          trouver ni un défaut du site — c'est une règle du système, et aucun
+          code ne la change.
+        </div>
+        <p>La marche à suivre, une seule fois :</p>
+        <ul>
+          <li>Ouvrez ProjectOne dans <b>Safari</b> — pas dans Chrome ni dans un
+            autre navigateur, ils n'ont pas ce droit sur iPhone.</li>
+          <li>Touchez le bouton <b>Partager</b> en bas de l'écran, le carré avec
+            une flèche vers le haut.</li>
+          <li>Faites défiler la liste et choisissez <b>Sur l'écran d'accueil</b>,
+            puis <b>Ajouter</b>.</li>
+          <li>Fermez Safari et ouvrez ProjectOne depuis la <b>nouvelle icône</b>.</li>
+          <li>Allez dans <b>Mon compte</b> : le bouton <b>Activer les
+            notifications</b> est maintenant là. Touchez-le et acceptez.</li>
+        </ul>
+        <p>
+          Tant que la condition n'est pas remplie, la page affiche cette marche à
+          suivre à la place du bouton — elle ne vous laisse pas appuyer sur
+          quelque chose qui échouerait.
+        </p>
+        <p>
+          Une fois activées, deux boutons apparaissent : <b>Envoyer un test</b>,
+          qui fait arriver une notification immédiatement pour vérifier que tout
+          fonctionne, et <b>Désactiver ici</b>, qui coupe l'envoi sur cet
+          appareil sans toucher aux autres. L'abonnement vaut en effet par
+          appareil : l'iPhone, l'iPad et l'ordinateur s'activent chacun de leur
+          côté. La page indique donc l'état de l'appareil que vous avez en main,
+          et mentionne en dessous combien d'autres appareils du compte sont
+          abonnés.
+        </p>
+        <p>
+          Sur <b>Android et sur ordinateur</b>, il n'y a pas d'installation
+          préalable : le bouton d'activation est disponible directement dans le
+          navigateur.
+        </p>
+        <p>
+          Une précision utile : iOS supprime l'abonnement de lui-même quand
+          l'application reste plusieurs jours sans être ouverte. Les
+          notifications s'arrêteraient alors sans le moindre message. Le site
+          s'en charge : à chaque ouverture, il vérifie et refait l'abonnement
+          tout seul si nécessaire, sans rien vous demander. Cela ne se produit
+          que si vous les aviez activées — si vous avez touché
+          <b>Désactiver ici</b>, ce choix est retenu et rien ne le défera.
+        </p>
+        <div class="encadre">
+          <b>Ce qui est envoyé, et ce qui ne l'est pas.</b> La notification dit
+          qu'une analyse est partie, rien de plus. Aucun montant, aucun nom de
+          titre, aucune donnée de portefeuille n'y figure — elle transite par les
+          serveurs d'Apple, et ce qui n'est pas indispensable n'a rien à y faire.
+          Il faut <b>iOS 16.4 ou plus récent</b>.
+        </div>
         <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
         <ul>
           <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
@@ -1065,6 +1214,12 @@ td{font-size:13px}
                 <td>Son cours n'a pas pu être récupéré — souvent un ticker ou une place de cotation erronés.</td></tr>
             <tr><td>Le message d'enregistrement parle d'une synchronisation échouée</td>
                 <td>Votre saisie est bien enregistrée sur le serveur mais n'a pas rejoint le dépôt : le rapport de demain ne la verra pas. Signalez-le à l'administrateur.</td></tr>
+            <tr><td>Pas de bouton d'activation des notifications sur iPhone</td>
+                <td>Le site n'a pas été ajouté à l'écran d'accueil. Safari → Partager → Sur l'écran d'accueil, puis rouvrez depuis la nouvelle icône. Apple n'autorise pas les notifications depuis un simple onglet.</td></tr>
+            <tr><td>« Le serveur n'est pas prêt » dans la carte Notifications</td>
+                <td>La bibliothèque de chiffrement manque sur le serveur, ou les clés n'ont pas pu être écrites. La raison exacte est affichée juste en dessous. C'est un réglage d'administrateur.</td></tr>
+            <tr><td>Les notifications se sont arrêtées toutes seules</td>
+                <td>iOS supprime l'abonnement quand l'application reste plusieurs jours sans être ouverte. Rouvrez simplement ProjectOne depuis son icône : l'abonnement se refait tout seul. Si l'icône a été supprimée de l'écran d'accueil, il faut la remettre puis réactiver dans Mon compte.</td></tr>
             <tr><td>Les pastilles de l'onglet Bot sont rouges</td>
                 <td>Le programme distant ne répond pas. Sans effet sur votre portefeuille ni sur votre rapport. Réessayez plus tard.</td></tr>
             <tr><td>« Non configuré » à la place des données du bot</td>
@@ -1094,6 +1249,18 @@ td{font-size:13px}
         <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:.3rem">
           <span id="bot-courbe-debut">—</span><span id="bot-courbe-fin">—</span>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:1.25rem">
+        <div class="label">méthode</div>
+        <div class="card-title">Ses stratégies</div>
+        <p class="muted" style="font-size:.82rem;margin:-.6rem 0 1.1rem">
+          Le programme n'a pas une façon de faire mais plusieurs, qui tournent
+          en parallèle et ne se déclenchent pas dans les mêmes conditions de
+          marché. La colonne « stratégie » des tableaux ci-dessus renvoie à
+          l'une d'elles.
+        </p>
+        <div id="bot-strategies"></div>
       </div>
 
       <div class="card" style="margin-top:1.25rem">
@@ -1303,6 +1470,8 @@ function doLogout(){
 
 // ── App init ───────────────────────────────────────────────────────
 function showApp(){
+  enregistrerTravailleur();
+  reabonnerSiBesoin();
   majPiedLateral();
   chargerAccueil(true);
   document.getElementById('login-screen').style.display='none';
@@ -1369,6 +1538,7 @@ function switchTab(name,btn){
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
   if(name==='admin') loadUsers();
+  if(name==='compte') majPanneauNotifications();
   if(name==='accueil') chargerAccueil();
   if(name==='bot')   chargerBot();
   if(name==='action') chargerEtatServices('action-etat');
@@ -1941,6 +2111,7 @@ async function chargerBot(force){
     '<div class="v '+t[2]+'">'+esc(t[1])+'</div></div>').join('');
 
   dessinerCourbe(perf&&perf.points?perf.points:[], init);
+  afficherStrategies(Object.keys((pos&&pos.by_source)||{}));
 
   // Positions, groupees par strategie
   const boite=document.getElementById('bot-positions');
@@ -1958,7 +2129,7 @@ async function chargerBot(force){
         '<td style="text-align:right">'+nb(p.score,0)+'</td>'+
         '<td style="text-align:right">'+jour(p.opened_at)+'</td></tr>').join('');
       return '<div style="margin-bottom:1rem"><div style="font-size:.8rem;color:var(--muted);'+
-        'text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem">'+esc(k)+
+        'letter-spacing:.02em;margin-bottom:.35rem">'+esc(libelleStrategie(k))+
         ' — '+src[k].length+' ligne'+(src[k].length>1?'s':'')+'</div>'+
         '<div class="table-wrap"><table><thead><tr><th>Titre</th><th>Secteur</th>'+
         '<th style="text-align:right">Qté</th><th style="text-align:right">Entrée</th>'+
@@ -1978,7 +2149,7 @@ async function chargerBot(force){
       '<th style="text-align:right">Gain</th><th style="text-align:right">%</th>'+
       '<th style="text-align:right">Tenue</th><th>Motif</th><th style="text-align:right">Fermé le</th>'+
       '</tr></thead><tbody>'+trades.map(t=>
-      '<tr><td>'+esc(t.ticker)+'</td><td>'+esc(t.source||"—")+'</td>'+
+      '<tr><td>'+esc(t.ticker)+'</td><td>'+esc(libelleStrategie(t.source))+'</td>'+
       '<td style="text-align:right">'+nb(t.entry_price,2)+'</td>'+
       '<td style="text-align:right">'+nb(t.exit_price,2)+'</td>'+
       '<td style="text-align:right" class="'+signe(t.pnl)+'">'+(Number(t.pnl)>0?"+":"")+nb(t.pnl,0)+'</td>'+
@@ -2610,6 +2781,345 @@ function afficherVentes(){
     + (pvTot > 0 ? '+' : '') + nb(pvTot, 2) + ' €</b><br>'
     + '<span style="opacity:.75">Brut de frais. Le rapport quotidien en déduit le courtage '
     + 'aller-retour et publie la plus-value nette.</span></div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v12 — Les strategies du bot
+//
+// Les libelles viennent du README du depot swing-hunter et des noms de
+// modules. Une source inconnue n'est jamais affichee en code brut : on
+// dit honnetement qu'on ne la documente pas encore.
+// ═══════════════════════════════════════════════════════════════════
+
+const STRATEGIES = {
+  brain: {nom:"Momentum — le scanner principal", quand:"trois fois par jour, en séance",
+    texte:"Cherche les titres déjà lancés et dont le mouvement tient : tendance "
+        + "confirmée, volume au rendez-vous, pas de signe d'essoufflement. C'est "
+        + "la stratégie qui ouvre le plus de positions."},
+  crisis: {nom:"Retour à la moyenne — en marché baissier", quand:"deux fois par jour, uniquement en régime BEAR ou CRISIS",
+    texte:"L'inverse du momentum. Quand le marché est en crise, elle achète ce "
+        + "qui a été vendu trop fort, en pariant sur un rebond technique. Elle "
+        + "reste à l'arrêt tant que le régime macro n'est pas dégradé."},
+  value: {nom:"Valeur — le chasseur de décotes", quand:"quotidien",
+    texte:"Ne regarde pas le graphique mais les comptes : rentabilité, flux de "
+        + "trésorerie, qualité du bilan, prix rapporté à ces éléments. Horizon "
+        + "plus long, rotation plus lente."},
+  surfer: {nom:"Rotation sectorielle", quand:"quotidien",
+    texte:"Ne choisit pas d'abord un titre mais un secteur — technologie, "
+        + "énergie, santé — puis les meilleures valeurs à l'intérieur. L'idée "
+        + "est de suivre les déplacements de capitaux d'un secteur à l'autre."},
+  catalyst: {nom:"Catalyseur — sur événement", quand:"en séance",
+    texte:"Se déclenche sur un fait précis : publication de résultats, "
+        + "actualité forte, mouvement de cours inhabituel repéré au scan du soir."},
+  supply: {nom:"Chaîne d'approvisionnement", quand:"quotidien",
+    texte:"Part d'une entreprise pour remonter à ses fournisseurs et à ses "
+        + "clients. Quand un donneur d'ordre va bien, ceux qui le fournissent "
+        + "en profitent souvent avec un décalage."}
+};
+
+function libelleStrategie(code){
+  const s = STRATEGIES[(code || '').toLowerCase()];
+  return s ? s.nom.split(' — ')[0] : (code || '—');
+}
+
+function afficherStrategies(sourcesActives){
+  const box = document.getElementById('bot-strategies');
+  if(!box) return;
+  const actives = new Set((sourcesActives || []).map(s => String(s).toLowerCase()));
+  const cles = Object.keys(STRATEGIES);
+  const inconnues = [...actives].filter(s => !STRATEGIES[s]);
+
+  box.innerHTML = '<div class="grille-gurus">' + cles.map(k => {
+    const s = STRATEGIES[k];
+    const ici = actives.has(k);
+    return '<details class="guru"' + (ici ? ' open' : '') + '>'
+      + '<summary><b>' + esc(s.nom) + '</b>'
+      + (ici ? '<span class="note" style="font-size:.68rem;color:var(--primary)">en position</span>' : '')
+      + '</summary>'
+      + '<div style="font-size:.82rem;margin-top:.5rem;line-height:1.55">' + esc(s.texte) + '</div>'
+      + '<div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">'
+      + esc(s.quand) + '</div></details>';
+  }).join('') + '</div>'
+  + (inconnues.length
+      ? '<div class="message" style="margin-top:.9rem">Le bot utilise aussi « '
+        + inconnues.map(esc).join(' », « ') + " » : je ne documente pas encore "
+        + "cette ou ces stratégies ici.</div>"
+      : '')
+  + '<div class="apercu" style="margin-top:.9rem">'
+  + "Toutes partagent le même gestionnaire de risque : taille de position "
+  + "proportionnée à la volatilité du titre, stop posé à l'achat, et stop "
+  + "suiveur qui remonte quand le cours monte.<br>"
+  + '<span style="opacity:.75">Ces descriptions expliquent l\'intention de '
+  + "chaque stratégie. Elles ne disent pas qu'elle fonctionne.</span></div>";
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// v13 — Notifications (iPhone)
+//
+// Apple ne delivre une notification web que si le site a ete AJOUTE A
+// L'ECRAN D'ACCUEIL. Depuis un onglet Safari, la demande d'autorisation
+// est refusee instantanement, sans message. Toute la logique ci-dessous
+// consiste donc a reconnaitre precisement la situation de l'utilisateur
+// et a lui dire quoi faire, plutot qu'a echouer en silence.
+// ═══════════════════════════════════════════════════════════════════
+
+let SW_PRET = null;
+let ABONNEMENT_LOCAL = null;
+
+// iOS supprime l'abonnement quand l'application reste plusieurs jours sans
+// etre ouverte. L'utilisateur ne s'en apercoit pas : les notifications
+// s'arretent, sans message. On refait donc l'abonnement tout seul a
+// l'ouverture — mais UNIQUEMENT s'il les avait demandees. Sans cette
+// memoire, un « Desactiver ici » serait annule au redemarrage suivant.
+const CLE_VOULU = 'po_notifs_voulues';
+function notifsVoulues(){
+  try{ return localStorage.getItem(CLE_VOULU) === '1'; }catch(e){ return false; }
+}
+function marquerNotifs(voulues){
+  try{
+    if(voulues) localStorage.setItem(CLE_VOULU, '1');
+    else localStorage.removeItem(CLE_VOULU);
+  }catch(e){ /* navigation privee : tant pis, rien de vital n'en depend */ }
+}
+
+function estIOS(){
+  const ua = navigator.userAgent || '';
+  return /iPad|iPhone|iPod/.test(ua)
+      || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);  // iPad recent
+}
+function estInstalle(){
+  return window.navigator.standalone === true
+      || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function pushPossible(){
+  return 'serviceWorker' in navigator && 'PushManager' in window
+      && typeof Notification !== 'undefined';
+}
+
+async function enregistrerTravailleur(){
+  if(!('serviceWorker' in navigator)) return null;
+  if(SW_PRET) return SW_PRET;
+  try{
+    await navigator.serviceWorker.register('/sw.js', {scope: '/'});
+    SW_PRET = await navigator.serviceWorker.ready;
+    return SW_PRET;
+  }catch(e){
+    console.warn('Travailleur de service non enregistre', e);
+    return null;
+  }
+}
+
+function b64EnOctets(base64){
+  const p = '='.repeat((4 - base64.length % 4) % 4);
+  const b = atob((base64 + p).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...b].map(c => c.charCodeAt(0)));
+}
+function octetsEnB64(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function noteNotif(texte, erreur){
+  const el = document.getElementById('notif-res');
+  if(el) el.innerHTML = texte
+    ? '<div class="message' + (erreur ? ' erreur' : '') + '">' + esc(texte) + '</div>' : '';
+}
+
+async function majPanneauNotifications(){
+  const etat = document.getElementById('notif-etat');
+  const act = document.getElementById('notif-actions');
+  if(!etat || !act) return;
+  act.innerHTML = '';
+
+  const pastille = (cls, txt) =>
+    '<span class="pastille ' + cls + '"><span class="point"></span>' + esc(txt) + '</span>';
+
+  if(!pushPossible()){
+    etat.innerHTML = '<div class="etat-services">' + pastille('ko',
+      "Ce navigateur ne gère pas les notifications web") + '</div>'
+      + '<p class="muted" style="font-size:.82rem;margin-top:.7rem">'
+      + "Sur iPhone, il faut iOS 16.4 ou plus récent.</p>";
+    return;
+  }
+
+  if(estIOS() && !estInstalle()){
+    etat.innerHTML = '<div class="etat-services">' + pastille('ko',
+      "Site non ajouté à l'écran d'accueil") + '</div>'
+      + '<div class="apercu" style="margin-top:.9rem">'
+      + "<b>Pour recevoir les notifications sur iPhone :</b><br><br>"
+      + "1. Touchez le bouton <b>Partager</b> en bas de Safari — le carré avec une flèche vers le haut.<br>"
+      + "2. Faites défiler et choisissez <b>Sur l'écran d'accueil</b>.<br>"
+      + "3. Validez avec <b>Ajouter</b>.<br>"
+      + "4. Fermez Safari et ouvrez ProjectOne depuis la nouvelle icône.<br>"
+      + "5. Revenez sur cette page : le bouton d'activation sera là.<br><br>"
+      + '<span style="opacity:.75">Cette contrainte vient d\'Apple. Sur Android '
+      + "et sur ordinateur, l'activation marche directement depuis le navigateur.</span></div>";
+    return;
+  }
+
+  let info = {};
+  try{ info = await api('GET','/api/push/cle-publique'); }
+  catch(e){ info = {disponible:false, motif:e.message}; }
+
+  if(!info.disponible){
+    etat.innerHTML = '<div class="etat-services">' + pastille('ko',
+      "Le serveur n'est pas prêt") + '</div>'
+      + '<p class="muted" style="font-size:.82rem;margin-top:.7rem">'
+      + esc(info.motif || 'raison inconnue') + '</p>';
+    return;
+  }
+
+  const perm = Notification.permission;
+  const nb = info.abonnements || 0;
+
+  // DEFAUT CORRIGE. On regardait le nombre d'abonnes du COMPTE, pas l'etat de
+  // CET appareil. Un iPhone deja abonne faisait donc afficher « Envoyer un
+  // test » sur l'ordinateur, qui lui n'etait abonne a rien : le test partait
+  // vers le telephone et l'ordinateur paraissait muet sans raison. On
+  // interroge desormais l'abonnement local.
+  let abonneIci = false;
+  try{
+    const reg = await enregistrerTravailleur();
+    ABONNEMENT_LOCAL = reg ? await reg.pushManager.getSubscription() : null;
+    abonneIci = !!ABONNEMENT_LOCAL && perm === 'granted';
+  }catch(e){ ABONNEMENT_LOCAL = null; }
+
+  const autres = nb - (abonneIci ? 1 : 0);
+  const mentionAutres = autres > 0
+    ? '<p class="muted" style="font-size:.8rem;margin-top:.7rem">'
+      + autres + ' autre' + (autres > 1 ? 's appareils sont abonnés' : ' appareil est abonné')
+      + ' à ce compte.</p>'
+    : '';
+
+  if(perm === 'denied'){
+    etat.innerHTML = '<div class="etat-services">' + pastille('ko',
+      "Notifications refusées pour ce site") + '</div>'
+      + '<p class="muted" style="font-size:.82rem;margin-top:.7rem">'
+      + "L'autorisation a été refusée. Sur iPhone : Réglages → Notifications → "
+      + "ProjectOne. Sur ordinateur : l'icône à gauche de l'adresse du site.</p>";
+    return;
+  }
+
+  if(abonneIci){
+    etat.innerHTML = '<div class="etat-services">' + pastille('ok',
+      "Activées sur cet appareil") + '</div>' + mentionAutres;
+    act.innerHTML =
+      '<button class="btn btn-primary" onclick="testerNotification(this)">Envoyer un test</button>'
+      + '<button class="btn btn-ghost" onclick="desactiverNotifications(this)">Désactiver ici</button>';
+    return;
+  }
+
+  etat.innerHTML = '<div class="etat-services">' + pastille('',
+    "Non activées sur cet appareil") + '</div>' + mentionAutres;
+  act.innerHTML = '<button class="btn btn-primary" onclick="activerNotifications(this)">'
+                + 'Activer les notifications</button>';
+}
+
+async function abonnerCetAppareil(reg, info){
+  let ab = await reg.pushManager.getSubscription();
+  if(!ab){
+    ab = await reg.pushManager.subscribe({
+      userVisibleOnly: true,             // impose par iOS
+      applicationServerKey: b64EnOctets(info.cle_publique)
+    });
+  }
+  const brut = ab.toJSON();
+  await api('POST','/api/push/abonnement', {
+    endpoint: ab.endpoint,
+    p256dh: (brut.keys && brut.keys.p256dh) || octetsEnB64(ab.getKey('p256dh')),
+    auth:   (brut.keys && brut.keys.auth)   || octetsEnB64(ab.getKey('auth')),
+    appareil: (navigator.userAgent || '').slice(0, 120)
+  });
+  ABONNEMENT_LOCAL = ab;
+  return ab;
+}
+
+// Appelee a chaque ouverture. Silencieuse : elle ne demande jamais rien et
+// n'affiche jamais rien. Si elle echoue, l'utilisateur retrouve le bouton
+// d'activation dans Mon compte, comme avant.
+async function reabonnerSiBesoin(){
+  try{
+    if(!pushPossible() || !notifsVoulues()) return;
+    // L'autorisation ne se redemande pas : elle exige un geste, et on est ici
+    // au chargement. Si elle a ete retiree, il n'y a rien a rattraper.
+    if(Notification.permission !== 'granted') return;
+    if(estIOS() && !estInstalle()) return;
+    const reg = await enregistrerTravailleur();
+    if(!reg) return;
+    if(await reg.pushManager.getSubscription()) return;   // rien a refaire
+    const info = await api('GET','/api/push/cle-publique');
+    if(!info.disponible) return;
+    await abonnerCetAppareil(reg, info);
+    console.info('[notifications] abonnement refait apres expiration iOS');
+  }catch(e){
+    console.warn('[notifications] reabonnement automatique impossible', e);
+  }
+}
+
+async function activerNotifications(bouton){
+  bouton.disabled = true;
+  noteNotif("Demande d'autorisation…");
+  try{
+    // L'autorisation DOIT etre demandee depuis un geste de l'utilisateur :
+    // c'est pour cela qu'elle part d'un clic et non du chargement de la page.
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      noteNotif("Autorisation refusée. Rien n'a été enregistré.", true);
+      return majPanneauNotifications();
+    }
+    const reg = await enregistrerTravailleur();
+    if(!reg) throw new Error("le travailleur de service n'a pas pu s'installer");
+
+    const info = await api('GET','/api/push/cle-publique');
+    if(!info.disponible) throw new Error(info.motif || 'serveur non prêt');
+
+    await abonnerCetAppareil(reg, info);
+    marquerNotifs(true);
+    noteNotif("Notifications activées sur cet appareil.");
+  }catch(e){
+    noteNotif("Activation impossible : " + e.message, true);
+  }finally{
+    bouton.disabled = false;
+    majPanneauNotifications();
+  }
+}
+
+async function testerNotification(bouton){
+  bouton.disabled = true;
+  noteNotif("Envoi en cours…");
+  try{
+    const r = await api('POST','/api/push/test');
+    noteNotif("Envoyée à " + r.envoyes + " appareil(s)"
+              + (r.echecs ? ", " + r.echecs + " échec(s)" : "")
+              + ". Elle peut mettre quelques secondes à arriver.");
+  }catch(e){
+    noteNotif("Échec de l'envoi : " + e.message, true);
+  }finally{ bouton.disabled = false; }
+}
+
+async function desactiverNotifications(bouton){
+  bouton.disabled = true;
+  try{
+    const reg = await enregistrerTravailleur();
+    let adresse = '';
+    if(reg){
+      const ab = await reg.pushManager.getSubscription();
+      if(ab){ adresse = ab.endpoint; await ab.unsubscribe(); }
+    }
+    // On transmet l'adresse de CET appareil : sans elle, le serveur
+    // supprimerait les abonnements de tous les autres.
+    await api('DELETE','/api/push/abonnement', {endpoint: adresse});
+    ABONNEMENT_LOCAL = null;
+    // On retient le refus : sans ca, le reabonnement automatique le defferait
+    // a la prochaine ouverture.
+    marquerNotifs(false);
+    noteNotif("Notifications désactivées sur cet appareil.");
+  }catch(e){
+    noteNotif("Désactivation incomplète : " + e.message, true);
+  }finally{
+    bouton.disabled = false;
+    majPanneauNotifications();
+  }
 }
 
 verifierInscription();
