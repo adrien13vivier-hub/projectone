@@ -212,6 +212,9 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 .dlg-grille{display:grid;grid-template-columns:1fr 1fr;gap:.9rem 1.1rem}
 .dlg-grille label{display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;font-weight:600}
 .dlg-grille label[hidden]{display:none}
+.c-taux-cell.vide .c-taux{visibility:hidden}
+.c-taux{max-width:5.5rem}
+.c-devise{min-width:4.5rem}
 .btn-renfort:hover{border-color:var(--success);color:var(--text)}
 .dlg-grille input{padding:.5rem .6rem;border-radius:7px;border:1px solid var(--border);
   background:var(--surface2);color:var(--text);font:inherit}
@@ -665,7 +668,7 @@ td{font-size:13px}
             <thead>
               <tr>
                 <th>Nom</th><th>Classe</th><th>Ticker</th><th>ISIN</th>
-                <th>Qté / Valeur</th><th>Prix de revient</th><th>Place de cotation</th>
+                <th>Qté / Valeur</th><th>Prix de revient</th><th>Devise</th><th>Taux → EUR</th><th>Place de cotation</th>
                 <th>Compte</th><th>Étiquettes</th><th>Stop</th><th>Param.</th><th></th>
               </tr>
             </thead>
@@ -805,6 +808,7 @@ td{font-size:13px}
           <a href="#aide-bot">Le bot de trading</a>
           <a href="#aide-action">Analyser une action</a>
           <a href="#aide-pru">Racheter un titre</a>
+          <a href="#aide-devise">Saisir un prix en dollars</a>
           <a href="#aide-confiance">L'indice de confiance</a>
           <a href="#aide-notifs">Notifications iPhone</a>
           <a href="#aide-limites">Ce que l'outil ne fait pas</a>
@@ -1280,6 +1284,51 @@ td{font-size:13px}
           inventée gonflait la confiance affichée tout en tirant la note vers le
           milieu. Un critère absent est désormais déclaré absent.
         </p>
+        <h4 id="aide-devise">Saisir un prix de revient en dollars</h4>
+        <p>
+          Le tableau du portefeuille porte une colonne <b>Devise</b> : EUR ou
+          USD. Elle dit dans quelle monnaie vous tapez le <b>prix de revient</b>
+          — rien d'autre. Choisissez USD et un champ <b>Taux → EUR</b> apparaît :
+          vous saisissez alors le prix tel qu'il figure sur votre avis d'opéré,
+          et le taux du jour de l'achat.
+        </p>
+        <div class="encadre">
+          <b>Ce qui est enregistré reste un montant en euros.</b> La conversion
+          se fait au moment où vous cliquez sur Enregistrer, une fois pour
+          toutes. Tout le reste du programme — plus-values, frais, poids des
+          lignes, rapport quotidien — continue de travailler en euros et ne sait
+          rien de ce réglage. La devise et le taux sont conservés à côté, pour
+          que vous puissiez retrouver votre saisie et la vérifier.
+        </div>
+        <p>
+          <b>Le taux est figé au jour de l'achat</b>, comme pour une vente. Le
+          gain ou la perte de change fait partie de votre résultat : recalculer
+          plus tard avec le taux du moment effacerait cette part-là.
+        </p>
+        <ul>
+          <li><b>Sans taux, la ligne n'est pas enregistrée.</b> Si vous
+            choisissez USD sans indiquer de taux, le message au-dessus du
+            tableau vous nomme la ligne concernée. Inventer un taux par défaut
+            reviendrait à inventer votre prix de revient.</li>
+          <li><b>Changer de devise ne change pas ce que la ligne vaut.</b> Passer
+            de USD à EUR réécrit simplement le champ avec le montant en euros
+            correspondant.</li>
+          <li><b>Le bouton Racheté suit cette colonne.</b> Si la ligne est en
+            USD, la fenêtre demande un prix en dollars et reprend votre taux.
+            Deux réglages contradictoires sur la même ligne seraient une source
+            d'erreur garantie.</li>
+          <li><b>Un regroupement repasse la ligne en euros.</b> Plusieurs achats
+            faits à des taux différents donnent un prix de revient moyen en
+            euros : le réexprimer dans une seule devise de saisie n'aurait pas
+            de sens.</li>
+        </ul>
+        <p>
+          À ne pas confondre avec la <b>place de cotation</b>, juste à côté :
+          celle-là dit où le titre se négocie, et sert à récupérer le cours et à
+          le convertir chaque jour. Une action américaine achetée en euros via
+          votre courtier reste cotée en dollars — les deux colonnes ont le droit
+          de ne pas dire la même chose.
+        </p>
         <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
         <ul>
           <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
@@ -1306,6 +1355,8 @@ td{font-size:13px}
                 <td>Elle a été regroupée avec une autre ligne du même titre, au prix de revient moyen. Le message au-dessus du tableau dit laquelle et à quel prix. Rien n'est perdu : le détail de chaque achat est conservé.</td></tr>
             <tr><td>« Le détail des achats ne correspondait plus »</td>
                 <td>La quantité ou le prix de revient ont été corrigés à la main dans le tableau. Le programme repart de ce qui est affiché plutôt que d'un historique périmé. Le prix de revient affiché, lui, ne change pas.</td></tr>
+            <tr><td>« Prix saisi en dollars sans taux de change »</td>
+                <td>La colonne Devise de cette ligne est sur USD mais le champ Taux est vide. Indiquez combien valait 1 dollar en euros au jour de l'achat, ou repassez la ligne en EUR.</td></tr>
             <tr><td>Un ETF affiche peu de critères mais 100 % de confiance</td>
                 <td>Normal. Un ETF n'a ni PER, ni marges, ni croissance : ces critères sont sans objet, pas manquants. Le rapport les énumère à part.</td></tr>
             <tr><td>Pas de bouton d'activation des notifications sur iPhone</td>
@@ -1765,18 +1816,28 @@ function mkRow(l={}){
   // de revient, dont elles prennent la place.
   const manuel = estManuel(classe);
   const col5 = manuel ? (l.value ?? '')     : (l.quantity ?? '');
-  const col6 = manuel ? (l.buy_value ?? '') : (l.buy_price ?? '');
+  // Le prix est STOCKE en euros. S'il avait été saisi en dollars, on le
+  // reconvertit pour le réafficher tel que l'utilisateur l'avait tapé.
+  const deviseSaisie = (l.buy_currency === 'USD' && Number(l.buy_fx) > 0) ? 'USD' : 'EUR';
+  const tauxSaisie = deviseSaisie === 'USD' ? Number(l.buy_fx) : '';
+  let col6 = manuel ? (l.buy_value ?? '') : (l.buy_price ?? '');
+  if(!manuel && deviseSaisie === 'USD' && Number(col6) > 0){
+    col6 = Number((Number(col6) / Number(l.buy_fx)).toFixed(6));
+  }
 
   tr.innerHTML=`
-    <td><input value="${echapper(l.name)}" placeholder="Air Liquide"></td>
+    <td><input class="c-nom" value="${echapper(l.name)}" placeholder="Air Liquide"></td>
     <td>${mkSelect(CLASSES,classe,'cls-sel')}</td>
     <td><input class="c-ticker" value="${echapper(l.ticker||l.ticker_eodhd)}" placeholder="AI.PA ou AAPL"></td>
-    <td><input value="${echapper(l.isin)}" placeholder="FR0000…"></td>
+    <td><input class="c-isin" value="${echapper(l.isin)}" placeholder="FR0000…"></td>
     <td><input class="c-qte" type="number" value="${col5}" placeholder="10" min="0" step="any"></td>
     <td><input class="c-prix" type="number" value="${col6}" placeholder="150.00" min="0" step="any"></td>
+    <td>${mkSelect(DEVISES_SAISIE, deviseSaisie, 'c-devise')}</td>
+    <td class="c-taux-cell"><input class="c-taux" type="number" value="${tauxSaisie}"
+        placeholder="0.92" min="0" step="any" title="Combien vaut 1 dollar en euros, au jour de l'achat"></td>
     <td class="c-place-cell">${mkSelect(MARKETS,l.market||'us','c-place')}</td>
-    <td><input value="${echapper(l.account)}" placeholder="PEA Bourso" style="min-width:120px"></td>
-    <td><input value="${echapper(tags)}" placeholder="dividende, socle" style="min-width:130px"></td>
+    <td><input class="c-compte" value="${echapper(l.account)}" placeholder="PEA Bourso" style="min-width:120px"></td>
+    <td><input class="c-tags" value="${echapper(tags)}" placeholder="dividende, socle" style="min-width:130px"></td>
     <td>${mkSelect(STOP_TYPES,stop.type||'none','c-stoptype')}</td>
     <td><input class="c-stopval" type="number" value="${stop.value ?? ''}" placeholder="15" min="0" step="any"></td>
     <td style="white-space:nowrap">
@@ -1789,8 +1850,23 @@ function mkRow(l={}){
   tr.dataset.achats = JSON.stringify(l.achats || []);
   const cls = tr.querySelector('.cls-sel');
   const stp = tr.querySelector('.c-stoptype');
+  const dev = tr.querySelector('.c-devise');
   cls.addEventListener('change',()=>majLigne(tr));
   stp.addEventListener('change',()=>majLigne(tr));
+  let devAvant = deviseSaisie, tauxAvant = Number(tauxSaisie) || 1;
+  dev.addEventListener('change',()=>{
+    changerDevise(tr, devAvant, tauxAvant);
+    devAvant = deviseLigne(tr); tauxAvant = tauxLigne(tr) || 1;
+  });
+  tr.querySelector('.c-taux').addEventListener('input',()=>{
+    appliquerTaux(tr);
+    tauxAvant = tauxLigne(tr) || 1;
+  });
+  // Retaper le prix soi-meme annule la conversion en attente.
+  tr.querySelector('.c-prix').addEventListener('input',()=>{
+    if(tr.dataset.eurEnAttente) delete tr.dataset.eurEnAttente;
+  });
+  majDeviseLigne(tr);
   majLigne(tr);
   return tr;
 }
@@ -1901,13 +1977,13 @@ function readLines(){
   LIGNES_IGNOREES=[];
   document.querySelectorAll('#portfolio-tbody tr').forEach((tr,rang)=>{
     const c   = tr.querySelectorAll('td');
-    let nom = c[0].querySelector('input').value.trim();
+    let nom = tr.querySelector('.c-nom').value.trim();
     const tkBrut = (tr.querySelector('.c-ticker')
                     ? tr.querySelector('.c-ticker').value : '').trim().toUpperCase();
     // Le ticker fait office de nom : saisir « AAPL » et rien d'autre suffit.
     if(!nom && tkBrut) nom = tkBrut;
     if(!nom){
-      if(c[0].querySelector('input').value || tkBrut
+      if(tr.querySelector('.c-nom').value || tkBrut
          || tr.querySelector('.c-qte').value || tr.querySelector('.c-prix').value)
         LIGNES_IGNOREES.push("ligne " + (rang + 1) + " : il manque un nom ou un ticker");
       return;
@@ -1919,14 +1995,14 @@ function readLines(){
     const prix    = nombreOuNull(tr.querySelector('.c-prix').value);
     const type    = tr.querySelector('.c-stoptype').value;
     const val     = nombreOuNull(tr.querySelector('.c-stopval').value);
-    const tags    = c[8].querySelector('input').value
+    const tags    = tr.querySelector('.c-tags').value
                       .split(',').map(t=>t.trim()).filter(Boolean);
 
     const ligne = {
       name: nom,
       asset_class: classe,
-      isin: c[3].querySelector('input').value.trim(),
-      account: c[7].querySelector('input').value.trim(),
+      isin: tr.querySelector('.c-isin').value.trim(),
+      account: tr.querySelector('.c-compte').value.trim(),
       tags: tags
     };
 
@@ -1937,7 +2013,16 @@ function readLines(){
       ligne.ticker    = tr.querySelector('.c-ticker').value.trim().toUpperCase();
       ligne.market    = tr.querySelector('.c-place').value;
       ligne.quantity  = qte;
-      ligne.buy_price = prix;
+      const devL = deviseLigne(tr), tauxL = tauxLigne(tr);
+      if(devL === 'USD' && !(tauxL > 0)){
+        LIGNES_IGNOREES.push("« " + nom + " » : prix saisi en dollars sans taux de change — "
+                           + "indiquez combien vaut 1 dollar en euros au jour de l'achat");
+        return;
+      }
+      // On envoie TOUJOURS des euros. La devise et le taux ne servent qu'à
+      // rejouer la saisie et à la vérifier.
+      ligne.buy_price = (prix === null) ? null : Number((prix * tauxL).toFixed(6));
+      if(devL !== 'EUR'){ ligne.buy_currency = devL; ligne.buy_fx = tauxL; }
       const ach = lireAchats(tr);
       if(ach.length) ligne.achats = ach;
     }
@@ -2725,7 +2810,7 @@ function infosPlace(code){
 function ouvrirVente(bouton){
   const tr = bouton.closest('tr');
   const c = tr.querySelectorAll('td');
-  const nom = c[0].querySelector('input').value.trim();
+  const nom = tr.querySelector('.c-nom').value.trim();
   const tk = (tr.querySelector('.c-ticker') ? tr.querySelector('.c-ticker').value : '').trim().toUpperCase();
   const classe = tr.querySelector('.cls-sel').value;
 
@@ -2751,7 +2836,7 @@ function ouvrirVente(bouton){
     'Vous en détenez ' + nb(qte, qte < 1 ? 4 : 0) + '. Une quantité inférieure garde le reste en portefeuille.';
   document.getElementById('v-dev-vente').textContent = '(' + inf.devise + ')';
   document.getElementById('v-prix').value = '';
-  document.getElementById('v-revient').value = tr.querySelector('.c-prix').value || '';
+  document.getElementById('v-revient').value = prixRevientEur(tr) || '';
 
   const horsEuro = inf.devise !== 'EUR';
   document.getElementById('v-bloc-taux').hidden = !horsEuro;
@@ -2973,6 +3058,110 @@ function afficherStrategies(sourcesActives){
 }
 
 
+
+// ═══════════════════════════════════════════════════════════════════
+// v15 — SAISIR UN PRIX DE REVIENT EN DOLLARS
+//
+// Jusqu'ici le prix de revient devait etre saisi EN EUROS. Pour une action
+// americaine, il fallait donc convertir soi-meme avant de taper, et le taux
+// employe n'etait consigne nulle part.
+//
+// Desormais chaque ligne porte sa devise de saisie. Ce qui est STOCKE ne
+// change pas : `buy_price` reste un montant en euros, et tout l'aval
+// (analyse, frais, plus-values) continue de travailler en euros sans rien
+// savoir de ce reglage. Seuls `buy_currency` et `buy_fx` s'ajoutent, pour
+// pouvoir reafficher la saisie d'origine et verifier la conversion.
+//
+// LE TAUX EST FIGE AU JOUR DE L'ACHAT, comme pour une vente : le gain de
+// change fait partie du resultat, le recalculer plus tard avec un autre taux
+// fausserait la plus-value.
+// ═══════════════════════════════════════════════════════════════════
+
+const DEVISES_SAISIE = [{code: 'EUR', label: 'EUR'}, {code: 'USD', label: 'USD'}];
+
+function deviseLigne(tr){
+  const s = tr.querySelector('.c-devise');
+  return s ? s.value : 'EUR';
+}
+function tauxLigne(tr){
+  if(deviseLigne(tr) === 'EUR') return 1;
+  const t = Number((tr.querySelector('.c-taux') || {}).value);
+  return t > 0 ? t : 0;          // 0 = taux manquant, la ligne sera signalee
+}
+
+// Le prix de revient EN EUROS, quelle que soit la devise de saisie.
+// Tout ce qui calcule (vente, renfort, PRU) passe par ici et nulle part
+// ailleurs : c'est ce qui garantit qu'aucun montant en dollars ne se
+// retrouve additionne a des euros.
+function prixRevientEur(tr){
+  const p = Number((tr.querySelector('.c-prix') || {}).value) || 0;
+  const t = tauxLigne(tr);
+  return p > 0 && t > 0 ? p * t : 0;
+}
+
+// Ecrit un prix en euros dans la ligne, converti vers sa devise d'affichage.
+function ecrirePrixRevient(tr, prixEur){
+  const t = tauxLigne(tr);
+  const champ = tr.querySelector('.c-prix');
+  if(!champ) return;
+  champ.value = (t > 0) ? Number((prixEur / t).toFixed(6)) : Number(prixEur.toFixed(6));
+}
+
+// Affiche ou masque le champ de taux selon la devise choisie.
+function majDeviseLigne(tr){
+  const usd = deviseLigne(tr) === 'USD';
+  const cell = tr.querySelector('.c-taux-cell');
+  const champ = tr.querySelector('.c-taux');
+  if(cell) cell.classList.toggle('vide', !usd);
+  if(champ){
+    champ.hidden = !usd;
+    if(usd && !(Number(champ.value) > 0)) champ.value = '';
+  }
+  const prix = tr.querySelector('.c-prix');
+  if(prix) prix.placeholder = usd ? '150.00 $' : '150.00';
+}
+
+// Changer de devise ne doit PAS changer ce que la ligne vaut.
+//
+// Le sens USD -> EUR est immediat : on connait le taux, on convertit.
+// Le sens EUR -> USD ne l'est pas : le taux n'est pas encore saisi. Laisser
+// le champ tel quel serait le PIRE des choix — 150 affiches deviendraient
+// 150 DOLLARS, et la ligne changerait de valeur sans que personne ne le voie.
+// On met donc le montant en euros DE COTE, et on convertit des que le taux
+// arrive. Si l'utilisateur retape le prix avant, c'est qu'il saisit lui-meme
+// le montant en dollars : on abandonne la conversion en attente.
+function changerDevise(tr, avantDevise, avantTaux){
+  const champ = tr.querySelector('.c-prix');
+  const p = Number((champ || {}).value) || 0;
+  const eur = (avantDevise === 'USD' && avantTaux > 0) ? p * avantTaux : p;
+  majDeviseLigne(tr);
+  if(!champ) return;
+
+  if(deviseLigne(tr) === 'EUR'){
+    delete tr.dataset.eurEnAttente;
+    if(eur > 0) champ.value = Number(eur.toFixed(6));
+    return;
+  }
+  // Vers USD : on garde le montant en euros jusqu'a connaitre le taux.
+  if(eur > 0 && avantDevise === 'EUR'){
+    tr.dataset.eurEnAttente = String(eur);
+    champ.value = '';
+    champ.placeholder = 'après le taux…';
+  }
+}
+
+// Appelee quand le taux est saisi : c'est la que la conversion en attente
+// peut enfin se faire.
+function appliquerTaux(tr){
+  const enAttente = Number(tr.dataset.eurEnAttente || 0);
+  const t = tauxLigne(tr);
+  if(enAttente > 0 && t > 0){
+    tr.querySelector('.c-prix').value = Number((enAttente / t).toFixed(6));
+    delete tr.dataset.eurEnAttente;
+    majDeviseLigne(tr);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // v14 — RENFORCER UNE POSITION, ET LE PRIX DE REVIENT MOYEN
 //
@@ -3047,7 +3236,7 @@ function achatsUtilisables(tr, qte, pru){
 function ouvrirRenfort(bouton){
   const tr = bouton.closest('tr');
   const c = tr.querySelectorAll('td');
-  const nom = c[0].querySelector('input').value.trim();
+  const nom = tr.querySelector('.c-nom').value.trim();
   const tk = (tr.querySelector('.c-ticker') ? tr.querySelector('.c-ticker').value : '')
              .trim().toUpperCase();
   const classe = tr.querySelector('.cls-sel').value;
@@ -3060,7 +3249,7 @@ function ouvrirRenfort(bouton){
   if(!nom && !tk){ alert("Cette ligne n'a ni nom ni ticker."); return; }
 
   const qte = Number(tr.querySelector('.c-qte').value) || 0;
-  const pru = Number(tr.querySelector('.c-prix').value) || 0;
+  const pru = prixRevientEur(tr);
   const place = tr.querySelector('.c-place') ? tr.querySelector('.c-place').value : 'us';
   const inf = infosPlace(place);
 
@@ -3077,10 +3266,13 @@ function ouvrirRenfort(bouton){
   document.getElementById('r-prix').value = '';
   document.getElementById('r-dev-achat').textContent = '(' + inf.devise + ')';
 
-  const horsEuro = inf.devise !== 'EUR';
+  const devSaisie = deviseLigne(tr);
+  const horsEuro = devSaisie !== 'EUR';
+  document.getElementById('r-dev-achat').textContent = '(' + devSaisie + ')';
   document.getElementById('r-bloc-taux').hidden = !horsEuro;
-  document.getElementById('r-dev-taux').textContent = inf.devise;
-  document.getElementById('r-taux').value = 1;
+  document.getElementById('r-dev-taux').textContent = devSaisie;
+  document.getElementById('r-taux').value = horsEuro ? (tauxLigne(tr) || '') : 1;
+  RENFORT_EN_COURS.devise = devSaisie;
 
   document.getElementById('r-date').value = new Date().toISOString().slice(0, 10);
   const err0 = document.getElementById('r-erreur');
@@ -3180,7 +3372,7 @@ function validerRenfort(){
   const {qte, pru} = calculPru(achats);
   ecrireAchats(tr, achats);
   tr.querySelector('.c-qte').value = Number(qte.toFixed(8));
-  tr.querySelector('.c-prix').value = Number(pru.toFixed(6));
+  ecrirePrixRevient(tr, pru);
 
   fermerRenfort();
   const st = document.getElementById('save-status');
