@@ -1,13 +1,20 @@
 {
   "username": "adrien",
-  "saved_at": "2026-09-17T16:54:12.634012+00:00",
+  "saved_at": "2026-09-17T16:55:29.882185+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": [],
+    "watchlist": [
+      {
+        "name": "SNAP",
+        "ticker": "SNAP",
+        "market": "us",
+        "sector": ""
+      }
+    ],
     "risque_pct": 1.0,
     "poids_max_pct": 15.0,
     "vol_cible_pct": 2.0
