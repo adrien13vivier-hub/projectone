@@ -423,6 +423,10 @@ def normaliser_ligne(ligne: dict, index: int = 0) -> dict:
         # puisse montrer d'ou vient le prix de revient moyen.
         "achats":      [a for a in (ligne.get("achats") or [])
                         if isinstance(a, dict)],
+        # v15 : trace de la devise de saisie. `cost_eur` reste en euros ;
+        # ces deux champs ne servent qu'a la verification humaine.
+        "devise_saisie": str(ligne.get("buy_currency") or "EUR").upper(),
+        "taux_saisie":   _nombre(ligne.get("buy_fx"), 1.0) or 1.0,
     }
 
     # ── Chemin MANUEL : livret, immobilier, collection, autre ───────────────
