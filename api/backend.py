@@ -669,6 +669,11 @@ class PortfolioLine(BaseModel):
     # Une ligne sans `achats` reste parfaitement valide : tous les profils
     # existants sont dans ce cas.
     achats:      Optional[List[dict]] = None   # [{qte, prix, date}]
+    # v15 — devise DE SAISIE du prix de revient. `buy_price` reste un montant
+    # en EUROS : ces deux champs ne servent qu'à rejouer la saisie d'origine
+    # et à la vérifier. Absents = saisie en euros, comme avant.
+    buy_currency: Optional[str] = None         # "USD" ou absent
+    buy_fx:       Optional[float] = None       # 1 unité de buy_currency en EUR
 
 def _pru(achats: list) -> tuple:
     """Quantité totale et prix de revient unitaire moyen.
@@ -766,6 +771,12 @@ def fusionner_lignes(lignes: list) -> tuple:
         base["quantity"] = qte
         base["buy_price"] = pru
         base["achats"] = achats
+        # Le PRU est un montant en euros issu de plusieurs achats, parfois
+        # faits a des taux differents. Le reexprimer dans une devise de saisie
+        # unique n'aurait pas de sens : la ligne fusionnee repasse en euros.
+        if len(membres) > 1:
+            base.pop("buy_currency", None)
+            base.pop("buy_fx", None)
         # Les étiquettes des lignes regroupées sont réunies, sans doublon :
         # une étiquette posée sur le second achat serait sinon perdue.
         etiquettes = []
