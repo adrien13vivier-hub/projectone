@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-09-17T16:55:29.882185+00:00",
+  "saved_at": "2026-09-17T16:55:47.373459+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -12,7 +12,7 @@
         "name": "SNAP",
         "ticker": "SNAP",
         "market": "us",
-        "sector": ""
+        "sector": "tech"
       }
     ],
     "risque_pct": 1.0,
