@@ -1,36 +1,17 @@
 {
   "username": "adrien",
+  "saved_at": "2026-09-17T16:54:12.634012+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": []
+    "watchlist": [],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0
   },
-  "lines": [
-    {
-      "name": "CoreWeave",
-      "ticker": "CRWV",
-      "market": "us",
-      "quantity": 2,
-      "buy_price": 93.91
-    },
-    {
-      "name": "Credit Agricole SA",
-      "ticker": "ACA.PA",
-      "market": "euronext_paris",
-      "quantity": 10,
-      "buy_price": 16.9
-    },
-    {
-      "name": "Abionyx Pharma",
-      "ticker": "ABNX.PA",
-      "market": "euronext_paris",
-      "quantity": 10,
-      "buy_price": 3.84
-    }
-  ],
   "closed": [
     {
       "name": "Palantir Technologies",
@@ -43,6 +24,68 @@
       "fx_at_sale": 0.86337,
       "sell_date": "2026-08-17 15:34:15",
       "note": "Vente integrale de la ligne"
+    }
+  ],
+  "lines": [
+    {
+      "name": "CoreWeave",
+      "ticker": "CRWV",
+      "isin": "",
+      "quantity": 2.0,
+      "buy_price": 93.91,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
+    },
+    {
+      "name": "Credit Agricole SA",
+      "ticker": "ACA.PA",
+      "isin": "",
+      "quantity": 10.0,
+      "buy_price": 16.9,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
+    },
+    {
+      "name": "Abionyx Pharma",
+      "ticker": "ABNX.PA",
+      "isin": "",
+      "quantity": 10.0,
+      "buy_price": 3.84,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
+    },
+    {
+      "name": "Abionyx Pharma",
+      "ticker": "ABNX.PA",
+      "isin": "",
+      "quantity": 15.0,
+      "buy_price": 1.92,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
+    },
+    {
+      "name": "SM",
+      "ticker": "SM",
+      "isin": "US78454L1008",
+      "quantity": 10.0,
+      "buy_price": 38.01,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
     }
   ]
 }
