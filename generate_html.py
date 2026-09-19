@@ -583,9 +583,28 @@ def extract_stops(md: str) -> dict:
         if m:
             expo_msg = re.sub(r"[*]", "", m.group(0)).strip()
 
+    # Indice de correlation moyenne : un chiffre unique, absent si le
+    # portefeuille a moins de deux lignes cotees avec un historique suffisant.
+    expo_indice = {}
+    m = re.search(r"Corr[eé]lation moyenne du portefeuille\s*:\s*"
+                  r"([+-]?[\d.,]+)\s*%\*\*\s*\(([^)]+)\)", sec)
+    if m:
+        expo_indice["valeur"] = m.group(1).replace(",", ".")
+        expo_indice["classe"] = m.group(2).strip()
+        mp = re.search(r"calcul[ée]e? sur (\d+) paire", sec)
+        expo_indice["n_paires"] = mp.group(1) if mp else "?"
+        ml = re.search(r"(\d+) ligne\(s\) cot[ée]e", sec)
+        expo_indice["n_lignes"] = ml.group(1) if ml else "?"
+        me = re.search(r"[EÉ]tendue observ[ée]e\s*:\s*de\s*([+-]?[\d.,]+)\s*%\s*"
+                       r"[àa]\s*([+-]?[\d.,]+)\s*%", sec)
+        if me:
+            expo_indice["min"] = me.group(1).replace(",", ".")
+            expo_indice["max"] = me.group(2).replace(",", ".")
+
     return {"resume": resume, "alertes": alertes, "stops": stops,
             "tailles": tailles, "entete_sizing": entete, "amorcage": note,
-            "expo_groupes": expo_groupes, "expo_msg": expo_msg}
+            "expo_groupes": expo_groupes, "expo_msg": expo_msg,
+            "expo_indice": expo_indice}
 
 
 def extract_repartition(md: str) -> list:
@@ -750,7 +769,34 @@ def build_stops_html() -> str:
     risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
   </p>"""
 
-    expo_html = ""
+    expo_indice = stops_data.get("expo_indice") or {}
+    indice_html = ""
+    if expo_indice.get("valeur") is not None:
+        try:
+            val = float(expo_indice["valeur"])
+        except ValueError:
+            val = None
+        # < 20% (ou negatif) : lignes independantes, plutot rassurant.
+        # >= 70% : le portefeuille bouge comme un bloc, plutot un signal.
+        couleur = ("var(--green)" if val is not None and val < 20 else
+                  "var(--red)" if val is not None and val >= 70 else "var(--yellow)")
+        indice_html = f"""
+  <div class="mini-bar" style="margin-bottom:10px">
+    <div class="mini-card">
+      <div class="mini-val" style="color:{couleur}">{expo_indice['valeur']}&nbsp;%</div>
+      <div class="mini-lbl">Corrélation moyenne — {expo_indice.get('classe', '')}</div>
+    </div>
+  </div>
+  <p class="macro-note">
+    Calculée sur {expo_indice.get('n_paires', '?')} paire(s) de lignes
+    ({expo_indice.get('n_lignes', '?')} ligne(s) cotée(s) avec un historique
+    suffisant){f", étendue observée de {expo_indice['min']}&nbsp;% à {expo_indice['max']}&nbsp;%" if 'min' in expo_indice else ''}.
+    Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment
+    les unes des autres. Un chiffre élevé et négatif est aussi une forme de
+    concentration, sur le pari inverse.
+  </p>"""
+
+    groupes_html = ""
     if stops_data.get("expo_groupes"):
         erows = ""
         for g in stops_data["expo_groupes"]:
@@ -758,8 +804,7 @@ def build_stops_html() -> str:
             erows += (f'<tr><td>{g["groupe"]}</td>'
                       f'<td class="cell-num">{g["poids"]}</td>'
                       f'<td><span class="badge {cls}">{g["alerte"]}</span></td></tr>\n')
-        expo_html = f"""
-  <h3 class="macro-sub">🔗 Exposition corrélée</h3>
+        groupes_html = f"""
   <p class="macro-note">
     Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
     prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
@@ -773,9 +818,12 @@ def build_stops_html() -> str:
     </table>
   </div>"""
     elif stops_data.get("expo_msg"):
+        groupes_html = f'\n  <p class="macro-note">{stops_data["expo_msg"]}</p>'
+
+    expo_html = ""
+    if indice_html or groupes_html:
         expo_html = f"""
-  <h3 class="macro-sub">🔗 Exposition corrélée</h3>
-  <p class="macro-note">{stops_data["expo_msg"]}</p>"""
+  <h3 class="macro-sub">🔗 Exposition corrélée</h3>{indice_html}{groupes_html}"""
 
     return f"""
 <section class="section-block" id="stops">
