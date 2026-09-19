@@ -247,6 +247,14 @@ def init_db():
             cree_le    TEXT NOT NULL
         )
     """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS push_prefs (
+            username   TEXT PRIMARY KEY,
+            analyse    INTEGER NOT NULL DEFAULT 1,
+            bot_achat  INTEGER NOT NULL DEFAULT 1,
+            bot_vente  INTEGER NOT NULL DEFAULT 1
+        )
+    """)
     con.commit()
     # Compte admin par défaut si la table est vide
     if not con.execute("SELECT 1 FROM users").fetchone():
@@ -369,7 +377,21 @@ def run_analysis_for(username: str) -> dict:
 # RAPPEL IPHONE : la notification n'arrive que si le site a ete ajoute a
 # l'ecran d'accueil. Depuis un onglet Safari, Apple refuse l'autorisation
 # sans message. Aucun code ne contourne cela.
-PUSH_SUJET = os.getenv("PUSH_SUJET", "mailto:admin@localhost")
+# LE SUJET VAPID — cause de l'echec « aucun envoi n'a abouti » (v17).
+# Le sujet identifie l'expediteur aupres du service de notification. L'ancienne
+# valeur par defaut, « mailto:admin@localhost », est ACCEPTEE par Google et
+# Mozilla mais REFUSEE par Apple : web.push.apple.com repond 403 BadJwtToken
+# a tout domaine « localhost ». Les notifications iPhone ne pouvaient donc
+# jamais partir. On prend l'adresse publique du site, qu'Apple accepte, et on
+# ecarte toute valeur que l'on sait refusee.
+_SUJET_DEFAUT = "https://projectone.antoineassocies.fr"
+PUSH_SUJET = (os.getenv("PUSH_SUJET") or _SUJET_DEFAUT).strip()
+if (not PUSH_SUJET.startswith(("mailto:", "https://"))
+        or "localhost" in PUSH_SUJET or PUSH_SUJET.endswith(".invalid")
+        or "@example." in PUSH_SUJET):
+    print(f"[push] PUSH_SUJET « {PUSH_SUJET} » serait refuse par Apple : "
+          f"remplace par {_SUJET_DEFAUT}.")
+    PUSH_SUJET = _SUJET_DEFAUT
 VAPID_PATH = DATA_DIR / "vapid.json"
 
 try:
@@ -412,45 +434,78 @@ def _oublier_abonnement(endpoint: str) -> None:
     con.close()
 
 
-def notifier(username: str, titre: str, corps: str, url: str = "/") -> dict:
+def notifier(username: str, titre: str, corps: str, url: str = "/",
+             tag: str = "projectone") -> dict:
     """Notifie tous les appareils d'un utilisateur. Ne leve jamais.
 
     Un abonnement que le service declare perime est supprime sur-le-champ :
     sinon on le reessaierait chaque soir, indefiniment.
+
+    En cas d'echec, la reponse du service (code et motif) est RENVOYEE, pas
+    seulement ecrite dans le journal : « aucun envoi n'a abouti » sans la
+    raison ne permet a personne de corriger quoi que ce soit.
     """
     etat = etat_push()
     if not etat.get("disponible"):
         return {"envoyes": 0, "echecs": 0, "motif": etat.get("motif")}
 
-    message = {"titre": titre, "corps": corps, "url": url,
+    message = {"titre": titre, "corps": corps, "url": url, "tag": tag,
                "quand": datetime.now(timezone.utc).astimezone().strftime("%H:%M")}
     envoyes = echecs = 0
+    motif = ""
     for ab in _abonnements(username):
         r = _push.envoyer(ab, message, _CLES_PUSH, PUSH_SUJET)
         if r.ok:
             envoyes += 1
         else:
             echecs += 1
+            service = "Apple" if "apple.com" in ab["endpoint"] else "le service de notification"
             if r.perime:
                 _oublier_abonnement(ab["endpoint"])
+                motif = (f"{service} indique que l'abonnement de cet appareil n'existe "
+                         f"plus ({r.code}) : il a ete retire, reactivez les notifications.")
                 print(f"[push] Abonnement perime retire pour {username}.")
             else:
-                print(f"[push] Echec vers {username} : {r.code} {r.detail[:120]}")
-    return {"envoyes": envoyes, "echecs": echecs}
+                motif = f"{service} a repondu {r.code or 'sans code'} : {r.detail[:160]}"
+                print(f"[push] Echec vers {username} : {r.code} {r.detail[:160]}")
+    return {"envoyes": envoyes, "echecs": echecs, "motif": motif}
 
 
-def notifier_tous(titre: str, corps: str, url: str = "/") -> dict:
-    """Meme chose, pour tous les comptes ayant un abonnement."""
-    total = {"envoyes": 0, "echecs": 0}
+# ── Preferences : quoi notifier, par compte ─────────────────────────────────
+CATEGORIES_PUSH = ("analyse", "bot_achat", "bot_vente")
+
+
+def preferences_push(username: str) -> dict:
+    con = get_db()
+    row = con.execute("SELECT * FROM push_prefs WHERE username=?",
+                      (username,)).fetchone()
+    con.close()
+    # Tout est active par defaut : s'abonner, c'est deja dire « previens-moi ».
+    return {c: bool(row[c]) if row else True for c in CATEGORIES_PUSH}
+
+
+def notifier_tous(titre: str, corps: str, url: str = "/",
+                  categorie: str = "analyse", tag: str = "projectone") -> dict:
+    """Pour tous les comptes abonnes QUI ONT CHOISI cette categorie."""
+    total = {"envoyes": 0, "echecs": 0, "comptes": 0}
     vus = {a["username"] for a in _abonnements()}
     for u in vus:
-        r = notifier(u, titre, corps, url)
+        if not preferences_push(u).get(categorie, True):
+            continue
+        r = notifier(u, titre, corps, url, tag)
         total["envoyes"] += r.get("envoyes", 0)
         total["echecs"] += r.get("echecs", 0)
-    if vus:
+        total["comptes"] += 1
+    if total["comptes"]:
         print(f"[push] {titre} -> {total['envoyes']} envoi(s), "
-              f"{total['echecs']} echec(s) sur {len(vus)} compte(s).")
+              f"{total['echecs']} echec(s) sur {total['comptes']} compte(s).")
     return total
+
+
+def quelqu_un_veut(categorie: str) -> bool:
+    """Evite d'interroger le bot toutes les deux minutes pour personne."""
+    return any(preferences_push(u).get(categorie, True)
+               for u in {a["username"] for a in _abonnements()})
 
 
 # ── Scheduler APScheduler ────────────────────────────────────────────
@@ -511,7 +566,7 @@ def _declencher_analyse_distante():
         notifier_tous("Analyse lancee",
                       f"L'analyse de ce soir est partie a {horodatage[-5:]}. "
                       f"Le rapport sera pret dans quelques minutes.",
-                      "/")
+                      "/", categorie="analyse", tag="analyse")
     marque = "OK" if res.get("ok") else "ECHEC"
     print(f"[Analyse] {horodatage} — declenchement GitHub : {marque} "
           f"({res.get('etat')}) {res.get('detail', '')}")
@@ -1003,12 +1058,42 @@ def push_test(user: dict = Depends(current_user)):
             status_code=400,
             detail="Aucun appareil abonne. Activez d'abord les notifications.")
     r = notifier(user["sub"], "ProjectOne",
-                 "Notification de test : la chaine fonctionne.", "/")
+                 "Notification de test : la chaine fonctionne.", "/", "test")
     if not r.get("envoyes"):
         raise HTTPException(
             status_code=502,
             detail=("Aucun envoi n'a abouti. " + str(r.get("motif") or "")).strip())
     return r
+
+
+class PreferencesPush(BaseModel):
+    analyse:   Optional[bool] = None
+    bot_achat: Optional[bool] = None
+    bot_vente: Optional[bool] = None
+
+
+@app.get("/api/push/preferences")
+def push_preferences_lire(user: dict = Depends(current_user)):
+    return preferences_push(user["sub"])
+
+
+@app.post("/api/push/preferences")
+def push_preferences_ecrire(data: PreferencesPush, user: dict = Depends(current_user)):
+    actuel = preferences_push(user["sub"])
+    for c in CATEGORIES_PUSH:
+        v = getattr(data, c)
+        if v is not None:
+            actuel[c] = bool(v)
+    con = get_db()
+    con.execute(
+        "INSERT INTO push_prefs (username, analyse, bot_achat, bot_vente) VALUES (?,?,?,?) "
+        "ON CONFLICT(username) DO UPDATE SET analyse=excluded.analyse, "
+        "bot_achat=excluded.bot_achat, bot_vente=excluded.bot_vente",
+        (user["sub"], int(actuel["analyse"]), int(actuel["bot_achat"]),
+         int(actuel["bot_vente"])))
+    con.commit()
+    con.close()
+    return actuel
 
 
 @app.get("/api/status")
@@ -1833,3 +1918,71 @@ try:
     print("[External] Passerelle analyse + bot activee.")
 except Exception as _e:
     print(f"[External] Passerelle non activee : {type(_e).__name__}: {_e}")
+
+
+# ---------------------------------------------------------------------------
+# v17 — Notifications des ordres du bot de trading.
+#
+# Le bot previent Discord a l'instant ou il passe un ordre ; le site, lui,
+# n'etait jamais prevenu. Toutes les deux minutes, on compare l'etat du bot a
+# celui vu la fois d'avant (voir api/bot_alertes.py) et on notifie les
+# achats et les ventes aux comptes qui l'ont choisi.
+#
+# Rien ne tourne si le bot n'est pas configure, si les notifications ne sont
+# pas pretes, ou si personne ne veut ces alertes : pas d'appel inutile.
+# ---------------------------------------------------------------------------
+BOT_ETAT_PATH = DATA_DIR / "bot_vus.json"
+BOT_INTERVALLE_MIN = max(1, int(os.getenv("BOT_ALERTES_MINUTES", "2")))
+_BOT_DERNIER = {"quand": None, "resultat": None}
+
+
+def _surveiller_bot():
+    try:
+        from api import bot_alertes, external
+    except Exception as e:
+        _BOT_DERNIER.update(quand=datetime.now().isoformat(timespec="seconds"),
+                            resultat={"ok": False, "motif": f"module absent : {e}"})
+        return
+    if not (external.SWING_URL and external.SWING_KEY):
+        _BOT_DERNIER.update(quand=datetime.now().isoformat(timespec="seconds"),
+                            resultat={"ok": False, "motif": "bot non configure"})
+        return
+    if not etat_push().get("disponible"):
+        return
+    if not (quelqu_un_veut("bot_achat") or quelqu_un_veut("bot_vente")):
+        return
+
+    def lire(chemin):
+        params = {"limite": 100} if chemin == "/api/trades" else None
+        return external._appeler(external.SWING_URL, external.SWING_KEY, chemin,
+                                 params=params, nom_service="Le bot de trading")
+
+    def envoyer(categorie, titre, corps, url, tag):
+        return notifier_tous(titre, corps, url, categorie=categorie, tag=tag)
+
+    res = bot_alertes.passage(lire, envoyer, BOT_ETAT_PATH)
+    _BOT_DERNIER.update(quand=datetime.now().isoformat(timespec="seconds"), resultat=res)
+    if res.get("premier_passage"):
+        print(f"[bot-alertes] Premier passage : {res.get('positions')} position(s) et "
+              f"{res.get('trades')} trade(s) memorises, rien n'est notifie.")
+    elif res.get("evenements"):
+        print(f"[bot-alertes] {res['evenements']} ordre(s) detecte(s), "
+              f"{res.get('envoyes', 0)} notification(s) envoyee(s).")
+    elif not res.get("ok"):
+        print(f"[bot-alertes] {res.get('motif')}")
+
+
+try:
+    scheduler.add_job(_surveiller_bot, "interval", minutes=BOT_INTERVALLE_MIN,
+                      id="bot_alertes", replace_existing=True,
+                      max_instances=1, coalesce=True,
+                      next_run_time=datetime.now(timezone.utc) + timedelta(seconds=20))
+    print(f"[bot-alertes] Surveillance du bot toutes les {BOT_INTERVALLE_MIN} min.")
+except Exception as _e:
+    print(f"[bot-alertes] Surveillance non planifiee : {type(_e).__name__}: {_e}")
+
+
+@app.get("/api/push/bot-etat")
+def push_bot_etat(user: dict = Depends(current_user)):
+    """Le dernier passage de la surveillance, pour la carte Notifications."""
+    return {"intervalle_min": BOT_INTERVALLE_MIN, **_BOT_DERNIER}
