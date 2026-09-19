@@ -234,6 +234,54 @@ def test_exposition_correlee_portefeuille_vide_ou_solo():
 
 
 # ─────────────────────────────────────────────────────────────────────────
+# Indice de correlation moyenne -- resume le portefeuille en un chiffre
+# ─────────────────────────────────────────────────────────────────────────
+
+def test_indice_correlation_moyenne_deux_lignes_parfaitement_correlees():
+    base, correlee, _ = _base_correlee_inverse()
+    idx = re_.indice_correlation_moyenne([{"closes": base}, {"closes": correlee}])
+    assert idx["indice_pct"] > 99.0
+    assert idx["n_paires"] == 1
+    assert idx["n_lignes"] == 2
+
+
+def test_indice_correlation_moyenne_melange_positif_et_negatif():
+    base, correlee, inverse = _base_correlee_inverse()
+    idx = re_.indice_correlation_moyenne([
+        {"closes": base}, {"closes": correlee}, {"closes": inverse},
+    ])
+    # 3 paires : +1 (base/correlee), -1 (base/inverse), -1 (correlee/inverse)
+    # -> moyenne = -1/3
+    assert idx["n_paires"] == 3
+    assert -34.0 < idx["indice_pct"] < -32.0
+    assert idx["min_pct"] < -99.0
+    assert idx["max_pct"] > 99.0
+
+
+def test_indice_correlation_moyenne_ignore_le_poids():
+    # Contrairement a exposition_correlee, aucun poids n'est requis : une
+    # ligne avec un historique suffisant compte, point.
+    base, correlee, _ = _base_correlee_inverse()
+    idx = re_.indice_correlation_moyenne([{"closes": base}, {"closes": correlee}])
+    assert idx["indice_pct"] is not None
+
+
+def test_indice_correlation_moyenne_indisponible_sous_deux_lignes():
+    base, _, _ = _base_correlee_inverse()
+    assert re_.indice_correlation_moyenne([])["indice_pct"] is None
+    assert re_.indice_correlation_moyenne([{"closes": base}])["indice_pct"] is None
+
+
+def test_classe_correlation_seuils():
+    assert re_.classe_correlation(None) == "Indisponible"
+    assert re_.classe_correlation(10) == "Faible"
+    assert re_.classe_correlation(30) == "Modérée"
+    assert re_.classe_correlation(60) == "Élevée"
+    assert "bloc" in re_.classe_correlation(85)
+    assert "amortissent" in re_.classe_correlation(-20)
+
+
+# ─────────────────────────────────────────────────────────────────────────
 # Etat persistant : robustesse aux fichiers absents / corrompus
 # ─────────────────────────────────────────────────────────────────────────
 
