@@ -768,6 +768,87 @@ def exposition_correlee(lignes: list,
     return groupes
 
 
+def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS) -> dict:
+    """Résume tout le portefeuille coté en UN chiffre : la corrélation moyenne.
+
+    `exposition_correlee()` répond à « QUELLES lignes bougent ensemble, et
+    est-ce que ça pèse trop lourd ». Cette fonction répond à une question
+    différente et complémentaire : « EN MOYENNE, mon portefeuille bouge-t-il
+    comme un bloc, ou les lignes sont-elles indépendantes ? » -- un chiffre
+    unique, suivable dans le temps, qui résume l'effet de diversification
+    réel plutôt que déclaré (deux lignes différentes peuvent très bien être
+    concentrées sur le même risque de marché).
+
+    Méthode : moyenne simple, sur TOUTES les paires de lignes dont
+    l'historique est suffisant (pas seulement celles au-delà d'un seuil), de
+    leur corrélation de rendements quotidiens. Chaque paire compte pour un,
+    qu'elle soit pondérée lourd ou léger dans le portefeuille -- pondérer par
+    le poids demanderait une définition supplémentaire (poids de la PAIRE ?
+    produit des poids ?) qui n'apporterait pas plus de clarté qu'elle n'en
+    ôterait pour un chiffre pensé comme repère simple.
+
+    `lignes` : liste de dicts avec au moins `closes`. Le poids n'est pas
+    nécessaire ici (contrairement à exposition_correlee) : chaque ligne
+    cotée avec un historique suffisant compte, qu'elle pèse beaucoup ou peu.
+
+    Retourne {"indice_pct": float 0-100 | None, "n_paires": int,
+             "n_lignes": int, "min_pct": float | None, "max_pct": float | None}.
+    `indice_pct` est la moyenne des corrélations exprimée en %, PAS en
+    valeur absolue : deux portefeuilles anti-corrélés (-80%) et corrélés
+    (+80%) donnent des indices opposés, pas le même chiffre -- l'un annule
+    le risque de marché, l'autre le double, ce n'est pas la même situation.
+    None quand moins de deux lignes ont un historique exploitable, ou
+    qu'aucune paire n'a assez de points communs.
+    """
+    candidats = [l for l in (lignes or [])
+                if len(_series_propre(l.get("closes"))) >= min_obs + 1]
+    n = len(candidats)
+    vide = {"indice_pct": None, "n_paires": 0, "n_lignes": n,
+            "min_pct": None, "max_pct": None}
+    if n < 2:
+        return vide
+
+    correlations = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            c = correlation(candidats[i].get("closes"), candidats[j].get("closes"), min_obs)
+            if c is not None:
+                correlations.append(c)
+    if not correlations:
+        return vide
+
+    return {
+        "indice_pct": round(sum(correlations) / len(correlations) * 100.0, 1),
+        "n_paires":   len(correlations),
+        "n_lignes":   n,
+        "min_pct":    round(min(correlations) * 100.0, 1),
+        "max_pct":    round(max(correlations) * 100.0, 1),
+    }
+
+
+def classe_correlation(indice_pct) -> str:
+    """Étiquette lisible pour l'indice de corrélation moyenne.
+
+    Les seuils sont empiriques, pas une norme académique : une diversification
+    « bonne » dépend de ce qu'on compare (deux ETF actions monde sont
+    normalement à 80%+ sans que ce soit un problème -- c'est le but). À lire
+    comme un repère de suivi dans le temps pour CE portefeuille, pas comme un
+    verdict absolu.
+    """
+    v = _nombre(indice_pct)
+    if v is None:
+        return "Indisponible"
+    if v < 0:
+        return "Négative (les lignes s'amortissent entre elles)"
+    if v < 20:
+        return "Faible"
+    if v < 45:
+        return "Modérée"
+    if v < 70:
+        return "Élevée"
+    return "Très élevée (le portefeuille bouge comme un bloc)"
+
+
 # =============================================================================
 # ORCHESTRATION
 # =============================================================================
@@ -1135,6 +1216,38 @@ def _autotest() -> int:
                 {"nom": "B", "closes": correlee, "poids_pct": None},
             ]) == [])
     verifie("portefeuille vide -> aucun groupe", exposition_correlee([]) == [])
+
+    # -- Indice de correlation moyenne ----------------------------------------
+    idx_ab = indice_correlation_moyenne([
+        {"closes": base}, {"closes": correlee},
+    ])
+    verifie("indice correlation parfaite ~ 100", idx_ab["indice_pct"] > 99.0, str(idx_ab))
+    verifie("indice : une seule paire", idx_ab["n_paires"] == 1, str(idx_ab))
+
+    idx_abc = indice_correlation_moyenne([
+        {"closes": base}, {"closes": correlee}, {"closes": inverse},
+    ])
+    # 3 paires : (base,correlee)=+1, (base,inverse)=-1, (correlee,inverse)=-1
+    # -> moyenne = (1 - 1 - 1) / 3 = -1/3 ~= -33.3%
+    verifie("indice moyenne sur 3 paires, positives et negatives melangees",
+            idx_abc["n_paires"] == 3 and -34.0 < idx_abc["indice_pct"] < -32.0,
+            str(idx_abc))
+    verifie("indice min/max coherents avec les paires extremes",
+            idx_abc["min_pct"] < -99.0 and idx_abc["max_pct"] > 99.0, str(idx_abc))
+
+    verifie("indice indisponible sous deux lignes exploitables",
+            indice_correlation_moyenne([{"closes": base}]) == {
+                "indice_pct": None, "n_paires": 0, "n_lignes": 1,
+                "min_pct": None, "max_pct": None})
+    verifie("indice indisponible sur portefeuille vide",
+            indice_correlation_moyenne([])["indice_pct"] is None)
+
+    verifie("classe_correlation faible", classe_correlation(10) == "Faible")
+    verifie("classe_correlation modérée", classe_correlation(30) == "Modérée")
+    verifie("classe_correlation élevée", classe_correlation(60) == "Élevée")
+    verifie("classe_correlation très élevée", "bloc" in classe_correlation(85))
+    verifie("classe_correlation négative", "amortissent" in classe_correlation(-20))
+    verifie("classe_correlation indisponible", classe_correlation(None) == "Indisponible")
 
     # -- Persistance ---------------------------------------------------------
     import tempfile
