@@ -212,6 +212,8 @@ td input:focus,td select:focus{border-color:var(--primary);outline:none;backgrou
 .dlg-grille{display:grid;grid-template-columns:1fr 1fr;gap:.9rem 1.1rem}
 .dlg-grille label{display:flex;flex-direction:column;gap:.3rem;font-size:.8rem;font-weight:600}
 .dlg-grille label[hidden]{display:none}
+.pref-notif{display:flex;align-items:center;gap:.55rem;font-size:.86rem;margin:.35rem 0;cursor:pointer}
+.pref-notif input{width:1.05rem;height:1.05rem;accent-color:var(--primary)}
 .c-taux-cell.vide .c-taux{visibility:hidden}
 .c-taux{max-width:5.5rem}
 .c-devise{min-width:4.5rem}
@@ -706,6 +708,7 @@ td{font-size:13px}
         </p>
         <div id="notif-etat"></div>
         <div id="notif-actions" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem"></div>
+        <div id="notif-prefs"></div>
         <div id="notif-res" style="margin-top:.85rem"></div>
       </div>
 
@@ -811,6 +814,7 @@ td{font-size:13px}
           <a href="#aide-devise">Saisir un prix en dollars</a>
           <a href="#aide-confiance">L'indice de confiance</a>
           <a href="#aide-notifs">Notifications iPhone</a>
+          <a href="#aide-notifs-bot">Ordres du bot</a>
           <a href="#aide-limites">Ce que l'outil ne fait pas</a>
           <a href="#aide-souci">En cas de souci</a>
         </div>
@@ -1329,6 +1333,36 @@ td{font-size:13px}
           votre courtier reste cotée en dollars — les deux colonnes ont le droit
           de ne pas dire la même chose.
         </p>
+        <h4 id="aide-notifs-bot">Être prévenu des ordres du bot</h4>
+        <p>
+          Une fois les notifications activées, trois cases apparaissent dans
+          <b>Mon compte</b> : le départ de l'analyse du soir, les <b>achats</b>
+          du bot de trading, ses <b>ventes</b>. Toutes sont cochées au départ ;
+          décochez ce qui vous encombre. Le réglage vaut pour tous vos appareils.
+        </p>
+        <ul>
+          <li><b>Achat</b> — une nouvelle position, ou un renfort sur une
+            position existante : titre, quantité, prix et stratégie.</li>
+          <li><b>Vente</b> — une position soldée, avec le prix de sortie, le
+            résultat et le motif (objectif atteint, stop touché, stop suiveur),
+            ou une vente partielle quand le bot allège sans tout vendre.</li>
+        </ul>
+        <p>
+          Toucher la notification ouvre directement l'onglet <b>Bot de
+          trading</b>.
+        </p>
+        <div class="encadre">
+          <b>Jusqu'à deux minutes après Discord.</b> Le bot prévient Discord
+          lui-même, à l'instant de l'ordre. Le site, lui, va regarder ce qui a
+          changé toutes les deux minutes. Ce choix évite de modifier le bot, et
+          un site éteint ne lui fait rien perdre — au prix de ce petit décalage.
+          <br><br>
+          Juste après une mise à jour, le premier relevé n'annonce rien : il
+          mémorise les positions déjà ouvertes, pour ne pas vous envoyer d'un
+          coup une notification par position existante. Si le bot passe
+          beaucoup d'ordres en même temps (plus de six en deux minutes), vous
+          recevez un résumé au lieu d'une rafale.
+        </div>
         <h4 id="aide-limites">Ce que l'outil ne fait pas</h4>
         <ul>
           <li>Il ne passe aucun ordre et n'a accès à aucun compte bancaire ou de courtage.</li>
@@ -1355,6 +1389,10 @@ td{font-size:13px}
                 <td>Elle a été regroupée avec une autre ligne du même titre, au prix de revient moyen. Le message au-dessus du tableau dit laquelle et à quel prix. Rien n'est perdu : le détail de chaque achat est conservé.</td></tr>
             <tr><td>« Le détail des achats ne correspondait plus »</td>
                 <td>La quantité ou le prix de revient ont été corrigés à la main dans le tableau. Le programme repart de ce qui est affiché plutôt que d'un historique périmé. Le prix de revient affiché, lui, ne change pas.</td></tr>
+            <tr><td>« Aucun envoi n'a abouti » en testant une notification</td>
+                <td>Le message complet donne la réponse du service de notification. « 403 BadJwtToken » venant d'Apple : l'identité de l'expéditeur est refusée — corrigé en v17, mettez le serveur à jour. « 404 » ou « 410 » : l'abonnement de l'appareil n'existe plus, réactivez les notifications.</td></tr>
+            <tr><td>Pas de notification quand le bot achète ou vend</td>
+                <td>Vérifiez les cases dans Mon compte → Notifications. Le bot est relevé toutes les deux minutes : comptez jusqu'à deux minutes de décalage avec Discord. Le premier relevé après une mise à jour n'annonce rien, il mémorise l'existant.</td></tr>
             <tr><td>« Prix saisi en dollars sans taux de change »</td>
                 <td>La colonne Devise de cette ligne est sur USD mais le champ Taux est vide. Indiquez combien valait 1 dollar en euros au jour de l'achat, ou repassez la ligne en EUR.</td></tr>
             <tr><td>Un ETF affiche peu de critères mais 100 % de confiance</td>
@@ -1615,6 +1653,7 @@ function doLogout(){
 
 // ── App init ───────────────────────────────────────────────────────
 function showApp(){
+  setTimeout(ouvrirOngletDemande, 300);
   enregistrerTravailleur();
   reabonnerSiBesoin();
   majPiedLateral();
@@ -3162,6 +3201,66 @@ function appliquerTaux(tr){
   }
 }
 
+
+// ═══════════════════════════════════════════════════════════════════
+// v17 — CHOISIR CE QUI EST NOTIFIE
+//
+// Trois interrupteurs par compte : l'analyse du soir, les achats du bot,
+// les ventes du bot. Tout est active par defaut — s'abonner, c'est deja
+// dire « previens-moi » — et chacun peut couper ce qui l'encombre.
+// Le reglage vaut pour tous les appareils du compte.
+// ═══════════════════════════════════════════════════════════════════
+
+const LIBELLES_PREFS = [
+  ['analyse',   "Départ de l'analyse du soir"],
+  ['bot_achat', 'Achats du bot de trading'],
+  ['bot_vente', 'Ventes du bot de trading']
+];
+
+async function afficherPreferencesNotif(){
+  const zone = document.getElementById('notif-prefs');
+  if(!zone) return;
+  let p;
+  try{ p = await api('GET', '/api/push/preferences'); }
+  catch(e){ zone.innerHTML = ''; return; }
+  let bot = null;
+  try{ bot = await api('GET', '/api/push/bot-etat'); }catch(e){}
+
+  zone.innerHTML = '<div class="label" style="margin:1.1rem 0 .55rem">me prévenir pour</div>'
+    + LIBELLES_PREFS.map(([cle, lib]) =>
+        '<label class="pref-notif"><input type="checkbox" data-pref="' + cle + '"'
+        + (p[cle] ? ' checked' : '') + ' onchange="changerPreferenceNotif(this)"> '
+        + esc(lib) + '</label>').join('')
+    + '<p class="muted" style="font-size:.78rem;margin:.6rem 0 0;max-width:62ch">'
+    + 'Les ordres du bot sont relevés toutes les '
+    + esc(String((bot && bot.intervalle_min) || 2))
+    + ' minutes : une notification peut arriver jusqu\u2019à deux minutes après '
+    + 'celle de Discord.' + (bot && bot.resultat && bot.resultat.ok === false && bot.resultat.motif
+        ? ' <span style="color:var(--warn)">Dernier relevé : ' + esc(bot.resultat.motif) + '.</span>'
+        : '') + '</p>';
+}
+
+async function changerPreferenceNotif(caseACocher){
+  const corps = {};
+  corps[caseACocher.dataset.pref] = caseACocher.checked;
+  caseACocher.disabled = true;
+  try{
+    await api('POST', '/api/push/preferences', corps);
+    noteNotif(caseACocher.checked ? "Réglage enregistré : activé." : "Réglage enregistré : désactivé.");
+  }catch(e){
+    caseACocher.checked = !caseACocher.checked;      // on ne ment pas sur l'etat
+    noteNotif("Réglage non enregistré : " + e.message, true);
+  }finally{ caseACocher.disabled = false; }
+}
+
+// Une notification du bot ouvre directement l'onglet du bot.
+function ouvrirOngletDemande(){
+  if(location.hash === '#bot' && typeof allerOnglet === 'function'){
+    allerOnglet('bot');
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // v14 — RENFORCER UNE POSITION, ET LE PRIX DE REVIENT MOYEN
 //
@@ -3534,9 +3633,11 @@ async function majPanneauNotifications(){
     act.innerHTML =
       '<button class="btn btn-primary" onclick="testerNotification(this)">Envoyer un test</button>'
       + '<button class="btn btn-ghost" onclick="desactiverNotifications(this)">Désactiver ici</button>';
+    afficherPreferencesNotif();
     return;
   }
 
+  const zp = document.getElementById('notif-prefs'); if(zp) zp.innerHTML = '';
   etat.innerHTML = '<div class="etat-services">' + pastille('',
     "Non activées sur cet appareil") + '</div>' + mentionAutres;
   act.innerHTML = '<button class="btn btn-primary" onclick="activerNotifications(this)">'
