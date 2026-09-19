@@ -56,38 +56,63 @@ def test_palier_inverse_recompense_la_valeur_basse():
 
 # ─────────────────────────────────────────────────────────────────────────
 # note_titre -- ponderation avec exclusion des composantes manquantes
+#
+# Signature depuis la v14 (indice de confiance) :
+#   note_titre(composantes, classe="action") ->
+#       (note, confiance, detail, non_applicables, manquants)
+# Avec classe="action" (le defaut), NON_APPLICABLES n'exclut rien : le
+# comportement couvert ici est inchange par rapport a la version d'origine,
+# seule la forme du tuple retourne s'est enrichie.
 # ─────────────────────────────────────────────────────────────────────────
 
 def test_note_titre_toutes_composantes_disponibles():
     composantes = {k: 8.0 for k in pa.POIDS_NOTE}
-    note, confiance, detail = pa.note_titre(composantes)
+    note, confiance, detail, non_appl, manquants = pa.note_titre(composantes)
     assert note == 8.0
     assert confiance == 100.0
     assert set(detail) == set(pa.POIDS_NOTE)
+    assert non_appl == []      # aucune exclusion pour la classe "action"
+    assert manquants == []
 
 
 def test_note_titre_composante_absente_est_exclue_et_renormalisee():
     composantes = {k: 8.0 for k in pa.POIDS_NOTE}
     composantes["risque"] = None   # absente : ne doit PAS etre traitee comme 0
-    note, confiance, detail = pa.note_titre(composantes)
+    note, confiance, detail, non_appl, manquants = pa.note_titre(composantes)
     assert note == 8.0             # toutes les composantes restantes valent 8
     assert confiance < 100.0
     assert "risque" not in detail
+    assert manquants == ["risque"]
 
 
 def test_note_titre_aucune_composante_disponible():
-    note, confiance, detail = pa.note_titre({})
+    note, confiance, detail, non_appl, manquants = pa.note_titre({})
     assert note is None
     assert confiance == 0.0
     assert detail == {}
+    assert set(manquants) == set(pa.POIDS_NOTE)   # tout manque
 
 
 def test_note_titre_confiance_reflete_le_poids_couvert():
     # Ne fournir que "valorisation" (poids 0.24 sur un total de 1.0) doit
     # donner une confiance proche de 24%, pas un chiffre arbitraire.
-    note, confiance, _ = pa.note_titre({"valorisation": 9.0})
+    note, confiance, *_ = pa.note_titre({"valorisation": 9.0})
     assert note == 9.0
     assert abs(confiance - pa.POIDS_NOTE["valorisation"] * 100) < 0.5
+
+
+def test_note_titre_exclut_les_criteres_non_applicables_a_la_classe():
+    # Un ETF n'a pas de "sante financiere d'entreprise" -- la confiance ne
+    # doit pas etre penalisee par l'absence d'un critere qui ne s'applique
+    # pas a sa classe d'actif.
+    criteres_etf = pa.criteres_applicables("etf")
+    composantes = {k: 8.0 for k in criteres_etf}
+    note, confiance, detail, non_appl, manquants = pa.note_titre(
+        composantes, classe="etf")
+    assert note == 8.0
+    assert confiance == 100.0      # tout ce qui s'applique a l'ETF est fourni
+    assert manquants == []
+    assert set(non_appl) == (set(pa.POIDS_NOTE) - criteres_etf)
 
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -179,3 +204,61 @@ def test_bloc_md_exposition_correlee_avec_groupe_en_alerte():
     assert "A, B" in texte
     assert "⚠️ Oui" in texte
     assert "30" in texte
+
+
+def test_bloc_md_exposition_correlee_avec_indice():
+    indice = {"indice_pct": 42.3, "n_paires": 6, "n_lignes": 4,
+             "min_pct": -10.0, "max_pct": 91.0}
+    texte = "\n".join(pa.bloc_md_exposition_correlee([], indice))
+    assert "Corrélation moyenne du portefeuille : +42.3 %" in texte
+    assert "Modérée" in texte
+    assert "6 paire(s)" in texte
+    assert "4 ligne(s)" in texte
+
+
+def test_bloc_md_exposition_correlee_sans_indice_disponible():
+    # indice_pct absent ou None -- le paragraphe d'indice ne doit pas
+    # apparaitre du tout, pas apparaitre avec des valeurs vides.
+    texte = "\n".join(pa.bloc_md_exposition_correlee(
+        [], {"indice_pct": None, "n_paires": 0, "n_lignes": 1}))
+    assert "Corrélation moyenne du portefeuille" not in texte
+    assert "Aucun regroupement" in texte
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# append_correlation_history -- fichier dedie, une ligne par jour
+# ─────────────────────────────────────────────────────────────────────────
+
+def test_append_correlation_history_ecrit_une_ligne(tmp_path, monkeypatch):
+    monkeypatch.setattr(pa, "CORR_HISTORY_PATH", str(tmp_path / "correlation_history.csv"))
+    from datetime import datetime
+    pa.append_correlation_history(datetime(2026, 9, 19), {
+        "indice_pct": 42.3, "n_paires": 6, "n_lignes": 4,
+        "min_pct": -10.0, "max_pct": 91.0,
+    })
+    contenu = (tmp_path / "correlation_history.csv").read_text(encoding="utf-8")
+    assert "date,indice_pct,n_paires,n_lignes,min_pct,max_pct,classe" in contenu
+    assert "2026-09-19,42.3,6,4,-10.0,91.0,Modérée" in contenu
+
+
+def test_append_correlation_history_indice_indisponible_necrit_rien(tmp_path, monkeypatch):
+    chemin = tmp_path / "correlation_history.csv"
+    monkeypatch.setattr(pa, "CORR_HISTORY_PATH", str(chemin))
+    from datetime import datetime
+    pa.append_correlation_history(datetime(2026, 9, 19), {"indice_pct": None})
+    assert not chemin.exists()
+    pa.append_correlation_history(datetime(2026, 9, 19), None)
+    assert not chemin.exists()
+
+
+def test_append_correlation_history_accumule_plusieurs_jours(tmp_path, monkeypatch):
+    monkeypatch.setattr(pa, "CORR_HISTORY_PATH", str(tmp_path / "correlation_history.csv"))
+    from datetime import datetime
+    for jour, val in ((18, 30.0), (19, 42.3)):
+        pa.append_correlation_history(datetime(2026, 9, jour), {
+            "indice_pct": val, "n_paires": 1, "n_lignes": 2,
+            "min_pct": val, "max_pct": val,
+        })
+    lignes = (tmp_path / "correlation_history.csv").read_text(encoding="utf-8").splitlines()
+    assert len(lignes) == 3   # en-tete + 2 jours
+    assert lignes[0].startswith("date,")
