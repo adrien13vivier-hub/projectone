@@ -262,3 +262,95 @@ def test_append_correlation_history_accumule_plusieurs_jours(tmp_path, monkeypat
     lignes = (tmp_path / "correlation_history.csv").read_text(encoding="utf-8").splitlines()
     assert len(lignes) == 3   # en-tete + 2 jours
     assert lignes[0].startswith("date,")
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# get_price_yahoo -- cours de la watchlist, exclusivement Yahoo Finance
+#
+# La watchlist ne doit plus jamais consommer TwelveData/EODHD (quota reserve
+# au portefeuille reellement detenu) : chaque test monkeypatch
+# `_yahoo_summary` pour verifier le comportement sans reseau, comme le fait
+# deja `_fonda_yahoo` ailleurs dans le code.
+# ─────────────────────────────────────────────────────────────────────────
+
+EUR_USD = 0.92   # 1 USD = 0.92 EUR -- convention de get_eur_usd()/get_fx()
+
+
+def test_get_price_yahoo_sans_ticker_yf_est_indisponible():
+    prix, chg, src, from_cache, note = pa.get_price_yahoo(
+        {"ticker_eod": "FOO.US"}, EUR_USD, {})
+    assert prix is None
+    assert "ticker absent" in src
+
+
+def test_get_price_yahoo_demande_le_module_price_uniquement(monkeypatch):
+    # La watchlist n'a besoin que du cours : demander les modules fondamentaux
+    # (plus lourds) gaspillerait un appel et rapprocherait de la limitation
+    # de debit Yahoo pour rien.
+    vu = {}
+    def fake(symbole, modules=None):
+        vu["modules"] = modules
+        return {"regularMarketPrice": 10.0, "regularMarketPreviousClose": 10.0,
+                "currency": "USD"}, ""
+    monkeypatch.setattr(pa, "_yahoo_summary", fake)
+    pa.get_price_yahoo({"ticker_yf": "SNAP", "ticker_eod": "SNAP.US"}, EUR_USD, {})
+    assert vu["modules"] == "price"
+
+
+def test_get_price_yahoo_convertit_usd_en_euro(monkeypatch):
+    monkeypatch.setattr(pa, "_yahoo_summary", lambda s, modules=None: (
+        {"regularMarketPrice": 10.0, "regularMarketPreviousClose": 9.5,
+         "currency": "USD"}, ""))
+    prix, chg, src, from_cache, note = pa.get_price_yahoo(
+        {"ticker_yf": "SNAP", "ticker_eod": "SNAP.US"}, EUR_USD, {})
+    assert prix == round(10.0 * EUR_USD, 4)
+    assert chg == round((10.0 - 9.5) / 9.5 * 100, 2)
+    assert src == "Yahoo Finance"
+    assert from_cache is False
+    assert "USD" in note
+
+
+def test_get_price_yahoo_titre_deja_en_euro_ne_mentionne_aucune_conversion(monkeypatch):
+    monkeypatch.setattr(pa, "_yahoo_summary", lambda s, modules=None: (
+        {"regularMarketPrice": 50.0, "regularMarketPreviousClose": 51.0,
+         "currency": "EUR"}, ""))
+    prix, chg, src, from_cache, note = pa.get_price_yahoo(
+        {"ticker_yf": "AI.PA", "ticker_eod": "AI.PA"}, EUR_USD, {})
+    assert prix == 50.0
+    assert note is None
+
+
+def test_get_price_yahoo_gbp_pence_divise_par_cent(monkeypatch):
+    # REGRESSION -- Yahoo publie le penny sterling sous le code "GBp" (p
+    # minuscule). Mettre ce code en majuscule AVANT de le comparer donne
+    # "GBP" (la livre entiere) et fait ressortir un cours cent fois trop
+    # haut -- exactement le bogue deja documente pour taux_ligne(). Ce test
+    # verifie que get_price_yahoo distingue bien les deux.
+    monkeypatch.setattr(pa, "_yahoo_summary", lambda s, modules=None: (
+        {"regularMarketPrice": 1000.0, "regularMarketPreviousClose": 990.0,
+         "currency": "GBp"}, ""))
+    prix, chg, src, from_cache, note = pa.get_price_yahoo(
+        {"ticker_yf": "VOD.L", "ticker_eod": "VOD.LSE"}, EUR_USD,
+        {"fx_GBP": 1.15})
+    assert prix == round(1000.0 * 1.15 / 100.0, 4)
+    assert "GBX" in note
+
+
+def test_get_price_yahoo_echec_retombe_sur_le_cache(monkeypatch):
+    monkeypatch.setattr(pa, "_yahoo_summary",
+                        lambda s, modules=None: ({}, "429 (limite de debit Yahoo)"))
+    cache = {"price_yahoo_SNAP": 12.34, "saved_at": "2026-09-18"}
+    prix, chg, src, from_cache, note = pa.get_price_yahoo(
+        {"ticker_yf": "SNAP", "ticker_eod": "SNAP.US"}, EUR_USD, cache)
+    assert prix == 12.34
+    assert from_cache is True
+    assert "429" in note
+
+
+def test_get_price_yahoo_echec_sans_cache_est_indisponible(monkeypatch):
+    monkeypatch.setattr(pa, "_yahoo_summary",
+                        lambda s, modules=None: ({}, "429 (limite de debit Yahoo)"))
+    prix, chg, src, from_cache, note = pa.get_price_yahoo(
+        {"ticker_yf": "SNAP", "ticker_eod": "SNAP.US"}, EUR_USD, {})
+    assert prix is None
+    assert from_cache is False
