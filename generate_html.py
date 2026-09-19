@@ -647,8 +647,30 @@ def extract_repartition(md: str) -> list:
     return [a for a in axes if a["entrees"]]
 
 
+def extract_watchlist(md: str) -> list:
+    """Section « Watchlist » → liste de titres suivis, non détenus.
+
+    Absente de generate_html.py jusqu'ici : portfolio_analyzer.py génère
+    bien la section « ## Watchlist » dans le markdown, mais rien ne
+    l'extrayait ni ne la rendait côté HTML — elle disparaissait donc
+    silencieusement du rapport que Gaby consulte, alors même que la
+    watchlist contenait des titres.
+    """
+    sec = _section_md(md, "Watchlist")
+    if not sec:
+        return []
+    watchlist = []
+    for c in _lignes_table(sec, ["Valeur", "Secteur", "Cours"]):
+        if len(c) < 5:
+            continue
+        watchlist.append({"nom": c[0], "secteur": c[1], "cours": c[2],
+                          "variation": c[3], "actualite": c[4]})
+    return watchlist
+
+
 stops_data  = extract_stops(md_content)
 repartition = extract_repartition(md_content)
+watchlist   = extract_watchlist(md_content)
 
 
 # ══════════════════════════════════════════════════════
@@ -880,6 +902,34 @@ def build_repartition_html() -> str:
   <p class="macro-note">
     Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette
     peut dépasser 100&nbsp;%. Les autres axes forment bien une partition.
+  </p>
+</section>"""
+
+
+def build_watchlist_html() -> str:
+    if not watchlist:
+        return ""
+    rows = ""
+    for w in watchlist:
+        rows += (f"<tr><td><strong>{w['nom']}</strong></td>"
+                 f"<td>{w['secteur'] or '—'}</td>"
+                 f"<td class='cell-num'>{w['cours']}</td>"
+                 f"<td>{var_span(w['variation'])}</td>"
+                 f"<td>{w['actualite']}</td></tr>\n")
+    return f"""
+<section class="section-block" id="watchlist">
+  <h2 class="section-title">👁️ Watchlist</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Valeur</th><th>Secteur</th><th>Cours</th><th>Variation</th><th>Actualité</th></tr></thead>
+      <tbody>{rows}</tbody>
+    </table>
+  </div>
+  <p class="macro-note">
+    Titres suivis sans être détenus : ni coût de revient, ni note, ni stop —
+    seulement le cours et l'actualité. Cours et actualités proviennent
+    exclusivement de Yahoo Finance (cours) et de son flux RSS (actualités),
+    sans consommer le quota EODHD/TwelveData réservé au portefeuille réel.
   </p>
 </section>"""
 
@@ -1738,6 +1788,8 @@ nav_stops = ('<a href="#stops">Stops</a>'
              if stops_data and stops_data.get("stops") else "")
 nav_repartition = ('<a href="#repartition">Répartition</a>'
                    if repartition else "")
+nav_watchlist = ('<a href="#watchlist">Watchlist</a>'
+                 if watchlist else "")
 
 # Pastille d'alerte dans l'en-tete : le nombre de stops franchis. C'est
 # l'information qu'on veut voir sans faire defiler la page.
@@ -1775,6 +1827,7 @@ html_out = f"""<!DOCTYPE html>
       <a href="#tendances">Tendances</a>
       <a href="#positions">Positions</a>
       <a href="#synthese">Synthèse</a>
+      {nav_watchlist}
       <a href="#historique">Historique</a>
     </nav>
     <div class="header-actions">
@@ -1841,6 +1894,7 @@ html_out = f"""<!DOCTYPE html>
     {build_combined_chart_html()}
     {build_positions_html()}
     {build_synthese_html()}
+    {build_watchlist_html()}
     {build_closes_html()}
     {build_archive_html()}
 
