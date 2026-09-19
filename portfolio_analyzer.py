@@ -159,6 +159,11 @@ REPORT_PATH  = "reports/default/daily_report.md"
 # Volontairement place sous reports/<user>/ : c'est un dossier que le workflow
 # GitHub commite deja, aucune modification du YAML n'est donc necessaire.
 STOPS_STATE_PATH = "reports/default/stops_state.json"
+# Historique de l'indice de correlation moyenne (voir indice_correlation_moyenne
+# dans risk_engine.py) -- un fichier dedie, separe de history.csv qui est a la
+# granularite de la ligne : ici chaque ligne du CSV est une mesure de tout le
+# portefeuille pour un jour donne, pas d'une valeur individuelle.
+CORR_HISTORY_PATH = "reports/default/correlation_history.csv"
 
 
 def slugify(value: str) -> str:
@@ -169,12 +174,13 @@ def slugify(value: str) -> str:
 
 def set_user(username: str):
     """Bascule tous les chemins de sortie vers l'utilisateur indique."""
-    global USER, HISTORY_PATH, CHARTS_DIR, REPORT_PATH, STOPS_STATE_PATH
+    global USER, HISTORY_PATH, CHARTS_DIR, REPORT_PATH, STOPS_STATE_PATH, CORR_HISTORY_PATH
     USER         = slugify(username)
     HISTORY_PATH = f"reports/{USER}/history.csv"
     CHARTS_DIR   = f"reports/{USER}/charts"
     REPORT_PATH  = f"reports/{USER}/daily_report.md"
     STOPS_STATE_PATH = f"reports/{USER}/stops_state.json"
+    CORR_HISTORY_PATH = f"reports/{USER}/correlation_history.csv"
     os.makedirs(CHARTS_DIR, exist_ok=True)
     os.makedirs(f"docs/{USER}", exist_ok=True)
     _migrate_legacy_files()
@@ -2147,6 +2153,47 @@ def append_history(now: datetime, rows: list):
             writer.writerow({c: row.get(c, "") for c in colonnes})
 
 
+CORR_HISTORY_COLS = ["date", "indice_pct", "n_paires", "n_lignes",
+                     "min_pct", "max_pct", "classe"]
+
+
+def append_correlation_history(now: datetime, indice: dict):
+    """Ajoute la mesure du jour de l'indice de correlation moyenne.
+
+    Fichier separe de history.csv : celui-ci est a la granularite de la
+    ligne (un ticker par ligne), celui-la a la granularite du portefeuille
+    entier (une seule mesure par jour). Les melanger aurait force soit des
+    colonnes vides sur chaque ligne de titre, soit une ligne "fantome" sans
+    ticker dans un fichier qui n'en attend pas.
+
+    N'ecrit rien quand l'indice est indisponible (moins de deux lignes
+    exploitables) : une valeur vide dans un historique cense etre numerique
+    causerait plus de confusion qu'une absence de ligne ce jour-la.
+    """
+    indice = indice or {}
+    if indice.get("indice_pct") is None:
+        return
+
+    os.makedirs(os.path.dirname(CORR_HISTORY_PATH), exist_ok=True)
+    nouveau = not os.path.isfile(CORR_HISTORY_PATH)
+    try:
+        with open(CORR_HISTORY_PATH, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=CORR_HISTORY_COLS)
+            if nouveau:
+                writer.writeheader()
+            writer.writerow({
+                "date":       now.strftime("%Y-%m-%d"),
+                "indice_pct": indice.get("indice_pct"),
+                "n_paires":   indice.get("n_paires"),
+                "n_lignes":   indice.get("n_lignes"),
+                "min_pct":    indice.get("min_pct"),
+                "max_pct":    indice.get("max_pct"),
+                "classe":     risk_engine.classe_correlation(indice.get("indice_pct")),
+            })
+    except Exception as e:
+        _log.warning("Historique de correlation non ecrit (%s)", e)
+
+
 # =============================================================================
 # REPARTITION MULTI-ACTIFS
 # =============================================================================
@@ -2259,7 +2306,9 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
             "lignes": [], "resume": {"actifs": 0, "franchis": 0, "alertes": 0,
                                      "sans_stop": 0, "total": 0},
             "capital_ref": capital_ref, "reglages": dict(RISQUE),
-            "exposition_correlee": []}
+            "exposition_correlee": [],
+            "indice_correlation": {"indice_pct": None, "n_paires": 0,
+                                   "n_lignes": 0, "min_pct": None, "max_pct": None}}
 
     if not RISK_OK:
         return vide
@@ -2326,6 +2375,11 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
                     "poids_pct": vm / capital_ref * 100.0,
                 })
         exposition_correlee = risk_engine.exposition_correlee(candidats)
+        # Contrairement au groupement ci-dessus, l'indice ne depend pas du
+        # poids : une ligne coteE avec un historique suffisant compte, qu'elle
+        # pese beaucoup ou peu dans le portefeuille. `candidats` porte deja
+        # `closes` pour chaque ligne -- rien a recalculer.
+        indice_correlation = risk_engine.indice_correlation_moyenne(candidats)
 
         return {
             "disponible": True, "motif": None,
@@ -2334,6 +2388,7 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
             "capital_ref": capital_ref,
             "reglages": dict(RISQUE),
             "exposition_correlee": exposition_correlee,
+            "indice_correlation": indice_correlation,
         }
     except Exception as e:
         _log.error("Moteur de risque en echec : %s -- rapport genere sans les "
@@ -2619,11 +2674,12 @@ def bloc_md_stops(risque: dict) -> list:
         "",
     ]
 
-    out += bloc_md_exposition_correlee(risque.get("exposition_correlee") or [])
+    out += bloc_md_exposition_correlee(risque.get("exposition_correlee") or [],
+                                       risque.get("indice_correlation") or {})
     return out
 
 
-def bloc_md_exposition_correlee(groupes: list) -> list:
+def bloc_md_exposition_correlee(groupes: list, indice: dict = None) -> list:
     """Sous-section « Exposition corrélée » (dans Stops et Alertes).
 
     Le plafond de poids par ligne ne voit pas les positions qui bougent
@@ -2633,8 +2689,33 @@ def bloc_md_exposition_correlee(groupes: list) -> list:
 
     Un groupe sans dépassement du seuil d'alerte reste affiché : savoir que
     deux lignes bougent ensemble est utile même sous le seuil.
+
+    `indice` (optionnel) ajoute en tête un chiffre unique -- la corrélation
+    MOYENNE sur toutes les paires, pas seulement celles au-dessus du seuil.
+    Les deux mesures répondent à des questions différentes : le tableau dit
+    QUELLES lignes bougent ensemble, l'indice dit si le portefeuille, DANS
+    L'ENSEMBLE, bouge comme un bloc ou de façon indépendante. Suivi dans le
+    temps via `reports/<user>/correlation_history.csv`.
     """
     out = ["", "### Exposition corrélée", ""]
+
+    indice = indice or {}
+    if indice.get("indice_pct") is not None:
+        classe = risk_engine.classe_correlation(indice["indice_pct"])
+        out += [
+            f"**Corrélation moyenne du portefeuille : {indice['indice_pct']:+.1f} %** "
+            f"({classe}) -- calculée sur {indice['n_paires']} paire(s) de lignes "
+            f"({indice['n_lignes']} ligne(s) cotée(s) avec un historique suffisant). "
+            f"Étendue observée : de {indice['min_pct']:+.1f} % à {indice['max_pct']:+.1f} %.",
+            "",
+            "*Plus ce chiffre est proche de 0, plus les lignes bougent "
+            "indépendamment les unes des autres -- une diversification qui se "
+            "voit dans les mouvements réels, pas seulement dans les "
+            "étiquettes de classe d'actif ou de secteur. Un chiffre élevé et "
+            "négatif est aussi une forme de concentration, sur le pari inverse.*",
+            "",
+        ]
+
     if not groupes:
         out += [
             "Aucun regroupement de lignes fortement corrélées (seuil "
@@ -3082,6 +3163,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
 
     # ── 12. Historique CSV ────────────────────────────────────────────────────
     append_history(now, history_rows)
+    append_correlation_history(now, risque.get("indice_correlation"))
 
     # ── 13. Génération du rapport Markdown ───────────────────────────────────
     macro_trend = "Haussiere" if macro_score >= 6 else "Baissiere" if macro_score <= 4 else "Neutre"
