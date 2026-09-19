@@ -124,7 +124,10 @@ class ClesVapid:
         u = urlparse(endpoint)
         revendications = {
             "aud": f"{u.scheme}://{u.netloc}",
-            "exp": int(time.time()) + 12 * 3600,
+            # Une heure : la norme autorise 24 h, mais Apple est le plus strict
+            # des services et rien ne justifie de s'approcher de la limite —
+            # l'en-tete est recalcule a chaque envoi.
+            "exp": int(time.time()) + 3600,
             "sub": sujet,
         }
         entete = {"typ": "JWT", "alg": "ES256"}
