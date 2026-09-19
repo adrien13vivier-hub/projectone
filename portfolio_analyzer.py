@@ -755,6 +755,74 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
 
 
 # =============================================================================
+# COURS WATCHLIST -- exclusivement Yahoo Finance (aucun quota paye)
+# =============================================================================
+# La watchlist ne sert qu'a surveiller des titres non detenus : pas de cout
+# de revient, pas de score, pas de validation croisee necessaire. La faire
+# passer par le meme chemin que le portefeuille (TwelveData + EODHD) grevait
+# un quota deja compte au plus juste pour des lignes qui ne pesent sur aucune
+# decision de gestion. Yahoo est gratuit, sans cle, deja utilise pour les
+# fondamentaux et les actualites RSS de cette meme watchlist -- ne reste plus
+# qu'a l'utiliser aussi pour le cours.
+
+def get_price_yahoo(asset: dict, eur_usd: float, session_cache: dict) -> tuple:
+    """Cours d'un titre de watchlist via Yahoo Finance uniquement.
+
+    Meme forme de retour que get_price_eur -- (prix_eur, variation_pct,
+    source, from_cache, note) -- pour ne rien changer au code d'affichage
+    qui consomme ce tuple.
+
+    La variation est recalculee a la main depuis prix du jour / cloture
+    precedente plutot que de faire confiance a regularMarketChangePercent :
+    certains champs Yahoo sont des fractions (0.015) et d'autres deja des
+    pourcentages (1.5) selon le module, et ce n'est pas documente de
+    maniere fiable. Le calcul manuel evite ce risque de confusion.
+    """
+    ticker_yf = asset.get("ticker_yf")
+    cache_key = f"price_yahoo_{ticker_yf or asset.get('ticker_eod', '')}"
+
+    if not ticker_yf:
+        if session_cache.get(cache_key):
+            saved_at = session_cache.get("saved_at", "date inconnue")
+            return (session_cache[cache_key], 0.0, "Cache", True,
+                    f"Cours non disponible (Yahoo:ticker absent) -- cache du {saved_at} utilise")
+        return None, 0.0, "Indisponible (Yahoo:ticker absent)", False, None
+
+    brut, motif = _yahoo_summary(ticker_yf, modules="price")
+    prix = _yv(brut, "regularMarketPrice") if brut else None
+
+    if prix is not None:
+        # Yahoo publie le penny sterling sous le code "GBp" (p minuscule) --
+        # get_fx() attend "GBX" pour reconnaitre ce cas particulier (memes
+        # 100x que documente plus haut pour taux_ligne). Il faut le detecter
+        # AVANT toute mise en majuscule, sans quoi "GBp" devient "GBP" (la
+        # livre entiere) et le cours ressort cent fois trop haut.
+        devise_brute = str(brut.get("currency") or "")
+        devise = "GBX" if devise_brute == "GBp" else devise_brute.upper()
+        prec = _yv(brut, "regularMarketPreviousClose")
+        chg = round((prix - prec) / prec * 100.0, 2) if prec else 0.0
+
+        taux, fx_src = (1.0, "identite") if not devise else get_fx(devise, eur_usd, session_cache)
+        if taux is None:
+            return (round(prix, 4), chg, "Yahoo Finance", False,
+                    f"Cours en {devise} NON CONVERTI en euro "
+                    f"(taux {devise}/EUR indisponible)")
+        note_fx = None if devise in ("EUR", "") else \
+            f"converti depuis {devise} au taux {taux:.4f} ({fx_src})"
+        prix_eur = round(prix * taux, 4)
+        session_cache[cache_key] = prix_eur
+        return prix_eur, chg, "Yahoo Finance", False, note_fx
+
+    if session_cache.get(cache_key):
+        saved_at = session_cache.get("saved_at", "date inconnue")
+        return (session_cache[cache_key], 0.0, "Cache", True,
+                f"Cours non disponible (Yahoo:{motif or 'cours nul'}) -- "
+                f"cache du {saved_at} utilise")
+
+    return None, 0.0, f"Indisponible (Yahoo:{motif or 'cours nul'})", False, None
+
+
+# =============================================================================
 # INDICES -- EODHD principal * Finnhub fallback
 # =============================================================================
 
@@ -1094,9 +1162,16 @@ def _yahoo_poignee(force: bool = False):
             return None
 
 
-def _yahoo_summary(symbole: str) -> tuple:
-    """Modules quoteSummary d'un titre. Retourne (dict, motif_si_echec)."""
-    modules = "defaultKeyStatistics,financialData,summaryDetail"
+def _yahoo_summary(symbole: str, modules: str = None) -> tuple:
+    """Modules quoteSummary d'un titre. Retourne (dict, motif_si_echec).
+
+    `modules` par defaut couvre les fondamentaux (valorisation, sante,
+    croissance). Un appelant qui n'a besoin que du cours (la watchlist, par
+    exemple) passe un jeu de modules plus leger -- inutile de faire payer a
+    Yahoo une requete plus grosse que necessaire, et inutile de risquer une
+    limitation de debit pour des donnees qu'on n'utilisera pas.
+    """
+    modules = modules or "defaultKeyStatistics,financialData,summaryDetail"
 
     for tentative in (1, 2):
         crumb = _yahoo_poignee(force=(tentative == 2))
@@ -2922,11 +2997,16 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         bonds_data[b_name] = _MEMO[cle]
 
     # ── 5. Watchlist cours ────────────────────────────────────────────────────
+    # Yahoo Finance uniquement (get_price_yahoo) -- volontaire : la watchlist
+    # ne detient rien, ne pese sur aucun quota EODHD/TwelveData deja compte au
+    # plus juste pour le portefeuille reel. Prefixe de cache dedie ("wpxy:")
+    # pour ne jamais melanger avec d'anciennes valeurs mises en cache via
+    # l'ancien chemin ("wpx:").
     watchlist_prices = {}
     for w in WATCHLIST:
-        k = f"wpx:{w['ticker_eod']}"
+        k = f"wpxy:{w['ticker_eod']}"
         if k not in _MEMO:
-            p, chg, src, from_cache, note = get_price_eur(w, eur_usd, td_prices, session_cache)
+            p, chg, src, from_cache, note = get_price_yahoo(w, eur_usd, session_cache)
             _MEMO[k] = (p, chg, src, from_cache)
         watchlist_prices[w["ticker_eod"]] = _MEMO[k]
 
