@@ -24,7 +24,7 @@ Endpoints :
   GET  /                       → sert interface.html
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
-import json, os, subprocess, sys, time
+import json, os, subprocess, sys, time, traceback
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -1098,10 +1098,41 @@ def push_preferences_ecrire(data: PreferencesPush, user: dict = Depends(current_
 
 @app.get("/api/status")
 def status_check():
-    con = get_db()
-    nb_users = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-    rows = con.execute("SELECT username, slot_index, report_url FROM users ORDER BY slot_index").fetchall()
-    con.close()
+    """Etat public du service, interroge en permanence par le pied de page
+    du site (pastille verte/rouge « Systeme »).
+
+    BUG CORRIGE (20/09/2026) : une exception n'importe ou dans cette
+    fonction (BDD verrouillee, disque plein au moment d'ecrire un jeton de
+    rapport, etc.) remontait telle quelle -> FastAPI renvoyait un 500 ->
+    le site affichait « Serveur injoignable » alors que le service tournait
+    parfaitement (page d'accueil, connexion... tout fonctionnait). Ce point
+    d'entree est public et lu par une simple pastille visuelle : il ne doit
+    JAMAIS faire tomber la page pour une erreur ponctuelle et recuperable.
+    Chaque etape est maintenant isolee ; une panne partielle degrade la
+    reponse au lieu de la faire echouer, et la vraie erreur part dans les
+    logs serveur pour pouvoir etre diagnostiquee.
+    """
+    try:
+        con = get_db()
+        try:
+            nb_users = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            rows = con.execute(
+                "SELECT username, slot_index, report_url FROM users ORDER BY slot_index"
+            ).fetchall()
+        finally:
+            con.close()
+    except Exception:
+        print(f"[Status] Lecture BDD impossible :\n{traceback.format_exc()}")
+        return {
+            "status":   "degrade",
+            "erreur":   "base de donnees indisponible",
+            "users":    None,
+            "max_users": MAX_USERS,
+            "time":     datetime.now(timezone.utc).isoformat(),
+            "analyse":  None,
+            "schedule": [],
+        }
+
     # Une seule heure pour tout le monde. Les creneaux etales de 5 minutes
     # (22h30, 22h35, 22h40...) ont ete supprimes : l'analyse est GROUPEE,
     # un seul passage traite tous les profils et mutualise les appels API.
@@ -1109,11 +1140,25 @@ def status_check():
     # ancienne, mais elle vaut la meme chose sur toutes les lignes.
     slots = []
     for r in rows:
+        try:
+            report_url = lien_rapport(r["username"], CLOUDFLARE_BASE)
+        except Exception:
+            print(f"[Status] Lien de rapport impossible pour {r['username']} "
+                  f":\n{traceback.format_exc()}")
+            report_url = r["report_url"] or ""
         slots.append({
             "username":   r["username"],
             "slot":       HEURE_ANALYSE_GROUPEE,
-            "report_url": lien_rapport(r["username"], CLOUDFLARE_BASE)
+            "report_url": report_url,
         })
+
+    try:
+        dernier_declenchement = (_lire_dernier_declenchement()
+                                  or _DERNIER_DECLENCHEMENT or None)
+    except Exception:
+        print(f"[Status] Lecture du dernier declenchement impossible :\n{traceback.format_exc()}")
+        dernier_declenchement = None
+
     return {
         "status":   "ok",
         "users":    nb_users,
@@ -1132,8 +1177,7 @@ def status_check():
             # l'analyse a ete lancee par un autre processus (cron GitHub,
             # second worker uvicorn), la variable de CELUI-CI n'en sait rien
             # et la page afficherait « null » alors que tout a fonctionne.
-            "dernier_declenchement": (_lire_dernier_declenchement()
-                                      or _DERNIER_DECLENCHEMENT or None),
+            "dernier_declenchement": dernier_declenchement,
         },
         "schedule": slots
     }
