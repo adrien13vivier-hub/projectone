@@ -111,7 +111,14 @@ MARCHES = {
     "euronext_mil":   {"suffixe": ".MI",    "marche": "euronext", "devise": "EUR", "label": "Borsa Italiana"},
     "xetra":          {"suffixe": ".XETRA", "marche": "euronext", "devise": "EUR", "label": "Xetra (Francfort)"},
     "madrid":         {"suffixe": ".MC",    "marche": "euronext", "devise": "EUR", "label": "Bolsa de Madrid"},
-    "londres":        {"suffixe": ".LSE",   "marche": "euronext", "devise": "GBP", "label": "London Stock Exchange"},
+    # BUG CORRIGE (19/09/2026) : EODHD publie la plupart des titres LSE en
+    # PENCE (GBX), pas en livre (GBP) -- une ligne ressortait alors 100 fois
+    # trop haute une fois "convertie" comme si le cours etait en GBP. "GBX"
+    # est deja gere partout ailleurs dans le programme (get_fx le divise par
+    # 100), il suffit d'en faire le defaut de cette place. Un titre LSE dont
+    # EODHD publie vraiment le cours en livres (rare) peut toujours etre
+    # force en "GBP" ligne par ligne via le champ devise du portefeuille.
+    "londres":        {"suffixe": ".LSE",   "marche": "euronext", "devise": "GBX", "label": "London Stock Exchange"},
     "suisse":         {"suffixe": ".SW",    "marche": "euronext", "devise": "CHF", "label": "SIX Swiss Exchange"},
 
     # Crypto-actifs : EODHD les publie sous la forme BTC-USD.CC, toujours
@@ -121,6 +128,19 @@ MARCHES = {
 }
 
 SUFFIXE_VERS_MARCHE = {v["suffixe"].lstrip("."): k for k, v in MARCHES.items()}
+
+# BUG CORRIGE (19/09/2026) : `ticker_yf` reprenait tel quel le suffixe EODHD
+# (".LSE", ".XETRA"...), alors que Yahoo Finance a sa PROPRE convention de
+# suffixes, differente pour deux places -- Londres (".L", pas ".LSE") et
+# Xetra (".DE", pas ".XETRA"). Le ticker Yahoo etait donc introuvable pour
+# ces deux places : ni fondamentaux de repli, ni flux RSS Yahoo, ni cours de
+# watchlist. Les autres places (Paris, Amsterdam, Bruxelles, Lisbonne, Milan,
+# Madrid, Suisse) partagent deja le meme suffixe cote EODHD et cote Yahoo :
+# rien a corriger pour elles, ce dict ne liste que les exceptions.
+SUFFIXE_YAHOO_OVERRIDE = {
+    "londres": ".L",
+    "xetra":   ".DE",
+}
 
 # Place fictive des lignes sans marché (livret, immobilier, collection…).
 # Elle n'apparaît pas dans MARCHES : aucune API ne doit pouvoir la router.
@@ -324,13 +344,15 @@ def deriver_tickers(ticker: str, place: str) -> dict:
     # Hors États-Unis : TwelveData et AlphaVantage ne couvrent pas ces places
     # dans leur offre gratuite. On les laisse à None pour éviter des appels
     # voués à l'échec qui consommeraient du quota pour rien.
-    complet = f"{racine}{fiche['suffixe']}"
+    complet     = f"{racine}{fiche['suffixe']}"
+    suffixe_yf  = SUFFIXE_YAHOO_OVERRIDE.get(place, fiche["suffixe"])
+    complet_yf  = f"{racine}{suffixe_yf}"
     return {
         "ticker_fh":  complet,
         "ticker_eod": complet,
         "ticker_td":  None,
         "ticker_av":  None,
-        "ticker_yf":  complet,
+        "ticker_yf":  complet_yf,
     }
 
 
