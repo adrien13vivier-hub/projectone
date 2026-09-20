@@ -138,6 +138,28 @@ TD_BASE  = "https://api.twelvedata.com"
 AV_BASE  = "https://www.alphavantage.co/query"
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
+
+def date_seance(now: datetime) -> str:
+    """Date ('YYYY-MM-DD') de la seance de bourse que CE rapport decrit.
+
+    BUG CORRIGE (19/09/2026) : history.csv, stops_state.json et
+    correlation_history.csv etaient dates avec `now.strftime(...)` -- l'heure
+    D'EXECUTION du run, pas la seance decrite. Le declenchement reel arrive
+    systematiquement apres minuit heure de Paris (releve entre 00h47 et
+    01h25 -- voir la note sur le cron de secours dans
+    .github/workflows/daily_analysis.yml) : un run qui rapporte la cloture
+    de la veille au soir se retrouvait ainsi date du LENDEMAIN. Avant 6h du
+    matin -- largement avant la reouverture de n'importe quelle place
+    suivie -- on considere que le rapport decrit encore la seance de la
+    veille. Le titre du rapport, lui, continue d'afficher l'heure REELLE de
+    generation : ce n'est pas la meme information.
+    """
+    d = now.date()
+    if now.hour < 6:
+        d = d - timedelta(days=1)
+    return d.strftime("%Y-%m-%d")
+
+
 DIVERGENCE_THRESHOLD_PCT = 2.0
 
 # --- CHEMINS ------------------------------------------------------------------
@@ -365,6 +387,34 @@ def save_session_cache(cache: dict):
         json.dump(cache, f, ensure_ascii=False, indent=2)
 
 
+def _cache_set(session_cache: dict, cle: str, valeur):
+    """Ecrit une valeur de repli en cache AVEC sa propre date de fraicheur.
+
+    BUG CORRIGE (19/09/2026) : le cache ne portait qu'une seule date GLOBALE
+    (`saved_at`, voir save_session_cache ci-dessus), reecrite a CHAQUE
+    sauvegarde du fichier -- y compris un jour ou une valeur donnee n'a PAS
+    ete rafraichie (fournisseur en panne, on relit juste l'ancienne). Le
+    message affiche a l'utilisateur ("cache du ...") citait alors la date
+    du jour meme pour une donnee vieille de plusieurs jours. Chaque entree
+    porte maintenant sa propre date, ecrite uniquement quand la valeur est
+    REELLEMENT rafraichie (voir _cache_date pour la lecture).
+    """
+    session_cache[cle] = valeur
+    session_cache[f"{cle}__date"] = date_seance(datetime.now(PARIS_TZ))
+
+
+def _cache_date(session_cache: dict, cle: str) -> str:
+    """Date de fraicheur d'une entree de cache (voir _cache_set).
+
+    Repli sur `saved_at` pour un cache ecrit avant ce correctif (entrees
+    sans date individuelle) -- imprecis pour une valeur ancienne, mais pas
+    pire que le comportement precedent, et evite un "date inconnue" sur
+    tout cache existant au moment de la mise a jour.
+    """
+    return (session_cache.get(f"{cle}__date")
+            or session_cache.get("saved_at") or "date inconnue")
+
+
 # =============================================================================
 # COUCHE HTTP  (quota-aware)
 # =============================================================================
@@ -378,7 +428,14 @@ def _get(url: str, params: dict, api_key_name: str, timeout: int = 12) -> tuple:
         if r.status_code == 200:
             return r.json(), None
         if r.status_code == 429:
+            _quota_epuiser(api_key_name)
             return None, "HTTP_429_QUOTA"
+        if r.status_code == 402:
+            # EODHD (et d'autres) renvoient 402 "Payment Required" quand le
+            # quota JOURNALIER du plan est atteint -- ce n'est pas une panne
+            # ponctuelle, et retenter n'y changera rien avant demain.
+            _quota_epuiser(api_key_name)
+            return None, "HTTP_402_QUOTA"
         return None, f"HTTP {r.status_code}"
     except requests.exceptions.Timeout:
         return None, "Timeout"
@@ -388,8 +445,23 @@ def _get(url: str, params: dict, api_key_name: str, timeout: int = 12) -> tuple:
         return None, str(e)[:60]
 
 
+def _quota_epuiser(key: str):
+    """Marque une cle comme epuisee pour le reste du run.
+
+    Le compteur local (_QUOTA) n'est qu'une ESTIMATION du quota reel du
+    fournisseur -- il peut etre en retard sur la vraie limite si d'autres
+    process ou d'autres jours ont deja consomme des appels. Un vrai 402/429
+    est la verite terrain : on aligne le compteur local dessus pour que
+    TOUS les appels suivants a cette cle, ce run-ci, s'arretent tout de
+    suite localement plutot que de retenter et d'echouer un par un.
+    """
+    with _quota_lock:
+        if key in _QUOTA:
+            _QUOTA[key]["used"] = _QUOTA[key]["limit"]
+
+
 def _is_quota_error(err: str) -> bool:
-    return err in ("QUOTA_REACHED", "HTTP_429_QUOTA") if err else False
+    return err in ("QUOTA_REACHED", "HTTP_429_QUOTA", "HTTP_402_QUOTA") if err else False
 
 
 # =============================================================================
@@ -513,7 +585,7 @@ def get_eur_usd(session_cache: dict) -> tuple:
         errors.append("AlphaVantage:cle absente")
 
     if session_cache.get("eur_usd"):
-        saved_at = session_cache.get("saved_at", "date inconnue")
+        saved_at = _cache_date(session_cache, "eur_usd")
         return (session_cache["eur_usd"], "Cache", True,
                 f"EUR/USD non disponible ({', '.join(errors)}) -- cache du {saved_at} utilise")
 
@@ -667,12 +739,54 @@ def taux_ligne(asset: dict, eur_usd: float, session_cache: dict = None) -> float
     return 1.0 if taux is None else taux
 
 
+def variation_jour_pct(price_eur, h_closes):
+    """Variation du jour en %, recalculee depuis l'historique deja telecharge.
+
+    BUG CORRIGE (19/09/2026) : la variation renvoyee par les fournisseurs
+    n'etait pas fiable -- TwelveData ne la renvoie jamais (0.0 code en dur
+    cote appelant), et celle d'EODHD pouvait rester a +0.00% un jour ou la
+    ligne avait pourtant nettement bouge. Ce calcul n'a besoin d'aucun appel
+    supplementaire : `h_closes` est deja telecharge pour le momentum.
+
+    Le run tourne apres la cloture de tous les marches (22h37 Paris) : la
+    derniere cloture de l'historique (`h_closes[-1]`) correspond donc
+    normalement DEJA a la seance du jour. On le verifie en la comparant au
+    cours recu par ailleurs (`price_eur`) : s'ils concordent a moins de
+    0,5 % pres, l'historique inclut bien le jour et la variation se lit
+    entre les deux dernieres clotures. Sinon (run declenche en cours de
+    seance, historique pas encore a jour), `h_closes[-1]` est la veille et
+    la variation se lit entre le cours du jour et cette derniere cloture.
+
+    Retourne None si le calcul est impossible (moins de 2 clotures, ou
+    cours du jour absent) -- l'appelant garde alors la valeur fournisseur.
+    """
+    closes = [c for c in (h_closes or []) if c is not None]
+    if len(closes) < 2 or not price_eur:
+        return None
+    dernier, avant = closes[-1], closes[-2]
+    if not dernier or not avant:
+        return None
+    if abs(price_eur - dernier) / dernier <= 0.005:
+        return round((dernier - avant) / avant * 100, 2)
+    return round((price_eur - dernier) / dernier * 100, 2)
+
+
 # =============================================================================
 # COURS (tous marches) -- Orchestrateur
 # =============================================================================
 
 def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
                   session_cache: dict) -> tuple:
+    """Cours d'une ligne, converti en euros.
+
+    BUG CORRIGE (19/09/2026) : les `float(raw)` / `float(data.get("change_p",
+    0.0))` directs plantaient (ValueError) des qu'un fournisseur renvoyait
+    "NA" au lieu d'un chiffre -- une exception non rattrapee ici sautait le
+    repli sur le cache session tout en bas de la fonction, la ligne perdait
+    alors sa valeur sans meme essayer le dernier cours connu. `_f()` renvoie
+    None plutot que de lever, ce qui laisse le code continuer normalement
+    vers le prochain repli (TwelveData -> EODHD -> cache -> indisponible).
+    """
     td_val = eod_val = None
     note   = None
     chg    = 0.0
@@ -686,7 +800,7 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
     if asset["marche"] in ("us", "crypto"):
         if TWELVEDATA_KEY and asset.get("ticker_td"):
             td_ticker = asset.get("ticker_td")
-            td_raw    = td_prices.get(td_ticker) if td_ticker else None
+            td_raw    = _f(td_prices.get(td_ticker)) if td_ticker else None
             if td_raw and td_raw > 0:
                 td_val = round(td_raw * eur_usd, 4)
             elif td_ticker:
@@ -699,10 +813,10 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
                              {"api_token": EODHD_KEY, "fmt": "json"},
                              "eodhd")
             if data and not _is_quota_error(err):
-                raw = data.get("close") or data.get("previousClose")
-                if raw and float(raw) > 0:
-                    chg     = float(data.get("change_p", 0.0))
-                    eod_val = round(float(raw) * eur_usd, 4)
+                raw = _f(data.get("close")) if _f(data.get("close")) else _f(data.get("previousClose"))
+                if raw and raw > 0:
+                    chg     = _f(data.get("change_p")) or 0.0
+                    eod_val = round(raw * eur_usd, 4)
                 else:
                     errors.append("EODHD:cours nul")
             elif _is_quota_error(err):
@@ -722,21 +836,21 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
                              {"api_token": EODHD_KEY, "fmt": "json"},
                              "eodhd")
             if data and not _is_quota_error(err):
-                raw = data.get("close") or data.get("previousClose")
-                if raw and float(raw) > 0:
+                raw = _f(data.get("close")) if _f(data.get("close")) else _f(data.get("previousClose"))
+                if raw and raw > 0:
+                    chg_val = _f(data.get("change_p")) or 0.0
                     devise = str(asset.get("devise") or "EUR").upper()
                     taux, fx_src = get_fx(devise, eur_usd, session_cache)
                     if taux is None:
                         # On publie quand meme, mais le doute est ecrit noir sur
                         # blanc a cote du chiffre.
-                        return (round(float(raw), 4), float(data.get("change_p", 0.0)),
+                        return (round(raw, 4), chg_val,
                                 "EODHD", False,
                                 f"Cours en {devise} NON CONVERTI en euro "
                                 f"(taux {devise}/EUR indisponible)")
                     note_fx = None if devise in ("EUR", "") else \
                         f"converti depuis {devise} au taux {taux:.4f} ({fx_src})"
-                    return (round(float(raw) * taux, 4),
-                            float(data.get("change_p", 0.0)),
+                    return (round(raw * taux, 4), chg_val,
                             "EODHD", False, note_fx)
                 errors.append("EODHD:cours nul")
             elif _is_quota_error(err):
@@ -747,7 +861,7 @@ def get_price_eur(asset: dict, eur_usd: float, td_prices: dict,
             errors.append("EODHD:cle absente")
 
     if session_cache.get(cache_key):
-        saved_at = session_cache.get("saved_at", "date inconnue")
+        saved_at = _cache_date(session_cache, cache_key)
         return (session_cache[cache_key], 0.0, "Cache", True,
                 f"Cours non disponible ({', '.join(errors)}) -- cache du {saved_at} utilise")
 
@@ -783,7 +897,7 @@ def get_price_yahoo(asset: dict, eur_usd: float, session_cache: dict) -> tuple:
 
     if not ticker_yf:
         if session_cache.get(cache_key):
-            saved_at = session_cache.get("saved_at", "date inconnue")
+            saved_at = _cache_date(session_cache, cache_key)
             return (session_cache[cache_key], 0.0, "Cache", True,
                     f"Cours non disponible (Yahoo:ticker absent) -- cache du {saved_at} utilise")
         return None, 0.0, "Indisponible (Yahoo:ticker absent)", False, None
@@ -810,11 +924,11 @@ def get_price_yahoo(asset: dict, eur_usd: float, session_cache: dict) -> tuple:
         note_fx = None if devise in ("EUR", "") else \
             f"converti depuis {devise} au taux {taux:.4f} ({fx_src})"
         prix_eur = round(prix * taux, 4)
-        session_cache[cache_key] = prix_eur
+        _cache_set(session_cache, cache_key, prix_eur)
         return prix_eur, chg, "Yahoo Finance", False, note_fx
 
     if session_cache.get(cache_key):
-        saved_at = session_cache.get("saved_at", "date inconnue")
+        saved_at = _cache_date(session_cache, cache_key)
         return (session_cache[cache_key], 0.0, "Cache", True,
                 f"Cours non disponible (Yahoo:{motif or 'cours nul'}) -- "
                 f"cache du {saved_at} utilise")
@@ -827,15 +941,25 @@ def get_price_yahoo(asset: dict, eur_usd: float, session_cache: dict) -> tuple:
 # =============================================================================
 
 def get_index(symbols: dict) -> dict:
+    """Cours d'un indice. price/change_pct valent None si indisponible.
+
+    BUG CORRIGE (19/09/2026) : cette fonction renvoyait {"price": 0.0,
+    "change_pct": 0.0} en cas d'echec (quota EODHD atteint, "NA", etc.),
+    et cette valeur inventee s'affichait dans le rapport comme un vrai
+    "+0.00%" -- indiscernable d'une seance sans mouvement. `get_bond_yield`
+    evitait deja ce piege (voir sa docstring) ; meme regle ici. `_f()`
+    remplace les `float()` directs, qui plantaient tout le rapport de
+    l'utilisateur des qu'un fournisseur renvoyait "NA" au lieu d'un chiffre.
+    """
     if EODHD_KEY:
         data, err = _get(f"{EOD_BASE}/real-time/{symbols['eod']}",
                          {"api_token": EODHD_KEY, "fmt": "json"},
                          "eodhd")
         if data and not _is_quota_error(err):
-            raw = data.get("close") or data.get("previousClose")
-            if raw:
-                return {"price":      float(raw),
-                        "change_pct": float(data.get("change_p", 0.0)),
+            prix = _f(data.get("close")) or _f(data.get("previousClose"))
+            if prix is not None:
+                return {"price":      prix,
+                        "change_pct": _f(data.get("change_p")),
                         "source":     "EODHD"}
         eod_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
     else:
@@ -845,15 +969,17 @@ def get_index(symbols: dict) -> dict:
         data, err = _get(f"{FH_BASE}/quote",
                          {"symbol": symbols["fh"], "token": FINNHUB_KEY},
                          "finnhub")
-        if data and data.get("c") and not _is_quota_error(err):
-            return {"price":      float(data["c"]),
-                    "change_pct": float(data.get("dp", 0.0)),
-                    "source":     "Finnhub (fallback)"}
+        if data and not _is_quota_error(err):
+            prix = _f(data.get("c"))
+            if prix is not None:
+                return {"price":      prix,
+                        "change_pct": _f(data.get("dp")),
+                        "source":     "Finnhub (fallback)"}
         fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
     else:
         fh_err = "cle absente"
 
-    return {"price": 0.0, "change_pct": 0.0,
+    return {"price": None, "change_pct": None,
             "source": f"Indisponible (EODHD:{eod_err}, Finnhub:{fh_err})"}
 
 
@@ -1085,8 +1211,13 @@ def get_consensus(asset: dict) -> tuple:
 
 def _f(valeur):
     """Conversion tolerante en float. Retourne None plutot que 0 si absent,
-    pour ne pas confondre 'donnee manquante' et 'valeur nulle'."""
-    if valeur in (None, "", "NA", "N/A", "None"):
+    pour ne pas confondre 'donnee manquante' et 'valeur nulle'.
+
+    Definie une seule fois desormais (v7.4 la definissait deux fois -- la
+    seconde, plus loin dans le fichier, l'emportait silencieusement ; les
+    deux etaient quasi identiques, celle-ci reprend la version la plus
+    tolerante, qui traite aussi "-" comme une valeur absente)."""
+    if valeur in (None, "", "NA", "N/A", "None", "-"):
         return None
     try:
         v = float(valeur)
@@ -1268,18 +1399,6 @@ def _fonda_yahoo(ticker_yf: str) -> tuple:
     return (ratios, "Yahoo Finance") if ratios else ({}, "aucun ratio")
 
 
-def _f(valeur):
-    """Conversion tolerante en float. None plutot que 0 si absent, pour ne pas
-    confondre 'donnee manquante' et 'valeur nulle'."""
-    if valeur in (None, "", "NA", "N/A", "None", "-"):
-        return None
-    try:
-        v = float(valeur)
-        return None if v != v else v
-    except (ValueError, TypeError):
-        return None
-
-
 def _fonda_eodhd(ticker_eod: str) -> tuple:
     """Ratios via EODHD. Renvoie 403 si l'abonnement n'inclut pas le flux
     Fundamentals — conserve en repli au cas ou l'offre changerait."""
@@ -1400,7 +1519,14 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
             data, err = _get(AV_BASE, {
                 "function":   "TIME_SERIES_DAILY",
                 "symbol":     ticker_av,
-                "outputsize": "compact",
+                # BUG CORRIGE (19/09/2026) : "compact" ne renvoie que les 100
+                # DERNIERES seances -- pour un titre au calendrier charge,
+                # cela peut representer moins de 5 mois et non 6 (un "6M
+                # +22.9%" du rapport affichait en realite une fenetre de
+                # ~4,7 mois). "full" ne coute pas d'appel supplementaire
+                # (toujours 1 requete), seulement plus de lignes dans la
+                # reponse : gratuit vis-a-vis du quota.
+                "outputsize": "full",
                 "apikey":     ALPHAVANTAGE_KEY,
             }, "alphavantage")
             ts = data.get("Time Series (Daily)") if isinstance(data, dict) else None
@@ -1415,9 +1541,28 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
                         closes.append(round(float(vals["4. close"]) * taux, 4))
                     except (ValueError, TypeError, KeyError):
                         pass
-                if len(dates) >= 2:
+                # AlphaVantage TIME_SERIES_DAILY n'est PAS ajuste des
+                # operations sur titre (splits, regroupements) -- seule sa
+                # variante "_ADJUSTED" l'est, et elle est reservee aux plans
+                # payants. Un split non ajuste produit un saut d'un jour a
+                # l'autre d'un facteur ~2, ~3, ~4... qu'aucun mouvement de
+                # marche normal n'egale : au-dela de 40% en une seance, on
+                # rejette la serie plutot que de laisser un faux effondrement
+                # (ou une fausse envolee) fausser le momentum, la volatilite,
+                # et surtout un stop suiveur qui se calerait sur un plus haut
+                # pre-split. On retombe alors sur EODHD (adjusted_close).
+                saut_suspect = any(
+                    closes[i - 1] and abs(closes[i] - closes[i - 1]) / closes[i - 1] >= 0.40
+                    for i in range(1, len(closes))
+                )
+                if len(dates) >= 2 and not saut_suspect:
                     return dates, closes, "AlphaVantage", False, None
-            av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+                if saut_suspect:
+                    av_err = "serie ecartee (saut >= 40% -- split non ajuste suspecte)"
+                else:
+                    av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
+            else:
+                av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
         else:
             av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
 
@@ -1437,7 +1582,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
             fh_err = "cle absente"
 
         if session_cache_global.get(cache_key):
-            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            saved_at = _cache_date(session_cache_global, cache_key)
             cached   = session_cache_global[cache_key]
             return (cached.get("dates", []), cached.get("closes", []),
                     "Cache", True,
@@ -1462,7 +1607,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
             fh_err = "cle absente"
 
         if session_cache_global.get(cache_key):
-            saved_at = session_cache_global.get("saved_at", "date inconnue")
+            saved_at = _cache_date(session_cache_global, cache_key)
             cached   = session_cache_global[cache_key]
             return (cached.get("dates", []), cached.get("closes", []),
                     "Cache", True,
@@ -1717,12 +1862,22 @@ def score_history(dates: list, closes: list) -> tuple:
 
 # ── Risque ──────────────────────────────────────────────────────────────────
 
-def score_risque(f: dict, dates: list, closes: list):
+def score_risque(f: dict, dates: list, closes: list, taux: float = 1.0):
     """Volatilite et position dans le canal 52 semaines.
 
     Note haute = risque contenu. Le beta mesure l'amplitude par rapport au
     marche ; la position dans le canal annuel indique s'il reste de la marge
     avant le plus haut.
+
+    `taux` : BUG CORRIGE (19/09/2026). `closes` (l'historique) est deja
+    converti en euros par l'appelant, mais `haut_52s`/`bas_52s` viennent
+    tels quels de Yahoo/EODHD, dans la devise NATIVE du titre (dollar pour
+    les valeurs US, pence pour Londres...). Comparer un cours en euros a un
+    canal en dollars faussait la position d'environ 13% pour les valeurs US
+    (au taux courant), et rendait le calcul absurde en GBX (facteur ~85).
+    `taux` est le meme facteur de conversion que celui applique a `closes`
+    (voir `taux_ligne`) : par defaut 1.0, pour ne rien changer aux appels
+    qui ne le fournissent pas (tests existants notamment).
     """
     notes, poids = [], []
 
@@ -1734,6 +1889,8 @@ def score_risque(f: dict, dates: list, closes: list):
         poids.append(2.0)
 
     haut, bas = f.get("haut_52s"), f.get("bas_52s")
+    if haut and bas and taux:
+        haut, bas = haut * taux, bas * taux
     serie = _parse_serie(dates, closes)
     if haut and bas and serie and haut > bas:
         pos = (serie[-1][1] - bas) / (haut - bas) * 100
@@ -1929,7 +2086,14 @@ def compute_closed_trades(closes: list) -> tuple:
 
 
 def score_macro(indices_data):
-    chgs = [v["change_pct"] for v in indices_data.values() if v["change_pct"] != 0]
+    # get_index() peut renvoyer change_pct=None (indice indisponible, quota
+    # atteint) : `None != 0` vaut True en Python, donc None se glissait dans
+    # `chgs` et `sum()` plantait tout le rapport. On exclut explicitement les
+    # indices indisponibles -- un score macro calcule sur zero indice
+    # disponible reste a 5.0 ("Neutre"), inchange, mais ce 5.0-la ne doit
+    # jamais etre confondu avec un vrai zero.
+    chgs = [v["change_pct"] for v in indices_data.values()
+            if v["change_pct"] is not None and v["change_pct"] != 0]
     return round(max(0.0, min(10.0, 5.0 + sum(chgs) / len(chgs))), 2) if chgs else 5.0
 
 
@@ -2257,7 +2421,7 @@ def append_correlation_history(now: datetime, indice: dict):
             if nouveau:
                 writer.writeheader()
             writer.writerow({
-                "date":       now.strftime("%Y-%m-%d"),
+                "date":       date_seance(now),
                 "indice_pct": indice.get("indice_pct"),
                 "n_paires":   indice.get("n_paires"),
                 "n_lignes":   indice.get("n_lignes"),
@@ -2391,6 +2555,16 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
     try:
         etat = risk_engine.charger_etat(STOPS_STATE_PATH)
 
+        # Deux lignes du portefeuille peuvent partager le meme ticker (deux
+        # comptes, ou une fusion PRU pas encore declenchee). asset_data et les
+        # cours restent lus par le VRAI ticker (une seule cotation existe) --
+        # mais la cle transmise au moteur de risque doit etre UNIQUE par
+        # ligne, sinon la deuxieme ecrase l'etat de stop (high-water mark) de
+        # la premiere, et rien en aval ne peut plus distinguer les deux lignes
+        # (valeur de marche, poids, groupe correle). La premiere occurrence
+        # garde la cle nue, pour ne pas perdre l'historique de stop deja
+        # enregistre sous ce ticker.
+        _occurrences = {}
         entrees = []
         for r in results:
             a = r["asset"]
@@ -2399,16 +2573,28 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
             # explicitement plutot que de les laisser produire un stop bancal.
             if a.get("manuel"):
                 continue
-            cle = a.get("ticker_eod") or a.get("name")
-            d   = asset_data.get(cle) or {}
+            ticker = a.get("ticker_eod") or a.get("name")
+            d   = asset_data.get(ticker) or {}
+            n = _occurrences.get(ticker, 0) + 1
+            _occurrences[ticker] = n
+            cle = ticker if n == 1 else f"{ticker}#{n}"
             entrees.append({
                 "cle":    cle,
-                "nom":    a.get("name", cle),
+                "nom":    a.get("name", ticker),
                 "compte": a.get("account", ""),
                 "cours":  r.get("price_eur"),
                 "cout":   a.get("cost_eur"),
                 "closes": d.get("h_closes") or [],
+                # Dates alignees avec "closes" -- transmises pour que la
+                # correlation entre une ligne US et une ligne europeenne
+                # s'aligne sur les VRAIES dates communes plutot que sur les N
+                # derniers points de chaque serie (voir risk_engine.correlation).
+                "dates":  d.get("h_dates") or [],
                 "ligne":  a,
+                # Rattachee ici, dans le meme ordre que `results` : c'est ce
+                # qui permet de la reaffecter par position plus bas, sans
+                # repasser par un dict indexe par ticker (voir vm_par_cle).
+                "vm":     r.get("vm"),
                 # Un stop absolu peut etre libelle en devise etrangere. Le
                 # taux vient de get_fx, memoise : aucun appel supplementaire.
                 "eur_par_devise": taux_ligne(a, eur_usd, session_cache),
@@ -2429,24 +2615,38 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
 
         # On rattache la valeur de marche a chaque ligne : le rendu en a besoin
         # pour comparer la taille detenue a la taille suggeree.
-        vm_par_cle = {r["asset"].get("ticker_eod"): r.get("vm") for r in results}
-        for l in sortie["lignes"]:
-            l["vm"] = vm_par_cle.get(l["cle"])
+        #
+        # BUG CORRIGE (19/09/2026) : un dict {ticker: vm} ecrasait la valeur
+        # des lignes precedentes des qu'un meme ticker apparaissait plusieurs
+        # fois (WPEA x3 chez adrisis, ABNX x2 chez adrien) -- toutes les
+        # lignes en double affichaient alors la VM de la DERNIERE d'entre
+        # elles. `evaluer_portefeuille` traite `entrees` un par un et rend
+        # `sortie["lignes"]` dans le meme ordre, sans en perdre ni en
+        # ajouter (une ligne en erreur reste presente, voir risk_engine) :
+        # la reaffectation par POSITION est donc exacte, meme pour des
+        # tickers en double.
+        assert len(entrees) == len(sortie["lignes"]), (
+            "evaluer_portefeuille a change le nombre de lignes -- "
+            "la reaffectation par position n'est plus valide")
+        for e, l in zip(entrees, sortie["lignes"]):
+            l["vm"] = e.get("vm")
 
         # Exposition correlee : le plafond de poids ne voit qu'une ligne a la
         # fois. On lui fournit le poids ACTUEL (vm / capital), pas la taille
         # suggeree par dimensionner() -- c'est bien de ce qui est deja detenu
         # qu'on veut savoir si ca bouge ensemble.
-        closes_par_cle = {e["cle"]: e["closes"] for e in entrees}
+        donnees_par_cle = {e["cle"]: e for e in entrees}
         candidats = []
         if capital_ref:
             for l in sortie["lignes"]:
                 vm = _nombre_simple(l.get("vm"))
                 if vm is None:
                     continue
+                e = donnees_par_cle.get(l["cle"]) or {}
                 candidats.append({
                     "nom":       l.get("nom"),
-                    "closes":    closes_par_cle.get(l["cle"]) or [],
+                    "closes":    e.get("closes") or [],
+                    "dates":     e.get("dates") or [],
                     "poids_pct": vm / capital_ref * 100.0,
                 })
         exposition_correlee = risk_engine.exposition_correlee(candidats)
@@ -2861,13 +3061,16 @@ def bloc_md_repartition(repartition: dict) -> list:
 
 def _fetch_asset_data(asset: dict, eur_usd: float,
                       td_prices: dict, session_cache: dict) -> dict:
-    news = get_company_news(asset, 2)
+    # get_company_news() a ete retire d'ici (19/09/2026) : son resultat
+    # n'etait lu nulle part, ni dans le markdown ni dans generate_html.py --
+    # c'etaient 1 a 2 appels EODHD/Finnhub perdus par actif cote, a chaque
+    # run, sur un quota deja serre. La synthese d'actualite (RSS Yahoo, sans
+    # cle ni quota) reste affichee via get_news_synthesis.
     cs, cons_str, cons_src = get_consensus(asset)
     h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
     synthesis, synth_src = get_news_synthesis(asset)
     fonda, fonda_src = get_fundamentals(asset)
     return {
-        "news": news,
         "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
         "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
         "h_cache": h_cache, "h_err": h_err,
@@ -2897,6 +3100,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         return False
 
     now = datetime.now(PARIS_TZ)
+    jour_seance = date_seance(now)
     os.makedirs(CHARTS_DIR, exist_ok=True)
     os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
     os.makedirs("cache", exist_ok=True)
@@ -2914,7 +3118,13 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
 
     # ── 1. EUR/USD ────────────────────────────────────────────────────────────
     eur_usd, eur_usd_src, eur_usd_cache, eur_usd_warn = get_eur_usd(session_cache)
-    session_cache["eur_usd"] = eur_usd
+    # BUG CORRIGE (19/09/2026) : cette ligne ecrasait le cache MEME quand la
+    # valeur venait deja du cache (eur_usd_cache=True) ou d'une valeur de
+    # secours codee en dur (0.92, ni mesuree ni fraiche) -- le rafraichissant
+    # ainsi a chaque run sans jamais avoir ete reellement mis a jour. On ne
+    # cache desormais qu'une valeur REELLEMENT obtenue aujourd'hui.
+    if not eur_usd_cache and eur_usd_src != "Defaut 0.92":
+        _cache_set(session_cache, "eur_usd", eur_usd)
 
     # ── 2. Cours US en batch (TwelveData) ─────────────────────────────────────
     us_tickers = [a["ticker_td"] for a in COTEES if a.get("ticker_td")]
@@ -2968,9 +3178,17 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     asset_data = {a["ticker_eod"]: _MEMO[f"ad:{a['ticker_eod']}"] for a in COTEES}
 
     # ── 4. Indices macro ──────────────────────────────────────────────────────
+    # Memoise par nom d'indice (comme les taux 10 ans juste en dessous) : en
+    # mode --all-users, le S&P 500 et le CAC 40 sont les memes pour tout le
+    # monde. Avant ce correctif, chaque utilisateur re-interrogeait EODHD
+    # pour les memes deux indices -- un des postes qui faisait atteindre le
+    # quota journalier avant la fin du run (voir get_index).
     indices_data = {}
     for idx_name, idx_sym in INDICES.items():
-        indices_data[idx_name] = get_index(idx_sym)
+        cle = f"idx:{idx_name}"
+        if cle not in _MEMO:
+            _MEMO[cle] = get_index(idx_sym)
+        indices_data[idx_name] = _MEMO[cle]
 
     macro_score = score_macro(indices_data)
 
@@ -3045,7 +3263,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             pnl_m_pct = round(pnl_m / cout_m * 100, 2) if cout_m else 0.0
 
             history_rows.append({
-                "date": now.strftime("%Y-%m-%d"), "time": now.strftime("%H:%M"),
+                "date": jour_seance, "time": now.strftime("%H:%M"),
                 "ticker": key, "name": asset["name"],
                 "price_eur": valeur, "cost_eur": cout_m, "qty": 1,
                 "vm": valeur, "pnl_brut": pnl_m, "pnl_brut_pct": pnl_m_pct,
@@ -3080,11 +3298,23 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         h_dates  = d.get("h_dates", [])
         h_closes = d.get("h_closes", [])
 
+        # BUG CORRIGE (19/09/2026) : chg_pct du fournisseur n'etait pas
+        # fiable -- toujours a 0.0 cote TwelveData (jamais renvoye par
+        # cross_validate), et pas toujours juste cote EODHD (une ligne
+        # pouvait afficher +0.00% un jour ou son historique montrait une
+        # vraie hausse a deux chiffres). On le recalcule depuis les deux
+        # dernieres clotures de l'historique deja telecharge, deja en EUR.
+        # Le chiffre fournisseur reste utilise si le recalcul est impossible
+        # (historique trop court) : mieux vaut un chiffre imprecis qu'aucun.
+        chg_recalc = variation_jour_pct(price_eur, h_closes)
+        if chg_recalc is not None:
+            chg_pct = chg_recalc
+
         if h_closes and not d.get("h_cache"):
-            session_cache[f"hist_{key}"] = {"dates": h_dates, "closes": h_closes}
+            _cache_set(session_cache, f"hist_{key}", {"dates": h_dates, "closes": h_closes})
 
         if price_eur and not price_cache:
-            session_cache[f"price_{key}"] = price_eur
+            _cache_set(session_cache, f"price_{key}", price_eur)
 
         if price_eur is None:
             _log.warning("Cours introuvable pour %s — position ignorée dans le rapport", key)
@@ -3113,7 +3343,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "croissance":   score_croissance(fonda),
             "momentum":     sc_hist,
             "consensus":    cs,
-            "risque":       score_risque(fonda, h_dates, h_closes),
+            "risque":       score_risque(fonda, h_dates, h_closes,
+                                         taux_ligne(asset, eur_usd, session_cache)),
         }
         classe_actif = asset.get("asset_class") or asset.get("asset_type") or "action"
         total_score, confiance, detail, non_appl, manquants = note_titre(
@@ -3126,7 +3357,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                              asset.get("classe_label") or classe_actif)
 
         history_rows.append({
-            "date":         now.strftime("%Y-%m-%d"),
+            "date":         jour_seance,
             "time":         now.strftime("%H:%M"),
             "ticker":       key,
             "name":         asset["name"],
@@ -3231,7 +3462,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
 
     # ── 9 quater. Stops, alertes et dimensionnement ─────────────────────────
     risque = evaluer_risque(results, asset_data, capital_ref, eur_usd,
-                            now.strftime("%Y-%m-%d"), session_cache)
+                            jour_seance, session_cache)
 
     # ── 10. Graphique combiné ─────────────────────────────────────────────────
     chart_path   = os.path.join(CHARTS_DIR, "portfolio_combined.png")
@@ -3249,7 +3480,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     macro_trend = "Haussiere" if macro_score >= 6 else "Baissiere" if macro_score <= 4 else "Neutre"
 
     lines = [
-        f"# Rapport de Portefeuille v7.0 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
+        f"# Rapport de Portefeuille v7.5 -- {now.strftime('%d/%m/%Y %H:%M')} (Paris)",
         "",
         "---",
         "",
@@ -3263,10 +3494,18 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     ]
 
     for idx_name, idx_val in indices_data.items():
-        chg  = idx_val["change_pct"]
+        chg   = idx_val["change_pct"]
+        prix  = idx_val["price"]
+        # BUG CORRIGE (19/09/2026) : chg/prix valaient 0.0 (jamais None) meme
+        # quand l'indice etait indisponible (quota EODHD atteint) -- "0.00%"
+        # s'affichait comme si c'etait une vraie seance plate. Desormais
+        # get_index() renvoie None dans ce cas, et on l'affiche comme tel.
+        if chg is None or prix is None:
+            lines.append(f"| {idx_name} | n/d | n/d |")
+            continue
         sym  = "^" if chg >= 0 else "v"
         sign = "+" if chg >= 0 else ""
-        prix_fmt = f"{idx_val['price']:,.2f}".replace(",", " ")
+        prix_fmt = f"{prix:,.2f}".replace(",", " ")
         lines.append(f"| {idx_name} | {sym} {sign}{chg:.2f}% | {prix_fmt} |")
 
     lines += [""]
@@ -3300,7 +3539,11 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             lines.append(f"| Ecart OAT - UST | -- | {(fr - us) * 100:+.0f} pb | -- |")
         lines += [""]
 
-    macro_news = get_macro_news(5)
+    # Memoise pour la meme raison que les indices juste au-dessus : les
+    # manchettes macro generales ne dependent pas de l'utilisateur.
+    if "macro_news" not in _MEMO:
+        _MEMO["macro_news"] = get_macro_news(5)
+    macro_news = _MEMO["macro_news"]
     if macro_news:
         lines.append("**Manchettes macro :**")
         lines.append("")
