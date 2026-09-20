@@ -674,22 +674,61 @@ def _rendements(closes: list) -> list:
             for i in range(1, len(serie)) if serie[i - 1] > 0]
 
 
+def _rendements_par_date(dates: list, closes: list) -> dict:
+    """Rendements quotidiens indexes par date ("YYYY-MM-DD").
+
+    Contrairement a `_rendements()`, qui suppose que "le Nieme point" de deux
+    series designe la meme seance, ceci associe chaque rendement a sa VRAIE
+    date. Necessaire pour comparer une place americaine et une place
+    europeenne : leurs jours feries ne coincident pas (Labor Day, 14 juillet,
+    Thanksgiving...), donc "les N derniers points" de chacune ne sont pas
+    forcement les memes N seances -- un decalage silencieux d'un jour ou
+    plus sur une partie de la fenetre.
+    """
+    paires = []
+    for d, c in zip(dates or [], closes or []):
+        v = _nombre(c)
+        if v is not None and v > 0 and d:
+            paires.append((str(d)[:10], v))
+    paires.sort(key=lambda x: x[0])
+    out, precedent = {}, None
+    for d, v in paires:
+        if precedent is not None and precedent > 0:
+            out[d] = v / precedent - 1.0
+        precedent = v
+    return out
+
+
 def correlation(closes_a: list, closes_b: list,
-                min_obs: int = CORRELATION_MIN_OBS) -> float:
+                min_obs: int = CORRELATION_MIN_OBS,
+                dates_a: list = None, dates_b: list = None) -> float:
     """Coefficient de correlation de Pearson entre deux series de rendements.
 
-    Aligne les deux series sur leurs `min_obs`-et-plus derniers rendements
-    COMMUNS (memes N derniers points de chaque serie, pas necessairement les
-    memes dates -- ce module ne recoit que des cloture, pas des dates).
-    Retourne None sous `min_obs` points, ou si l'une des deux series est
-    constante (ecart-type nul : la correlation n'est alors pas definie).
+    Avec `dates_a`/`dates_b` fournis (BUG CORRIGE le 19/09/2026), les deux
+    series sont alignees sur l'INTERSECTION de leurs dates -- plus fiable
+    qu'aligner sur les N derniers points de chaque serie, ce qui suppose a
+    tort que deux places boursieres partagent le meme calendrier (voir
+    `_rendements_par_date`). Sans dates (compatibilite des appels existants),
+    on retombe sur l'ancien alignement par position.
+    Retourne None sous `min_obs` points communs, ou si l'une des deux series
+    est constante (ecart-type nul : la correlation n'est alors pas definie).
     """
-    ra, rb = _rendements(closes_a), _rendements(closes_b)
-    n = min(len(ra), len(rb))
-    if n < min_obs:
-        return None
-    ra, rb = ra[-n:], rb[-n:]
+    if dates_a and dates_b:
+        ra_d = _rendements_par_date(dates_a, closes_a)
+        rb_d = _rendements_par_date(dates_b, closes_b)
+        communes = sorted(set(ra_d) & set(rb_d))
+        if len(communes) < min_obs:
+            return None
+        ra = [ra_d[d] for d in communes]
+        rb = [rb_d[d] for d in communes]
+    else:
+        ra, rb = _rendements(closes_a), _rendements(closes_b)
+        n = min(len(ra), len(rb))
+        if n < min_obs:
+            return None
+        ra, rb = ra[-n:], rb[-n:]
 
+    n = len(ra)
     moy_a = sum(ra) / n
     moy_b = sum(rb) / n
     cov   = sum((ra[i] - moy_a) * (rb[i] - moy_b) for i in range(n)) / n
@@ -710,6 +749,10 @@ def exposition_correlee(lignes: list,
     `lignes` : liste de dicts avec au moins
         nom        libelle affiche
         closes     historique de clotures
+        dates      dates de ces clotures ("YYYY-MM-DD", meme longueur que
+                   `closes`), FACULTATIF -- fournies, la correlation
+                   s'aligne sur les dates communes plutot que sur les N
+                   derniers points de chaque serie (voir `correlation`).
         poids_pct  poids ACTUEL dans le portefeuille (vm / capital x 100) --
                    PAS la taille suggeree par dimensionner(). Une ligne sans
                    poids connu ou sans historique suffisant est ecartee : on
@@ -745,7 +788,9 @@ def exposition_correlee(lignes: list,
 
     for i in range(n):
         for j in range(i + 1, n):
-            c = correlation(candidats[i].get("closes"), candidats[j].get("closes"))
+            c = correlation(candidats[i].get("closes"), candidats[j].get("closes"),
+                            dates_a=candidats[i].get("dates"),
+                            dates_b=candidats[j].get("dates"))
             if c is not None and c >= seuil:
                 unir(i, j)
 
@@ -811,7 +856,9 @@ def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS)
     correlations = []
     for i in range(n):
         for j in range(i + 1, n):
-            c = correlation(candidats[i].get("closes"), candidats[j].get("closes"), min_obs)
+            c = correlation(candidats[i].get("closes"), candidats[j].get("closes"), min_obs,
+                            dates_a=candidats[i].get("dates"),
+                            dates_b=candidats[j].get("dates"))
             if c is not None:
                 correlations.append(c)
     if not correlations:
