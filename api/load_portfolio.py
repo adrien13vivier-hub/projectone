@@ -729,9 +729,20 @@ def charger_liens() -> dict:
 
 
 def enregistrer_liens(table: dict):
-    LIENS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    LIENS_PATH.write_text(json.dumps(table, ensure_ascii=False, indent=2),
-                          encoding="utf-8")
+    """Ecrit data/report_links.json. Ne leve jamais (meme logique que
+    `_ecrire_dernier_declenchement` dans backend.py) : cette fonction est
+    appelee par `jeton_rapport`, elle-meme appelee par `/api/status` — un
+    disque plein ou un souci de permission ne doit pas faire planter un
+    endpoint public consulte en continu par la pastille du site. En cas
+    d'echec, la table reste seulement inchangee sur disque ; un jeton
+    genere en memoire pour cette requete sera simplement regenere au
+    prochain appel."""
+    try:
+        LIENS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        LIENS_PATH.write_text(json.dumps(table, ensure_ascii=False, indent=2),
+                              encoding="utf-8")
+    except OSError as e:
+        print(f"[Liens] Écriture de report_links.json impossible : {e}")
 
 
 def jeton_rapport(username: str, creer: bool = True, rotation: bool = False) -> str:
