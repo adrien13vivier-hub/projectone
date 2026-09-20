@@ -13,6 +13,28 @@ import portfolio_analyzer as pa
 
 
 # ─────────────────────────────────────────────────────────────────────────
+# date_seance -- date de la seance decrite par le rapport (19/09/2026)
+# ─────────────────────────────────────────────────────────────────────────
+
+def test_date_seance_avant_minuit_est_le_jour_meme():
+    from datetime import datetime
+    assert pa.date_seance(datetime(2026, 9, 19, 22, 45)) == "2026-09-19"
+
+
+def test_date_seance_juste_apres_minuit_reste_la_veille():
+    # Le run reel arrive typiquement entre 00h47 et 01h25 (cron de secours
+    # retarde) : il decrit encore la cloture de la veille au soir.
+    from datetime import datetime
+    assert pa.date_seance(datetime(2026, 9, 20, 0, 52)) == "2026-09-19"
+    assert pa.date_seance(datetime(2026, 9, 20, 5, 59)) == "2026-09-19"
+
+
+def test_date_seance_bascule_a_6h():
+    from datetime import datetime
+    assert pa.date_seance(datetime(2026, 9, 20, 6, 0)) == "2026-09-20"
+
+
+# ─────────────────────────────────────────────────────────────────────────
 # slugify -- identifiants de dossier
 # ─────────────────────────────────────────────────────────────────────────
 
@@ -232,12 +254,29 @@ def test_bloc_md_exposition_correlee_sans_indice_disponible():
 def test_append_correlation_history_ecrit_une_ligne(tmp_path, monkeypatch):
     monkeypatch.setattr(pa, "CORR_HISTORY_PATH", str(tmp_path / "correlation_history.csv"))
     from datetime import datetime
-    pa.append_correlation_history(datetime(2026, 9, 19), {
+    # 22h45 : heure normale de declenchement (avant minuit), la date de
+    # seance est donc bien celle du jour calendaire.
+    pa.append_correlation_history(datetime(2026, 9, 19, 22, 45), {
         "indice_pct": 42.3, "n_paires": 6, "n_lignes": 4,
         "min_pct": -10.0, "max_pct": 91.0,
     })
     contenu = (tmp_path / "correlation_history.csv").read_text(encoding="utf-8")
     assert "date,indice_pct,n_paires,n_lignes,min_pct,max_pct,classe" in contenu
+    assert "2026-09-19,42.3,6,4,-10.0,91.0,Modérée" in contenu
+
+
+def test_append_correlation_history_run_apres_minuit_garde_la_veille(tmp_path, monkeypatch):
+    """BUG CORRIGE (19/09/2026) : le run reel arrive apres minuit heure de
+    Paris (cron de secours retarde) -- un rapport qui decrit la cloture du
+    19 au soir doit rester date du 19, pas basculer au 20 sous pretexte que
+    l'horloge du run a deja change de jour."""
+    monkeypatch.setattr(pa, "CORR_HISTORY_PATH", str(tmp_path / "correlation_history.csv"))
+    from datetime import datetime
+    pa.append_correlation_history(datetime(2026, 9, 20, 0, 52), {
+        "indice_pct": 42.3, "n_paires": 6, "n_lignes": 4,
+        "min_pct": -10.0, "max_pct": 91.0,
+    })
+    contenu = (tmp_path / "correlation_history.csv").read_text(encoding="utf-8")
     assert "2026-09-19,42.3,6,4,-10.0,91.0,Modérée" in contenu
 
 
