@@ -18,7 +18,7 @@ Endpoints :
   POST /api/portfolio/{user}   → sauvegarder les lignes
   POST /api/analyze/{user}     → lancer l'analyse manuellement
   GET  /api/users              → liste des utilisateurs (admin)
-  POST /api/users              → créer un compte (admin, max 5)
+  POST /api/users              → créer un compte (admin, max MAX_USERS)
   DELETE /api/users/{username} → supprimer un compte (admin)
   GET  /api/status             → statut serveur + prochain slot par user
   GET  /                       → sert interface.html
@@ -32,7 +32,7 @@ from fastapi import FastAPI, HTTPException, Depends, status, Body
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import List, Optional
 import sqlite3, bcrypt, jwt as pyjwt
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -893,6 +893,31 @@ class VenteRealisee(BaseModel):
     sell_date:     Optional[str] = ""
     marche:        Optional[str] = "euronext"
     note:          Optional[str] = ""
+
+    # BUG CORRIGE (21/09/2026) : les noms de champs `qty`/`buy_price_eur`/
+    # `marche` sont ceux qu'écrit l'interface actuelle. Des ventes
+    # enregistrées AVANT que ce nommage soit fixé portent encore les
+    # anciens noms (`quantity`/`buy_price`/`market`). Comme `qty` et
+    # `buy_price_eur` sont obligatoires, une seule vieille vente dans
+    # `closed` faisait échouer la validation de la requête ENTIÈRE —
+    # `/api/portfolio/{user}` répondait 422 et plus AUCUN enregistrement
+    # n'était possible pour ce compte, même pour une ligne qui n'a rien à
+    # voir avec cette vente. Rencontré sur le compte d'adrien (vente
+    # Palantir du 17/08, ancien format). On accepte maintenant les deux
+    # noms, ancien et nouveau.
+    @model_validator(mode="before")
+    @classmethod
+    def _migrer_anciens_noms(cls, valeurs):
+        if not isinstance(valeurs, dict):
+            return valeurs
+        valeurs = dict(valeurs)
+        if valeurs.get("qty") is None and valeurs.get("quantity") is not None:
+            valeurs["qty"] = valeurs["quantity"]
+        if valeurs.get("buy_price_eur") is None and valeurs.get("buy_price") is not None:
+            valeurs["buy_price_eur"] = valeurs["buy_price"]
+        if valeurs.get("marche") is None and valeurs.get("market") is not None:
+            valeurs["marche"] = valeurs["market"]
+        return valeurs
 
 
 class PortfolioSave(BaseModel):
