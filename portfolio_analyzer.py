@@ -3737,6 +3737,16 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         "",
     ]
 
+    # BUG CORRIGE (21/09/2026) : "Actualite" vient du flux RSS externe et
+    # peut contenir un "|" (present dans beaucoup de titres de depeches,
+    # ex. "Apple | Reuters"). Insere tel quel dans une cellule de table
+    # Markdown, ce caractere est interprete comme un separateur de colonne
+    # -- il decale/tronque le reste de la ligne, aussi bien a l'affichage
+    # Markdown brut que dans le decoupage par "|" de generate_html.py.
+    # Meme risque, plus rare, sur le nom/secteur (saisis a la main).
+    def _cellule_md(txt: str) -> str:
+        return str(txt).replace("|", "/").replace("\n", " ").strip()
+
     # ── Watchlist ─────────────────────────────────────────────────────────────
     lines += ["## Watchlist", "", "| Valeur | Secteur | Cours EUR | Variation | Actualite |",
               "|--------|---------|-----------|-----------|-----------|"]
@@ -3750,8 +3760,10 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             chg_str = f"{sym} {sign}{chg:.2f}%"
         else:
             p_str = chg_str = "N/D"
+        synth_txt = _cellule_md(synth_txt)
         short_synth = (synth_txt[:80] + "…") if len(synth_txt) > 80 else synth_txt
-        lines.append(f"| {w['name']} | {w['sector']} | {p_str} | {chg_str} | {short_synth} |")
+        lines.append(f"| {_cellule_md(w['name'])} | {_cellule_md(w['sector'])} | {p_str} | "
+                     f"{chg_str} | {short_synth} |")
 
     lines += ["", "---", ""]
 
