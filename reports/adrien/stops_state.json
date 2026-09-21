@@ -4,6 +4,10 @@
       "arme": true,
       "hwm": null
     },
+    "ABNX.PA#2": {
+      "arme": true,
+      "hwm": null
+    },
     "ACA.PA": {
       "arme": true,
       "hwm": null
@@ -17,6 +21,6 @@
       "hwm": null
     }
   },
-  "maj": "2026-09-18 22:47",
+  "maj": "2026-09-21 23:34",
   "schema": 1
 }
