@@ -2223,7 +2223,14 @@ async function loadUsers(){
   try{
     const users=await api('GET','/api/users');
     const list=document.getElementById('user-list');
-    document.getElementById('user-count').textContent=`(${users.length} / 5)`;
+    // BUG CORRIGE (21/09/2026) : le plafond de comptes etait ecrit en dur
+    // ("/ 5") alors que le serveur autorise MAX_USERS (10 depuis la
+    // derniere mise a jour) -- la page affichait donc un plafond faux.
+    // /api/inscription-ouverte expose deja ce plafond reel, sans doublon
+    // de logique cote serveur.
+    let max = '?';
+    try{ max = (await api('GET','/api/inscription-ouverte')).max; }catch(e){ /* affichage degrade seulement */ }
+    document.getElementById('user-count').textContent=`(${users.length} / ${max})`;
     list.innerHTML='';
     users.forEach(u=>{
       const div=document.createElement('div');
