@@ -1,14 +1,30 @@
 {
   "username": "didier",
-  "saved_at": "2026-09-21T17:21:18.100530+00:00",
+  "saved_at": "2026-09-21T17:22:48.322617+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": []
+    "watchlist": [],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0
   },
-  "lines": [],
-  "closed": []
+  "closed": [],
+  "lines": [
+    {
+      "name": "JC.DECAUX",
+      "ticker": "DEC.PA",
+      "isin": "",
+      "quantity": 12.0,
+      "buy_price": 21.0,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
+    }
+  ]
 }
