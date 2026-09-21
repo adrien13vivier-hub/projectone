@@ -284,9 +284,29 @@ jobs:
       # ── 7. Commit rapport + graphiques + pages HTML ─────────────────────
       # CORRECTION : le commit est TOUJOURS effectué (même si diff minimal)
       # pour garantir l'activité du dépôt et éviter la désactivation GitHub.
+      #
+      # BUG CORRIGE (21/09/2026) -- course avec le serveur sur
+      # data/report_links.json :
+      # Ce job part d'un checkout fait en tout DEBUT de run (etape 0), puis
+      # passe plusieurs minutes a analyser/generer avant d'arriver ici. Si,
+      # pendant ce temps, le serveur (api/github_sync.py, via l'API
+      # Contents avec verification de SHA) pousse lui-meme un changement sur
+      # data/report_links.json -- par exemple parce que Gaby cree un compte
+      # -- alors la branche distante a avance : un simple "git push" est
+      # alors rejete (non-fast-forward), et TOUT le commit du jour (rapports,
+      # graphiques, pages HTML) echoue a se publier, alors meme que
+      # l'analyse a reussi. C'est ce qui s'est produit lors de l'incident
+      # "commit 8fa7e2b a retire adrisis" : un run dont l'etat local de
+      # report_links.json etait perime a ecrase, une fois son push enfin
+      # accepte, un ajout de jeton fait entre-temps.
+      # Correction : avant de pousser, on se resynchronise TOUJOURS sur la
+      # derniere version distante (fetch + rebase), avec deux tentatives --
+      # le meme principe de "lire la derniere version avant d'ecrire" que
+      # celui deja utilise cote serveur.
       - name: Commit report, charts & HTML page
         if: steps.check_today.outputs.already_done == 'false'
         run: |
+          set -euo pipefail
           git config user.name  "Portfolio Bot"
           git config user.email "bot@portfolio-analyzer"
           echo "$(date +'%Y-%m-%d %H:%M:%S UTC')" > reports/.last_run
@@ -303,7 +323,32 @@ jobs:
           else
             git commit -m "📊 Rapport quotidien $(date +'%Y-%m-%d %H:%M') Paris"
           fi
-          git push
+
+          # Publication avec re-synchronisation : jusqu'à 3 tentatives.
+          for essai in 1 2 3; do
+            if git push; then
+              echo "✅ Publié (tentative $essai)."
+              break
+            fi
+            if [ "$essai" = "3" ]; then
+              echo "❌ Echec de publication après 3 tentatives — un changement distant concurrent (ex. data/report_links.json mis à jour par le serveur) n'a pas pu être réconcilié."
+              exit 1
+            fi
+            echo "⚠️  Push rejeté (changement distant concurrent), tentative $essai/3 : re-synchronisation..."
+            git fetch origin main
+            # Rebase plutôt que merge : garde un historique linéaire. Si le
+            # changement distant (ex. un nouveau jeton ajouté par le
+            # serveur) ne touche pas les mêmes lignes que notre commit, le
+            # rebase se résout tout seul et rien n'est perdu des deux
+            # côtés. S'il y a un vrai conflit (même ligne modifiée par les
+            # deux), on abandonne proprement plutôt que de deviner --
+            # jamais d'écrasement silencieux d'une version par l'autre.
+            if ! git rebase origin/main; then
+              echo "❌ Rebase impossible automatiquement (conflit réel) : abandon, le prochain run reprendra depuis l'état distant à jour."
+              git rebase --abort
+              exit 1
+            fi
+          done
 
       # ── 8. Upload artifact ────────────────────────────────────────────
       - name: Upload report artifact
