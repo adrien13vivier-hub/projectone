@@ -1,0 +1,17 @@
+data/vapid.json
+data/jwt_secret.txt
+config_externe.json
+
+# AJOUT (22/09/2026, audit securite) : la base des comptes (mots de passe
+# hashes bcrypt) n'y figurait pas. Elle n'a jamais ete commitee jusqu'ici
+# -- par habitude, pas par garantie -- puisque seul le workflow GitHub
+# Actions ajoute des fichiers au depot, avec une liste explicite de
+# chemins qui ne l'inclut pas. Mais rien n'empechait qu'elle le soit un
+# jour par une commande git lancee directement sur le serveur. Ce fichier
+# ne doit JAMAIS quitter le serveur.
+data/users.db
+
+# Fichiers temporaires produits par l'ecriture atomique des JSON
+# (ecrire_json_atomique et equivalents) : jamais destines a etre commites.
+data/*.tmp*
+data/portfolios/*.tmp*
