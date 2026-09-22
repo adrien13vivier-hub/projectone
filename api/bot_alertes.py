@@ -126,8 +126,24 @@ def detecter(etat: dict, positions_brutes, trades_bruts) -> Tuple[List[dict], di
     avant_pos: Dict[str, float] = etat.get("positions") or {}
     avant_trd = set(etat.get("trades") or [])
 
-    # Un historique de trades VIDE alors qu'on en connaissait n'est pas une
-    # information : c'est une réponse ratée du bot (redémarrage, base en
+    # BUG CORRIGE (22/09/2026) : le meme garde-fou existait deja plus bas
+    # pour les trades, mais pas ici pour les positions -- alors que c'est
+    # exactement le meme risque. Si /api/positions repond une liste VIDE
+    # par erreur (bot en redemarrage, base en cours d'ouverture, panne
+    # reseau ponctuelle), l'ancien code ecrivait quand meme `photo_pos={}`
+    # comme nouvel etat de reference. Au passage suivant, des que le bot
+    # repondait a nouveau normalement, TOUTES les positions reelles (deja
+    # detenues depuis longtemps) semblaient nouvelles par rapport a cet
+    # etat vide -- generant une notification "achat" en double pour
+    # chacune d'elles. Meme logique que pour les trades juste en dessous :
+    # une liste vide qui succede a une liste non vide n'est pas une
+    # information, c'est un signe de reponse ratee. On garde l'etat
+    # precedent tel quel.
+    if avant_pos and not photo_pos:
+        return [], etat
+
+    # Un historique de trades VIDE alors qu'on en connaissait un n'est pas
+    # une information : c'est une réponse ratée du bot (redémarrage, base en
     # cours d'ouverture). Un trade clos ne disparaît pas. On garde l'état
     # précédent tel quel, sinon le passage suivant prendrait tout
     # l'historique pour des ventes nouvelles.
@@ -212,9 +228,19 @@ def lire_etat(chemin: Path) -> dict:
 
 
 def ecrire_etat(chemin: Path, etat: dict) -> None:
+    # BUG CORRIGE (22/09/2026, ecriture non atomique) : meme correctif que
+    # dans load_portfolio.ecrire_json_atomique() -- fichier temporaire
+    # voisin puis os.replace(), pour qu'une coupure en cours d'ecriture ne
+    # puisse jamais laisser un etat tronque (le bot relirait un JSON
+    # invalide au passage suivant et perdrait la trace des alertes deja
+    # envoyees, au risque de les renvoyer en double).
     try:
-        chemin.write_text(json.dumps(etat, ensure_ascii=False, indent=1),
-                          encoding="utf-8")
+        import os
+        chemin.parent.mkdir(parents=True, exist_ok=True)
+        tmp = chemin.with_name(chemin.name + f".tmp{os.getpid()}")
+        tmp.write_text(json.dumps(etat, ensure_ascii=False, indent=1),
+                       encoding="utf-8")
+        os.replace(tmp, chemin)
     except OSError as e:
         print(f"[bot-alertes] état non écrit : {e}")
 
