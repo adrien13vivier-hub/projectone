@@ -1,14 +1,80 @@
 {
   "username": "damien",
-  "saved_at": "2026-09-22T19:48:17.343420+00:00",
+  "saved_at": "2026-09-22T19:56:58.764490+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": []
+    "watchlist": [],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0
   },
-  "lines": [],
-  "closed": []
+  "closed": [],
+  "lines": [
+    {
+      "name": "DEC.PA",
+      "ticker": "DEC.PA",
+      "isin": "",
+      "quantity": 12.0,
+      "buy_price": 21.0,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": []
+    },
+    {
+      "name": "ABNX.PA",
+      "ticker": "ABNX.PA",
+      "isin": "",
+      "quantity": 30.0,
+      "buy_price": 2.653333,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "achats": [
+        {
+          "qte": 10,
+          "prix": 4.12,
+          "date": ""
+        },
+        {
+          "qte": 20,
+          "prix": 1.92,
+          "date": "2026-09-17"
+        }
+      ]
+    },
+    {
+      "name": "SM",
+      "ticker": "SM",
+      "isin": "",
+      "quantity": 17.0,
+      "buy_price": 28.706353,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "achats": [
+        {
+          "qte": 5,
+          "prix": 27.8816,
+          "date": ""
+        },
+        {
+          "qte": 12,
+          "prix": 29.049999999999997,
+          "date": "2026-09-21"
+        }
+      ],
+      "buy_currency": "USD",
+      "buy_fx": 0.8713
+    }
+  ]
 }
