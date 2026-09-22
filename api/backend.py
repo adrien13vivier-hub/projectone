@@ -302,7 +302,26 @@ def decode_token(token: str) -> dict:
 oauth2 = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 def current_user(token: str = Depends(oauth2)) -> dict:
-    return decode_token(token)
+    payload = decode_token(token)
+    # FAILLE CORRIGEE (22/09/2026) : le jeton JWT n'etait verifie que par sa
+    # signature et sa date d'expiration (8h, JWT_EXPIRE) -- jamais contre la
+    # base de comptes. Un compte supprime par l'admin (DELETE /api/users/x)
+    # restait donc utilisable avec son ancien jeton jusqu'a 8h apres sa
+    # suppression : portefeuille, mot de passe, notifications... tout
+    # restait accessible avec des identifiants qui n'existent plus. On
+    # revalide maintenant l'existence du compte (et son role a jour) a
+    # chaque requete authentifiee -- une simple lecture SQLite locale,
+    # negligeable pour le nombre de comptes de ce service.
+    con = get_db()
+    try:
+        row = con.execute("SELECT role FROM users WHERE username=?",
+                           (payload.get("sub"),)).fetchone()
+    finally:
+        con.close()
+    if row is None:
+        raise HTTPException(status_code=401, detail="Compte supprimé ou inexistant")
+    payload["role"] = row["role"]
+    return payload
 
 def require_admin(user: dict = Depends(current_user)) -> dict:
     if user.get("role") != "admin":
@@ -310,7 +329,7 @@ def require_admin(user: dict = Depends(current_user)) -> dict:
     return user
 
 # ── Analyse d'un utilisateur ─────────────────────────────────────────
-from api.load_portfolio import lien_rapport, dossier_rapport
+from api.load_portfolio import lien_rapport, dossier_rapport, ecrire_json_atomique
 
 
 def run_analysis_for(username: str) -> dict:
@@ -591,8 +610,7 @@ def _lire_dernier_declenchement() -> dict:
 
 def _ecrire_dernier_declenchement(valeur: dict) -> None:
     try:
-        DECLENCHEMENT_PATH.write_text(
-            json.dumps(valeur, ensure_ascii=False, indent=2), encoding="utf-8")
+        ecrire_json_atomique(DECLENCHEMENT_PATH, valeur)
     except OSError as e:
         print(f"[Analyse] Trace du declenchement non ecrite : {e}")
 
@@ -1039,6 +1057,13 @@ def push_abonner(data: AbonnementPush, user: dict = Depends(current_user)):
     if not etat_push().get("disponible"):
         raise HTTPException(status_code=503,
                             detail=etat_push().get("motif", "Notifications indisponibles"))
+    # FAILLE CORRIGEE (22/09/2026, SSRF) : voir push.endpoint_valide(). On
+    # rejette ici toute adresse qui ne ressemble pas a un vrai service de
+    # notification push, avant meme de l'enregistrer -- le serveur ne doit
+    # jamais pouvoir etre amene a appeler une adresse fournie par un compte.
+    from api.push import endpoint_valide as _endpoint_valide
+    if not _endpoint_valide(data.endpoint):
+        raise HTTPException(status_code=400, detail="Adresse d'abonnement non reconnue")
     con = get_db()
     con.execute(
         "INSERT INTO push_subs (endpoint, username, p256dh, auth, appareil, cree_le) "
@@ -1141,9 +1166,6 @@ def status_check():
         con = get_db()
         try:
             nb_users = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-            rows = con.execute(
-                "SELECT username, slot_index, report_url FROM users ORDER BY slot_index"
-            ).fetchall()
         finally:
             con.close()
     except Exception:
@@ -1158,24 +1180,27 @@ def status_check():
             "schedule": [],
         }
 
+    # FAILLE CORRIGEE (22/09/2026) : cette route est PUBLIQUE, sans
+    # authentification -- c'est voulu, la pastille "Systeme" du pied de
+    # page en a besoin avant meme la connexion. Elle renvoyait auparavant,
+    # pour chaque compte, son nom d'utilisateur ET son lien de rapport
+    # complet (le jeton secret qui rend ce lien non devinable). N'importe
+    # qui pouvait donc lire tous les rapports de tous les comptes sans se
+    # connecter, en interrogeant simplement cette route -- ca annulait
+    # entierement l'interet du jeton secret (cf. data/report_links.json).
+    # Verification faite sur interface.html : rien cote frontend ne lit
+    # jamais schedule[i].username ni schedule[i].report_url -- seul
+    # schedule[0].slot sert, en repli, pour afficher l'heure d'analyse.
+    # Cette cle est identique pour tous les comptes (analyse groupee), donc
+    # aucune information utile n'est perdue en ne renvoyant plus que ca.
+    #
     # Une seule heure pour tout le monde. Les creneaux etales de 5 minutes
     # (22h30, 22h35, 22h40...) ont ete supprimes : l'analyse est GROUPEE,
     # un seul passage traite tous les profils et mutualise les appels API.
     # Cette liste conserve la cle "slot" pour ne pas casser une interface
-    # ancienne, mais elle vaut la meme chose sur toutes les lignes.
-    slots = []
-    for r in rows:
-        try:
-            report_url = lien_rapport(r["username"], CLOUDFLARE_BASE)
-        except Exception:
-            print(f"[Status] Lien de rapport impossible pour {r['username']} "
-                  f":\n{traceback.format_exc()}")
-            report_url = r["report_url"] or ""
-        slots.append({
-            "username":   r["username"],
-            "slot":       HEURE_ANALYSE_GROUPEE,
-            "report_url": report_url,
-        })
+    # ancienne, mais elle vaut la meme chose sur toutes les lignes -- et ne
+    # contient plus ni identite ni lien de rapport.
+    slots = [{"slot": HEURE_ANALYSE_GROUPEE} for _ in range(nb_users)]
 
     try:
         dernier_declenchement = (_lire_dernier_declenchement()
@@ -1343,20 +1368,21 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
     # plutot que de decouvrir une ligne en moins sans explication.
     lignes, regroupements = fusionner_lignes(brutes)
 
-    pfile.write_text(
-        json.dumps({
-            "username": username,
-            "saved_at": datetime.now(timezone.utc).isoformat(),
-            "settings": settings,
-            # Sans cette reprise, chaque enregistrement du portefeuille
-            # effacait silencieusement toutes les plus-values realisees.
-            "closed":   ([v.model_dump() for v in data.closed]
-                         if data.closed is not None
-                         else ancien.get("closed", [])),
-            "lines":    lignes
-        }, ensure_ascii=False, indent=2),
-        encoding="utf-8"
-    )
+    # BUG CORRIGE (22/09/2026, ecriture non atomique) : voir
+    # ecrire_json_atomique(). C'est le fichier le plus souvent ecrit par ce
+    # service, a chaque enregistrement depuis l'interface -- celui qu'une
+    # coupure au mauvais moment aurait le plus de chances de tronquer.
+    ecrire_json_atomique(pfile, {
+        "username": username,
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "settings": settings,
+        # Sans cette reprise, chaque enregistrement du portefeuille
+        # effacait silencieusement toutes les plus-values realisees.
+        "closed":   ([v.model_dump() for v in data.closed]
+                     if data.closed is not None
+                     else ancien.get("closed", [])),
+        "lines":    lignes
+    })
 
     # Contrôle immédiat : on renvoie les lignes rejetées pour que l'interface
     # puisse les signaler à l'utilisateur avant qu'il lance une analyse.
@@ -1573,8 +1599,7 @@ def changer_nom(data: ChangementNom, user: dict = Depends(current_user)):
     elif src.exists():
         profil = json.loads(src.read_text(encoding="utf-8"))
         profil["username"] = nouveau
-        dst.write_text(json.dumps(profil, ensure_ascii=False, indent=2),
-                       encoding="utf-8")
+        ecrire_json_atomique(dst, profil)
         src.unlink()
 
     # Le jeton du lien public suit le compte, pour ne pas invalider une
@@ -1617,17 +1642,20 @@ def changer_nom(data: ChangementNom, user: dict = Depends(current_user)):
     except Exception as e:
         sync = {"ok": False, "etat": "erreur", "detail": f"{type(e).__name__}: {e}"}
 
+    # BUG CORRIGE (22/09/2026) : ce bloc ajoutait un job local
+    # (`scheduler.add_job(..., id=f"analyse_{nouveau}")`) des qu'un compte
+    # etait renomme, SANS jamais verifier PLANIFICATION_LOCALE -- une
+    # analyse locale se declenchait donc meme quand ce reglage vaut "0"
+    # (le cas normal : c'est GitHub Actions qui analyse). En plus, le
+    # prefixe d'identifiant ("analyse_") differait de celui utilise partout
+    # ailleurs ("analyze_", voir rebuild_scheduler()) : ce job restait donc
+    # invisible pour le nettoyage fait par ailleurs (delete_user, un futur
+    # rebuild_scheduler). rebuild_scheduler() est deja la source unique de
+    # verite pour la planification locale (elle applique PLANIFICATION_LOCALE,
+    # verifie les cles API et utilise le bon prefixe) : on la relance
+    # simplement au lieu de dupliquer sa logique ici.
     if scheduler.running:
-        try:
-            scheduler.remove_job(f"analyse_{ancien}")
-        except Exception:
-            pass
-        slot_h, slot_m = creneau_utilisateur(row["slot_index"])
-        scheduler.add_job(
-            func=lambda u=nouveau: run_analysis_for(u),
-            trigger=CronTrigger(hour=slot_h, minute=slot_m, timezone="Europe/Paris"),
-            id=f"analyse_{nouveau}", replace_existing=True,
-        )
+        rebuild_scheduler()
 
     return {"ok": True, "ancien": ancien, "nouveau": nouveau,
             "remarque": remarque, "sync": sync,
@@ -1707,19 +1735,21 @@ def register(data: Inscription):
 
     used = [r[0] for r in con.execute("SELECT slot_index FROM users").fetchall()]
     slot_index   = next((i for i in range(MAX_USERS) if i not in used), nb)
-    slot_h, slot_m = creneau_utilisateur(slot_index)
+    # BUG CORRIGE (22/09/2026) : slot_h/slot_m servaient uniquement a poser
+    # l'ancien job local (scheduler.add_job) supprime plus bas au profit de
+    # rebuild_scheduler() -- ils sont retires ici, l'analyse etant desormais
+    # groupee sur HEURE_ANALYSE_GROUPEE pour tout le monde.
     report_url   = lien_rapport(nom, CLOUDFLARE_BASE)
 
     pfile = PORTFOLIOS / f"portfolio_{nom}.json"
     if not pfile.exists():
-        pfile.parent.mkdir(parents=True, exist_ok=True)
-        pfile.write_text(json.dumps({
+        ecrire_json_atomique(pfile, {
             "username": nom,
             "saved_at": datetime.now(timezone.utc).isoformat(),
             "settings": {"broker": "autre", "indices": ["S&P 500", "CAC 40"],
                          "watchlist": []},
             "lines":    [], "closed": []
-        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        })
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     con.execute("INSERT INTO users VALUES (?,?,?,?,?,?)",
@@ -1745,12 +1775,13 @@ def register(data: Inscription):
     except Exception as e:
         sync = {"ok": False, "etat": "erreur", "detail": f"{type(e).__name__}: {e}"}
 
+    # BUG CORRIGE (22/09/2026) : voir le meme correctif dans changer_nom().
+    # Cette route est en plus l'inscription PUBLIQUE (/api/register) : sans
+    # ce correctif, chaque nouvelle inscription declenchait une planification
+    # d'analyse locale, meme avec PLANIFICATION_LOCALE=0. rebuild_scheduler()
+    # applique deja la bonne regle (et le bon prefixe d'identifiant).
     if scheduler.running:
-        scheduler.add_job(
-            func=lambda u=nom: run_analysis_for(u),
-            trigger=CronTrigger(hour=slot_h, minute=slot_m, timezone="Europe/Paris"),
-            id=f"analyse_{nom}", replace_existing=True,
-        )
+        rebuild_scheduler()
 
     # Meme horaire pour tout le monde : l'analyse est groupee, ce qui divise
     # le nombre d'appels aux fournisseurs de donnees.
@@ -1795,14 +1826,13 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     # des sa premiere connexion.
     pfile = PORTFOLIOS / f"portfolio_{data.username}.json"
     if not pfile.exists():
-        pfile.parent.mkdir(parents=True, exist_ok=True)
-        pfile.write_text(json.dumps({
+        ecrire_json_atomique(pfile, {
             "username": data.username,
             "saved_at": datetime.now(timezone.utc).isoformat(),
             "settings": {"broker": "autre", "indices": ["S&P 500", "CAC 40"],
                          "watchlist": []},
             "lines":    []
-        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        })
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     con.execute(
@@ -1813,15 +1843,15 @@ def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
     con.commit()
     con.close()
 
-    # Ajoute immédiatement le job au scheduler
-    scheduler.add_job(
-        _scheduled_job,
-        trigger=CronTrigger(hour=slot_h, minute=slot_m, timezone="Europe/Paris"),
-        args=[data.username],
-        id=f"analyze_{data.username}",
-        replace_existing=True
-    )
-    print(f"[Scheduler] Nouveau job : {data.username} → {slot_h}h{slot_m:02d} heure Paris")
+    # BUG CORRIGE (22/09/2026) : ce bloc ajoutait un job local
+    # inconditionnellement, sans meme verifier `scheduler.running`, ni
+    # PLANIFICATION_LOCALE -- un compte cree par l'admin declenchait donc une
+    # analyse locale meme quand ce reglage vaut "0". rebuild_scheduler() est
+    # la source unique de verite pour la planification locale.
+    if scheduler.running:
+        rebuild_scheduler()
+    print(f"[Scheduler] Compte {data.username} pris en compte "
+          f"({'planification locale' if PLANIFICATION_LOCALE else 'GitHub Actions uniquement'}).")
 
     return {
         "created":    data.username,
@@ -1840,7 +1870,7 @@ def rotate_link(username: str, admin: dict = Depends(require_admin)):
     dossier docs/r/<ancien_jeton>/ doit etre supprime du depot pour que
     l'ancienne adresse cesse effectivement de repondre.
     """
-    from api.load_portfolio import jeton_rapport, dossier_rapport as _dr
+    from api.load_portfolio import jeton_rapport, dossier_rapport as _dr, charger_liens
     ancien = _dr(username, creer=False)
     jeton_rapport(username, rotation=True)
     nouveau_lien = lien_rapport(username, CLOUDFLARE_BASE)
@@ -1850,9 +1880,39 @@ def rotate_link(username: str, admin: dict = Depends(require_admin)):
     con.commit()
     con.close()
 
+    # FAILLE CORRIGEE (22/09/2026) : cette route ne faisait QUE regenerer le
+    # jeton en local. Or l'ancien lien restait publie et fonctionnel sur
+    # GitHub jusqu'a la prochaine analyse quotidienne (jusqu'a ~24h) : elle
+    # ne poussait ni la nouvelle table de jetons (data/report_links.json,
+    # comme le fait delete_user() via pousser_liens), ni la suppression du
+    # dossier de l'ancien rapport publie (docs/r/<ancien_jeton>/) -- alors
+    # que l'usage documente de cette route est justement de couper l'acces
+    # d'urgence si un lien a fuite. Meme mecanisme que delete_user().
+    depot = {"table": "non tentee", "ancien_dossier": "non tentee"}
+    try:
+        from api import github_sync as _gs
+        if not _gs.est_configure():
+            depot = {"table": "non configure", "ancien_dossier": "non configure"}
+        else:
+            table = charger_liens()
+            r = _gs.pousser_liens(table)
+            depot["table"] = r.get("etat", "inconnu") if isinstance(r, dict) else "poussee"
+            if ancien:
+                r2 = _gs.supprimer_dossier(ancien, f"Rotation du lien de {username}")
+                depot["ancien_dossier"] = (f"{r2.get('etat')} "
+                                           f"({r2.get('supprimes', 0)} fichier(s))")
+    except Exception as e:
+        print(f"[RotateLink] Publication distante incomplete pour {username} : "
+              f"{type(e).__name__}: {e}")
+        depot["erreur"] = f"{type(e).__name__}: {e}"
+
     return {"username": username, "report_url": nouveau_lien,
-            "a_supprimer": ancien,
-            "message": f"Supprime {ancien}/ du depot pour couper l'ancien acces."}
+            "ancien_dossier": ancien, "depot": depot,
+            "message": ("Nouveau lien publie et ancien lien coupe sur le depot."
+                        if not depot.get("erreur")
+                        else "Nouveau lien genere localement, mais la publication "
+                             "distante a échoué -- l'ancien lien peut rester actif "
+                             "jusqu'a la prochaine analyse quotidienne.")}
 
 
 @app.delete("/api/users/{username}")
