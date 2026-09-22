@@ -459,6 +459,17 @@ def esc(txt) -> str:
         return ""
     return html.escape(str(txt), quote=True)
 
+def expl(contenu_html: str, label: str = "Voir l'explication") -> str:
+    """AJOUT (22/09/2026), a la demande de Gaby : le rapport contenait trop
+    de texte explicatif fixe (paragraphes pedagogiques qui ne changent pas
+    d'un jour a l'autre, ex. "comment lire ce chiffre") affiche en
+    permanence, ce qui l'alourdissait. On reprend le meme principe deja en
+    place pour "Comment cette note est calculee" (un <details> repliable) :
+    seuls les chiffres et le contenu propre au jour restent visibles direct;
+    les explications generales passent derriere un petit bouton a ouvrir
+    si on le souhaite."""
+    return f'<details class="expl-toggle"><summary>ℹ️ {label}</summary>{contenu_html}</details>'
+
 def rec_badge(rec: str) -> str:
     # BUG CORRIGE (21/09/2026) : ce test reconnaissait un vocabulaire
     # (ACHAT FORT / ACHAT / GARDER / EVITER / VENDRE) que
@@ -890,6 +901,7 @@ def build_stops_html() -> str:
       <tbody>{trows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     «&nbsp;Amplitude/jour&nbsp;» : de combien la valeur bouge en moyenne d'une
     clôture à l'autre — la lecture concrète de la volatilité.<br>
@@ -898,7 +910,7 @@ def build_stops_html() -> str:
     le même montant. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
     budget de risque justifierait : positif, la ligne est plus grosse que le
     risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
-  </p>"""
+  </p></details>"""
 
     expo_indice = stops_data.get("expo_indice") or {}
     indice_html = ""
@@ -922,10 +934,13 @@ def build_stops_html() -> str:
     Calculée sur {expo_indice.get('n_paires', '?')} paire(s) de lignes
     ({expo_indice.get('n_lignes', '?')} ligne(s) cotée(s) avec un historique
     suffisant){f", étendue observée de {expo_indice['min']}&nbsp;% à {expo_indice['max']}&nbsp;%" if 'min' in expo_indice else ''}.
+  </p>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+  <p class="macro-note">
     Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment
     les unes des autres. Un chiffre élevé et négatif est aussi une forme de
     concentration, sur le pari inverse.
-  </p>"""
+  </p></details>"""
 
     groupes_html = ""
     if stops_data.get("expo_groupes"):
@@ -936,12 +951,13 @@ def build_stops_html() -> str:
                       f'<td class="cell-num">{g["poids"]}</td>'
                       f'<td><span class="badge {cls}">{g["alerte"]}</span></td></tr>\n')
         groupes_html = f"""
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
     prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
     laisse penser. Un signal d'attention basé sur le passé récent, pas une
     prévision.
-  </p>
+  </p></details>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Groupe</th><th>Poids cumulé</th><th>Alerte</th></tr></thead>
@@ -969,13 +985,14 @@ def build_stops_html() -> str:
       <tbody>{rows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Un stop est franchi quand la <strong>clôture</strong> du jour passe sous le
     niveau — pas le cours en séance, dont les à-coups produisent des sorties
     inutiles. Une seule alerte par franchissement&nbsp;; le déclencheur se
     ré-arme quand le cours repasse au-dessus. Les stops suiveurs et VQ montent
     avec le cours et ne redescendent jamais.
-  </p>
+  </p></details>
   {sizing}
   {expo_html}
 </section>"""
@@ -1008,10 +1025,11 @@ def build_repartition_html() -> str:
 <section class="section-block" id="repartition">
   <h2 class="section-title">🧭 Répartition</h2>
   <div class="alloc-grid">{blocs}</div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette
     peut dépasser 100&nbsp;%. Les autres axes forment bien une partition.
-  </p>
+  </p></details>
 </section>"""
 
 
@@ -1036,12 +1054,13 @@ def build_watchlist_html() -> str:
       <tbody>{rows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Titres suivis sans être détenus : ni coût de revient, ni note, ni stop —
     seulement le cours et l'actualité. Cours et actualités proviennent
     exclusivement de Yahoo Finance (cours) et de son flux RSS (actualités),
     sans consommer le quota EODHD/TwelveData réservé au portefeuille réel.
-  </p>
+  </p></details>
 </section>"""
 
 
@@ -1106,13 +1125,14 @@ def build_indices_html() -> str:
       <tbody>{brows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Le taux long souverain est le prix de l'argent sans risque : c'est la barre
     que toute action doit franchir. Quand il monte, le rendement exigé sur les
     actions monte avec lui et pèse sur les valorisations — d'autant plus fort
     que les bénéfices attendus sont lointains. L'écart OAT&nbsp;-&nbsp;UST
     mesure la prime que le marché demande à la France face aux États-Unis.
-  </p>"""
+  </p></details>"""
 
     return f"""
 <section class="section-block" id="macro">
@@ -1308,10 +1328,11 @@ def build_closes_html() -> str:
     return f"""
 <section class="section-block" id="realise">
   <h2 class="section-title">💰 Plus-values réalisées</h2>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="section-note">
     Positions vendues. Elles ne figurent plus dans le portefeuille et n'entrent
     pas dans la valorisation. Frais aller-retour déduits.
-  </p>
+  </p></details>
   <div class="table-wrap">
     <table>
       <thead>
@@ -1578,6 +1599,21 @@ header {
   font-size: .75rem; color: var(--muted); font-style: italic;
   line-height: 1.6; margin-top: 10px;
 }
+/* AJOUT (22/09/2026) : "bouton" repliable pour les paragraphes purement
+   explicatifs (comment lire un chiffre, comment un calcul fonctionne),
+   pour ne plus les afficher en permanence -- voir expl(). */
+.expl-toggle { margin: 8px 0 0; }
+.expl-toggle summary {
+  cursor: pointer; font-size: .72rem; color: var(--accent);
+  font-weight: 500; user-select: none; list-style: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.expl-toggle summary::-webkit-details-marker { display: none; }
+.expl-toggle summary::marker { content: ""; }
+.expl-toggle summary:hover { text-decoration: underline; }
+.expl-toggle[open] summary { margin-bottom: 6px; color: var(--muted); }
+.expl-toggle .macro-note,
+.expl-toggle .section-note { margin-top: 0; }
 .vente-date {
   font-size: .66rem; color: var(--muted); margin-top: 2px; font-weight: 400;
 }
