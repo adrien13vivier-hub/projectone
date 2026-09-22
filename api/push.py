@@ -63,6 +63,47 @@ def b64d(texte: str) -> bytes:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# FAILLE CORRIGEE (22/09/2026) — SSRF via l'abonnement push
+# ─────────────────────────────────────────────────────────────────────────────
+# `envoyer()` fait un `requests.post(endpoint, ...)` ou `endpoint` vient tel
+# quel de l'abonnement enregistre par POST /api/push/abonnement -- une
+# donnee fournie par le navigateur, donc par n'importe quel compte connecte.
+# Sans verification, un compte pouvait enregistrer n'importe quelle URL
+# (une adresse interne au reseau du serveur, une adresse locale, ou un site
+# tiers quelconque) : le serveur l'aurait alors appelee lui-meme, avec un
+# jeton d'authentification VAPID signe, a chaque notification envoyee
+# (alerte de stop, notification de test...). C'est une SSRF (Server-Side
+# Request Forgery) : le serveur devient un relais de requetes pour un
+# tiers.
+#
+# Un vrai abonnement Web Push ne pointe jamais que vers un des quelques
+# services de push connus des navigateurs. On verifie donc l'adresse au
+# moment de l'ENREGISTREMENT (avant qu'elle soit jamais utilisee) : HTTPS
+# obligatoire, et l'hote doit appartenir a cette liste. Tenue courte et
+# a completer si un navigateur en ajoute un nouveau.
+DOMAINES_PUSH_AUTORISES = (
+    "fcm.googleapis.com",        # Chrome, Edge, Android, Opera (Chromium)
+    "android.googleapis.com",    # anciens Chrome/Android
+    "updates.push.services.mozilla.com",  # Firefox desktop
+    "web.push.apple.com",        # Safari / iOS / macOS
+    "notify.windows.com",        # Edge Legacy / Windows (+ sous-domaines wns*.)
+)
+
+
+def endpoint_valide(endpoint: str) -> bool:
+    """True si `endpoint` ressemble a un vrai service de notification push
+    (et pas une adresse arbitraire fournie par le client)."""
+    try:
+        u = urlparse(str(endpoint or ""))
+    except Exception:
+        return False
+    if u.scheme != "https" or not u.hostname:
+        return False
+    hote = u.hostname.lower()
+    return any(hote == d or hote.endswith("." + d) for d in DOMAINES_PUSH_AUTORISES)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Cles VAPID : l'identite du serveur aupres du service de notification
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -108,14 +149,23 @@ class ClesVapid:
             encryption_algorithm=serialization.NoEncryption()).decode("ascii")
         obj = cls(prive)
         chemin.parent.mkdir(parents=True, exist_ok=True)
-        chemin.write_text(json.dumps(
+        # BUG CORRIGE (22/09/2026, ecriture non atomique) : ecrit d'abord
+        # dans un fichier temporaire voisin puis le substitue en une seule
+        # operation (os.replace, atomique) -- une coupure en cours
+        # d'ecriture ne peut plus laisser une cle privee VAPID tronquee sur
+        # disque. Le chmod 600 est applique AVANT la substitution : le
+        # fichier final n'est donc jamais, meme brievement, lisible par
+        # d'autres comptes du systeme.
+        tmp = chemin.with_name(chemin.name + f".tmp{os.getpid()}")
+        tmp.write_text(json.dumps(
             {"prive_pem": pem, "publique": obj.publique_b64,
              "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S")},
             ensure_ascii=False, indent=2), encoding="utf-8")
         try:
-            os.chmod(chemin, 0o600)
+            os.chmod(tmp, 0o600)
         except OSError:
             pass
+        os.replace(tmp, chemin)
         print(f"[push] Cles VAPID creees dans {chemin}.")
         return obj
 
@@ -222,6 +272,11 @@ def envoyer(abonnement: dict, message: dict, cles: ClesVapid, sujet: str,
     endpoint = abonnement.get("endpoint") or ""
     if not endpoint:
         return Resultat(False, 0, "abonnement sans adresse")
+    # Deuxieme barriere (la premiere est a l'enregistrement, dans backend.py) :
+    # un abonnement deja en base avant ce correctif pourrait porter une
+    # adresse non verifiee. On ne l'appelle jamais dans ce cas.
+    if not endpoint_valide(endpoint):
+        return Resultat(False, 0, "adresse d'abonnement non reconnue (rejetee)")
 
     try:
         corps = chiffrer(json.dumps(message, ensure_ascii=False).encode("utf-8"),
