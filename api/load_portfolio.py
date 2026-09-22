@@ -720,6 +720,34 @@ import secrets
 LIENS_PATH = ROOT / "data" / "report_links.json"
 
 
+def ecrire_json_atomique(chemin, donnees) -> None:
+    """Ecrit un fichier JSON de facon atomique.
+
+    AJOUT (22/09/2026). Auparavant, chaque ecriture JSON de ce service
+    (portefeuille, table des jetons, VAPID, dernier declenchement...) se
+    faisait par un `chemin.write_text(...)` direct : ouverture, TRONCATURE
+    du fichier existant, puis ecriture progressive. Si le processus est
+    interrompu pile a ce moment-la (redemarrage du service, coupure,
+    disque plein en cours d'ecriture), le fichier reste tronque -- un JSON
+    invalide, illisible au prochain demarrage. Pour le portefeuille d'un
+    utilisateur, ca veut dire des lignes perdues sans aucun message
+    d'erreur avant le prochain enregistrement.
+
+    On ecrit ici dans un fichier temporaire voisin (meme dossier, donc
+    meme systeme de fichiers), puis on le substitue au fichier final avec
+    `os.replace()`, qui est une operation atomique du systeme
+    d'exploitation : a tout instant, le fichier final est soit l'ancienne
+    version complete, soit la nouvelle version complete -- jamais un etat
+    intermediaire tronque.
+    """
+    import os as _os
+    chemin = Path(chemin)
+    chemin.parent.mkdir(parents=True, exist_ok=True)
+    tmp = chemin.with_name(chemin.name + f".tmp{_os.getpid()}")
+    tmp.write_text(json.dumps(donnees, ensure_ascii=False, indent=2), encoding="utf-8")
+    _os.replace(tmp, chemin)
+
+
 def charger_liens() -> dict:
     """Table {utilisateur: jeton}."""
     try:
@@ -729,18 +757,16 @@ def charger_liens() -> dict:
 
 
 def enregistrer_liens(table: dict):
-    """Ecrit data/report_links.json. Ne leve jamais (meme logique que
-    `_ecrire_dernier_declenchement` dans backend.py) : cette fonction est
-    appelee par `jeton_rapport`, elle-meme appelee par `/api/status` — un
-    disque plein ou un souci de permission ne doit pas faire planter un
-    endpoint public consulte en continu par la pastille du site. En cas
-    d'echec, la table reste seulement inchangee sur disque ; un jeton
-    genere en memoire pour cette requete sera simplement regenere au
-    prochain appel."""
+    """Ecrit data/report_links.json, de facon atomique (ecrire_json_atomique).
+    Ne leve jamais (meme logique que `_ecrire_dernier_declenchement` dans
+    backend.py) : cette fonction est appelee par `jeton_rapport`, elle-meme
+    appelee a l'inscription, la creation de compte, la rotation de jeton...
+    un disque plein ou un souci de permission ne doit pas faire planter ces
+    parcours. En cas d'echec, la table reste seulement inchangee sur
+    disque ; un jeton genere en memoire pour cette requete sera simplement
+    regenere au prochain appel."""
     try:
-        LIENS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        LIENS_PATH.write_text(json.dumps(table, ensure_ascii=False, indent=2),
-                              encoding="utf-8")
+        ecrire_json_atomique(LIENS_PATH, table)
     except OSError as e:
         print(f"[Liens] Écriture de report_links.json impossible : {e}")
 
