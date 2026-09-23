@@ -44,6 +44,12 @@ DATA_DIR         = ROOT / "data"
 PORTFOLIOS       = DATA_DIR / "portfolios"
 DB_PATH          = DATA_DIR / "users.db"
 INTERFACE        = ROOT / "interface.html"
+# v21 -- page d'accueil publique (voir "/" et "/app" plus bas). Fichiers
+# statiques, identiques a ceux publies sur Cloudflare Pages (docs/) --
+# distincts d'INTERFACE, qui est desormais servie sous /app.
+ACCUEIL_HTML     = ROOT / "index.html"
+ACCUEIL_JS       = ROOT / "app.js"
+ACCUEIL_CSS      = ROOT / "styles.css"
 ANALYZER         = ROOT / "portfolio_analyzer.py"
 GEN_HTML         = ROOT / "generate_html.py"
 GEN_CHART        = ROOT / "generate_chart.py"
@@ -952,7 +958,43 @@ class UserCreate(BaseModel):
 
 # ── Routes ───────────────────────────────────────────────────────────
 
+# v21 -- "/" sert desormais la page d'accueil PUBLIQUE (presentation, sans
+# compte), et l'application (ex-"/") vit maintenant sous "/app". Objectif
+# de Gaby : que quelqu'un qui tombe sur projectone.antoineassocies.fr sans
+# compte decouvre l'outil, plutot que d'atterrir directement sur un
+# formulaire de connexion.
+#
+# Repli volontaire : si index.html n'a pas encore ete copie sur le serveur
+# (etape de deploiement oubliee), "/" continue de servir l'application
+# plutot que d'afficher une erreur -- mieux vaut l'ancien comportement
+# qu'une page cassee.
 @app.get("/", include_in_schema=False)
+def serve_accueil():
+    if ACCUEIL_HTML.exists():
+        return FileResponse(str(ACCUEIL_HTML), media_type="text/html")
+    if INTERFACE.exists():
+        return FileResponse(str(INTERFACE), media_type="text/html")
+    raise HTTPException(status_code=404, detail="page d'accueil introuvable")
+
+
+@app.get("/app.js", include_in_schema=False)
+def accueil_js():
+    if ACCUEIL_JS.exists():
+        return FileResponse(str(ACCUEIL_JS), media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="app.js introuvable")
+
+
+@app.get("/styles.css", include_in_schema=False)
+def accueil_css():
+    if ACCUEIL_CSS.exists():
+        return FileResponse(str(ACCUEIL_CSS), media_type="text/css")
+    raise HTTPException(status_code=404, detail="styles.css introuvable")
+
+
+# v21 -- l'application (connexion + tableau de bord) vit ici. C'est vers
+# cette adresse que pointent tous les boutons "Se connecter" de la page
+# d'accueil, le manifeste PWA (start_url) et le clic sur une notification.
+@app.get("/app", include_in_schema=False)
 def serve_interface():
     if INTERFACE.exists():
         return FileResponse(str(INTERFACE), media_type="text/html")
