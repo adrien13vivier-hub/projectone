@@ -1,0 +1,21 @@
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Robots-Tag: noindex, nofollow
+
+# Les rapports ne doivent jamais être indexés ni mis en cache par un proxy
+# partagé : l'adresse fait office de clé d'accès.
+/r/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: private, no-store
+  Referrer-Policy: no-referrer
+
+# v19 -- taux EUR/USD du jour (voir generate_portal.py). Chiffre public, non
+# personnel : contrairement a /r/*, rien ici n'identifie qui que ce soit.
+# Access-Control-Allow-Origin autorise l'interface (sur un autre domaine,
+# projectone.antoineassocies.fr) a le lire directement depuis le navigateur.
+/taux-change.json
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
