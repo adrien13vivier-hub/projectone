@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-09-17T16:55:47.373459+00:00",
+  "saved_at": "2026-09-23T14:38:11.820729+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -23,13 +23,13 @@
     {
       "name": "Palantir Technologies",
       "ticker": "PLTR",
-      "market": "us",
-      "quantity": 2,
-      "buy_price": 119.06,
+      "qty": 2.0,
+      "buy_price_eur": 119.06,
       "sell_price": 172.7,
       "sell_currency": "USD",
       "fx_at_sale": 0.86337,
       "sell_date": "2026-08-17 15:34:15",
+      "marche": "us",
       "note": "Vente integrale de la ligne"
     }
   ],
@@ -62,25 +62,25 @@
       "name": "Abionyx Pharma",
       "ticker": "ABNX.PA",
       "isin": "",
-      "quantity": 10.0,
-      "buy_price": 3.84,
+      "quantity": 25.0,
+      "buy_price": 2.688,
       "market": "euronext_paris",
       "asset_type": "action",
       "asset_class": "action",
       "account": "",
-      "tags": []
-    },
-    {
-      "name": "Abionyx Pharma",
-      "ticker": "ABNX.PA",
-      "isin": "",
-      "quantity": 15.0,
-      "buy_price": 1.92,
-      "market": "euronext_paris",
-      "asset_type": "action",
-      "asset_class": "action",
-      "account": "",
-      "tags": []
+      "tags": [],
+      "achats": [
+        {
+          "qte": 10.0,
+          "prix": 3.84,
+          "date": ""
+        },
+        {
+          "qte": 15.0,
+          "prix": 1.92,
+          "date": ""
+        }
+      ]
     },
     {
       "name": "SM",
