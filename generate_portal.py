@@ -57,6 +57,38 @@ def dernier_releve(user: str) -> str:
         return "illisible"
 
 
+def ecrire_taux_change() -> None:
+    """docs/taux-change.json -- taux EUR/USD du jour, publie a cote des
+    rapports (v19). Consomme par interface.html pour remplir tout seul le
+    "Taux -> EUR" d'une ligne ou d'un rachat saisi en dollars.
+
+    Rien de sensible ici : c'est un chiffre public, pas un rapport personnel.
+    En cas d'echec des deux sources (EODHD puis Yahoo Finance, voir
+    portfolio_analyzer.get_taux_usd_eur_du_jour), on n'ecrit RIEN plutot que
+    de publier une valeur inventee -- le fichier de la veille reste en place,
+    ce qui reste plus juste qu'un chiffre fabrique sur lequel quelqu'un
+    baserait un prix de revient.
+    """
+    try:
+        from portfolio_analyzer import get_taux_usd_eur_du_jour
+    except Exception as e:
+        print(f"⚠️  Taux EUR/USD indisponible (import) : {e}")
+        return
+
+    taux, source = get_taux_usd_eur_du_jour()
+    if taux is None:
+        print(f"⚠️  Taux EUR/USD non publié aujourd'hui : {source}")
+        return
+
+    chemin = DOCS / "taux-change.json"
+    chemin.write_text(json.dumps({
+        "eur_usd": round(taux, 6),
+        "date":    datetime.now().strftime("%Y-%m-%d"),
+        "source":  source,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"✅ Taux EUR/USD du jour publié ({source}) : {taux:.4f}")
+
+
 def construire_page(nb: int) -> str:
     maintenant = datetime.now().strftime("%d/%m/%Y à %H:%M")
     return f"""<!DOCTYPE html>
@@ -122,6 +154,8 @@ def main():
     DOCS.mkdir(parents=True, exist_ok=True)
     OUT.write_text(construire_page(len(users)), encoding="utf-8")
     print(f"✅ Page d'accueil neutre générée : {OUT}")
+
+    ecrire_taux_change()
 
     if not users:
         print("Aucun profil dans data/portfolios/.")
