@@ -1,153 +1,54 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>
-  // v21 -- si cette page s'ouvre depuis l'icone deja installee sur un
-  // ecran d'accueil (telephone), on saute la vitrine et on va direct a
-  // l'application : quelqu'un qui a deja un compte et a installe l'app ne
-  // doit jamais retomber sur une page de decouverte a chaque ouverture.
-  // Repli navigator.standalone pour Safari iOS, qui ne reconnait pas
-  // toujours la media query display-mode.
-  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-    location.replace('/app');
-  }
-</script>
-<title>Portfolio Analyzer — Un rapport, chaque jour à 16h00</title>
-<meta name="description" content="Analyse de risque de portefeuille automatisée : neuf classes d'actifs, quatre types de stop, exposition corrélée. Rapport quotidien à 16h00 Paris.">
-<meta name="theme-color" content="#0B0E0F">
-<meta name="robots" content="index, follow">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Portfolio Analyzer</title>
+<style>
+  :root { --fond:#0d1117; --carte:#161b22; --bord:#30363d;
+           --texte:#e6edf3; --doux:#8b949e; --accent:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center;
+          justify-content:center; padding:2rem 1.25rem; background:var(--fond);
+          color:var(--texte); line-height:1.6;
+          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .boite { max-width:520px; background:var(--carte); border:1px solid var(--bord);
+            border-radius:14px; padding:2.25rem; }
+  h1 { margin:0 0 .35rem; font-size:1.55rem; letter-spacing:-.02em; }
+  .sous { margin:0 0 1.75rem; color:var(--doux); font-size:.92rem; }
+  p { margin:0 0 1rem; font-size:.93rem; }
+  .encart { background:#0d1117; border:1px solid var(--bord);
+             border-left:3px solid var(--accent); border-radius:0 8px 8px 0;
+             padding:.9rem 1.1rem; margin:1.5rem 0; font-size:.88rem;
+             color:var(--doux); }
+  code { background:#21262d; padding:.12rem .4rem; border-radius:4px;
+          font-size:.85em; color:var(--accent); }
+  footer { margin-top:1.75rem; padding-top:1.25rem; border-top:1px solid var(--bord);
+            color:var(--doux); font-size:.78rem; }
+</style>
 </head>
 <body>
+  <div class="boite">
+    <h1>Portfolio Analyzer</h1>
+    <p class="sous">Analyse de portefeuille automatisée · 9 profil(s) suivi(s)</p>
 
-<!-- ══════════ LOADER — le nom se décode (réf. Locomotive) ══════════ -->
-<div class="loader" id="loader" aria-hidden="true">
-  <p class="loader-side loader-tl mono"><span data-decode="ALPHAVANTAGE · TWELVEDATA · EODHD · FINNHUB">&nbsp;</span></p>
-  <p class="loader-side loader-br mono"><span data-decode="PROCHAIN RAPPORT · 16H00 PARIS">&nbsp;</span></p>
-  <div class="loader-center">
-    <p class="loader-word" id="loaderWord">Portfolio Analyzer</p>
-    <span class="loader-rule"><i id="loaderBar"></i></span>
-    <p class="mono loader-pct" id="loaderPct">0%</p>
-  </div>
-</div>
+    <p>Chaque utilisateur dispose d'une adresse personnelle vers son propre
+       rapport, mise à jour automatiquement chaque jour ouvré.</p>
 
-<div class="cursor" id="cursor" aria-hidden="true"></div>
-
-<!-- ══════════ DOCK ══════════ -->
-<header class="dock" id="dock">
-  <a class="dock-word" href="#hero">Portfolio Analyzer</a>
-  <nav class="dock-nav" aria-label="Navigation principale">
-    <a class="mono dock-link" href="#hero">Produit</a>
-    <a class="mono dock-link" href="#backtest">Backtest</a>
-    <a class="mono dock-link" href="#contact">Contact</a>
-    <a class="btn btn-primary mag" href="https://projectone.antoineassocies.fr/app">Se connecter</a>
-  </nav>
-</header>
-
-<main>
-
-<!-- ══════════ 01 · HERO ══════════ -->
-<section class="hero" id="hero">
-  <div class="hero-side hero-side-l mono" aria-hidden="true"><span class="dim">SOURCES CROISÉES</span><span>ALPHAVANTAGE · TWELVEDATA</span></div>
-  <div class="hero-side hero-side-r mono" aria-hidden="true"><span class="dim">EXÉCUTION</span><span>GITHUB ACTIONS · 16H00 PARIS</span></div>
-
-  <div class="hero-copy">
-    <div class="badge-day" data-in style="--i:0">
-      <span class="badge-ico">↻</span>
-      <span class="mono">RAPPORT DU JOUR — <b id="today">22 SEPT 2026</b></span>
-      <span class="badge-sep"></span>
-      <span class="mono accent">16H00 PARIS</span>
+    <div class="encart">
+      Ton lien ressemble à <code>/r/xxxxxxxxxxxxxxxx/</code> et t'a été
+      communiqué à l'inscription. Garde-le : c'est lui qui donne accès à ton
+      rapport. Ne le partage pas.
     </div>
 
-    <h1 class="hero-title" id="heroTitle">
-      <span class="line">Un rapport,</span>
-      <span class="line">chaque jour à 16h00.</span>
-    </h1>
+    <p>Lien perdu ? Reconnecte-toi à l'interface de configuration : il y est
+       affiché en permanence.</p>
 
-    <p class="hero-sub" data-in style="--i:6">Neuf classes d'actifs, quatre types de stop, une exposition corrélée surveillée en continu — sourcé sur quatre API croisées.</p>
-
-    <div class="hero-cta" data-in style="--i:8">
-      <a class="btn btn-primary mag" href="https://projectone.antoineassocies.fr/app">Se connecter →</a>
-      <a class="btn btn-ghost mag" href="#backtest">Voir comment ça marche ↓</a>
-    </div>
+    <footer>
+      Page régénérée le 18/09/2026 à 22:47. Les analyses produites sont indicatives
+      et ne constituent pas un conseil en investissement.
+    </footer>
   </div>
-
-  <div class="stage" id="stage">
-    <div class="chip c1 float" data-depth="34" style="--i:10"><span class="dot ok"></span>AI.PA&nbsp;&nbsp;+2,4%</div>
-    <div class="chip c2 float" data-depth="-26" style="--i:11"><span class="dot warn"></span>VQ&nbsp;18%</div>
-    <div class="chip c3 float" data-depth="44" style="--i:12"><span class="dot bad"></span>CORRÉLATION 0,71 ⚠</div>
-    <div class="chip c4 float" data-depth="-38" style="--i:13">OAT 10Y&nbsp;&nbsp;+3bp</div>
-
-    <div class="card3d" id="card3d" data-in style="--i:9">
-      <div class="card-bar">
-        <i></i><i></i><i></i>
-        <span class="mono">PORTFOLIO-ANALYZER.APP</span>
-        <span class="mono live"><span class="dot ok"></span>APERÇU</span>
-      </div>
-      <div class="card-kpis">
-        <div>
-          <p class="mono">VALEUR TOTALE</p>
-          <p class="fig" data-count="184320" data-suffix=" €">0</p>
-          <svg class="spark" viewBox="0 0 200 46" preserveAspectRatio="none" aria-hidden="true"><polyline id="sparkLine" points="0,38 30,32 60,35 90,20 120,24 150,10 200,13" pathLength="1"/></svg>
-        </div>
-        <div><p class="mono">RISQUE / IDÉE</p><p class="fig" data-count="1" data-dec="1" data-suffix="%">0</p></div>
-        <div><p class="mono warn">CORRÉLATION</p><p class="fig warn" data-count="27.4" data-dec="1" data-suffix="%">0</p></div>
-        <div><p class="mono bad">ALERTES</p><p class="fig bad" data-count="2">0</p></div>
-      </div>
-      <div class="card-foot">
-        <span class="mono">BITCOIN — VQ 38% FRANCHI</span>
-        <span class="mono bad">À ÉVITER</span>
-      </div>
-      <div class="card-glare" id="glare"></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ 06 · BACKTEST — la citation qui s'encre ══════════ -->
-<section class="backtest" id="backtest">
-  <div class="bt-pin">
-    <div class="bt-inner">
-      <span class="bt-glyph" id="btGlyph" aria-hidden="true">&ldquo;</span>
-      <blockquote class="bt-quote" id="btQuote" data-scrub>On a corrélé le score publié à la performance réellement observée trente jours plus tard. Le résultat est quasi nul — et on le publie quand même, parce que c'est le seul moyen de savoir si l'algorithme a raison.</blockquote>
-      <div class="bt-rule" id="btRule"></div>
-      <div class="bt-sign" id="btSign">
-        <div>
-          <p class="bt-name">risk_engine × backtest_score.py</p>
-          <p class="mono">269 PAIRES SCORE/PERFORMANCE — HORIZON 30 JOURS</p>
-        </div>
-        <p class="bt-fig"><span data-count="0.04" data-dec="2" data-prefix="−" id="btFig">−0,00</span><small class="mono">CORR.</small></p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ 09 · FOOTER ══════════ -->
-<footer class="footer" id="contact">
-  <p class="mono foot-kicker" data-in>UN PORTEFEUILLE À SURVEILLER ?</p>
-  <div class="foot-cta" data-in style="--i:2">
-    <a class="btn btn-primary mag" href="https://projectone.antoineassocies.fr/app">Se connecter →</a>
-    <a class="btn btn-ghost mag" href="#hero">Retour en haut ↑</a>
-  </div>
-
-  <h2 class="foot-word" id="footWord" aria-label="Portfolio Analyzer">
-    <span class="fw-line" aria-hidden="true" data-letters>Portfolio</span>
-    <span class="fw-line" aria-hidden="true" data-letters>Analyzer</span>
-  </h2>
-
-  <div class="foot-bottom">
-    <p class="mono">© 2026 — ADRIEN VIVIER</p>
-    <p class="mono"><a class="hov" href="https://projectone.antoineassocies.fr/app" data-decode-hover="SE CONNECTER ↗">SE CONNECTER ↗</a></p>
-    <p class="mono">CONSTRUIT AVEC GITHUB ACTIONS</p>
-  </div>
-</footer>
-
-</main>
-
-<script src="app.js"></script>
 </body>
 </html>
