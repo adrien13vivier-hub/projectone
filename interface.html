@@ -40,7 +40,9 @@ img{display:block;max-width:100%}
 
 /* ── Tabs ── */
 .tabs{display:flex;gap:.25rem;margin-bottom:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.25rem}
-.tab{flex:1;padding:.5rem .75rem;border-radius:calc(var(--radius) - 2px);font-size:.875rem;font-weight:500;color:var(--muted);transition:all .18s ease;text-align:center}
+.tab{flex:1;padding:.5rem .75rem;border-radius:calc(var(--radius) - 2px);font-size:.875rem;font-weight:500;color:var(--muted);transition:all .18s ease;text-align:center;display:flex;align-items:center;justify-content:center;gap:.6rem}
+.tab svg{flex:none;width:18px;height:18px}
+.tab-label{overflow:hidden;text-overflow:ellipsis}
 .tab.active{background:var(--primary);color:var(--on-primary)}
 .tab:hover:not(.active){background:var(--surface2);color:var(--text)}
 .tab-panel{display:none}.tab-panel.active{display:block}
@@ -271,9 +273,9 @@ a,button{transition:.22s ease}
 .brand:hover{color:var(--text)}
 
 .tabs{display:grid;gap:5px;margin:80px 0 0;background:none;border:0;padding:0;border-radius:0}
-.tab{flex:none;text-align:left;padding:11px;border-radius:8px;font-size:14px;font-weight:500;
-  color:var(--muted);border-left:2px solid transparent;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
+.tab{flex:none;justify-content:flex-start;text-align:left;padding:11px;border-radius:8px;font-size:14px;font-weight:500;
+  color:var(--muted);border-left:2px solid transparent;white-space:nowrap}
+.tab-label{white-space:nowrap}
 .tab:hover:not(.active){background:var(--surface);color:#fff}
 .tab.active{background:var(--surface);color:var(--text);border-left:2px solid var(--primary)}
 
@@ -471,15 +473,36 @@ td{font-size:13px}
 <div class="app" id="app-screen" style="display:none">
   <aside class="side">
     <a class="brand" href="#" onclick="allerOnglet('accueil');return false">PROJECT<b>ONE</b></a>
+    <!-- v19 -- icones SVG (traits fins, sans emoji) a la place des pictos
+         emoji d'origine ; nouvel onglet "Gestion du risque". -->
     <nav class="tabs" id="nav-tabs">
-      <button class="tab active" onclick="switchTab('accueil',this)">◈ Vue d'ensemble</button>
-      <button class="tab" onclick="switchTab('portfolio',this)">📁 Portefeuille</button>
-      <button class="tab" onclick="switchTab('analyse',this)">📊 Analyse</button>
-      <button class="tab" onclick="switchTab('compte',this)">👤 Mon compte</button>
-      <button class="tab" onclick="switchTab('aide',this)">📖 Mode d'emploi</button>
-      <button class="tab" onclick="switchTab('bot',this)">🤖 Bot de trading</button>
-      <button class="tab" onclick="switchTab('action',this)">🔍 Analyse d'action</button>
-      <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">⚙️ Utilisateurs</button>
+      <button class="tab active" onclick="switchTab('accueil',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span class="tab-label">Vue d'ensemble</span></button>
+      <button class="tab" onclick="switchTab('portfolio',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+        <span class="tab-label">Portefeuille</span></button>
+      <button class="tab" onclick="switchTab('risque',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4.5"/></svg>
+        <span class="tab-label">Gestion du risque</span></button>
+      <button class="tab" onclick="switchTab('analyse',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 6h6v6"/></svg>
+        <span class="tab-label">Analyse</span></button>
+      <button class="tab" onclick="switchTab('compte',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.4-4 4.2-6 7.5-6s6.1 2 7.5 6"/></svg>
+        <span class="tab-label">Mon compte</span></button>
+      <button class="tab" onclick="switchTab('aide',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-1.8-1.3-4-2-6.5-2C4.5 4 3 4.3 3 4.3V18s1.5-.3 2.5-.3c2.5 0 4.7.7 6.5 2 1.8-1.3 4-2 6.5-2 1 0 2.5.3 2.5.3V4.3S19.5 4 18.5 4C16 4 13.8 4.7 12 6z"/><path d="M12 6v14"/></svg>
+        <span class="tab-label">Mode d'emploi</span></button>
+      <button class="tab" onclick="switchTab('bot',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="10" rx="2.5"/><path d="M12 5v4"/><circle cx="12" cy="3.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.15" fill="currentColor" stroke="none"/><path d="M2 13h2M20 13h2"/></svg>
+        <span class="tab-label">Bot de trading</span></button>
+      <button class="tab" onclick="switchTab('action',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>
+        <span class="tab-label">Analyse d'action</span></button>
+      <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.9-3.4 3.2-5 6-5s5.1 1.6 6 5"/><path d="M16.5 5.5c1.4.3 2.5 1.5 2.5 3s-1.1 2.7-2.5 3"/><path d="M18 19c-.4-2.1-1.3-3.6-2.6-4.5"/></svg>
+        <span class="tab-label">Utilisateurs</span></button>
     </nav>
     <div class="sidefoot" id="pied-lateral">
       Système<br>
@@ -614,39 +637,6 @@ td{font-size:13px}
         </div>
 
         <div style="margin-top:1.25rem">
-          <label style="margin:0 0 .5rem">Gestion du risque
-            <span style="color:var(--muted);font-weight:400">— pilote les stops et la taille des positions suggérée</span>
-          </label>
-          <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
-            <div class="form-group">
-              <label>Risque par idée (%)</label>
-              <input id="cfg-risque" type="number" min="0.05" max="10" step="0.05" value="1">
-              <small style="color:var(--muted);font-size:.75rem">Part du capital perdue si le stop part.</small>
-            </div>
-            <div class="form-group">
-              <label>Poids maximum par ligne (%)</label>
-              <input id="cfg-poidsmax" type="number" min="1" max="100" step="1" value="15">
-              <small style="color:var(--muted);font-size:.75rem">Plafond, quelle que soit la formule.</small>
-            </div>
-            <div class="form-group">
-              <label>Budget de volatilité (%)</label>
-              <input id="cfg-volcible" type="number" min="0.1" max="50" step="0.1" value="2">
-              <small style="color:var(--muted);font-size:.75rem">Utilisé pour les lignes sans stop.</small>
-            </div>
-            <div class="form-group">
-              <label>Liquidités disponibles (€)</label>
-              <input id="cfg-liquidites" type="number" min="0" step="1" placeholder="laisser vide si inconnu">
-              <small style="color:var(--muted);font-size:.75rem">Plafonne les tailles suggérées.</small>
-            </div>
-            <div class="form-group">
-              <label>Stop par défaut</label>
-              <select id="cfg-stopdefaut"></select>
-              <small style="color:var(--muted);font-size:.75rem">Appliqué aux lignes sans stop propre.</small>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:1.25rem">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
             <label style="margin:0">Watchlist <span style="color:var(--muted);font-weight:400">— valeurs suivies sans etre detenues</span></label>
             <button class="btn btn-ghost btn-sm" onclick="addWatch()">+ Valeur</button>
@@ -696,6 +686,46 @@ td{font-size:13px}
           <strong>Stops</strong> — <em>Pourcentage</em> et <em>Suiveur</em> attendent un
           pourcentage, <em>Absolu</em> un prix plancher, <em>VQ</em> ne demande rien
           (il est calculé par la volatilité). Les étiquettes se séparent par des virgules.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Gestion du risque (v19, deplace hors de l'onglet Portefeuille) ── -->
+    <div class="tab-panel" id="panel-risque">
+      <div class="card">
+        <div class="label">pilotage</div>
+        <div class="card-title">Gestion du risque</div>
+        <p class="muted" style="font-size:.82rem;margin:-.6rem 0 1rem">
+          Ces réglages pilotent les stops et la taille des positions suggérée
+          par le rapport quotidien — ils ne changent rien à vos lignes tant
+          que vous ne les appliquez pas vous-même.
+        </p>
+        <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
+          <div class="form-group">
+            <label>Risque par idée (%)</label>
+            <input id="cfg-risque" type="number" min="0.05" max="10" step="0.05" value="1">
+            <small style="color:var(--muted);font-size:.75rem">Part du capital perdue si le stop part.</small>
+          </div>
+          <div class="form-group">
+            <label>Poids maximum par ligne (%)</label>
+            <input id="cfg-poidsmax" type="number" min="1" max="100" step="1" value="15">
+            <small style="color:var(--muted);font-size:.75rem">Plafond, quelle que soit la formule.</small>
+          </div>
+          <div class="form-group">
+            <label>Budget de volatilité (%)</label>
+            <input id="cfg-volcible" type="number" min="0.1" max="50" step="0.1" value="2">
+            <small style="color:var(--muted);font-size:.75rem">Utilisé pour les lignes sans stop.</small>
+          </div>
+          <div class="form-group">
+            <label>Liquidités disponibles (€)</label>
+            <input id="cfg-liquidites" type="number" min="0" step="1" placeholder="laisser vide si inconnu">
+            <small style="color:var(--muted);font-size:.75rem">Plafonne les tailles suggérées.</small>
+          </div>
+          <div class="form-group">
+            <label>Stop par défaut</label>
+            <select id="cfg-stopdefaut"></select>
+            <small style="color:var(--muted);font-size:.75rem">Appliqué aux lignes sans stop propre.</small>
+          </div>
         </div>
       </div>
     </div>
@@ -936,7 +966,7 @@ td{font-size:13px}
           réarme si le cours repasse au-dessus.
         </p>
         <p>
-          Dans <strong>Mon profil → Gestion du risque</strong>, le
+          Dans l'onglet <strong>Gestion du risque</strong>, le
           <em>stop par défaut</em> s'applique à toutes les lignes qui n'en
           déclarent pas : mettre « VQ » là est la façon la plus rapide de
           couvrir tout le portefeuille d'un coup.
@@ -1550,6 +1580,12 @@ td{font-size:13px}
 let TOKEN=null, CURRENT_USER=null, USER_ROLE=null, REPORT_URL=null;
 const BASE='';
 
+// v19 -- taux EUR/USD du jour, pour remplir tout seul le "Taux -> EUR" des
+// lignes et rachats saisis en dollars. {valeur, date} une fois recupere,
+// sinon null : la saisie manuelle reste alors possible comme avant, rien
+// n'est jamais bloque par son absence.
+let TAUX_EUR_USD_JOUR = null;
+
 // BUG CORRIGE (21/09/2026) : quand FastAPI rejette une requete (422 —
 // champ manquant, type invalide...), `detail` n'est PAS une chaine mais
 // une LISTE d'objets {loc, msg, type}, un par champ en erreur. `new
@@ -1583,6 +1619,31 @@ function api(method,path,body){
     }
     return r.json();
   });
+}
+
+// v19 -- Taux EUR/USD du jour ────────────────────────────────────────
+//
+// Enregistre chaque jour par l'analyse GitHub Actions (EODHD, repli Yahoo
+// Finance si EODHD echoue) dans un petit fichier public, publie a cote des
+// rapports par Cloudflare Pages -- voir generate_portal.py. Pas de cle ici :
+// c'est un simple fichier statique, comme un rapport.
+//
+// Appelee une fois a la connexion. En cas d'echec (site injoignable,
+// fichier pas encore genere...), TAUX_EUR_USD_JOUR reste null et la saisie
+// manuelle du taux continue de fonctionner exactement comme avant -- cette
+// fonction ne fait qu'eviter d'avoir a le taper a la main quand elle reussit.
+async function chargerTauxDuJour(){
+  try{
+    const v = await api('GET', '/api/version');
+    const base = String(v.cloudflare_base || '').replace(/\/+$/, '');
+    if(!base) return;
+    const r = await fetch(base + '/taux-change.json', {cache: 'no-store'});
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d && Number(d.eur_usd) > 0){
+      TAUX_EUR_USD_JOUR = {valeur: Number(d.eur_usd), date: d.date || null};
+    }
+  }catch(e){ /* pas grave : la saisie manuelle du taux reste possible */ }
 }
 
 // ── Login ──────────────────────────────────────────────────────────
@@ -1693,6 +1754,7 @@ function showApp(){
   document.getElementById('app-screen').style.display='';
   document.getElementById('badge-user').textContent=CURRENT_USER+(USER_ROLE==='admin'?' (admin)':'');
   if(USER_ROLE==='admin') document.getElementById('tab-admin').style.display='';
+  chargerTauxDuJour();
   loadPortfolio();
   loadSlotInfo();
   if(REPORT_URL){
@@ -3192,7 +3254,14 @@ function majDeviseLigne(tr){
   if(cell) cell.classList.toggle('vide', !usd);
   if(champ){
     champ.hidden = !usd;
-    if(usd && !(Number(champ.value) > 0)) champ.value = '';
+    // v19 -- rempli automatiquement avec le taux du jour quand il a pu etre
+    // recupere (voir chargerTauxDuJour()) ; reste modifiable a la main, et
+    // vide comme avant si ce taux est indisponible. Ne touche jamais un
+    // champ deja renseigne (achat deja enregistre, taux tape a la main).
+    if(usd && !(Number(champ.value) > 0)){
+      champ.value = (TAUX_EUR_USD_JOUR && TAUX_EUR_USD_JOUR.valeur > 0)
+        ? TAUX_EUR_USD_JOUR.valeur : '';
+    }
   }
   const prix = tr.querySelector('.c-prix');
   if(prix) prix.placeholder = usd ? '150.00 $' : '150.00';
@@ -3408,7 +3477,12 @@ function ouvrirRenfort(bouton){
   document.getElementById('r-dev-achat').textContent = '(' + devSaisie + ')';
   document.getElementById('r-bloc-taux').hidden = !horsEuro;
   document.getElementById('r-dev-taux').textContent = devSaisie;
-  document.getElementById('r-taux').value = horsEuro ? (tauxLigne(tr) || '') : 1;
+  // v19 -- a defaut du taux deja utilise sur cette ligne, on propose le taux
+  // du jour (voir chargerTauxDuJour()) plutot que de laisser le champ vide ;
+  // reste modifiable a la main dans tous les cas.
+  document.getElementById('r-taux').value = horsEuro
+    ? (tauxLigne(tr) || (TAUX_EUR_USD_JOUR ? TAUX_EUR_USD_JOUR.valeur : '') || '')
+    : 1;
   RENFORT_EN_COURS.devise = devSaisie;
 
   document.getElementById('r-date').value = new Date().toISOString().slice(0, 10);
