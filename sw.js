@@ -25,7 +25,10 @@ self.addEventListener('push', evenement => {
     badge: '/icone-192.png',
     tag: d.tag || 'projectone',
     renotify: true,
-    data: { url: d.url || '/' }
+    // v21 -- "/" sert desormais la page de decouverte publique, pas
+    // l'application : le repli par defaut d'une notification sans lien
+    // explicite doit mener a "/app" (connexion / tableau de bord).
+    data: { url: d.url || '/app' }
   };
   // waitUntil est obligatoire : sans lui le systeme peut arreter le
   // travailleur avant que la notification soit affichee.
@@ -34,7 +37,7 @@ self.addEventListener('push', evenement => {
 
 self.addEventListener('notificationclick', evenement => {
   evenement.notification.close();
-  const cible = (evenement.notification.data && evenement.notification.data.url) || '/';
+  const cible = (evenement.notification.data && evenement.notification.data.url) || '/app';
   evenement.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(fenetres => {
       for (const f of fenetres) {
