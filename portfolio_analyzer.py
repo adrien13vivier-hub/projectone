@@ -594,6 +594,58 @@ def get_eur_usd(session_cache: dict) -> tuple:
 
 
 # =============================================================================
+# TAUX EUR/USD DU JOUR -- EODHD, repli Yahoo Finance (v19)
+# =============================================================================
+# Distinct de get_eur_usd() ci-dessus, qui sert au calcul du rapport (source
+# AlphaVantage, avec repli sur le cache de session puis 0.92 par defaut). Ce
+# taux-ci n'alimente rien dans le rapport : il est publie tel quel dans
+# docs/taux-change.json (voir generate_portal.py) pour que l'interface
+# remplisse toute seule le "Taux -> EUR" d'un titre ou d'un rachat saisi en
+# dollars, sans que personne n'ait besoin d'aller le chercher.
+#
+# Demande explicitement EODHD en source principale, Yahoo Finance en repli --
+# donc PAS de valeur de secours inventee comme 0.92 si les deux echouent :
+# un chiffre fabrique qui se glisserait sans bruit dans le prix de revient
+# de quelqu'un serait pire que l'absence de remplissage automatique. En cas
+# d'echec des deux sources, la fonction renvoie (None, motif) et
+# generate_portal.py laisse alors le fichier publie tel qu'il etait la
+# veille plutot que d'ecrire une valeur fausse.
+
+def get_taux_usd_eur_du_jour() -> tuple:
+    """Combien vaut 1 dollar en euros, aujourd'hui. Retourne (taux, source)
+    ou (None, motif_erreur) si EODHD et Yahoo Finance ont tous deux echoue.
+    """
+    errors = []
+
+    if EODHD_KEY:
+        data, err = _get(f"{EOD_BASE}/real-time/USDEUR.FOREX",
+                         {"api_token": EODHD_KEY, "fmt": "json"}, "eodhd")
+        if data and not _is_quota_error(err):
+            brut = data.get("close") or data.get("previousClose")
+            try:
+                taux = float(brut)
+                if taux > 0:
+                    return taux, "EODHD"
+                errors.append("EODHD:cours nul")
+            except (TypeError, ValueError):
+                errors.append("EODHD:valeur non numerique")
+        elif _is_quota_error(err):
+            errors.append("EODHD:quota atteint")
+        else:
+            errors.append(f"EODHD:{err or 'vide'}")
+    else:
+        errors.append("EODHD:cle absente")
+
+    brut, motif = _yahoo_summary("USDEUR=X", modules="price")
+    taux = _yv(brut, "regularMarketPrice") if brut else None
+    if taux is not None and taux > 0:
+        return float(taux), "Yahoo Finance"
+    errors.append(f"Yahoo:{motif or 'cours nul'}")
+
+    return None, f"indisponible ({', '.join(errors)})"
+
+
+# =============================================================================
 # COURS US -- TwelveData  (batch)
 # =============================================================================
 
