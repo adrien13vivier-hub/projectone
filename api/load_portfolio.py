@@ -158,30 +158,25 @@ PLACE_MANUELLE = "manuel"
 # calculé plus bas — "crypto" pour les crypto-actifs, "manuel" pour les lignes
 # non cotées, "us" ou "euronext" pour le reste. Une seule source de vérité.
 
+# REDUIT le 24/09/2026 a la demande de Gaby : seules quatre classes restent
+# suivies (ETF/fonds, actions, crypto, liquidites). Obligation, metal precieux,
+# immobilier, collection et autre ont ete retires -- aucun portefeuille reel
+# n'utilisait ces classes au moment du retrait (verifie sur data/portfolios/
+# avant de couper), donc rien n'est casse pour les comptes existants.
 CLASSES_ACTIFS = {
-    "action":     {"label": "Action",         "manuel": False, "ordre": 1},
-    "etf":        {"label": "ETF / Fonds",    "manuel": False, "ordre": 2},
-    "obligation": {"label": "Obligation",     "manuel": False, "ordre": 3},
-    "crypto":     {"label": "Crypto",         "manuel": False, "ordre": 4,
-                   "place": "crypto"},
-    "metal":      {"label": "Metal precieux", "manuel": False, "ordre": 5},
-    "cash":       {"label": "Liquidites",     "manuel": True,  "ordre": 6},
-    "immobilier": {"label": "Immobilier",     "manuel": True,  "ordre": 7},
-    "collection": {"label": "Collection",     "manuel": True,  "ordre": 8},
-    "autre":      {"label": "Autre",          "manuel": True,  "ordre": 9},
+    "action": {"label": "Action",      "manuel": False, "ordre": 1},
+    "etf":    {"label": "ETF / Fonds", "manuel": False, "ordre": 2},
+    "crypto": {"label": "Crypto",      "manuel": False, "ordre": 3,
+               "place": "crypto"},
+    "cash":   {"label": "Liquidites",  "manuel": True,  "ordre": 4},
 }
 
 ALIAS_CLASSES = {
     "actions": "action", "stock": "action", "equity": "action", "titre": "action",
     "fonds": "etf", "tracker": "etf", "sicav": "etf", "opcvm": "etf",
-    "obligations": "obligation", "bond": "obligation", "oblig": "obligation",
     "cryptomonnaie": "crypto", "cryptos": "crypto", "bitcoin": "crypto",
-    "or": "metal", "gold": "metal", "argent": "metal", "metaux": "metal",
     "liquidites": "cash", "liquidite": "cash", "especes": "cash",
     "livret": "cash", "compte": "cash", "monetaire": "cash",
-    "immo": "immobilier", "real_estate": "immobilier", "scpi": "immobilier",
-    "collectible": "collection", "collectibles": "collection", "montre": "collection",
-    "other": "autre", "divers": "autre",
 }
 
 
