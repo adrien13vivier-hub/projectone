@@ -39,7 +39,7 @@
 <button class="toggle" data-theme-toggle onclick="toggleTheme()">🌙 Sombre</button>
 <a class="back" href="index.html">← Retour au rapport</a>
 <h1>📈 Historique du Portefeuille</h1>
-<p class="meta">Mis à jour le 24/09/2026 à 01:07 · 8 sessions · 30 derniers jours</p>
+<p class="meta">Mis à jour le 25/09/2026 à 01:25 · 9 sessions · 30 derniers jours</p>
 
 <div class="grid">
   <div class="card">
@@ -60,13 +60,13 @@
 </div>
 
 <script>
-const labels      = ["2026-09-15 01:25", "2026-09-16 01:09", "2026-09-17 01:14", "2026-09-18 01:04", "2026-09-19 00:47", "2026-09-21 01:34", "2026-09-22 01:15", "2026-09-23 01:07"];
-const pnlData     = [9.63, 6.56, 10.59, 16.1, 14.42, 23.87, 28.72, 27.31];
-const colors      = ["rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)"];
+const labels      = ["2026-09-15 01:25", "2026-09-16 01:09", "2026-09-17 01:14", "2026-09-18 01:04", "2026-09-19 00:47", "2026-09-21 01:34", "2026-09-22 01:15", "2026-09-23 01:07", "2026-09-24 01:25"];
+const pnlData     = [9.63, 6.56, 10.59, 16.1, 14.42, 23.87, 28.72, 27.31, 22.88];
+const colors      = ["rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)"];
 const bLabels     = ["MSCI WORLD", "S&P500", "MSCI WORLD", "MSCI WORLD"];
-const bData       = [5.29, -0.56, 25.36, -2.78];
+const bData       = [4.03, -1.12, 22.84, -2.87];
 const bColors     = ["rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)"];
-const lineDatasets = [{"label": "MSCI WORLD", "data": [-3.1, -3.15, -3.08, -2.98, -3.01, -2.84, -2.75, -2.78], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "S&P500", "data": [-3.7, -4.2, -3.66, -2.84, -2.78, -1.24, -0.44, -0.56], "borderColor": "#16a34a", "backgroundColor": "rgba(22,163,74,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}];
+const lineDatasets = [{"label": "MSCI WORLD", "data": [-3.1, -3.15, -3.08, -2.98, -3.01, -2.84, -2.75, -2.78, -2.87], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "S&P500", "data": [-3.7, -4.2, -3.66, -2.84, -2.78, -1.24, -0.44, -0.56, -1.12], "borderColor": "#16a34a", "backgroundColor": "rgba(22,163,74,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}];
 
 const isDark    = () => document.documentElement.getAttribute('data-theme') === 'dark';
 const gridColor = () => isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
