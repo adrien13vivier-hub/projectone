@@ -677,8 +677,8 @@ td{font-size:13px}
           <button class="btn btn-ghost btn-sm" onclick="addLine()">+ Ajouter une ligne</button>
         </div>
         <div class="info-box neutral" style="margin-top:1rem;font-size:.82rem">
-          <strong>Actifs non cotés</strong> — choisir la classe <em>Liquidités</em>,
-          <em>Immobilier</em>, <em>Collection</em> ou <em>Autre</em> : le ticker et la
+          <strong>Actifs non cotés</strong> — choisir la classe <em>Liquidités</em> :
+          le ticker et la
           place disparaissent, la colonne «&nbsp;Qté / Valeur&nbsp;» devient la valeur
           actuelle en euros et «&nbsp;Prix de revient&nbsp;» le prix d'acquisition
           (laisser vide si inconnu). Aucune requête n'est envoyée aux fournisseurs de
@@ -917,7 +917,7 @@ td{font-size:13px}
         <table>
           <thead><tr><th>Colonne</th><th>Ce qu'on y met</th></tr></thead>
           <tbody>
-            <tr><td>Classe</td><td>Action, ETF, Obligation, Crypto, Métal précieux — ou Liquidités, Immobilier, Collection, Autre pour ce qui n'est pas coté</td></tr>
+            <tr><td>Classe</td><td>Action, ETF, Crypto — ou Liquidités pour ce qui n'est pas coté</td></tr>
             <tr><td>Ticker</td><td>Le code de la valeur : <code>AI.PA</code>, <code>AAPL</code>, <code>BTC</code></td></tr>
             <tr><td>Qté / Valeur</td><td>Le nombre de titres — ou, pour un actif non coté, sa valeur actuelle en euros</td></tr>
             <tr><td>Prix de revient</td><td>Ce que vous avez payé par titre — ou le prix d'acquisition pour un actif non coté</td></tr>
@@ -986,10 +986,7 @@ td{font-size:13px}
         </p>
         <p>
           Le <strong>capital de référence</strong> est la somme de vos valeurs
-          cotées et de vos liquidités. L'immobilier et les collections en sont
-          exclus : risquer 1 % d'un patrimoine dominé par un appartement
-          conduirait à des positions absurdes sur un portefeuille boursier bien
-          plus petit.
+          cotées et de vos liquidités.
         </p>
         <p>
           Une ligne <strong>déjà sous son stop</strong> ne reçoit aucune taille :
@@ -1172,8 +1169,8 @@ td{font-size:13px}
           affichés dans le registre, eux, sont bruts de frais.
         </div>
         <p>
-          Le bouton refuse les biens non cotés — un appartement ou une collection
-          ne passe pas par un carnet d'ordres. Pour ceux-là, corrigez la valeur de
+          Le bouton refuse les lignes non cotées — les liquidités ne passent pas
+          par un carnet d'ordres. Pour celles-là, corrigez la valeur de
           la ligne ou supprimez-la.
         </p>
 
@@ -1867,16 +1864,13 @@ const INDICES_DISPO = ['S&P 500','CAC 40','Nikkei 225'];
 
 // Repli local : si le backend est une version anterieure et ne sert pas encore
 // /api/asset-classes ni /api/stop-types, l'interface reste utilisable.
+// Reduit le 24/09/2026 : seules quatre classes restent suivies (voir
+// CLASSES_ACTIFS dans api/load_portfolio.py, la vraie source de verite).
 let CLASSES = [
-  {code:'action',    label:'Action',          manuel:false},
-  {code:'etf',       label:'ETF / Fonds',     manuel:false},
-  {code:'obligation',label:'Obligation',      manuel:false},
-  {code:'crypto',    label:'Crypto',          manuel:false, place:'crypto'},
-  {code:'metal',     label:'Métal précieux',  manuel:false},
-  {code:'cash',      label:'Liquidités',      manuel:true},
-  {code:'immobilier',label:'Immobilier',      manuel:true},
-  {code:'collection',label:'Collection',      manuel:true},
-  {code:'autre',     label:'Autre',           manuel:true}
+  {code:'action', label:'Action',      manuel:false},
+  {code:'etf',    label:'ETF / Fonds', manuel:false},
+  {code:'crypto', label:'Crypto',      manuel:false, place:'crypto'},
+  {code:'cash',   label:'Liquidités',  manuel:true}
 ];
 let STOP_TYPES = [
   {code:'none',    label:'Aucun',           parametre:null},
@@ -2849,9 +2843,7 @@ async function chargerAccueil(force){
   }
 
   // ── 02 / repartition par classe ───────────────────────────────────
-  const noms={action:"Actions",etf:"ETF",obligation:"Obligations",crypto:"Crypto",
-              metal:"Métaux",immobilier:"Immobilier",collection:"Collections",
-              autre:"Autre",cash:"Liquidités"};
+  const noms={action:"Actions",etf:"ETF",crypto:"Crypto",cash:"Liquidités"};
   const parts=Object.keys(classes).map(c=>({c,m:classes[c]}))
                     .sort((a,b)=>b.m-a.m);
   const maxi=parts.length?parts[0].m:0;
