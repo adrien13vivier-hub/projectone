@@ -789,7 +789,7 @@ def fusionner_lignes(lignes: list) -> tuple:
 
     Retourne (lignes fusionnées, journal lisible de ce qui a été regroupé).
     """
-    MANUELLES = {"cash", "immobilier", "collection", "autre"}
+    MANUELLES = {"cash"}  # seule classe manuelle restante depuis la reduction du 24/09/2026
     groupes, ordre, intactes = {}, [], []
 
     for ligne in lignes:
