@@ -187,7 +187,7 @@
     btRule.style.transform = `scaleX(${clamp((p - .66) / .14)})`;
     btSign.classList.toggle('in', p > .78);
     if (p > .84 && !figDone) { figDone = true; count(btFig, 1500); }
-    if (p < .6 && figDone) { figDone = false; btFig.textContent = '−0,00'; }
+    if (p < .6 && figDone) { figDone = false; btFig.textContent = '0'; }
 
     // footer : révélations déclenchées par la position (filet de sécurité de l'observer)
     $$('.footer [data-in], #footWord').forEach(el => { if (!el.classList.contains('in') && el.getBoundingClientRect().top < vh * .85) el.classList.add('in'); });
