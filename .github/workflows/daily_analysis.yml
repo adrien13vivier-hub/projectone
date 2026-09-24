@@ -269,8 +269,13 @@ jobs:
           # d'utilisateur n'apparaît jamais dans l'URL.
           find docs/r -name index.html -exec ls -lh {} \; 2>/dev/null || true
 
-      # ── 6. Page d'accueil listant tous les profils ───────────────────────
-      - name: Generate landing page & report links
+      # ── 6. Taux de change du jour + récapitulatif des liens ──────────────
+      # docs/index.html N'EST PLUS regenere ici (depuis le 23/09/2026) : c'est
+      # la page d'accueil PUBLIQUE de ProjectOne, un fichier fixe entretenu à
+      # la main. Cette étape vérifie juste qu'il est bien présent dans le
+      # dépôt (au cas où le fichier aurait été supprimé par erreur), sans y
+      # toucher.
+      - name: Taux de change + récapitulatif des liens
         if: steps.check_today.outputs.already_done == 'false'
         env:
           CLOUDFLARE_PAGES_URL: ${{ vars.CLOUDFLARE_PAGES_URL }}
@@ -279,7 +284,7 @@ jobs:
           # lisible que par les personnes ayant accès au dépôt : il doit donc
           # rester privé.
           python generate_portal.py || { echo "❌ ERREUR generate_portal.py (code $?)"; exit 1; }
-          ls -lh docs/index.html || { echo "❌ docs/index.html non généré"; exit 1; }
+          ls -lh docs/index.html || { echo "❌ docs/index.html est absent du dépôt — page d'accueil publique manquante"; exit 1; }
 
       # ── 7. Commit rapport + graphiques + pages HTML ─────────────────────
       # CORRECTION : le commit est TOUJOURS effectué (même si diff minimal)
