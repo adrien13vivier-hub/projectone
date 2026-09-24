@@ -1500,7 +1500,7 @@ def get_fundamentals(asset: dict) -> tuple:
     Toutes les valeurs sont conservees en PROPORTION (0.18 pour 18 %) ; la
     conversion en pourcentage se fait une seule fois, dans la notation.
     """
-    if str(asset.get("asset_type", "action")).lower() in ("etf", "obligation", "crypto"):
+    if str(asset.get("asset_type", "action")).lower() in ("etf", "crypto"):
         return {}, f"non applicable ({asset.get('asset_type')})"
 
     fusion, sources, motifs = {}, [], []
@@ -2014,10 +2014,8 @@ POIDS_NOTE = {
 CRITERES_ENTREPRISE = ("valorisation", "sante", "croissance", "consensus")
 
 NON_APPLICABLES = {
-    "etf":        CRITERES_ENTREPRISE,
-    "obligation": CRITERES_ENTREPRISE,
-    "crypto":     CRITERES_ENTREPRISE,
-    "metal":      CRITERES_ENTREPRISE,
+    "etf":    CRITERES_ENTREPRISE,
+    "crypto": CRITERES_ENTREPRISE,
 }
 
 
@@ -2500,13 +2498,14 @@ def _nombre_simple(valeur):
     return None if v != v else v
 
 
-ORDRE_CLASSES = ["action", "etf", "obligation", "crypto", "metal",
-                 "cash", "immobilier", "collection", "autre"]
+# REDUIT le 24/09/2026 (meme decision que CLASSES_ACTIFS dans
+# api/load_portfolio.py) : obligation, metal precieux, immobilier, collection
+# et autre ne sont plus suivis.
+ORDRE_CLASSES = ["action", "etf", "crypto", "cash"]
 
 LIBELLE_CLASSES = {
-    "action": "Actions", "etf": "ETF / Fonds", "obligation": "Obligations",
-    "crypto": "Crypto", "metal": "Métaux précieux", "cash": "Liquidités",
-    "immobilier": "Immobilier", "collection": "Collection", "autre": "Autre",
+    "action": "Actions", "etf": "ETF / Fonds",
+    "crypto": "Crypto", "cash": "Liquidités",
 }
 
 
