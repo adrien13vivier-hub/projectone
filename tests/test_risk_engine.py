@@ -7,6 +7,9 @@ pour tout retouche future du fichier.
 
 Aucun reseau, aucune cle API : uniquement des donnees synthetiques.
 """
+import random
+from datetime import date, timedelta
+
 import risk_engine as re_
 
 
@@ -177,31 +180,67 @@ def test_dimensionner_par_volatilite_egalise_le_risque():
 # ─────────────────────────────────────────────────────────────────────────
 
 def _base_correlee_inverse():
+    """Trois series de clotures pour tester la correlation sur variations a
+    3 mois (CORRELATION_FENETRE_JOURS = 63 seances). Il faut au moins
+    CORRELATION_MIN_OBS + CORRELATION_FENETRE_JOURS (83) clotures pour obtenir
+    une seule paire exploitable -- on en genere 120, via un generateur
+    pseudo-aleatoire a graine fixe (reproductible) plutot qu'un motif
+    periodique : un motif dont la periode divise la fenetre de 63 seances
+    ferait retomber toutes les variations glissantes sur la meme valeur
+    (ecart-type nul -> correlation indefinie).
+    """
+    rng = random.Random(7)
     base = [100.0]
-    for i in range(30):
-        base.append(base[-1] * (1 + (0.01 if i % 3 else -0.02)))
-    correlee = [v * 2.5 for v in base]
-    inverse = [200.0]
-    for i in range(1, len(base)):
-        r = base[i] / base[i - 1] - 1.0
-        inverse.append(inverse[-1] * (1 - r))
+    for _ in range(120):
+        base.append(base[-1] * (1 + rng.uniform(-0.015, 0.015)))
+    correlee = [v * 2.5 for v in base]        # proportionnelle -> correlation = 1
+    inverse = [base[0] ** 2 / v for v in base]  # inverse -> correlation ~ -1
     return base, correlee, inverse
 
 
 def test_correlation_parfaite_positive_et_negative():
     base, correlee, inverse = _base_correlee_inverse()
     assert re_.correlation(base, correlee) > 0.999
-    assert re_.correlation(base, inverse) < -0.999
+    # Sur des variations a 3 mois (composees), l'inverse exact d'une serie
+    # n'est plus une symetrie parfaitement lineaire (contrairement a des
+    # rendements a 1 jour) : la correlation reste tres fortement negative,
+    # mais pas necessairement au-dela de -0.999.
+    assert re_.correlation(base, inverse) < -0.99
 
 
 def test_correlation_insuffisance_de_donnees_est_none():
     base, correlee, _ = _base_correlee_inverse()
-    assert re_.correlation(base[:10], correlee[:10]) is None
+    assert re_.correlation(base[:70], correlee[:70]) is None
 
 
 def test_correlation_serie_constante_est_none():
     base, _, _ = _base_correlee_inverse()
     assert re_.correlation(base, [42.0] * len(base)) is None
+
+
+def test_correlation_par_date_tolere_des_calendriers_differents():
+    """BUG CORRIGE le 19/09/2026 : deux places (ex. US/FR) n'ont pas le meme
+    calendrier de jours feries -- `dates_a`/`dates_b` doivent aligner sur les
+    dates COMMUNES plutot que sur les N derniers points de chaque serie.
+    Peu de feries non-communs entre deux grandes places sur 200 jours (2 ici)
+    -- on reste realiste plutot que de retirer une seance sur 17, ce qui
+    decalerait artificiellement la fenetre de 63 seances (comptee par
+    POSITION dans chaque serie) bien plus qu'un vrai desaccord de calendrier.
+    """
+    base, correlee, _ = _base_correlee_inverse()
+    debut = date(2026, 1, 2)
+    toutes_dates = [(debut + timedelta(days=i)).isoformat() for i in range(200)]
+    dates_a = toutes_dates[:]
+    dates_b = [d for i, d in enumerate(toutes_dates) if i % 80 != 0]
+    base_pad = (base + [base[-1]] * (len(toutes_dates) - len(base)))[:len(toutes_dates)]
+    correlee_pad = (correlee + [correlee[-1]] * (len(toutes_dates) - len(correlee)))[:len(toutes_dates)]
+    closes_b = [v for i, v in enumerate(correlee_pad) if i % 80 != 0]
+
+    c = re_.correlation(base_pad, closes_b, dates_a=dates_a, dates_b=dates_b)
+    assert c is not None and c > 0.9
+
+    assert re_.correlation(base_pad[:70], closes_b[:70],
+                           dates_a=dates_a[:70], dates_b=dates_b[:70]) is None
 
 
 def test_exposition_correlee_regroupe_et_exclut_le_non_correle():
