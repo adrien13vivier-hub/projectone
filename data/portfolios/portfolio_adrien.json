@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-09-23T14:38:11.820729+00:00",
+  "saved_at": "2026-09-25T10:29:03.127836+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -13,6 +13,12 @@
         "ticker": "SNAP",
         "market": "us",
         "sector": "tech"
+      },
+      {
+        "name": "Apple",
+        "ticker": "AAPL",
+        "market": "us",
+        "sector": "Tech"
       }
     ],
     "risque_pct": 1.0,
@@ -71,12 +77,12 @@
       "tags": [],
       "achats": [
         {
-          "qte": 10.0,
+          "qte": 10,
           "prix": 3.84,
           "date": ""
         },
         {
-          "qte": 15.0,
+          "qte": 15,
           "prix": 1.92,
           "date": ""
         }
