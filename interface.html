@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Analyzer</title>
+<title>ProjectOne</title>
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#101416">
+<meta name="theme-color" content="#0B0E0F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ProjectOne">
@@ -13,10 +13,10 @@
 <link rel="icon" href="/icone-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
 <style>
-:root,[data-theme="light"],[data-theme="dark"],[data-theme="nuit"]{--bg:#101416;--surface:#19201f;--surface2:#202927;--border:#2b3538;--text:#eef2f1;--muted:#8c9799;--faint:#6d787a;--primary:#4f9fb5;--primary-h:#6fb8cb;--on-primary:#0a1113;--mana:#3f8cff;--mana2:#2457b8;--halo:#3f8cff2e;--success:#4f9fb5;--error:#ed8068;--danger:#8d3a2c;--warn:#e0a052;--radius:0.5rem;--shadow:none;--font:'Manrope',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
-/* theme unique : bleu nuit */
+:root,[data-theme="light"],[data-theme="dark"],[data-theme="nuit"]{--bg:#0B0E0F;--surface:#141B1D;--surface2:#1B2426;--surface3:#212B2E;--border:rgba(237,241,240,.10);--border-strong:rgba(237,241,240,.18);--text:#EDF1F0;--muted:#93A0A2;--faint:#3A4547;--primary:#49D3C4;--primary-h:#7BE6DA;--on-primary:#07211C;--accent:#49D3C4;--mana:#49D3C4;--mana2:#34A89C;--halo:rgba(73,211,196,.18);--success:#58D68D;--error:#EF6F5B;--danger:#EF6F5B;--warn:#F0B95C;--radius:0.5rem;--shadow:none;--font:'Bricolage Grotesque',system-ui,sans-serif;--mono:'DM Mono',ui-monospace,monospace}
+/* theme unique : harmonise sur la nouvelle page d'accueil (25/09/2026) */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100dvh;font-size:1rem;line-height:1.6}
@@ -83,7 +83,9 @@ img{display:block;max-width:100%}
 .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary)}
 
 /* ── Login ── */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100dvh;background:var(--bg)}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100dvh;background:var(--bg);position:relative;overflow:hidden}
+#login-screen::before{content:'';position:absolute;left:50%;top:38%;translate:-50% -50%;width:900px;height:600px;
+  border-radius:50%;background:radial-gradient(closest-side,rgba(73,211,196,.14),transparent);filter:blur(20px);pointer-events:none}
 .login-card{width:100%;max-width:380px;padding:2.5rem;background:var(--surface);border:1px solid var(--border);border-radius:calc(var(--radius)*2);box-shadow:var(--shadow)}
 .login-card h1{font-size:1.4rem;margin-bottom:.5rem;font-weight:700}
 .login-card p{color:var(--muted);font-size:.875rem;margin-bottom:1.5rem}
@@ -341,7 +343,7 @@ a,button{transition:.22s ease}
 .up{color:var(--primary)}.down{color:var(--error)}
 
 .chart{position:absolute;bottom:23px;left:21px;right:21px;height:78px;display:flex;align-items:end;gap:5px;z-index:0}
-.bar{flex:1;background:#86c4d3;border-radius:4px 4px 0 0;min-height:3px}
+.bar{flex:1;background:#8FE4DA;border-radius:4px 4px 0 0;min-height:3px}
 .bar:nth-child(3n){background:var(--primary)}
 .orbit{position:absolute;width:180px;height:180px;border:1px solid var(--primary);
   border-radius:50%;right:-62px;bottom:-78px;pointer-events:none;z-index:0;opacity:.55}
@@ -374,14 +376,37 @@ td{font-size:13px}
 .message{background:var(--surface2);border-color:transparent;border-radius:8px}
 .doc code{background:#ffffff10}
 
-/* ── Boutons : lueur bleue au survol, comme la maquette ─────────────── */
-.btn{border-radius:7px}
+/* ── Boutons : forme pilule et lueur turquoise au survol, comme l'accueil ── */
+.btn{border-radius:999px;transition:background .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease}
 .btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-ghost{border:1px solid var(--border-strong)}
 .btn-primary:hover,.btn-ghost:hover,.copy a:hover,.panel a.lien:hover{
-  background:var(--mana);border-color:var(--mana);color:#fff;
-  box-shadow:0 0 0 3px #3f8cff2e,0 7px 18px #3f8cff38;transform:translateY(-1px)}
+  background:var(--primary-h);border-color:var(--primary-h);color:var(--on-primary);
+  box-shadow:0 0 0 3px var(--halo),0 7px 18px rgba(73,211,196,.22);transform:translateY(-1px)}
+.btn-ghost:hover{color:var(--on-primary)}
 .btn-primary:active,.btn-ghost:active,.copy a:active,.panel a.lien:active{
-  background:var(--mana2);transform:translateY(0)}
+  background:var(--mana2);border-color:var(--mana2);transform:translateY(0)}
+
+/* ── Effets d'ensemble : reprise du langage visuel de l'accueil ──────── */
+@keyframes appIn{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+.app{animation:appIn .5s cubic-bezier(.19,1,.22,1) both}
+@keyframes panelIn{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
+.tab-panel.active{animation:panelIn .45s cubic-bezier(.19,1,.22,1) both}
+@media(prefers-reduced-motion:reduce){.app,.tab-panel.active{animation:none}}
+
+.panel,.tuile,.guru{transition:transform .25s ease,border-color .25s ease}
+.panel:hover{transform:translateY(-3px)}
+.tuile:hover,.guru:hover{transform:translateY(-2px);border-color:var(--border-strong)}
+
+.rond{transition:transform .35s cubic-bezier(.19,1,.22,1),border-color .2s ease,color .2s ease}
+.rond:hover{transform:rotate(150deg)}
+
+.form-group input:focus,.form-group select:focus,
+.dlg-grille input:focus,.recherche input:focus{
+  box-shadow:0 0 0 3px var(--halo)}
+
+.tab.active{background:rgba(73,211,196,.08)}
+.tab{transition:background .2s ease,color .2s ease,border-color .2s ease}
 
 /* ── Connexion ──────────────────────────────────────────────────────── */
 .login-card{background:var(--surface);border:0;border-radius:16px;padding:34px}
@@ -426,7 +451,7 @@ td{font-size:13px}
       <path d="M9 27 L18 9 L27 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M12 22h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
-    <h1>Portfolio Analyzer</h1>
+    <h1>ProjectOne</h1>
     <p>Connectez-vous pour accéder à votre espace personnel.</p>
     <div class="form-group">
       <label>Identifiant</label>
