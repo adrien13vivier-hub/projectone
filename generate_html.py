@@ -828,7 +828,7 @@ def build_stops_html() -> str:
                       f'<td><span class="badge {cls}">{g["alerte"]}</span></td></tr>\n')
         groupes_html = f"""
   <p class="macro-note">
-    Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
+    Lignes dont les variations à 3 mois sont fortement corrélées entre elles —
     prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
     laisse penser. Un signal d'attention basé sur le passé récent, pas une
     prévision.
