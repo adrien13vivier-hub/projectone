@@ -1,0 +1,14 @@
+{
+  "username": "mamefat",
+  "saved_at": "2026-09-25T10:41:55.813751+00:00",
+  "settings": {
+    "broker": "autre",
+    "indices": [
+      "S&P 500",
+      "CAC 40"
+    ],
+    "watchlist": []
+  },
+  "lines": [],
+  "closed": []
+}
