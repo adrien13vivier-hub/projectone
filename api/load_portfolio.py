@@ -436,6 +436,9 @@ def normaliser_ligne(ligne: dict, index: int = 0) -> dict:
         "tags":        normaliser_tags(ligne.get("tags") or ligne.get("etiquettes")),
         "stop":        normaliser_stop(ligne.get("stop")),
         "isin":        str(ligne.get("isin", "")).strip(),
+        # Secteur saisi a la main (facultatif) : prioritaire sur la lecture
+        # automatique du moteur d'apprentissage, qui s'en sert comme reference.
+        "sector":      str(ligne.get("sector") or ligne.get("secteur") or "").strip(),
         # v14 : le detail des achats voyage avec la ligne, pour que le rapport
         # puisse montrer d'ou vient le prix de revient moyen.
         "achats":      [a for a in (ligne.get("achats") or [])
@@ -647,6 +650,15 @@ def normalize_profile(raw: dict, username: str = None) -> dict:
     settings["liquidites"] = round(liq, 2) if liq is not None and liq >= 0 else None
 
     settings["stop_defaut"] = normaliser_stop(settings.get("stop_defaut"))
+
+    # Moteur d'apprentissage : horizon(s) borne(s) a l'entree. Import tolerant,
+    # comme partout ailleurs : sans le module, le reglage est simplement conserve.
+    try:
+        from learning_engine import normalize_settings as _norm_apprentissage
+        settings["apprentissage"] = _norm_apprentissage(settings.get("apprentissage"))
+        settings["apprentissage"]["classes"] = list(settings["apprentissage"]["classes"])
+    except Exception:
+        pass
 
     closes, err_closes = [], []
     for i, op in enumerate(raw.get("closed") or []):
