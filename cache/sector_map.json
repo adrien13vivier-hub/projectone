@@ -1,0 +1,26 @@
+{
+ "ABNX.PA": {
+  "fetched": "2026-09-25",
+  "industry": "Biotechnology",
+  "sector": "Healthcare",
+  "src": "yahoo"
+ },
+ "ACA.PA": {
+  "fetched": "2026-09-25",
+  "industry": "Banks - Regional",
+  "sector": "Financial Services",
+  "src": "yahoo"
+ },
+ "CRWV.US": {
+  "fetched": "2026-09-25",
+  "industry": "Software - Infrastructure",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
+ "SM.US": {
+  "fetched": "2026-09-25",
+  "industry": "Oil & Gas E&P",
+  "sector": "Energy",
+  "src": "yahoo"
+ }
+}
