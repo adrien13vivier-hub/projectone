@@ -18,11 +18,20 @@ Convertit reports/daily_report.md  →  docs/index.html
   - v3.8 : fix extract_kpi() → cible la ligne TOTAL en gras dans le tableau
             synthèse ; fix extract_positions() → regex m_row tolère ^ et
             tous les formats de variation actuels
+  - v3.9 (21/09/2026) : badges de recommandation resynchronisés sur le
+            vocabulaire actuel de portfolio_analyzer.recommend() ; momentum
+            1M/3M/6M réparé (regex bloquée par le gras markdown "**") ;
+            distinction "Sans objet" / "Attendu mais non obtenu" réintroduite ;
+            réaffichage de la justification, du consensus analystes, des
+            avertissements macro et du motif d'indisponibilité des stops ;
+            échappement HTML de tout texte externe (actualités RSS, noms
+            saisis) via esc() ; sanitisation de la watchlist (motif de la
+            troncature au "|" traité côté portfolio_analyzer.py)
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
-import base64, json, logging, os, re, sys
+import base64, html, json, logging, os, re, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -208,9 +217,16 @@ def extract_positions(md: str) -> list[dict]:
         rec       = m_row.group(8).strip()
 
         # Momentum : extrait depuis la ligne "Perf. historique :"
-        # Format : Perf. historique : 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER
+        # Format reel emis par portfolio_analyzer.py :
+        #   **Perf. historique :** 1M -0.3% | 3M +39.9% | 6M +52.2% -- HAUSSIER *(source : ...)*
+        # BUG CORRIGE (21/09/2026) : la regex ne sautait pas les "**" de mise
+        # en gras markdown entourant "Perf. historique :", donc apres le
+        # ":" elle ne trouvait jamais directement "1M" (bloque par "**") et
+        # ne matchait plus jamais -- le momentum retombait systematiquement
+        # sur le fallback "—" / ancienne regex "Momentum" (elle-meme
+        # obsolete, plus emise par le generateur actuel).
         m_perf = re.search(
-            r"Perf\. historique[^:]*:\s*1M\s*([^\s|]+)\s*\|\s*3M\s*([^\s|]+)\s*\|\s*6M\s*([^\s|]+)\s*--\s*(\w+)",
+            r"\*{0,2}Perf\. historique\*{0,2}[^:]*:\*{0,2}\s*1M\s*([^\s|]+)\s*\|\s*3M\s*([^\s|]+)\s*\|\s*6M\s*([^\s|]+)\s*--\s*(\w+)",
             block)
         if m_perf:
             ret_1m    = m_perf.group(1).strip()
@@ -253,8 +269,39 @@ def extract_positions(md: str) -> list[dict]:
                             block, flags=re.MULTILINE)
         fondamentaux = m_fonda.group(1).strip() if m_fonda else ""
 
-        m_absent = re.search(r"\*Non disponible\s*:\s*([^-*]+?)\s*--", block)
-        absentes = m_absent.group(1).strip() if m_absent else ""
+        # BUG CORRIGE (21/09/2026) : cette regex cherchait l'ancienne phrase
+        # "Non disponible : ..." qui melangeait deux sens differents. Depuis
+        # la v14, portfolio_analyzer.py emet DEUX phrases distinctes (voir
+        # son commentaire "DEUX PHRASES, DEUX SENS") : l'ancienne regex ne
+        # matchait plus rien du tout, donc cette information disparaissait
+        # completement du rapport HTML.
+        #   - "Sans objet" : critere qui n'existe pas pour ce type d'actif
+        #     (ex. valorisation pour un ETF) -- normal, ne baisse PAS la
+        #     confiance.
+        #   - "Attendu mais non obtenu" : critere qui aurait du etre
+        #     disponible mais que la donnee source n'a pas fourni -- c'est
+        #     ce qui baisse reellement la confiance.
+        m_sans_objet = re.search(
+            r"\*Sans objet pour un actif de type[^:]*:\s*([^.]+?)\.\s*Ces crit[eè]res",
+            block)
+        sans_objet = m_sans_objet.group(1).strip() if m_sans_objet else ""
+
+        m_manquants = re.search(
+            r"\*Attendu mais non obtenu\s*:\s*([^-]+?)\s*--", block)
+        manquants = m_manquants.group(1).strip() if m_manquants else ""
+
+        # AJOUT (21/09/2026) : justification et consensus analystes, emis
+        # par portfolio_analyzer.py mais jamais captures jusqu'ici -- ils
+        # n'apparaissaient donc nulle part sur le rapport HTML.
+        m_just = re.search(r"\*\*Justification\s*:\*\*\s*(.+?)\s*(?:\n\n|---|$)",
+                            block, flags=re.DOTALL)
+        justification = m_just.group(1).strip() if m_just else ""
+
+        m_cons = re.search(
+            r"\*\*Consensus analystes\s*:\*\*\s*(.+?)\s*\*\(source\s*:\s*([^)]+?)\)?\*?\s*(?:\n|$)",
+            block)
+        consensus     = m_cons.group(1).strip() if m_cons else ""
+        consensus_src = m_cons.group(2).strip() if m_cons else ""
 
         positions.append({
             "name": name, "ticker": ticker,
@@ -262,7 +309,9 @@ def extract_positions(md: str) -> list[dict]:
             "pnl_brut": pnl_brut, "pnl_net": pnl_net,
             "score": score, "confiance": confiance, "rec": rec,
             "composantes": composantes, "fondamentaux": fondamentaux,
-            "absentes": absentes,
+            "sans_objet": sans_objet, "manquants": manquants,
+            "justification": justification,
+            "consensus": consensus, "consensus_src": consensus_src,
             "mom_label": mom_label,
             "ret_1m": ret_1m, "ret_3m": ret_3m, "ret_6m": ret_6m,
             "synthesis": synthesis, "synth_src": synth_src,
@@ -397,17 +446,51 @@ ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encod
 # ══════════════════════════════════════════════════════
 # HELPERS HTML
 # ══════════════════════════════════════════════════════
+def esc(txt) -> str:
+    """Echappe le HTML dans tout texte d'origine externe (actualites RSS,
+    noms/tickers saisis par l'utilisateur) avant interpolation dans une
+    f-string HTML. BUG CORRIGE (21/09/2026) : aucune fonction de ce genre
+    n'existait dans ce fichier -- tout texte, y compris les synthèses
+    d'actualités tirées du flux RSS (donc non maîtrisées), était injecté
+    tel quel dans le HTML final. Un simple caractère "<" dans une dépêche
+    suffisait à casser la mise en page ; un contenu construit exprès y
+    aurait pu inserer du HTML/JS."""
+    if txt is None:
+        return ""
+    return html.escape(str(txt), quote=True)
+
+def expl(contenu_html: str, label: str = "Voir l'explication") -> str:
+    """AJOUT (22/09/2026), a la demande de Gaby : le rapport contenait trop
+    de texte explicatif fixe (paragraphes pedagogiques qui ne changent pas
+    d'un jour a l'autre, ex. "comment lire ce chiffre") affiche en
+    permanence, ce qui l'alourdissait. On reprend le meme principe deja en
+    place pour "Comment cette note est calculee" (un <details> repliable) :
+    seuls les chiffres et le contenu propre au jour restent visibles direct;
+    les explications generales passent derriere un petit bouton a ouvrir
+    si on le souhaite."""
+    return f'<details class="expl-toggle"><summary>ℹ️ {label}</summary>{contenu_html}</details>'
+
 def rec_badge(rec: str) -> str:
+    # BUG CORRIGE (21/09/2026) : ce test reconnaissait un vocabulaire
+    # (ACHAT FORT / ACHAT / GARDER / EVITER / VENDRE) que
+    # portfolio_analyzer.recommend() n'emet plus depuis la refonte des
+    # recommandations. Toute position tombait donc dans le "else" et
+    # affichait un badge "hold" gris identique quel que soit l'avis reel.
+    # Vocabulaire actuel de recommend() : RENFORCER / CONSERVER /
+    # SURVEILLER (+ variante "en moins-value") / ALLEGER / SORTIR, plus les
+    # etats "on ne peut pas conclure" (A EXAMINER x2 / DONNEES
+    # INSUFFISANTES) et NON COTE (actif non cote, hors echelle d'avis).
     rec_u = rec.upper()
-    if "ACHAT FORT"   in rec_u: cls, ico = "buy-strong", "🟢"
-    elif "ACHAT"      in rec_u: cls, ico = "buy-mod",    "🔵"
-    elif "GARDER"     in rec_u: cls, ico = "hold",       "🟡"
-    elif "EVITER" in rec_u or "ÉVITER" in rec_u: cls, ico = "avoid", "🟠"
-    elif "VENDRE"     in rec_u: cls, ico = "sell",       "🔴"
-    else:                       cls, ico = "hold",       "⚪"
-    label = rec.replace("ACHAT FORT", "ACHAT FORT").replace("ACHAT MODERE", "ACHAT MODÉRÉ") \
-               .replace("A EVITER", "À ÉVITER")
-    return f'<span class="badge {cls}">{ico} {label}</span>'
+    if "RENFORCER"    in rec_u: cls, ico = "buy-strong", "🟢"
+    elif "CONSERVER"  in rec_u: cls, ico = "buy-mod",    "🔵"
+    elif "SURVEILLER" in rec_u: cls, ico = "hold",       "🟡"
+    elif "ALLEGER"    in rec_u or "ALLÉGER" in rec_u: cls, ico = "avoid", "🟠"
+    elif "SORTIR"     in rec_u: cls, ico = "sell",       "🔴"
+    elif "A EXAMINER" in rec_u or "À EXAMINER" in rec_u or "DONNEES INSUFFISANTES" in rec_u \
+        or "DONNÉES INSUFFISANTES" in rec_u or "NON COTE" in rec_u or "NON COTÉ" in rec_u:
+        cls, ico = "unknown", "⚪"
+    else:                       cls, ico = "unknown",    "⚪"
+    return f'<span class="badge {cls}">{ico} {esc(rec)}</span>'
 
 def score_bar(score_str: str) -> str:
     try:
@@ -430,9 +513,9 @@ def pnl_cell(txt: str) -> str:
 
 def mom_badge(label: str) -> str:
     l = label.upper()
-    if "HAUSSE" in l or "HAUSSIER" in l: return f'<span class="badge buy-strong">↗ {label}</span>'
-    if "BAISSE" in l or "BAISSIER" in l: return f'<span class="badge sell">↘ {label}</span>'
-    return f'<span class="badge hold">→ {label}</span>'
+    if "HAUSSE" in l or "HAUSSIER" in l: return f'<span class="badge buy-strong">↗ {esc(label)}</span>'
+    if "BAISSE" in l or "BAISSIER" in l: return f'<span class="badge sell">↘ {esc(label)}</span>'
+    return f'<span class="badge hold">→ {esc(label)}</span>'
 
 def var_span(txt: str) -> str:
     t = txt.strip()
@@ -528,6 +611,15 @@ def extract_stops(md: str) -> dict:
     if not sec:
         return {}
 
+    # BUG CORRIGE (21/09/2026) : quand le calcul du risque echoue ou n'est
+    # pas encore disponible, portfolio_analyzer.py (bloc_md_stops) n'ecrit
+    # QUE une ligne "> Section indisponible : {motif}" -- pas de tableau de
+    # stops. Cette information n'etait captee nulle part : build_stops_html
+    # se contentait de masquer toute la section (stops vide), sans jamais
+    # afficher le motif a l'utilisateur.
+    m_motif = re.search(r">\s*Section indisponible\s*:\s*(.+)", sec)
+    motif_indisponible = m_motif.group(1).strip() if m_motif else ""
+
     resume = {}
     m = re.search(r"Stops actifs\s*:\s*(\d+)\*\*.*?Franchis\s*:\s*(\d+)\*\*"
                   r".*?Sans stop\s*:\s*(\d+)\*\*.*?alertes du jour\s*:\s*(\d+)", sec)
@@ -604,7 +696,7 @@ def extract_stops(md: str) -> dict:
     return {"resume": resume, "alertes": alertes, "stops": stops,
             "tailles": tailles, "entete_sizing": entete, "amorcage": note,
             "expo_groupes": expo_groupes, "expo_msg": expo_msg,
-            "expo_indice": expo_indice}
+            "expo_indice": expo_indice, "motif_indisponible": motif_indisponible}
 
 
 def extract_repartition(md: str) -> list:
@@ -668,9 +760,26 @@ def extract_watchlist(md: str) -> list:
     return watchlist
 
 
+def extract_avertissements(md: str) -> list:
+    """Section « ## Avertissements Donnees » + la ligne EUR/USD isolee.
+
+    AJOUT (21/09/2026) : portfolio_analyzer.py écrit ces avertissements
+    (ex. donnée jugée périmée, taux de change suspect...) dans le markdown,
+    mais rien ne les récupérait côté HTML — Gaby ne les voyait jamais alors
+    qu'ils signalent une donnée potentiellement fausse dans le rapport.
+    """
+    sec = _section_md(md, "Avertissements Donnees")
+    avertissements = re.findall(r"^-\s*⚠️?\s*(.+)", sec, flags=re.MULTILINE) if sec else []
+    m_eur = re.search(r"^>\s*⚠️?\s*(.+)", md, flags=re.MULTILINE)
+    if m_eur and ("EUR" in m_eur.group(1) or "USD" in m_eur.group(1) or "change" in m_eur.group(1).lower()):
+        avertissements.append(m_eur.group(1).strip())
+    return [a.strip() for a in avertissements if a.strip()]
+
+
 stops_data  = extract_stops(md_content)
 repartition = extract_repartition(md_content)
 watchlist   = extract_watchlist(md_content)
+avertissements_donnees = extract_avertissements(md_content)
 
 
 # ══════════════════════════════════════════════════════
@@ -713,7 +822,18 @@ def _barre_distance(txt: str) -> str:
 
 
 def build_stops_html() -> str:
-    if not stops_data or not stops_data.get("stops"):
+    if not stops_data:
+        return ""
+    if not stops_data.get("stops"):
+        # BUG CORRIGE (21/09/2026) : auparavant, l'absence de tableau de
+        # stops faisait disparaitre TOUTE la section, y compris le motif
+        # explicatif ("donnees insuffisantes", "premiere evaluation", etc.)
+        if stops_data.get("motif_indisponible"):
+            return f"""
+<section class="section-block" id="stops">
+  <h2 class="section-title">🛑 Stops &amp; Alertes</h2>
+  <p class="macro-note">Section indisponible : {esc(stops_data["motif_indisponible"])}</p>
+</section>"""
         return ""
 
     res  = stops_data.get("resume") or {}
@@ -731,26 +851,26 @@ def build_stops_html() -> str:
 
     banniere = ""
     if stops_data.get("alertes"):
-        items = "".join(f"<li>{a}</li>" for a in stops_data["alertes"])
+        items = "".join(f"<li>{esc(a)}</li>" for a in stops_data["alertes"])
         banniere = (f'<div class="alert-box"><div class="alert-title">'
                     f'⚠️ Alertes du jour</div><ul>{items}</ul></div>')
 
     amorce = ""
     if stops_data.get("amorcage"):
-        amorce = f'<p class="macro-note">{stops_data["amorcage"]}</p>'
+        amorce = f'<p class="macro-note">{esc(stops_data["amorcage"])}</p>'
 
     rows = ""
     for st in stops_data["stops"]:
         cls, lib = _CLASSE_STATUT.get(st["statut"], ("stop-none", st["statut"]))
         compte = st["compte"] if st["compte"] not in ("--", "—", "") else "—"
-        rows += (f'<tr><td><strong>{st["nom"]}</strong>'
-                 f'<div class="sub-lbl">{compte}</div></td>'
-                 f'<td><span class="type-tag">{st["type"]}</span></td>'
-                 f'<td class="cfg-cell">{st["config"]}</td>'
-                 f'<td class="cell-num">{st["niveau"]}</td>'
-                 f'<td class="cell-num">{st["cloture"]}</td>'
+        rows += (f'<tr><td><strong>{esc(st["nom"])}</strong>'
+                 f'<div class="sub-lbl">{esc(compte)}</div></td>'
+                 f'<td><span class="type-tag">{esc(st["type"])}</span></td>'
+                 f'<td class="cfg-cell">{esc(st["config"])}</td>'
+                 f'<td class="cell-num">{esc(st["niveau"])}</td>'
+                 f'<td class="cell-num">{esc(st["cloture"])}</td>'
                  f'<td>{_barre_distance(st["distance"])}</td>'
-                 f'<td><span class="badge {cls}">{lib}</span></td></tr>\n')
+                 f'<td><span class="badge {cls}">{esc(lib)}</span></td></tr>\n')
 
     sizing = ""
     if stops_data.get("tailles"):
@@ -781,6 +901,7 @@ def build_stops_html() -> str:
       <tbody>{trows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     «&nbsp;Amplitude/jour&nbsp;» : de combien la valeur bouge en moyenne d'une
     clôture à l'autre — la lecture concrète de la volatilité.<br>
@@ -789,7 +910,7 @@ def build_stops_html() -> str:
     le même montant. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
     budget de risque justifierait : positif, la ligne est plus grosse que le
     risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
-  </p>"""
+  </p></details>"""
 
     expo_indice = stops_data.get("expo_indice") or {}
     indice_html = ""
@@ -813,10 +934,13 @@ def build_stops_html() -> str:
     Calculée sur {expo_indice.get('n_paires', '?')} paire(s) de lignes
     ({expo_indice.get('n_lignes', '?')} ligne(s) cotée(s) avec un historique
     suffisant){f", étendue observée de {expo_indice['min']}&nbsp;% à {expo_indice['max']}&nbsp;%" if 'min' in expo_indice else ''}.
+  </p>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+  <p class="macro-note">
     Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment
     les unes des autres. Un chiffre élevé et négatif est aussi une forme de
     concentration, sur le pari inverse.
-  </p>"""
+  </p></details>"""
 
     groupes_html = ""
     if stops_data.get("expo_groupes"):
@@ -827,12 +951,13 @@ def build_stops_html() -> str:
                       f'<td class="cell-num">{g["poids"]}</td>'
                       f'<td><span class="badge {cls}">{g["alerte"]}</span></td></tr>\n')
         groupes_html = f"""
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
-    Lignes dont les variations à 3 mois sont fortement corrélées entre elles —
+    Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
     prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
     laisse penser. Un signal d'attention basé sur le passé récent, pas une
     prévision.
-  </p>
+  </p></details>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Groupe</th><th>Poids cumulé</th><th>Alerte</th></tr></thead>
@@ -860,13 +985,14 @@ def build_stops_html() -> str:
       <tbody>{rows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Un stop est franchi quand la <strong>clôture</strong> du jour passe sous le
     niveau — pas le cours en séance, dont les à-coups produisent des sorties
     inutiles. Une seule alerte par franchissement&nbsp;; le déclencheur se
     ré-arme quand le cours repasse au-dessus. Les stops suiveurs et VQ montent
     avec le cours et ne redescendent jamais.
-  </p>
+  </p></details>
   {sizing}
   {expo_html}
 </section>"""
@@ -899,10 +1025,11 @@ def build_repartition_html() -> str:
 <section class="section-block" id="repartition">
   <h2 class="section-title">🧭 Répartition</h2>
   <div class="alloc-grid">{blocs}</div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette
     peut dépasser 100&nbsp;%. Les autres axes forment bien une partition.
-  </p>
+  </p></details>
 </section>"""
 
 
@@ -1125,16 +1252,21 @@ def build_learning_html() -> str:
 </section>"""
 
 
+
+
+
 def build_watchlist_html() -> str:
     if not watchlist:
         return ""
     rows = ""
     for w in watchlist:
-        rows += (f"<tr><td><strong>{w['nom']}</strong></td>"
-                 f"<td>{w['secteur'] or '—'}</td>"
-                 f"<td class='cell-num'>{w['cours']}</td>"
+        # BUG CORRIGE (21/09/2026) : "actualite" vient du flux RSS (source
+        # externe non maitrisee) et etait inseree telle quelle dans le HTML.
+        rows += (f"<tr><td><strong>{esc(w['nom'])}</strong></td>"
+                 f"<td>{esc(w['secteur']) or '—'}</td>"
+                 f"<td class='cell-num'>{esc(w['cours'])}</td>"
                  f"<td>{var_span(w['variation'])}</td>"
-                 f"<td>{w['actualite']}</td></tr>\n")
+                 f"<td>{esc(w['actualite'])}</td></tr>\n")
     return f"""
 <section class="section-block" id="watchlist">
   <h2 class="section-title">👁️ Watchlist</h2>
@@ -1144,12 +1276,30 @@ def build_watchlist_html() -> str:
       <tbody>{rows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Titres suivis sans être détenus : ni coût de revient, ni note, ni stop —
     seulement le cours et l'actualité. Cours et actualités proviennent
     exclusivement de Yahoo Finance (cours) et de son flux RSS (actualités),
     sans consommer le quota EODHD/TwelveData réservé au portefeuille réel.
-  </p>
+  </p></details>
+</section>"""
+
+
+def build_avertissements_html() -> str:
+    """AJOUT (21/09/2026) : voir extract_avertissements() — ces mises en
+    garde (donnée jugée périmée, taux de change suspect, etc.) existaient
+    dans le rapport Markdown mais n'apparaissaient jusqu'ici nulle part
+    dans la page HTML consultée par Gaby."""
+    if not avertissements_donnees:
+        return ""
+    items = "".join(f"<li>{esc(a)}</li>" for a in avertissements_donnees)
+    return f"""
+<section class="section-block" id="avertissements">
+  <div class="alert-box">
+    <div class="alert-title">⚠️ Avertissements sur les données</div>
+    <ul>{items}</ul>
+  </div>
 </section>"""
 
 
@@ -1197,13 +1347,14 @@ def build_indices_html() -> str:
       <tbody>{brows}</tbody>
     </table>
   </div>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="macro-note">
     Le taux long souverain est le prix de l'argent sans risque : c'est la barre
     que toute action doit franchir. Quand il monte, le rendement exigé sur les
     actions monte avec lui et pèse sur les valorisations — d'autant plus fort
     que les bénéfices attendus sont lointains. L'écart OAT&nbsp;-&nbsp;UST
     mesure la prime que le marché demande à la France face aux États-Unis.
-  </p>"""
+  </p></details>"""
 
     return f"""
 <section class="section-block" id="macro">
@@ -1263,59 +1414,84 @@ def build_positions_html() -> str:
                           "var(--yellow)" if pct < 60 else "var(--green)")
                 barres += (
                     f'<div class="comp-row">'
-                    f'<span class="comp-name">{nom}</span>'
+                    f'<span class="comp-name">{esc(nom)}</span>'
                     f'<span class="comp-track"><span class="comp-fill" '
                     f'style="width:{pct:.0f}%;background:{teinte}"></span></span>'
-                    f'<span class="comp-val">{note}</span>'
-                    f'<span class="comp-w">{poids}%</span>'
+                    f'<span class="comp-val">{esc(note)}</span>'
+                    f'<span class="comp-w">{esc(poids)}%</span>'
                     f'</div>')
-            note_absente = (f'<p class="comp-missing">Non disponible : {p["absentes"]} '
-                            f'— poids redistribués.</p>' if p.get("absentes") else "")
-            fonda_line = (f'<p class="comp-fonda">{p["fondamentaux"]}</p>'
+            # BUG CORRIGE (21/09/2026) : voir le commentaire dans
+            # extract_positions() -- deux phrases distinctes, deux sens
+            # distincts, ne plus les fusionner en une seule ligne.
+            note_sans_objet = (f'<p class="comp-na">Sans objet pour ce type d\'actif : '
+                               f'{esc(p["sans_objet"])} — exclu du calcul, '
+                               f'sans impact sur la confiance.</p>'
+                               if p.get("sans_objet") else "")
+            note_manquants = (f'<p class="comp-missing">Attendu mais non obtenu : '
+                              f'{esc(p["manquants"])} — poids redistribués, '
+                              f'fait baisser la confiance.</p>'
+                              if p.get("manquants") else "")
+            fonda_line = (f'<p class="comp-fonda">{esc(p["fondamentaux"])}</p>'
                           if p.get("fondamentaux") else "")
             detail_html = f"""
     <details class="pos-detail-note">
       <summary>Comment cette note est calculée</summary>
       <div class="comp-list">{barres}</div>
       {fonda_line}
-      {note_absente}
+      {note_sans_objet}
+      {note_manquants}
     </details>"""
 
         synthesis_html = ""
         synth_text = p.get("synthesis", "").strip()
         if synth_text and "Aucune actualite" not in synth_text:
-            src_label = f'<span class="synth-src">{p["synth_src"]}</span>' if p.get("synth_src") else ""
+            src_label = f'<span class="synth-src">{esc(p["synth_src"])}</span>' if p.get("synth_src") else ""
             synthesis_html = f"""
     <div class="pos-synthesis">
       <div class="synth-header">💬 Actualité récente {src_label}</div>
-      <p class="synth-text">{synth_text}</p>
+      <p class="synth-text">{esc(synth_text)}</p>
     </div>"""
 
+        # AJOUT (21/09/2026) : consensus analystes et justification de la
+        # recommandation, emis par portfolio_analyzer.py mais jamais
+        # affiches jusqu'ici.
+        consensus_html = ""
+        if p.get("consensus"):
+            src = f' <span class="mom-rets">({esc(p["consensus_src"])})</span>' if p.get("consensus_src") else ""
+            consensus_html = f"""
+    <div class="pos-detail-item">
+      <span class="detail-lbl">Consensus</span>
+      <span>{esc(p['consensus'])}{src}</span>
+    </div>"""
+
+        justif_html = (f'<p class="pos-justif"><strong>Justification —</strong> {esc(p["justification"])}</p>'
+                       if p.get("justification") else "")
+
         cards += f"""
-<div class="position-card" id="pos-{p['ticker'].replace('.','_')}">
+<div class="position-card" id="pos-{esc(p['ticker']).replace('.','_')}">
   <div class="pos-header">
     <div class="pos-title">
-      <span class="pos-name">{p['name']}</span>
-      <code class="pos-ticker">{p['ticker']}</code>
+      <span class="pos-name">{esc(p['name'])}</span>
+      <code class="pos-ticker">{esc(p['ticker'])}</code>
     </div>
     <div class="pos-rec">{rec_badge(p['rec'])}</div>
   </div>
 
   <div class="pos-kpis">
     <div class="pos-kpi">
-      <div class="pos-kpi-val cell-num">{p['prix']} EUR</div>
+      <div class="pos-kpi-val cell-num">{esc(p['prix'])} EUR</div>
       <div class="pos-kpi-lbl">Cours {var_html}</div>
     </div>
     <div class="pos-kpi">
-      <div class="pos-kpi-val cell-num">{p['vm']} EUR</div>
+      <div class="pos-kpi-val cell-num">{esc(p['vm'])} EUR</div>
       <div class="pos-kpi-lbl">Valeur marché</div>
     </div>
     <div class="pos-kpi">
-      <div class="pos-kpi-val {pnl_brut_cls}">{p['pnl_brut']}</div>
+      <div class="pos-kpi-val {pnl_brut_cls}">{esc(p['pnl_brut'])}</div>
       <div class="pos-kpi-lbl">P&amp;L Brut</div>
     </div>
     <div class="pos-kpi">
-      <div class="pos-kpi-val {pnl_net_cls}">{p['pnl_net']}</div>
+      <div class="pos-kpi-val {pnl_net_cls}">{esc(p['pnl_net'])}</div>
       <div class="pos-kpi-lbl">P&amp;L Net</div>
     </div>
     <div class="pos-kpi">
@@ -1329,10 +1505,11 @@ def build_positions_html() -> str:
     <div class="pos-detail-item">
       <span class="detail-lbl">Momentum</span>
       <span>{mom_badge(p['mom_label'])}
-        <span class="mom-rets">1M: {p['ret_1m']} · 3M: {p['ret_3m']} · 6M: {p['ret_6m']}</span>
+        <span class="mom-rets">1M: {esc(p['ret_1m'])} · 3M: {esc(p['ret_3m'])} · 6M: {esc(p['ret_6m'])}</span>
       </span>
-    </div>
+    </div>{consensus_html}
   </div>
+  {justif_html}
   {synthesis_html}
 </div>"""
     return f"""
@@ -1352,8 +1529,8 @@ def build_closes_html() -> str:
         pv   = c[6] if len(c) > 6 else "—"
         date = c[7] if len(c) > 7 else ""
         cls  = "kpi-positive" if pv.startswith("+") else "kpi-negative"
-        lignes += (f"<tr><td><strong>{c[0]}</strong>"
-                   f"{f'<div class=vente-date>vendu le {date}</div>' if date else ''}</td>"
+        lignes += (f"<tr><td><strong>{esc(c[0])}</strong>"
+                   f"{f'<div class=vente-date>vendu le {esc(date)}</div>' if date else ''}</td>"
                    f"<td class='cell-num'>{c[1]}</td>"
                    f"<td class='cell-num'>{c[2]}</td>"
                    f"<td class='cell-num'>{c[3]}</td>"
@@ -1373,10 +1550,11 @@ def build_closes_html() -> str:
     return f"""
 <section class="section-block" id="realise">
   <h2 class="section-title">💰 Plus-values réalisées</h2>
+  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
   <p class="section-note">
     Positions vendues. Elles ne figurent plus dans le portefeuille et n'entrent
     pas dans la valorisation. Frais aller-retour déduits.
-  </p>
+  </p></details>
   <div class="table-wrap">
     <table>
       <thead>
@@ -1418,8 +1596,8 @@ def build_synthese_html() -> str:
                       else f"<td class='cell-num'>{score_raw}</td>")
         conf_cell  = f"<td class='cell-num'>{conf_raw or '—'}</td>"
 
-        rows_html += (f"<tr><td><strong>{nom}</strong></td>"
-                      f"<td class='cell-num'>{vm_raw}</td>"
+        rows_html += (f"<tr><td><strong>{esc(nom)}</strong></td>"
+                      f"<td class='cell-num'>{esc(vm_raw)}</td>"
                       f"{pnl_cell(pnl_raw)}{score_cell}{conf_cell}"
                       f"<td>{rec_badge(rec_raw)}</td></tr>\n")
 
@@ -1643,6 +1821,21 @@ header {
   font-size: .75rem; color: var(--muted); font-style: italic;
   line-height: 1.6; margin-top: 10px;
 }
+/* AJOUT (22/09/2026) : "bouton" repliable pour les paragraphes purement
+   explicatifs (comment lire un chiffre, comment un calcul fonctionne),
+   pour ne plus les afficher en permanence -- voir expl(). */
+.expl-toggle { margin: 8px 0 0; }
+.expl-toggle summary {
+  cursor: pointer; font-size: .72rem; color: var(--accent);
+  font-weight: 500; user-select: none; list-style: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.expl-toggle summary::-webkit-details-marker { display: none; }
+.expl-toggle summary::marker { content: ""; }
+.expl-toggle summary:hover { text-decoration: underline; }
+.expl-toggle[open] summary { margin-bottom: 6px; color: var(--muted); }
+.expl-toggle .macro-note,
+.expl-toggle .section-note { margin-top: 0; }
 .vente-date {
   font-size: .66rem; color: var(--muted); margin-top: 2px; font-weight: 400;
 }
@@ -1687,6 +1880,15 @@ header {
   line-height: 1.6;
 }
 .comp-missing { margin: .5rem 0 0; font-size: .68rem; color: var(--yellow); }
+/* AJOUT (21/09/2026) : "Sans objet" est informatif (critere qui n'existe
+   pas pour ce type d'actif) -- a ne pas confondre visuellement avec
+   .comp-missing, qui signale une vraie perte de confiance. */
+.comp-na      { margin: .5rem 0 0; font-size: .68rem; color: var(--muted); }
+.pos-justif {
+  margin: .6rem 0 0; padding-top: .6rem; border-top: 1px solid var(--border);
+  font-size: .78rem; color: var(--text); line-height: 1.5;
+}
+.pos-justif strong { color: var(--muted); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .4px; }
 
 @media (max-width: 560px) {
   .comp-row { grid-template-columns: 6.5rem 1fr 2rem 2.2rem; font-size: .68rem; }
@@ -1754,6 +1956,10 @@ tr:hover td { background: var(--accent-dim); transition: background .12s; }
 .hold       { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
 .avoid      { background: rgba(249,115,22,.1); color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
 .sell       { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
+/* BUG CORRIGE (21/09/2026) : etat "on ne sait pas encore conclure"
+   (A EXAMINER / DONNEES INSUFFISANTES / NON COTE), a distinguer visuellement
+   d'un vrai CONSERVER (badge .hold) pour ne pas laisser croire a un avis. */
+.unknown    { background: rgba(125,133,144,.13); color: var(--muted); border: 1px solid var(--border); }
 .up { color: var(--green); font-weight: 700; }
 .dn { color: var(--red);   font-weight: 700; }
 .archive-toggle {
@@ -2122,6 +2328,7 @@ html_out = f"""<!DOCTYPE html>
     </div>
 
     {build_indices_html()}
+    {build_avertissements_html()}
     {build_stops_html()}
     {build_repartition_html()}
     {build_combined_chart_html()}
