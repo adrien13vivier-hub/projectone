@@ -753,6 +753,9 @@ class PortfolioLine(BaseModel):
     # et à la vérifier. Absents = saisie en euros, comme avant.
     buy_currency: Optional[str] = None         # "USD" ou absent
     buy_fx:       Optional[float] = None       # 1 unité de buy_currency en EUR
+    # Secteur saisi à la main (facultatif) : prioritaire sur la lecture
+    # automatique du moteur d'apprentissage, qui s'en sert comme référence.
+    sector:       Optional[str] = ""
 
 def _pru(achats: list) -> tuple:
     """Quantité totale et prix de revient unitaire moyen.
@@ -894,6 +897,11 @@ class ProfileSettings(BaseModel):
     liquidites:    Optional[float] = None   # cash disponible pour de nouvelles entrées
     stop_defaut:   Optional[dict]  = None   # stop appliqué aux lignes sans stop
     capital_reference: Optional[float] = None  # force le capital de dimensionnement
+    # Moteur d'apprentissage : {"horizon": 60, "horizons": [90], "actif": true,
+    # "mutualiser": true, "classes": [...]} (borné par
+    # learning_engine.normalize_settings). Déclaré ici pour ne pas être rejeté
+    # ou silencieusement perdu par la validation pydantic à l'enregistrement.
+    apprentissage: Optional[dict] = None
 
 class VenteRealisee(BaseModel):
     """Une position soldee, conservee hors du portefeuille courant.
@@ -1377,6 +1385,25 @@ def get_portfolio(username: str, user: dict = Depends(current_user)):
     return json.loads(pfile.read_text(encoding="utf-8"))
 
 
+@app.get("/api/learning/{username}")
+def get_learning(username: str, user: dict = Depends(current_user)):
+    """Synthese du moteur d'apprentissage (fiabilite historique des notes).
+
+    Lecture seule : le moteur tourne dans le workflow quotidien, ce point
+    d'acces ne fait que servir reports/<user>/learning/summary.json.
+    """
+    if user["sub"] != username and user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Accès interdit")
+    slug = _slug_utilisateur(username) or "default"
+    chemin = Path("reports") / slug / "learning" / "summary.json"
+    try:
+        return json.loads(chemin.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"disponible": False,
+                "detail": "Aucune synthèse pour l'instant : elle apparaît après "
+                          "la prochaine analyse quotidienne."}
+
+
 @app.post("/api/portfolio/{username}")
 def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(current_user)):
     if user["sub"] != username and user.get("role") != "admin":
@@ -1399,6 +1426,11 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
             ancien = json.loads(pfile.read_text(encoding="utf-8"))
         except (ValueError, OSError):
             ancien = {}
+
+    # Un reglage d'apprentissage saisi a la main survit a un enregistrement
+    # depuis une interface qui ne le connait pas.
+    if "apprentissage" not in settings and (ancien.get("settings") or {}).get("apprentissage"):
+        settings["apprentissage"] = ancien["settings"]["apprentissage"]
 
     brutes = [{k: v for k, v in l.model_dump().items() if v is not None}
               for l in data.lines]
