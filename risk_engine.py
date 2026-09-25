@@ -650,40 +650,61 @@ def dimensionner_par_volatilite(capital: float,
 # appel API supplementaire.
 #
 # METHODE, ET SES LIMITES ASSUMEES :
-#   - Correlation de Pearson sur les rendements quotidiens, alignes sur leurs
-#     N derniers points communs (les historiques n'ont pas tous la meme
-#     longueur selon la date d'entree en portefeuille).
+#   - Correlation de Pearson sur des variations glissantes A 3 MOIS (et non
+#     jour a jour) : chaque point compare une cloture a celle de
+#     CORRELATION_FENETRE_JOURS seances plus tot. Une correlation sur
+#     variations quotidiennes capte surtout le bruit de court terme (deux
+#     titres peuvent bouger ensemble un jour donne pour des raisons sans
+#     rapport, puis plus rien) ; la fenetre a 3 mois lisse ce bruit et reflete
+#     une vraie tendance de fond commune, plus utile pour juger d'un risque de
+#     concentration au long cours.
+#   - Alignees sur leurs N dernieres variations COMMUNES (les historiques
+#     n'ont pas tous la meme longueur selon la date d'entree en portefeuille) ;
+#     avec `dates_a`/`dates_b` fournis, l'alignement se fait sur l'
+#     INTERSECTION des dates plutot que sur les N derniers points de chaque
+#     serie (voir `correlation`, BUG CORRIGE le 19/09/2026).
 #   - Deux lignes sont "reliees" au-dela d'un seuil (0.7 par defaut) ; les
 #     groupes sont les composantes connexes du graphe ainsi forme.
 #   - Ce n'est PAS une classification sectorielle ni un modele de risque
 #     factoriel : une correlation passee ne garantit rien sur la correlation
 #     future, et deux titres peuvent se decoreler brutalement (l'un publie un
 #     resultat, pas l'autre). C'est un signal d'attention, pas une prevision.
-#   - En dessous de CORRELATION_MIN_OBS rendements communs, la paire est
+#   - En dessous de CORRELATION_MIN_OBS variations communes, la paire est
 #     ignoree plutot que de publier un chiffre instable.
 
-CORRELATION_MIN_OBS  = 20     # rendements communs minimum pour une correlation publiee
+CORRELATION_FENETRE_JOURS = 63   # ~3 mois de seances de bourse (21 seances/mois)
+CORRELATION_MIN_OBS  = 20     # variations (a 3 mois) communes minimum pour une correlation publiee
 CORRELATION_SEUIL    = 0.70   # au-dela, deux lignes sont considerees comme "ensemble"
 EXPOSITION_ALERTE_PCT = 25.0  # poids cumule d'un groupe correle qui declenche l'alerte
 
 
-def _rendements(closes: list) -> list:
-    """Rendements quotidiens arithmetiques, dans l'ordre chronologique recu."""
+def _rendements(closes: list, fenetre: int = CORRELATION_FENETRE_JOURS) -> list:
+    """Variations glissantes sur `fenetre` seances, dans l'ordre chronologique
+    recu. Chaque point compare une cloture a celle de `fenetre` seances plus
+    tot (par defaut ~3 mois), et non a la veille : voir la note de methode
+    ci-dessus sur pourquoi une fenetre courte (1 jour) est trop bruitee pour
+    juger d'une vraie correlation de fond.
+    """
     serie = _series_propre(closes)
-    return [(serie[i] / serie[i - 1]) - 1.0
-            for i in range(1, len(serie)) if serie[i - 1] > 0]
+    return [(serie[i] / serie[i - fenetre]) - 1.0
+            for i in range(fenetre, len(serie)) if serie[i - fenetre] > 0]
 
 
-def _rendements_par_date(dates: list, closes: list) -> dict:
-    """Rendements quotidiens indexes par date ("YYYY-MM-DD").
+def _rendements_par_date(dates: list, closes: list,
+                         fenetre: int = CORRELATION_FENETRE_JOURS) -> dict:
+    """Variations glissantes sur `fenetre` seances, indexees par date de FIN
+    ("YYYY-MM-DD").
 
     Contrairement a `_rendements()`, qui suppose que "le Nieme point" de deux
-    series designe la meme seance, ceci associe chaque rendement a sa VRAIE
-    date. Necessaire pour comparer une place americaine et une place
+    series designe la meme seance, ceci associe chaque variation a sa VRAIE
+    date de fin. Necessaire pour comparer une place americaine et une place
     europeenne : leurs jours feries ne coincident pas (Labor Day, 14 juillet,
     Thanksgiving...), donc "les N derniers points" de chacune ne sont pas
     forcement les memes N seances -- un decalage silencieux d'un jour ou
-    plus sur une partie de la fenetre.
+    plus sur une partie de la fenetre. Chaque variation reste calculee dans
+    le calendrier propre de SA place (les `fenetre` seances qui la precedent
+    dans cette meme serie) ; seul l'ALIGNEMENT final entre les deux series se
+    fait par date commune, pas la fenetre elle-meme.
     """
     paires = []
     for d, c in zip(dates or [], closes or []):
@@ -691,18 +712,21 @@ def _rendements_par_date(dates: list, closes: list) -> dict:
         if v is not None and v > 0 and d:
             paires.append((str(d)[:10], v))
     paires.sort(key=lambda x: x[0])
-    out, precedent = {}, None
-    for d, v in paires:
-        if precedent is not None and precedent > 0:
-            out[d] = v / precedent - 1.0
-        precedent = v
+    out = {}
+    for i in range(fenetre, len(paires)):
+        d, v = paires[i]
+        v0 = paires[i - fenetre][1]
+        if v0 > 0:
+            out[d] = v / v0 - 1.0
     return out
 
 
 def correlation(closes_a: list, closes_b: list,
                 min_obs: int = CORRELATION_MIN_OBS,
-                dates_a: list = None, dates_b: list = None) -> float:
-    """Coefficient de correlation de Pearson entre deux series de rendements.
+                dates_a: list = None, dates_b: list = None,
+                fenetre: int = CORRELATION_FENETRE_JOURS) -> float:
+    """Coefficient de correlation de Pearson entre deux series de variations
+    glissantes a `fenetre` seances (3 mois par defaut -- voir _rendements).
 
     Avec `dates_a`/`dates_b` fournis (BUG CORRIGE le 19/09/2026), les deux
     series sont alignees sur l'INTERSECTION de leurs dates -- plus fiable
@@ -714,15 +738,15 @@ def correlation(closes_a: list, closes_b: list,
     est constante (ecart-type nul : la correlation n'est alors pas definie).
     """
     if dates_a and dates_b:
-        ra_d = _rendements_par_date(dates_a, closes_a)
-        rb_d = _rendements_par_date(dates_b, closes_b)
+        ra_d = _rendements_par_date(dates_a, closes_a, fenetre)
+        rb_d = _rendements_par_date(dates_b, closes_b, fenetre)
         communes = sorted(set(ra_d) & set(rb_d))
         if len(communes) < min_obs:
             return None
         ra = [ra_d[d] for d in communes]
         rb = [rb_d[d] for d in communes]
     else:
-        ra, rb = _rendements(closes_a), _rendements(closes_b)
+        ra, rb = _rendements(closes_a, fenetre), _rendements(closes_b, fenetre)
         n = min(len(ra), len(rb))
         if n < min_obs:
             return None
@@ -743,8 +767,9 @@ def correlation(closes_a: list, closes_b: list,
 
 def exposition_correlee(lignes: list,
                         seuil: float = CORRELATION_SEUIL,
-                        alerte_pct: float = EXPOSITION_ALERTE_PCT) -> list:
-    """Regroupe les lignes dont les rendements sont fortement correles.
+                        alerte_pct: float = EXPOSITION_ALERTE_PCT,
+                        fenetre: int = CORRELATION_FENETRE_JOURS) -> list:
+    """Regroupe les lignes dont les variations a 3 mois sont fortement correlees.
 
     `lignes` : liste de dicts avec au moins
         nom        libelle affiche
@@ -767,7 +792,8 @@ def exposition_correlee(lignes: list,
     """
     candidats = [l for l in (lignes or [])
                 if _nombre(l.get("poids_pct"))
-                and len(_series_propre(l.get("closes"))) >= CORRELATION_MIN_OBS + 1]
+                and len(_series_propre(l.get("closes")))
+                    >= CORRELATION_MIN_OBS + fenetre]
     n = len(candidats)
     if n < 2:
         return []
@@ -790,7 +816,8 @@ def exposition_correlee(lignes: list,
         for j in range(i + 1, n):
             c = correlation(candidats[i].get("closes"), candidats[j].get("closes"),
                             dates_a=candidats[i].get("dates"),
-                            dates_b=candidats[j].get("dates"))
+                            dates_b=candidats[j].get("dates"),
+                            fenetre=fenetre)
             if c is not None and c >= seuil:
                 unir(i, j)
 
@@ -813,7 +840,8 @@ def exposition_correlee(lignes: list,
     return groupes
 
 
-def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS) -> dict:
+def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS,
+                               fenetre: int = CORRELATION_FENETRE_JOURS) -> dict:
     """Résume tout le portefeuille coté en UN chiffre : la corrélation moyenne.
 
     `exposition_correlee()` répond à « QUELLES lignes bougent ensemble, et
@@ -826,11 +854,13 @@ def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS)
 
     Méthode : moyenne simple, sur TOUTES les paires de lignes dont
     l'historique est suffisant (pas seulement celles au-delà d'un seuil), de
-    leur corrélation de rendements quotidiens. Chaque paire compte pour un,
-    qu'elle soit pondérée lourd ou léger dans le portefeuille -- pondérer par
-    le poids demanderait une définition supplémentaire (poids de la PAIRE ?
-    produit des poids ?) qui n'apporterait pas plus de clarté qu'elle n'en
-    ôterait pour un chiffre pensé comme repère simple.
+    leur corrélation de variations glissantes à 3 mois (voir `_rendements` :
+    une fenêtre de 3 mois plutôt que jour à jour, pour lisser le bruit de
+    court terme et refléter une vraie tendance de fond commune). Chaque paire
+    compte pour un, qu'elle soit pondérée lourd ou léger dans le portefeuille
+    -- pondérer par le poids demanderait une définition supplémentaire (poids
+    de la PAIRE ? produit des poids ?) qui n'apporterait pas plus de clarté
+    qu'elle n'en ôterait pour un chiffre pensé comme repère simple.
 
     `lignes` : liste de dicts avec au moins `closes`. Le poids n'est pas
     nécessaire ici (contrairement à exposition_correlee) : chaque ligne
@@ -846,7 +876,7 @@ def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS)
     qu'aucune paire n'a assez de points communs.
     """
     candidats = [l for l in (lignes or [])
-                if len(_series_propre(l.get("closes"))) >= min_obs + 1]
+                if len(_series_propre(l.get("closes"))) >= min_obs + fenetre]
     n = len(candidats)
     vide = {"indice_pct": None, "n_paires": 0, "n_lignes": n,
             "min_pct": None, "max_pct": None}
@@ -858,7 +888,8 @@ def indice_correlation_moyenne(lignes: list, min_obs: int = CORRELATION_MIN_OBS)
         for j in range(i + 1, n):
             c = correlation(candidats[i].get("closes"), candidats[j].get("closes"), min_obs,
                             dates_a=candidats[i].get("dates"),
-                            dates_b=candidats[j].get("dates"))
+                            dates_b=candidats[j].get("dates"),
+                            fenetre=fenetre)
             if c is not None:
                 correlations.append(c)
     if not correlations:
@@ -1020,6 +1051,8 @@ def evaluer_portefeuille(lignes: list,
 # réseau, aucune clé API : ce test doit passer partout, tout le temps.
 
 def _autotest() -> int:
+    import random
+    from datetime import date, timedelta
     ok, ko = 0, []
 
     def verifie(nom, condition, detail=""):
@@ -1224,23 +1257,58 @@ def _autotest() -> int:
     verifie("ligne malformee isolee", len(res3["lignes"]) == 1)
 
     # -- Exposition correlee --------------------------------------------------
+    # Fenetre a 3 mois (63 seances) : il faut au moins CORRELATION_MIN_OBS +
+    # CORRELATION_FENETRE_JOURS clotures (83) pour obtenir une seule paire
+    # exploitable. On genere 120 seances (un peu plus que HISTORY_DAYS/jours
+    # ouvres reels) avec un generateur pseudo-aleatoire a graine fixe : il
+    # faut une serie SANS motif periodique aligne sur la fenetre de 63
+    # seances, sans quoi les variations glissantes tombent toutes sur la
+    # meme valeur (ecart-type nul -> correlation indefinie).
+    rng = random.Random(7)
     base = [100.0]
-    for i in range(30):
-        base.append(base[-1] * (1 + (0.01 if i % 3 else -0.02)))
-    correlee = [v * 2.5 for v in base]        # memes rendements -> correlation = 1
-    inverse = [200.0]
-    for i in range(1, len(base)):
-        r = base[i] / base[i - 1] - 1.0
-        inverse.append(inverse[-1] * (1 - r))  # rendements opposes -> correlation = -1
+    for _ in range(120):
+        base.append(base[-1] * (1 + rng.uniform(-0.015, 0.015)))
+    correlee = [v * 2.5 for v in base]        # proportionnelle -> correlation = 1
+    c0 = base[0] ** 2
+    inverse = [c0 / v for v in base]          # inverse -> correlation ~ -1
 
     c_pos = correlation(base, correlee)
     c_neg = correlation(base, inverse)
     verifie("correlation parfaite ~ +1", c_pos is not None and c_pos > 0.999, str(c_pos))
-    verifie("correlation opposee ~ -1", c_neg is not None and c_neg < -0.999, str(c_neg))
+    # Sur des variations a 3 mois (composees), l'inverse exact d'une serie
+    # n'est plus une symetrie parfaitement lineaire (contrairement a des
+    # rendements a 1 jour) : la correlation reste tres fortement negative,
+    # mais pas necessairement au-dela de -0.999.
+    verifie("correlation opposee tres negative", c_neg is not None and c_neg < -0.99, str(c_neg))
     verifie("correlation donnees insuffisantes -> None",
-            correlation(base[:10], correlee[:10]) is None)
+            correlation(base[:70], correlee[:70]) is None)
     verifie("correlation serie constante -> None",
             correlation(base, [42.0] * len(base)) is None)
+
+    # -- Correlation alignee sur les dates (BUG CORRIGE le 19/09/2026) -------
+    # Deux calendriers boursiers differents (ex. US vs FR) : une seance
+    # feriee cote FR mais ouvree cote US decale tout alignement par simple
+    # position. `dates_a`/`dates_b` doivent aligner sur les dates COMMUNES.
+    # Le nombre de feries non-communs entre deux grandes places (US/FR) est
+    # faible sur 200 jours (2 ici, sur 200) -- on reste realiste plutot que
+    # de retirer une seance sur 17, ce qui decalerait artificiellement la
+    # fenetre de 63 seances (comptee par POSITION dans chaque serie) bien
+    # plus qu'un vrai desaccord de calendrier ne le ferait.
+    debut = date(2026, 1, 2)
+    toutes_dates = [(debut + timedelta(days=i)).isoformat() for i in range(200)]
+    dates_a = toutes_dates[:]                        # place A : ouverte tous les jours generes
+    dates_b = [d for i, d in enumerate(toutes_dates) if i % 80 != 0]  # place B : 2 feries en plus
+    # closes_b doit avoir la MEME longueur que dates_b : on retire les memes
+    # index de la serie "correlee" que ceux retires de dates_b.
+    correlee_pad = (correlee + [correlee[-1]] * (len(toutes_dates) - len(correlee)))[:len(toutes_dates)]
+    base_pad = (base + [base[-1]] * (len(toutes_dates) - len(base)))[:len(toutes_dates)]
+    closes_b = [v for i, v in enumerate(correlee_pad) if i % 80 != 0]
+    c_dates = correlation(base_pad, closes_b, dates_a=dates_a, dates_b=dates_b)
+    verifie("correlation par date tolere des calendriers legerement differents",
+            c_dates is not None and c_dates > 0.9, str(c_dates))
+    verifie("correlation par date : sous le minimum de dates communes -> None",
+            correlation(base_pad[:70], closes_b[:70], dates_a=dates_a[:70],
+                       dates_b=dates_b[:70]) is None)
 
     groupes = exposition_correlee([
         {"nom": "A", "closes": base,     "poids_pct": 15.0},
