@@ -1,0 +1,36 @@
+{
+  "_lisez_moi": [
+    "Ce fichier COMPLETE learning_engine.DEFAULT_CONFIG, il ne le remplace pas :",
+    "toute reference omise ici garde sa valeur par defaut. market_refs est",
+    "indexe par PLACE (suffixe EODHD, ex. 'PA', 'XETRA', 'MI'). sector_refs est",
+    "indexe par REGION ('US' ou 'EUROPE'), avec un libelle de secteur GICS",
+    "exact en cle interne (ex. 'Information Technology', pas 'Technology').",
+    "Chaque reference se declare {'symbol': '...', 'devise': '...'} ; sans",
+    "devise, le controle de change est desactive pour cette seule reference.",
+    "",
+    "A VERIFIER AVANT PRODUCTION : les 7 tickers iShares MSCI Europe *** Sector",
+    "UCITS ETF ci-dessous (ESIF/ESIT/ESIN/ESIS/ESIC/ESIE/ESIH, ligne Xetra) et",
+    "EXSA (iShares STOXX Europe 600 UCITS ETF (DE)) sont corrobores par",
+    "plusieurs sources publiques (ishares.com, justetf.com, Yahoo Finance) au",
+    "24/09/2026, mais n'ont PAS pu etre confirmes contre l'EODHD Search API",
+    "elle-meme (ce module n'a pas d'acces reseau). A verifier une bonne fois",
+    "avec la cle EODHD reelle (couverture par abonnement variable) -- voir la",
+    "note de livraison. Un symbole invalide echoue proprement (l'observation",
+    "reste juste en attente), il ne fausse jamais un calcul.",
+    "",
+    "Quatre secteurs GICS n'ont pas de ticker confirme a ce jour : Materials,",
+    "Utilities, Real Estate, Communication Services (region EUROPE). Ne pas",
+    "en deviner un : les laisser absents fait retomber proprement le titre sur",
+    "la reference de marche pan-europeenne (EXSA). Completer cette section des",
+    "qu'un ticker fiable est identifie, avec la meme structure que ci-dessous."
+  ],
+  "market_refs": {},
+  "sector_refs": {
+    "EUROPE": {
+      "Materials": null,
+      "Utilities": null,
+      "Real Estate": null,
+      "Communication Services": null
+    }
+  }
+}
