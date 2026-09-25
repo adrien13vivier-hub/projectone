@@ -500,6 +500,9 @@ td{font-size:13px}
       <button class="tab" onclick="switchTab('action',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg>
         <span class="tab-label">Analyse d'action</span></button>
+      <button class="tab" onclick="switchTab('fiabilite',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 8l10 5 10-5-10-5z"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"/><path d="M22 8v6"/></svg>
+        <span class="tab-label">Fiabilité des notes</span></button>
       <button class="tab" id="tab-admin" style="display:none" onclick="switchTab('admin',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.9-3.4 3.2-5 6-5s5.1 1.6 6 5"/><path d="M16.5 5.5c1.4.3 2.5 1.5 2.5 3s-1.1 2.7-2.5 3"/><path d="M18 19c-.4-2.1-1.3-3.6-2.6-4.5"/></svg>
         <span class="tab-label">Utilisateurs</span></button>
@@ -1509,6 +1512,100 @@ td{font-size:13px}
       <div id="action-resultat"></div>
     </div>
 
+    <!-- ── Fiabilité des notes (moteur d'apprentissage) ── -->
+    <div class="tab-panel" id="panel-fiabilite">
+      <div class="card doc">
+        <div class="card-title">Fiabilité des notes — à quoi ça sert</div>
+
+        <h4 id="fiab-quoi">Le principe</h4>
+        <p>
+          Chaque soir, chaque titre noté sur 10 est enregistré avec sa date.
+          Une fois qu'un délai suffisant s'est écoulé (l'<strong>horizon</strong>,
+          réglable ci-dessous), le programme regarde ce qui s'est vraiment
+          passé : un titre noté 8/10 a-t-il vraiment mieux performé que son
+          secteur ? Un titre noté 3/10 a-t-il vraiment moins bien performé ?
+          Avec assez d'observations, cela donne une vraie mesure de fiabilité
+          de la note — une photo du passé, jamais une promesse sur l'avenir.
+        </p>
+        <div class="encadre">
+          <p>
+            <strong>À ne pas confondre avec l'indice de confiance</strong>
+            (voir l'onglet Mode d'emploi) : la confiance dit si le calcul de
+            la note du jour dispose de toutes les données nécessaires. La
+            fiabilité, elle, dit ce que les notes de ce type ont valu
+            <em>par le passé</em>, une fois le résultat connu.
+          </p>
+        </div>
+
+        <h4 id="fiab-mutualisation">Le journal commun</h4>
+        <p>
+          La fiabilité d'une note ne dépend pas de qui possède le titre : que
+          vous déteniez Apple ou non, une note de 8/10 sur Apple s'est
+          comportée de la même façon. C'est pourquoi les profils qui
+          acceptent de participer alimentent un <strong>journal commun et
+          anonyme</strong> : plus vite, tout le monde bénéficie d'un
+          échantillon plus large. Seuls le titre, la date, la note et le
+          résultat sont partagés — jamais votre identité, vos quantités ni vos
+          prix de revient. Vous pouvez vous en retirer à tout moment
+          ci-dessous ; votre suivi reste alors privé, mais progresse plus
+          lentement.
+        </p>
+
+        <h4 id="fiab-horizon">L'horizon</h4>
+        <p>
+          L'horizon est le délai, en séances de bourse, au bout duquel une
+          note est confrontée à la réalité. Un horizon court (20 séances,
+          environ un mois) donne des résultats plus vite mais sur une période
+          où le bruit du marché domine encore largement la note. Un horizon
+          long (252 séances, environ un an) est plus significatif mais met
+          plus de temps à se remplir. Le rapport quotidien et cet onglet
+          affichent toujours l'horizon choisi ici en premier.
+        </p>
+
+        <h4 id="fiab-lecture">Comment lire les résultats</h4>
+        <p>
+          « N » compte toutes les observations closes ; « N indépendantes »
+          ne compte que celles qui ne se chevauchent pas dans le temps pour un
+          même titre — c'est ce nombre-là qui fonde la confiance affichée.
+          Avec peu d'observations, l'espérance calibrée reste rapprochée de la
+          moyenne générale plutôt que de suivre une petite tranche isolée :
+          c'est voulu, pour ne pas tirer de conclusion hâtive d'un échantillon
+          trop mince.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Réglages</div>
+        <div class="form-group">
+          <label for="cfg-apprentissage-horizon">Horizon de mesure</label>
+          <select id="cfg-apprentissage-horizon">
+            <option value="20">20 séances (environ 1 mois)</option>
+            <option value="60">60 séances (environ 3 mois)</option>
+            <option value="120">120 séances (environ 6 mois)</option>
+            <option value="252">252 séances (environ 1 an)</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:.55rem;font-size:.875rem;margin-bottom:.7rem">
+          <input type="checkbox" id="cfg-apprentissage-actif" style="width:auto">
+          Activer le suivi de fiabilité des notes
+        </label>
+        <label style="display:flex;align-items:center;gap:.55rem;font-size:.875rem;margin-bottom:.9rem">
+          <input type="checkbox" id="cfg-apprentissage-mutualiser" style="width:auto">
+          Participer au journal commun (mutualisation anonyme)
+        </label>
+        <button class="btn btn-primary btn-sm" onclick="savePortfolio('save-status-fiab')">💾 Enregistrer</button>
+        <p class="scroll-hint">Ce réglage est enregistré avec le reste du portefeuille.</p>
+        <div id="save-status-fiab"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Résultats actuels</div>
+        <div id="fiab-message"></div>
+        <div class="tuiles" id="fiab-tuiles"></div>
+        <div id="fiab-corps"></div>
+      </div>
+    </div>
+
     <!-- ── Admin ── -->
     <div class="tab-panel" id="panel-admin">
       <div class="card">
@@ -1816,6 +1913,7 @@ function switchTab(name,btn){
   if(name==='accueil') chargerAccueil();
   if(name==='bot')   chargerBot();
   if(name==='action') chargerEtatServices('action-etat');
+  if(name==='fiabilite') chargerFiabilite();
 }
 
 // ── Horaire de l'analyse ───────────────────────────────────────────
@@ -2071,6 +2169,16 @@ async function loadPortfolio(){
     document.getElementById('cfg-stopdefaut').value =
       (sd && (sd.type || sd)) ? (sd.type || sd) : 'none';
 
+    // Moteur d'apprentissage : reglages a defaut sur, comme cote serveur
+    // (learning_engine.normalize_settings) si le profil n'en a pas encore.
+    const appr = cfg.apprentissage || {};
+    document.getElementById('cfg-apprentissage-horizon').value =
+      String(appr.horizon || 60);
+    document.getElementById('cfg-apprentissage-actif').checked =
+      appr.actif !== false;
+    document.getElementById('cfg-apprentissage-mutualiser').checked =
+      appr.mutualiser !== false;
+
     if(Array.isArray(cfg.indices)){
       document.querySelectorAll('.idx-cb').forEach(cb=>{cb.checked=cfg.indices.includes(cb.value);});
     }
@@ -2194,11 +2302,16 @@ function readSettings(){
     poids_max_pct: nombreOuNull(document.getElementById('cfg-poidsmax').value),
     vol_cible_pct: nombreOuNull(document.getElementById('cfg-volcible').value),
     liquidites:    nombreOuNull(document.getElementById('cfg-liquidites').value),
-    stop_defaut:   (stopDef && stopDef !== 'none') ? {type: stopDef} : null
+    stop_defaut:   (stopDef && stopDef !== 'none') ? {type: stopDef} : null,
+    apprentissage: {
+      horizon:     Number(document.getElementById('cfg-apprentissage-horizon').value) || 60,
+      actif:       document.getElementById('cfg-apprentissage-actif').checked,
+      mutualiser:  document.getElementById('cfg-apprentissage-mutualiser').checked
+    }
   };
 }
 
-async function savePortfolio(){
+async function savePortfolio(statusId){
   const lines=readLines();
   const settings=readSettings();   // peut completer LIGNES_IGNOREES
   const ignorees=LIGNES_IGNOREES.slice();
@@ -2207,7 +2320,10 @@ async function savePortfolio(){
        + '⚠️ ' + ignorees.length + ' saisie(s) non enregistrée(s) :<br>'
        + ignorees.map(m=>'• '+m).join('<br>') + '</div>')
     : '';
-  const st=document.getElementById('save-status');
+  // Reglages de fiabilite : declares dans un autre onglet, mais enregistres
+  // avec le reste du portefeuille -- statusId permet d'afficher le resultat
+  // au bon endroit selon l'onglet d'ou l'enregistrement a ete declenche.
+  const st=document.getElementById(statusId || 'save-status');
   if(!lines.length){
     st.innerHTML = avertir ||
       '<div class="info-box error" style="margin-bottom:.75rem">❌ Aucune ligne à enregistrer. '
@@ -2381,6 +2497,132 @@ function msg(cible,texte,erreur){
   const el=document.getElementById(cible);
   if(!el) return;
   el.innerHTML = texte ? '<div class="message'+(erreur?' erreur':'')+'">'+esc(texte)+'</div>' : '';
+}
+
+// ── Fiabilité des notes (moteur d'apprentissage) ─────────────────────
+const LIB_CIBLE_FIAB={sector:'surperformance sectorielle',market:'surperformance vs marché',raw:'rendement brut'};
+const LIB_NIVEAU_FIAB={elevee:'élevée',moyenne:'moyenne',faible:'faible',insuffisante:'insuffisante'};
+const COULEUR_NIVEAU_FIAB={elevee:'var(--success)',moyenne:'var(--success)',faible:'var(--warn)',insuffisante:'var(--muted)'};
+
+function niveauFiab(n){
+  return '<span style="color:'+(COULEUR_NIVEAU_FIAB[n]||'var(--muted)')+';font-weight:600">'
+       + esc(LIB_NIVEAU_FIAB[n]||n||'—') + '</span>';
+}
+
+async function chargerFiabilite(){
+  msg('fiab-message','');
+  document.getElementById('fiab-tuiles').innerHTML='';
+  const corps=document.getElementById('fiab-corps');
+  corps.innerHTML='<div class="vide">Chargement…</div>';
+
+  let d=null;
+  try{
+    d=await api('GET',`/api/learning/${CURRENT_USER}`);
+  }catch(e){
+    corps.innerHTML='';
+    msg('fiab-message',"Impossible de charger les résultats : "+e.message,true);
+    return;
+  }
+  if(!d || d.disponible===false || !d.counts){
+    corps.innerHTML='<div class="vide">'+esc((d&&d.detail) ||
+      "Aucune donnée pour l'instant : la section apparaît après la prochaine analyse quotidienne.")+'</div>';
+    return;
+  }
+
+  const c=d.counts, h=String(d.horizon), hs=d.horizons_stats||{};
+  const enAttente=(c.par_horizon && c.par_horizon[h] && c.par_horizon[h].en_attente) || 0;
+  const tuiles=[
+    ['Notes enregistrées', nb(c.snapshots,0)],
+    ['Observations clôturées', nb(c.matured,0)],
+    ['En attente ('+h+' séances)', nb(enAttente,0)],
+    ['Version de la note', d.score_version || '—']
+  ];
+  document.getElementById('fiab-tuiles').innerHTML = tuiles.map(t=>
+    '<div class="tuile"><div class="k">'+esc(t[0])+'</div><div class="v">'+esc(t[1])+'</div></div>').join('');
+
+  let html='';
+  if(d.mutualise){
+    html += '<div class="info-box neutral" style="margin-bottom:1rem">Apprentissage mutualisé : '
+          + 'calibré sur '+nb(c.n_tickers,0)+' titre(s) suivi(s) par l’ensemble des profils '
+          + 'participants.</div>';
+  }
+
+  const bloc=hs[h];
+  if(!bloc){
+    html += '<div class="vide">Aucune observation clôturée à '+h+' séances pour l’instant : les '
+          + nb(c.snapshots,0)+' note(s) enregistrée(s) attendent leur échéance.</div>';
+  }else{
+    const kind=bloc.headline, st=bloc.kinds[kind];
+    html += '<h4 style="margin:0 0 .5rem">Notes par tranche — horizon '+h+' séances · cible : '
+          + esc(LIB_CIBLE_FIAB[kind]||kind)+'</h4>';
+    if(st.legacy_included){
+      html += '<div class="info-box neutral" style="margin-bottom:.75rem">Échantillon incluant la '
+            + 'cohorte héritée (formules antérieures) : confiance plafonnée à « faible ».</div>';
+    }
+    html += '<div class="table-wrap"><table><thead><tr><th>Tranche</th>'
+          + '<th style="text-align:right">N</th><th style="text-align:right">N indép.</th>'
+          + '<th style="text-align:right">Surperf. moyenne</th><th style="text-align:right">% positifs</th>'
+          + '<th style="text-align:right">Espérance</th><th>Confiance</th></tr></thead><tbody>';
+    (st.bands||[]).forEach(b=>{
+      if(!b.n) return;
+      const hitTxt=(b.hit===null||b.hit===undefined) ? '—' : nb(b.hit*100,0)+' %';
+      html += '<tr><td>'+esc(b.label)+' <span style="color:var(--muted);font-size:.78rem">('
+            + esc(b.reco)+')</span></td>'
+            + '<td style="text-align:right">'+nb(b.n,0)+'</td>'
+            + '<td style="text-align:right">'+nb(b.n_indep,0)+'</td>'
+            + '<td style="text-align:right" class="'+signe(b.mean)+'">'+pct(b.mean,1)+'</td>'
+            + '<td style="text-align:right">'+hitTxt+'</td>'
+            + '<td style="text-align:right" class="'+signe(b.estimate)+'">'
+            + (b.estimate===null||b.estimate===undefined?'—':pct(b.estimate,1))+'</td>'
+            + '<td>'+niveauFiab(b.confidence)+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+
+    const icTxt=(st.ic===null||st.ic===undefined) ? '—' : ((st.ic>0?'+':'')+nb(st.ic,2));
+    html += '<p style="color:var(--muted);font-size:.85rem;margin-top:.6rem">Lien note → '
+          + 'surperformance : IC de rang '+icTxt+' · '+nb(st.n_tickers,0)+' titre(s) sur '
+          + nb(st.n_dates,0)+' séance(s).</p>';
+
+    if(st.regions && st.regions.length>1){
+      html += '<h4 style="margin:1rem 0 .4rem">Par région</h4><div class="table-wrap"><table><thead>'
+            + '<tr><th>Région</th><th style="text-align:right">N</th>'
+            + '<th style="text-align:right">N indép.</th>'
+            + '<th style="text-align:right">Surperf. moyenne</th></tr></thead><tbody>';
+      st.regions.forEach(r=>{
+        html += '<tr><td>'+esc(r.region)+'</td><td style="text-align:right">'+nb(r.n,0)+'</td>'
+              + '<td style="text-align:right">'+nb(r.n_indep,0)+'</td>'
+              + '<td style="text-align:right" class="'+signe(r.mean)+'">'+pct(r.mean,1)+'</td></tr>';
+      });
+      html += '</tbody></table></div><p style="color:var(--muted);font-size:.78rem">Ventilation par '
+            + 'région, à titre indicatif — n’entre pas dans le calcul de l’espérance calibrée.</p>';
+    }
+  }
+
+  if(d.positions && d.positions.length){
+    html += '<h4 style="margin:1.2rem 0 .4rem">Fiabilité par position — horizon '+h+' séances</h4>'
+          + '<div class="table-wrap"><table><thead><tr><th>Valeur</th>'
+          + '<th style="text-align:right">Note</th><th style="text-align:right">Surperf. attendue</th>'
+          + '<th style="text-align:right">P(surperf.)</th><th>Confiance</th></tr></thead><tbody>';
+    d.positions.forEach(p=>{
+      const pr=(p.horizons||{})[h];
+      if(!pr){
+        html += '<tr><td>'+esc(p.name)+'</td><td style="text-align:right">'+nb(p.score,1)+'/10</td>'
+              + '<td colspan="3" style="color:var(--muted)">En attente d’échéance</td></tr>';
+        return;
+      }
+      const proba=(pr.p_outperf===null||pr.p_outperf===undefined) ? '—' : nb(pr.p_outperf*100,0)+' %';
+      const att=(pr.estimate===null||pr.estimate===undefined) ? (pr.reason||'n/d') : pct(pr.estimate,1);
+      html += '<tr><td>'+esc(p.name)+'<div style="color:var(--muted);font-size:.75rem">'
+            + esc(p.sector||'secteur inconnu')+'</div></td>'
+            + '<td style="text-align:right">'+nb(p.score,1)+'/10</td>'
+            + '<td style="text-align:right" class="'+signe(pr.estimate)+'">'+att+'</td>'
+            + '<td style="text-align:right">'+proba+'</td>'
+            + '<td>'+niveauFiab(pr.confidence)+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  corps.innerHTML = html;
 }
 
 // ── Etat des deux services ─────────────────────────────────────────
