@@ -2789,9 +2789,11 @@ def bloc_md_exposition_correlee(groupes: list, indice: dict = None) -> list:
     """Sous-section « Exposition corrélée » (dans Stops et Alertes).
 
     Le plafond de poids par ligne ne voit pas les positions qui bougent
-    ensemble : cette sous-section regroupe les lignes dont les rendements
-    quotidiens sont corrélés au-delà du seuil (0.7 par défaut), sur
-    l'historique déjà récupéré pour la volatilité -- aucun appel API de plus.
+    ensemble : cette sous-section regroupe les lignes dont les variations à
+    3 mois sont corrélées au-delà du seuil (0.7 par défaut), sur l'historique
+    déjà récupéré pour la volatilité -- aucun appel API de plus. Une fenêtre
+    à 3 mois (et non jour à jour) pour lisser le bruit de court terme et
+    refléter une vraie tendance de fond commune (voir risk_engine._rendements).
 
     Un groupe sans dépassement du seuil d'alerte reste affiché : savoir que
     deux lignes bougent ensemble est utile même sous le seuil.
@@ -2833,9 +2835,9 @@ def bloc_md_exposition_correlee(groupes: list, indice: dict = None) -> list:
         return out
 
     out += [
-        "Lignes dont les mouvements quotidiens sont fortement corrélés entre "
-        "eux -- prises ensemble, elles pèsent plus qu'un plafond de poids par "
-        "ligne ne le laisse penser. Un signal d'attention, pas une prévision.",
+        "Lignes dont les variations à 3 mois sont fortement corrélées entre "
+        "elles -- prises ensemble, elles pèsent plus qu'un plafond de poids "
+        "par ligne ne le laisse penser. Un signal d'attention, pas une prévision.",
         "",
         "| Groupe | Poids cumulé | Alerte |",
         "|--------|--------------|--------|",
