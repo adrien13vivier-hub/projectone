@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-09-25T10:29:03.127836+00:00",
+  "saved_at": "2026-09-26T16:59:10.720042+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -23,7 +23,12 @@
     ],
     "risque_pct": 1.0,
     "poids_max_pct": 15.0,
-    "vol_cible_pct": 2.0
+    "vol_cible_pct": 2.0,
+    "apprentissage": {
+      "horizon": 60,
+      "actif": true,
+      "mutualiser": true
+    }
   },
   "closed": [
     {
@@ -50,7 +55,8 @@
       "asset_type": "action",
       "asset_class": "action",
       "account": "",
-      "tags": []
+      "tags": [],
+      "sector": ""
     },
     {
       "name": "Credit Agricole SA",
@@ -62,7 +68,8 @@
       "asset_type": "action",
       "asset_class": "action",
       "account": "",
-      "tags": []
+      "tags": [],
+      "sector": ""
     },
     {
       "name": "Abionyx Pharma",
@@ -86,7 +93,8 @@
           "prix": 1.92,
           "date": ""
         }
-      ]
+      ],
+      "sector": ""
     },
     {
       "name": "SM",
@@ -98,7 +106,8 @@
       "asset_type": "action",
       "asset_class": "action",
       "account": "",
-      "tags": []
+      "tags": [],
+      "sector": ""
     }
   ]
 }
