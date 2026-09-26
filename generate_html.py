@@ -440,7 +440,16 @@ archive.insert(0, {
     "vm":      kpi["valeur_marche"],
     "nb_pos":  str(len(positions)),
 })
-archive = archive[:30]
+# AJOUT (26/09/2026) : le graphique "Trajectoire du portefeuille" (page
+# Portefeuille) affiche la valeur nette depuis le debut du suivi. Il lit
+# ce meme fichier archive.json cote client. La retention etait plafonnee
+# a 30 entrees -- suffisant pour le tableau "Historique des rapports" mais
+# pas pour une vraie trajectoire "depuis le debut". Le fichier conserve
+# desormais jusqu'a ARCHIVE_MAX entrees (~10 ans de rapports quotidiens) ;
+# le tableau Historique continue lui de n'afficher que les 30 plus
+# recentes (tronque cote JavaScript, voir loadArchive()).
+ARCHIVE_MAX = 3650
+archive = archive[:ARCHIVE_MAX]
 ARCHIVE_PATH.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # ══════════════════════════════════════════════════════
@@ -468,7 +477,7 @@ def expl(contenu_html: str, label: str = "Voir l'explication") -> str:
     seuls les chiffres et le contenu propre au jour restent visibles direct;
     les explications generales passent derriere un petit bouton a ouvrir
     si on le souhaite."""
-    return f'<details class="expl-toggle"><summary>ℹ️ {label}</summary>{contenu_html}</details>'
+    return f'<details class="expl-toggle"><summary>{label}</summary>{contenu_html}</details>'
 
 def rec_badge(rec: str) -> str:
     # BUG CORRIGE (21/09/2026) : ce test reconnaissait un vocabulaire
@@ -481,16 +490,16 @@ def rec_badge(rec: str) -> str:
     # etats "on ne peut pas conclure" (A EXAMINER x2 / DONNEES
     # INSUFFISANTES) et NON COTE (actif non cote, hors echelle d'avis).
     rec_u = rec.upper()
-    if "RENFORCER"    in rec_u: cls, ico = "buy-strong", "🟢"
-    elif "CONSERVER"  in rec_u: cls, ico = "buy-mod",    "🔵"
-    elif "SURVEILLER" in rec_u: cls, ico = "hold",       "🟡"
-    elif "ALLEGER"    in rec_u or "ALLÉGER" in rec_u: cls, ico = "avoid", "🟠"
-    elif "SORTIR"     in rec_u: cls, ico = "sell",       "🔴"
+    if "RENFORCER"    in rec_u: cls = "buy-strong"
+    elif "CONSERVER"  in rec_u: cls = "buy-mod"
+    elif "SURVEILLER" in rec_u: cls = "hold"
+    elif "ALLEGER"    in rec_u or "ALLÉGER" in rec_u: cls = "avoid"
+    elif "SORTIR"     in rec_u: cls = "sell"
     elif "A EXAMINER" in rec_u or "À EXAMINER" in rec_u or "DONNEES INSUFFISANTES" in rec_u \
         or "DONNÉES INSUFFISANTES" in rec_u or "NON COTE" in rec_u or "NON COTÉ" in rec_u:
-        cls, ico = "unknown", "⚪"
-    else:                       cls, ico = "unknown",    "⚪"
-    return f'<span class="badge {cls}">{ico} {esc(rec)}</span>'
+        cls = "unknown"
+    else:                       cls = "unknown"
+    return f'<span class="badge {cls}">{esc(rec)}</span>'
 
 def score_bar(score_str: str) -> str:
     try:
@@ -821,6 +830,11 @@ def _barre_distance(txt: str) -> str:
             f'<span class="dist-txt">{val:.1f}% au-dessus</span></span>')
 
 
+
+# ══════════════════════════════════════════════════════
+# RENDU — STOPS ET ALERTES  (page Technique)
+# ══════════════════════════════════════════════════════
+
 def build_stops_html() -> str:
     if not stops_data:
         return ""
@@ -830,18 +844,18 @@ def build_stops_html() -> str:
         # explicatif ("donnees insuffisantes", "premiere evaluation", etc.)
         if stops_data.get("motif_indisponible"):
             return f"""
-<section class="section-block" id="stops">
-  <h2 class="section-title">🛑 Stops &amp; Alertes</h2>
+<article class="card section" id="stops">
+  <div class="section-title"><h2>Stops &amp; alertes</h2></div>
   <p class="macro-note">Section indisponible : {esc(stops_data["motif_indisponible"])}</p>
-</section>"""
+</article>"""
         return ""
 
     res  = stops_data.get("resume") or {}
     cartes = ""
     for cle, libelle, classe in (("actifs", "Stops actifs", ""),
-                                 ("franchis", "Franchis", "kpi-alert"),
+                                 ("franchis", "Franchis", "alert"),
                                  ("sans_stop", "Sans stop", ""),
-                                 ("alertes", "Alertes du jour", "kpi-alert")):
+                                 ("alertes", "Alertes du jour", "alert")):
         if cle not in res:
             continue
         val = res[cle]
@@ -852,8 +866,8 @@ def build_stops_html() -> str:
     banniere = ""
     if stops_data.get("alertes"):
         items = "".join(f"<li>{esc(a)}</li>" for a in stops_data["alertes"])
-        banniere = (f'<div class="alert-box"><div class="alert-title">'
-                    f'⚠️ Alertes du jour</div><ul>{items}</ul></div>')
+        banniere = (f'<div class="callout danger" style="margin-bottom:16px">'
+                    f'<strong>Alertes du jour</strong><ul>{items}</ul></div>')
 
     amorce = ""
     if stops_data.get("amorcage"):
@@ -872,109 +886,9 @@ def build_stops_html() -> str:
                  f'<td>{_barre_distance(st["distance"])}</td>'
                  f'<td><span class="badge {cls}">{esc(lib)}</span></td></tr>\n')
 
-    sizing = ""
-    if stops_data.get("tailles"):
-        trows = ""
-        for t in stops_data["tailles"]:
-            # La mention de bridage (« plafonné à 15 % du capital ») est
-            # une precision, pas une valeur : elle passe en seconde ligne pour
-            # ne pas etirer la colonne et pousser le tableau hors de l'ecran.
-            taille, _, precision = t["taille"].partition(" (")
-            cell_taille = taille
-            if precision:
-                cell_taille += f'<div class="sub-lbl">{precision.rstrip(")")}</div>'
-            trows += (f'<tr><td><strong>{t["nom"]}</strong></td>'
-                      f'<td>{t["vol"]}</td>'
-                      f'<td class="cell-num">{t["atr"]}</td>'
-                      f'<td class="cell-num">{t["vq"]}</td>'
-                      f'<td class="cell-num">{t["distance"]}</td>'
-                      f'<td class="cell-num">{cell_taille}</td>'
-                      f'<td class="cell-num">{t["detenu"]}</td>'
-                      f'<td class="cell-num">{t["ecart"]}</td></tr>\n')
-        sizing = f"""
-  <h3 class="macro-sub">🎯 Dimensionnement des positions</h3>
-  <p class="macro-note">{stops_data.get('entete_sizing', '')}</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Valeur</th><th>Volatilité an.</th><th>Amplitude/jour</th><th>VQ</th>
-        <th>Distance stop</th><th>Taille suggérée</th><th>Détenu</th><th>Écart</th></tr></thead>
-      <tbody>{trows}</tbody>
-    </table>
-  </div>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
-  <p class="macro-note">
-    «&nbsp;Amplitude/jour&nbsp;» : de combien la valeur bouge en moyenne d'une
-    clôture à l'autre — la lecture concrète de la volatilité.<br>
-    Montant&nbsp;= (capital&nbsp;×&nbsp;risque&nbsp;par&nbsp;idée)&nbsp;÷&nbsp;distance au stop.
-    Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas
-    le même montant. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
-    budget de risque justifierait : positif, la ligne est plus grosse que le
-    risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
-  </p></details>"""
-
-    expo_indice = stops_data.get("expo_indice") or {}
-    indice_html = ""
-    if expo_indice.get("valeur") is not None:
-        try:
-            val = float(expo_indice["valeur"])
-        except ValueError:
-            val = None
-        # < 20% (ou negatif) : lignes independantes, plutot rassurant.
-        # >= 70% : le portefeuille bouge comme un bloc, plutot un signal.
-        couleur = ("var(--green)" if val is not None and val < 20 else
-                  "var(--red)" if val is not None and val >= 70 else "var(--yellow)")
-        indice_html = f"""
-  <div class="mini-bar" style="margin-bottom:10px">
-    <div class="mini-card">
-      <div class="mini-val" style="color:{couleur}">{expo_indice['valeur']}&nbsp;%</div>
-      <div class="mini-lbl">Corrélation moyenne — {expo_indice.get('classe', '')}</div>
-    </div>
-  </div>
-  <p class="macro-note">
-    Calculée sur {expo_indice.get('n_paires', '?')} paire(s) de lignes
-    ({expo_indice.get('n_lignes', '?')} ligne(s) cotée(s) avec un historique
-    suffisant){f", étendue observée de {expo_indice['min']}&nbsp;% à {expo_indice['max']}&nbsp;%" if 'min' in expo_indice else ''}.
-  </p>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
-  <p class="macro-note">
-    Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment
-    les unes des autres. Un chiffre élevé et négatif est aussi une forme de
-    concentration, sur le pari inverse.
-  </p></details>"""
-
-    groupes_html = ""
-    if stops_data.get("expo_groupes"):
-        erows = ""
-        for g in stops_data["expo_groupes"]:
-            cls = "kpi-alert" if "Oui" in g["alerte"] else ""
-            erows += (f'<tr><td>{g["groupe"]}</td>'
-                      f'<td class="cell-num">{g["poids"]}</td>'
-                      f'<td><span class="badge {cls}">{g["alerte"]}</span></td></tr>\n')
-        groupes_html = f"""
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
-  <p class="macro-note">
-    Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
-    prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
-    laisse penser. Un signal d'attention basé sur le passé récent, pas une
-    prévision.
-  </p></details>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Groupe</th><th>Poids cumulé</th><th>Alerte</th></tr></thead>
-      <tbody>{erows}</tbody>
-    </table>
-  </div>"""
-    elif stops_data.get("expo_msg"):
-        groupes_html = f'\n  <p class="macro-note">{stops_data["expo_msg"]}</p>'
-
-    expo_html = ""
-    if indice_html or groupes_html:
-        expo_html = f"""
-  <h3 class="macro-sub">🔗 Exposition corrélée</h3>{indice_html}{groupes_html}"""
-
     return f"""
-<section class="section-block" id="stops">
-  <h2 class="section-title">🛡️ Stops &amp; Alertes</h2>
+<article class="card section" id="stops">
+  <div class="section-title"><h2>Stops &amp; alertes</h2></div>
   {banniere}
   <div class="mini-bar">{cartes}</div>
   {amorce}
@@ -985,21 +899,130 @@ def build_stops_html() -> str:
       <tbody>{rows}</tbody>
     </table>
   </div>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+  {expl('''
   <p class="macro-note">
     Un stop est franchi quand la <strong>clôture</strong> du jour passe sous le
     niveau — pas le cours en séance, dont les à-coups produisent des sorties
     inutiles. Une seule alerte par franchissement&nbsp;; le déclencheur se
     ré-arme quand le cours repasse au-dessus. Les stops suiveurs et VQ montent
     avec le cours et ne redescendent jamais.
-  </p></details>
-  {sizing}
-  {expo_html}
-</section>"""
+  </p>''')}
+</article>"""
+
+
+def build_dimensionnement_html() -> str:
+    if not stops_data or not stops_data.get("tailles"):
+        return ""
+    trows = ""
+    for t in stops_data["tailles"]:
+        # La mention de bridage (« plafonné à 15 % du capital ») est
+        # une precision, pas une valeur : elle passe en seconde ligne pour
+        # ne pas etirer la colonne et pousser le tableau hors de l'ecran.
+        taille, _, precision = t["taille"].partition(" (")
+        cell_taille = taille
+        if precision:
+            cell_taille += f'<div class="sub-lbl">{precision.rstrip(")")}</div>'
+        trows += (f'<tr><td><strong>{t["nom"]}</strong></td>'
+                  f'<td>{t["vol"]}</td>'
+                  f'<td class="cell-num">{t["atr"]}</td>'
+                  f'<td class="cell-num">{t["vq"]}</td>'
+                  f'<td class="cell-num">{t["distance"]}</td>'
+                  f'<td class="cell-num">{cell_taille}</td>'
+                  f'<td class="cell-num">{t["detenu"]}</td>'
+                  f'<td class="cell-num">{t["ecart"]}</td></tr>\n')
+    return f"""
+<article class="card section" id="dimensionnement">
+  <div class="section-title"><h2>Dimensionnement des positions</h2></div>
+  <p class="macro-note">{stops_data.get('entete_sizing', '')}</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Valeur</th><th>Volatilité an.</th><th>Amplitude/jour</th><th>VQ</th>
+        <th>Distance stop</th><th>Taille suggérée</th><th>Détenu</th><th>Écart</th></tr></thead>
+      <tbody>{trows}</tbody>
+    </table>
+  </div>
+  {expl('''
+  <p class="macro-note">
+    «&nbsp;Amplitude/jour&nbsp;» : de combien la valeur bouge en moyenne d'une
+    clôture à l'autre — la lecture concrète de la volatilité.<br>
+    Montant&nbsp;= (capital&nbsp;×&nbsp;risque par idée)&nbsp;÷&nbsp;distance au stop.
+    Deux volatilités différentes reçoivent ainsi le même risque, pas
+    le même montant. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
+    budget de risque justifierait : positif, la ligne est plus grosse que le
+    risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
+  </p>''')}
+</article>"""
+
+
+def build_correlation_html() -> str:
+    if not stops_data:
+        return ""
+    expo_indice = stops_data.get("expo_indice") or {}
+    expo_groupes = stops_data.get("expo_groupes")
+    expo_msg = stops_data.get("expo_msg")
+    if expo_indice.get("valeur") is None and not expo_groupes and not expo_msg:
+        return ""
+
+    ring_html = ""
+    if expo_indice.get("valeur") is not None:
+        try:
+            val = float(expo_indice["valeur"])
+        except (TypeError, ValueError):
+            val = None
+        # < 20% (ou negatif) : lignes independantes, plutot rassurant.
+        # >= 70% : le portefeuille bouge comme un bloc, plutot un signal.
+        couleur = ("var(--success)" if val is not None and val < 20 else
+                  "var(--danger)" if val is not None and val >= 70 else "var(--warn)")
+        pct_ring = max(0.0, min(val, 100.0)) if val is not None else 0.0
+        etendue = (f", étendue observée de {expo_indice['min']}&nbsp;% à {expo_indice['max']}&nbsp;%"
+                   if "min" in expo_indice else "")
+        ring_html = f"""
+  <div class="corr-row">
+    <div class="ring" style="background:conic-gradient({couleur} 0 {pct_ring:.1f}%, var(--surface2) {pct_ring:.1f}% 100%)">
+      <div><b>{esc(expo_indice['valeur'])}&nbsp;%</b><small>corrélation moy.</small></div>
+    </div>
+    <p class="corr-txt">
+      Calculée sur {expo_indice.get('n_paires', '?')} paire(s) de lignes
+      ({expo_indice.get('n_lignes', '?')} ligne(s) cotée(s) avec un historique
+      suffisant){etendue}.
+    </p>
+  </div>"""
+
+    groupes_html = ""
+    if expo_groupes:
+        erows = ""
+        for g in expo_groupes:
+            cls = "sortir" if "Oui" in g["alerte"] else "renforcer"
+            erows += (f'<tr><td>{esc(g["groupe"])}</td>'
+                      f'<td class="cell-num">{esc(g["poids"])}</td>'
+                      f'<td><span class="badge {cls}">{esc(g["alerte"])}</span></td></tr>\n')
+        groupes_html = f"""
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Groupe</th><th>Poids cumulé</th><th>Alerte</th></tr></thead>
+      <tbody>{erows}</tbody>
+    </table>
+  </div>"""
+    elif expo_msg:
+        groupes_html = f'<p class="macro-note">{esc(expo_msg)}</p>'
+
+    return f"""
+<article class="card section" id="correlation">
+  <div class="section-title"><h2>Exposition corrélée</h2></div>
+  {ring_html}
+  {groupes_html}
+  {expl('''
+  <p class="macro-note">
+    Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
+    prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
+    laisse penser. Un signal d'attention basé sur le passé récent, pas une
+    prévision.
+  </p>''')}
+</article>"""
 
 
 # ══════════════════════════════════════════════════════
-# RENDU — RÉPARTITION MULTI-ACTIFS
+# RENDU — RÉPARTITION MULTI-ACTIFS  (page Portefeuille)
 # ══════════════════════════════════════════════════════
 
 def build_repartition_html() -> str:
@@ -1022,15 +1045,125 @@ def build_repartition_html() -> str:
         blocs += (f'<div class="alloc-card"><h3 class="alloc-title">{axe["titre"]}</h3>'
                   f'{lignes}</div>')
     return f"""
-<section class="section-block" id="repartition">
-  <h2 class="section-title">🧭 Répartition</h2>
+<article class="card section" id="repartition">
+  <div class="section-title"><h2>Répartition par axe</h2></div>
   <div class="alloc-grid">{blocs}</div>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+  {expl('''
   <p class="macro-note">
     Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette
     peut dépasser 100&nbsp;%. Les autres axes forment bien une partition.
-  </p></details>
-</section>"""
+  </p>''')}
+</article>"""
+
+
+# ══════════════════════════════════════════════════════
+# RENDU — CONCENTRATION PAR POSITION (page Portefeuille, à côté
+# de la trajectoire) et TRAJECTOIRE DU PORTEFEUILLE
+# ══════════════════════════════════════════════════════
+
+def build_concentration_html() -> str:
+    """Poids de chaque position dans la valeur de marché totale. Calculé ici
+    (et non dans portfolio_analyzer.py) car il ne demande aucune donnée
+    nouvelle : seule la liste `positions` deja extraite est necessaire."""
+    if not positions:
+        return ""
+    parsed = []
+    total = 0.0
+    for p in positions:
+        try:
+            v = float(str(p["vm"]).replace(" ", "").replace(",", "."))
+        except (TypeError, ValueError):
+            continue
+        parsed.append((p["name"], v))
+        total += v
+    if total <= 0 or not parsed:
+        return ""
+    parsed.sort(key=lambda x: x[1], reverse=True)
+    rows = ""
+    for name, v in parsed:
+        part = v / total * 100
+        rows += (f'<div class="alloc-row"><div class="alloc-head">'
+                  f'<span class="alloc-lbl">{esc(name)}</span><b>{part:.1f}&nbsp;%</b></div>'
+                  f'<div class="alloc-rail"><span class="alloc-fill" '
+                  f'style="width:{min(part,100):.1f}%"></span></div></div>')
+
+    # Reprend, si disponible, le groupe le plus fortement corrélé (calculé
+    # dans stops_data pour la page Technique) pour donner tout de suite le
+    # contexte, sans recalculer une seconde fois la corrélation ici.
+    alerte_html = ""
+    if stops_data and stops_data.get("expo_groupes"):
+        alertants = [g for g in stops_data["expo_groupes"] if "Oui" in g.get("alerte", "")]
+        if alertants:
+            g = alertants[0]
+            alerte_html = (f'<div class="callout warn" style="margin-top:16px">'
+                            f'<strong>Concentration à examiner</strong>'
+                            f'{esc(g["groupe"])} — détail dans l\'onglet Technique.</div>')
+
+    return f"""
+<aside class="card">
+  <div class="section-title"><h2>Concentration</h2><p>Poids par position</p></div>
+  {rows}
+  {alerte_html}
+</aside>"""
+
+
+def build_trajectoire_html() -> str:
+    """Le contenu (points, echelle) est dessine cote client par drawTrajectoire()
+    a partir d'archive.json : c'est le seul endroit qui connait l'historique
+    complet (voir ARCHIVE_MAX plus haut)."""
+    return """
+<article class="card chart-card">
+  <div class="section-title"><h2>Trajectoire du portefeuille</h2><p>Valeur nette depuis le début du suivi</p></div>
+  <div class="chart-wrap">
+    <svg id="trajectoire-svg" viewBox="0 0 720 250" preserveAspectRatio="none" role="img"
+         aria-label="Valeur du portefeuille depuis le début du suivi"></svg>
+    <p class="chart-empty" id="trajectoire-empty" style="display:none">
+      Historique pas encore suffisant pour tracer une trajectoire — reviens dans quelques jours.
+    </p>
+  </div>
+  <p class="chart-caption" id="trajectoire-caption">Chargement de l'historique…</p>
+</article>"""
+
+
+# ══════════════════════════════════════════════════════
+# RENDU — FIABILITÉ DES NOTES (moteur d'apprentissage)
+#   - un résumé en jauge, en aside de la page Technique
+#   - le détail complet, inchangé, plus bas sur la même page
+# ══════════════════════════════════════════════════════
+
+def build_fiabilite_ring_html() -> str:
+    if not learning:
+        return ""
+    c = learning["counts"]
+    snap = c.get("snapshots", 0) or 0
+    mat  = c.get("matured", 0) or 0
+    pct  = (mat / snap * 100) if snap else 0.0
+
+    h  = str(learning.get("horizon"))
+    hs = learning.get("horizons_stats") or {}
+    bloc = hs.get(h)
+    titre = "Historique insuffisant"
+    if bloc:
+        kind = bloc.get("headline")
+        st = (bloc.get("kinds") or {}).get(kind) or {}
+        bandes = st.get("bands") or []
+        haut = bandes[-1] if bandes else None
+        if haut and haut.get("n"):
+            titre = f"Confiance {_LIB_LVL.get(haut['confidence'], haut['confidence'])}"
+
+    couleur = "var(--success)" if pct >= 50 else "var(--warn)" if pct >= 20 else "var(--danger)"
+    detail = (f"{mat} observation(s) clôturée(s) sur {snap} note(s) enregistrée(s) "
+              f"(horizon {h} séances).")
+
+    return f"""
+<aside class="card ring-card section sticky" id="fiabilite-ring">
+  <div class="ring" style="background:conic-gradient({couleur} 0 {pct:.1f}%, var(--surface2) {pct:.1f}% 100%)">
+    <div><b>{pct:.0f}&nbsp;%</b><small>observations évaluées</small></div>
+  </div>
+  <h3>{esc(titre)}</h3>
+  <p>{esc(detail)}</p>
+  <a class="ring-link" data-goto="technique" data-anchor="fiabilite" href="#fiabilite">Voir le détail complet</a>
+</aside>"""
 
 
 def load_learning_summary() -> dict:
@@ -1228,8 +1361,8 @@ def build_learning_html() -> str:
                        f'La calibration statistique reste la seule prévision affichée.</p>')
 
     return f"""
-<section class="section-block" id="fiabilite">
-  <h2 class="section-title">🎓 Fiabilité des notes</h2>
+<article class="card section" id="fiabilite">
+  <div class="section-title"><h2>Fiabilité des notes</h2></div>
   <div class="mini-bar">{cartes}</div>
   <div class="learn-note">Cette section mesure ce que les notes ont valu <b>dans le passé</b>,
     relativement au secteur ou au marché. Elle ne modifie jamais la note et ne
@@ -1239,7 +1372,7 @@ def build_learning_html() -> str:
   {horizons_html}
   {pos_html}
   {modele_html}
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+  {expl('''
   <p class="macro-note">
     Chaque note est enregistrée avec sa date, ses sous-notes et la version de la formule.
     À l'échéance (20, 60, 120 ou 252 séances de bourse), on mesure la surperformance du
@@ -1248,11 +1381,8 @@ def build_learning_html() -> str:
     confiance et les seuils de publication. L'espérance calibrée est rapprochée de la
     moyenne globale quand l'échantillon est mince. Le modèle d'apprentissage ne s'active
     que s'il bat la statistique simple sur des périodes postérieures à son entraînement.
-  </p></details>
-</section>"""
-
-
-
+  </p>''')}
+</article>"""
 
 
 def build_watchlist_html() -> str:
@@ -1268,22 +1398,22 @@ def build_watchlist_html() -> str:
                  f"<td>{var_span(w['variation'])}</td>"
                  f"<td>{esc(w['actualite'])}</td></tr>\n")
     return f"""
-<section class="section-block" id="watchlist">
-  <h2 class="section-title">👁️ Watchlist</h2>
+<article class="card section" id="watchlist">
+  <div class="section-title"><h2>Watchlist</h2><p>Valeurs observées, non détenues</p></div>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Valeur</th><th>Secteur</th><th>Cours</th><th>Variation</th><th>Actualité</th></tr></thead>
       <tbody>{rows}</tbody>
     </table>
   </div>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+  {expl('''
   <p class="macro-note">
     Titres suivis sans être détenus : ni coût de revient, ni note, ni stop —
     seulement le cours et l'actualité. Cours et actualités proviennent
     exclusivement de Yahoo Finance (cours) et de son flux RSS (actualités),
     sans consommer le quota EODHD/TwelveData réservé au portefeuille réel.
-  </p></details>
-</section>"""
+  </p>''')}
+</article>"""
 
 
 def build_avertissements_html() -> str:
@@ -1295,114 +1425,90 @@ def build_avertissements_html() -> str:
         return ""
     items = "".join(f"<li>{esc(a)}</li>" for a in avertissements_donnees)
     return f"""
-<section class="section-block" id="avertissements">
-  <div class="alert-box">
-    <div class="alert-title">⚠️ Avertissements sur les données</div>
+<div class="section" id="avertissements">
+  <div class="callout danger">
+    <strong>Avertissements sur les données</strong>
     <ul>{items}</ul>
   </div>
-</section>"""
+</div>"""
 
 
 def build_indices_html() -> str:
     if not indices and not bonds:
         return ""
+    tiles = ""
+    for idx in indices:
+        tiles += (f'<div class="market"><div class="l">{esc(idx["name"])}</div>'
+                  f'<div class="v">{esc(idx["cours"])}</div><small>{var_span(idx["variation"])}</small></div>')
+    for b in bonds:
+        tiles += (f'<div class="market"><div class="l">{esc(b["name"])}</div>'
+                  f'<div class="v">{esc(b["niveau"])}</div><small>{var_span(b["variation"])}</small></div>')
 
-    idx_block = ""
-    if indices:
-        rows = ""
-        for idx in indices:
-            rows += (f"<tr><td><strong>{idx['name']}</strong></td>"
-                     f"<td>{var_span(idx['variation'])}</td>"
-                     f"<td class='cell-num'>{idx['cours']}</td></tr>\n")
-        idx_block = f"""
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Indice</th><th>Variation</th><th>Cours</th></tr></thead>
-      <tbody>{rows}</tbody>
-    </table>
-  </div>"""
+    # La colonne "tendance sur 1 mois" n'existe que depuis la v7.4 : on ne
+    # l'affiche que si au moins un taux la renseigne, pour ne pas
+    # promettre une donnee absente d'un ancien rapport.
+    tendance_lignes = "".join(
+        f'<li>{esc(b["name"])} — {var_span(b["tendance"])} sur 1 mois</li>'
+        for b in bonds if b.get("tendance") and b["tendance"] not in ("—", "--", ""))
+    tendance_html = f'<ul class="macro-list">{tendance_lignes}</ul>' if tendance_lignes else ""
 
-    bond_block = ""
-    if bonds:
-        # La colonne "Sur 1 mois" n'existe que depuis la v7.4 : on ne
-        # l'affiche que si au moins une ligne la renseigne, pour ne pas
-        # ajouter une colonne vide aux anciens rapports.
-        avec_tendance = any(b.get("tendance") for b in bonds)
-        brows = ""
-        for b in bonds:
-            tend = ""
-            if avec_tendance:
-                t = b.get("tendance", "") or "—"
-                tend = (f"<td>{var_span(t)}</td>" if t not in ("—", "--", "")
-                        else "<td class='cell-num'>—</td>")
-            brows += (f"<tr><td><strong>{b['name']}</strong></td>"
-                      f"<td>{var_span(b['variation'])}</td>"
-                      f"<td class='cell-num'>{b['niveau']}</td>{tend}</tr>\n")
-        th_tend = "<th>Sur 1 mois</th>" if avec_tendance else ""
-        bond_block = f"""
-  <h3 class="macro-sub">🏛️ Taux souverains 10 ans</h3>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Taux</th><th>Variation</th><th>Niveau</th>{th_tend}</tr></thead>
-      <tbody>{brows}</tbody>
-    </table>
-  </div>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+    return f"""
+<article class="card section" id="macro">
+  <div class="section-title"><h2>Contexte économique</h2><p>Clôture de la veille</p></div>
+  <div class="macro-grid">{tiles}</div>
+  {tendance_html}
+  {expl('''
   <p class="macro-note">
     Le taux long souverain est le prix de l'argent sans risque : c'est la barre
     que toute action doit franchir. Quand il monte, le rendement exigé sur les
     actions monte avec lui et pèse sur les valorisations — d'autant plus fort
     que les bénéfices attendus sont lointains. L'écart OAT&nbsp;-&nbsp;UST
     mesure la prime que le marché demande à la France face aux États-Unis.
-  </p></details>"""
+  </p>''') if bonds else ''}
+</article>"""
 
-    return f"""
-<section class="section-block" id="macro">
-  <h2 class="section-title">🌍 Contexte Économique</h2>{idx_block}{bond_block}
-</section>"""
 
 def build_combined_chart_html() -> str:
     if not combined_b64:
         return ""
     return f"""
-<section class="section-block" id="tendances">
-  <h2 class="section-title">📉 Tendances — Performance Normalisée (Base 100)</h2>
+<article class="card chart-card section" id="tendances">
+  <div class="section-title"><h2>Tendances — performance normalisée (base 100)</h2><p>Graphique généré, par position</p></div>
   <div class="combined-chart-wrap">
     <img src="data:image/png;base64,{combined_b64}"
          alt="Performance normalisée base 100 de toutes les positions"
          loading="lazy" class="combined-chart-img"
          width="900" height="500">
-    <p class="chart-caption">
-      Chaque courbe représente la performance d'une valeur normalisée à 100 au premier jour disponible.
-      La ligne pointillée à 100 est la référence (prix d'entrée).
-    </p>
   </div>
-</section>"""
+  <p class="chart-caption">
+    Chaque courbe représente la performance d'une valeur normalisée à 100 au premier jour disponible.
+    La ligne pointillée à 100 est la référence (prix d'entrée).
+  </p>
+</article>"""
+
 
 def build_positions_html() -> str:
     if not positions:
-        return "<p style='color:var(--muted)'>Aucune position disponible.</p>"
+        return '<article class="card section" id="positions"><p class="macro-note">Aucune position disponible.</p></article>'
 
     cards = ""
     for p in positions:
-        pnl_net_cls  = "kpi-positive" if "+" in p["pnl_net"]  else "kpi-negative"
-        pnl_brut_cls = "kpi-positive" if "+" in p["pnl_brut"] else "kpi-negative"
-        var_html = var_span(p["variation"])
+        pnl_net_cls  = "cell-pos" if "+" in p["pnl_net"]  else "cell-neg"
+        pnl_brut_cls = "cell-pos" if "+" in p["pnl_brut"] else "cell-neg"
 
         # Un indice de confiance bas signale une note etablie sur peu de
         # criteres : il doit rester visible a cote de la note, jamais separe.
         conf = p.get("confiance", "")
+        conf_html = ""
         if conf:
             try:
-                cls = "conf-basse" if float(conf) < 60 else "conf-ok"
+                cls_conf = "conf-basse" if float(conf) < 60 else "conf-ok"
             except ValueError:
-                cls = "conf-ok"
-            conf_html = f' <span class="conf-badge {cls}">confiance {conf}%</span>'
-        else:
-            conf_html = ""
+                cls_conf = "conf-ok"
+            conf_html = f'<span class="conf-badge {cls_conf}">confiance {conf}%</span>'
 
         # Detail des composantes de la note
-        detail_html = ""
+        comp_html = ""
         if p.get("composantes"):
             barres = ""
             for nom, note, poids in p["composantes"]:
@@ -1410,8 +1516,8 @@ def build_positions_html() -> str:
                     pct = float(note) * 10
                 except ValueError:
                     continue
-                teinte = ("var(--red)" if pct < 35 else
-                          "var(--yellow)" if pct < 60 else "var(--green)")
+                teinte = ("var(--danger)" if pct < 35 else
+                          "var(--warn)" if pct < 60 else "var(--success)")
                 barres += (
                     f'<div class="comp-row">'
                     f'<span class="comp-name">{esc(nom)}</span>'
@@ -1433,90 +1539,81 @@ def build_positions_html() -> str:
                               if p.get("manquants") else "")
             fonda_line = (f'<p class="comp-fonda">{esc(p["fondamentaux"])}</p>'
                           if p.get("fondamentaux") else "")
-            detail_html = f"""
-    <details class="pos-detail-note">
-      <summary>Comment cette note est calculée</summary>
-      <div class="comp-list">{barres}</div>
-      {fonda_line}
-      {note_sans_objet}
-      {note_manquants}
-    </details>"""
+            comp_html = f'<div class="comp-list">{barres}</div>{fonda_line}{note_sans_objet}{note_manquants}'
+
+        consensus_html = ""
+        if p.get("consensus"):
+            src = f' <span class="mom-rets">({esc(p["consensus_src"])})</span>' if p.get("consensus_src") else ""
+            consensus_html = (f'<div class="pos-detail-item"><span class="detail-lbl">Consensus</span>'
+                              f'<span>{esc(p["consensus"])}{src}</span></div>')
+
+        note_extra = f"""
+    <div class="note-extra">
+      <div class="pos-detail-item"><span class="detail-lbl">Momentum</span>
+        <span>{mom_badge(p['mom_label'])}
+          <span class="mom-rets">1M: {esc(p['ret_1m'])} · 3M: {esc(p['ret_3m'])} · 6M: {esc(p['ret_6m'])}</span>
+        </span>
+      </div>{consensus_html}
+    </div>"""
 
         synthesis_html = ""
         synth_text = p.get("synthesis", "").strip()
         if synth_text and "Aucune actualite" not in synth_text:
             src_label = f'<span class="synth-src">{esc(p["synth_src"])}</span>' if p.get("synth_src") else ""
-            synthesis_html = f"""
-    <div class="pos-synthesis">
-      <div class="synth-header">💬 Actualité récente {src_label}</div>
-      <p class="synth-text">{esc(synth_text)}</p>
-    </div>"""
-
-        # AJOUT (21/09/2026) : consensus analystes et justification de la
-        # recommandation, emis par portfolio_analyzer.py mais jamais
-        # affiches jusqu'ici.
-        consensus_html = ""
-        if p.get("consensus"):
-            src = f' <span class="mom-rets">({esc(p["consensus_src"])})</span>' if p.get("consensus_src") else ""
-            consensus_html = f"""
-    <div class="pos-detail-item">
-      <span class="detail-lbl">Consensus</span>
-      <span>{esc(p['consensus'])}{src}</span>
-    </div>"""
+            synthesis_html = (f'<div class="synth-header">Actualité récente {src_label}</div>'
+                              f'<p class="synth-text">{esc(synth_text)}</p>')
+        else:
+            synthesis_html = '<p class="synth-text sub-lbl">Aucune actualité marquante ces derniers jours.</p>'
 
         justif_html = (f'<p class="pos-justif"><strong>Justification —</strong> {esc(p["justification"])}</p>'
                        if p.get("justification") else "")
 
+        ticker_court = esc(p["ticker"].split(".")[0][:4].upper()) or "?"
+
         cards += f"""
-<div class="position-card" id="pos-{esc(p['ticker']).replace('.','_')}">
-  <div class="pos-header">
-    <div class="pos-title">
-      <span class="pos-name">{esc(p['name'])}</span>
-      <code class="pos-ticker">{esc(p['ticker'])}</code>
+<article class="pos-card" id="pos-{esc(p['ticker']).replace('.','_')}">
+  <details class="pos-toggle-news">
+    <summary>
+      <div class="pos-id"><span class="ticker-chip">{ticker_court}</span>
+        <div><strong>{esc(p['name'])}</strong><small>{esc(p['ticker'])}</small></div></div>
+      <div class="pos-quick">
+        <span class="cell-num">{esc(p['prix'])}&nbsp;EUR {var_span(p['variation'])}</span>
+        <span class="{pnl_net_cls}">{esc(p['pnl_net'])}</span>
+        {rec_badge(p['rec'])}
+      </div>
+    </summary>
+    <div class="pos-news">
+      {synthesis_html}
+      {justif_html}
     </div>
-    <div class="pos-rec">{rec_badge(p['rec'])}</div>
+  </details>
+  <div class="pos-body">
+    <div class="pos-kpi"><div class="l">Valeur marché</div><div class="v">{esc(p['vm'])}&nbsp;EUR</div></div>
+    <div class="pos-kpi"><div class="l">P&amp;L brut</div><div class="v {pnl_brut_cls}">{esc(p['pnl_brut'])}</div></div>
+    <div class="pos-kpi"><div class="l">P&amp;L net</div><div class="v {pnl_net_cls}">{esc(p['pnl_net'])}</div></div>
   </div>
-
-  <div class="pos-kpis">
-    <div class="pos-kpi">
-      <div class="pos-kpi-val cell-num">{esc(p['prix'])} EUR</div>
-      <div class="pos-kpi-lbl">Cours {var_html}</div>
+  <details class="pos-note">
+    <summary>
+      <span class="note-label">Note du titre</span>
+      {score_bar(p['score'])}
+      {conf_html}
+    </summary>
+    <div class="note-detail">
+      {comp_html}
+      {note_extra}
     </div>
-    <div class="pos-kpi">
-      <div class="pos-kpi-val cell-num">{esc(p['vm'])} EUR</div>
-      <div class="pos-kpi-lbl">Valeur marché</div>
-    </div>
-    <div class="pos-kpi">
-      <div class="pos-kpi-val {pnl_brut_cls}">{esc(p['pnl_brut'])}</div>
-      <div class="pos-kpi-lbl">P&amp;L Brut</div>
-    </div>
-    <div class="pos-kpi">
-      <div class="pos-kpi-val {pnl_net_cls}">{esc(p['pnl_net'])}</div>
-      <div class="pos-kpi-lbl">P&amp;L Net</div>
-    </div>
-    <div class="pos-kpi">
-      <div>{score_bar(p['score'])}</div>
-      <div class="pos-kpi-lbl">Note du titre{conf_html}</div>
-    </div>
-  </div>
-  {detail_html}
-
-  <div class="pos-details">
-    <div class="pos-detail-item">
-      <span class="detail-lbl">Momentum</span>
-      <span>{mom_badge(p['mom_label'])}
-        <span class="mom-rets">1M: {esc(p['ret_1m'])} · 3M: {esc(p['ret_3m'])} · 6M: {esc(p['ret_6m'])}</span>
-      </span>
-    </div>{consensus_html}
-  </div>
-  {justif_html}
-  {synthesis_html}
-</div>"""
+  </details>
+</article>"""
     return f"""
-<section class="section-block" id="positions">
-  <h2 class="section-title">📈 Positions Détenues</h2>
+<article class="card section" id="positions">
+  <div class="table-top">
+    <div class="section-title" style="margin-bottom:0"><h2>Positions détenues</h2>
+      <p>Touche une position pour son actualité, touche la note pour son détail</p></div>
+    <span class="badge-count">{len(positions)} ligne(s)</span>
+  </div>
   <div class="positions-grid">{cards}</div>
-</section>"""
+</article>"""
+
 
 def build_closes_html() -> str:
     """Section des plus-values realisees. Masquee si aucune vente."""
@@ -1528,7 +1625,7 @@ def build_closes_html() -> str:
         # Colonnes : nom, qte, achat, vente, produit, frais, +/- value, [date]
         pv   = c[6] if len(c) > 6 else "—"
         date = c[7] if len(c) > 7 else ""
-        cls  = "kpi-positive" if pv.startswith("+") else "kpi-negative"
+        cls  = "cell-pos" if pv.startswith("+") else "cell-neg"
         lignes += (f"<tr><td><strong>{esc(c[0])}</strong>"
                    f"{f'<div class=vente-date>vendu le {esc(date)}</div>' if date else ''}</td>"
                    f"<td class='cell-num'>{c[1]}</td>"
@@ -1540,7 +1637,7 @@ def build_closes_html() -> str:
     pied = ""
     if closes_total and len(closes_total) > 6:
         tot = closes_total[6]
-        cls = "kpi-positive" if tot.startswith("+") else "kpi-negative"
+        cls = "cell-pos" if tot.startswith("+") else "cell-neg"
         pied = (f"<tr class='ligne-total'><td><strong>TOTAL</strong></td>"
                 f"<td class='cell-num'>—</td>"
                 f"<td class='cell-num'><strong>{closes_total[2]}</strong></td>"
@@ -1548,13 +1645,13 @@ def build_closes_html() -> str:
                 f"<td class='cell-num {cls}'><strong>{tot}</strong></td></tr>")
 
     return f"""
-<section class="section-block" id="realise">
-  <h2 class="section-title">💰 Plus-values réalisées</h2>
-  <details class="expl-toggle"><summary>ℹ️ Voir l'explication</summary>
+<article class="card section" id="realise">
+  <div class="section-title"><h2>Plus-values réalisées</h2></div>
+  {expl('''
   <p class="section-note">
     Positions vendues. Elles ne figurent plus dans le portefeuille et n'entrent
     pas dans la valorisation. Frais aller-retour déduits.
-  </p></details>
+  </p>''')}
   <div class="table-wrap">
     <table>
       <thead>
@@ -1564,7 +1661,7 @@ def build_closes_html() -> str:
       <tbody>{lignes}{pied}</tbody>
     </table>
   </div>
-</section>"""
+</article>"""
 
 
 def build_synthese_html() -> str:
@@ -1602,8 +1699,8 @@ def build_synthese_html() -> str:
                       f"<td>{rec_badge(rec_raw)}</td></tr>\n")
 
     return f"""
-<section class="section-block" id="synthese">
-  <h2 class="section-title">🏆 Synthèse &amp; Recommandations</h2>
+<article class="card section" id="synthese">
+  <div class="section-title"><h2>Synthèse &amp; recommandations</h2></div>
   <div class="table-wrap">
     <table>
       <thead>
@@ -1615,493 +1712,412 @@ def build_synthese_html() -> str:
       <tbody>{rows_html}</tbody>
     </table>
   </div>
-</section>"""
+</article>"""
+
 
 def build_archive_html() -> str:
     return """
-<section class="section-block" id="historique">
-  <h2 class="section-title">📂 Historique des Rapports</h2>
-  <button class="archive-toggle" onclick="toggleArchive()" id="archive-btn">
-    ▼ Afficher les 30 derniers rapports
-  </button>
+<article class="card section" id="historique">
+  <div class="section-title"><h2>Historique des rapports</h2></div>
+  <button class="archive-toggle" onclick="toggleArchive()" id="archive-btn">Afficher les 30 derniers rapports</button>
   <div id="archive-panel">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Date</th><th>P&L Net</th><th>VM</th><th>Positions</th></tr></thead>
+        <thead><tr><th>Date</th><th>P&amp;L Net</th><th>VM</th><th>Positions</th></tr></thead>
         <tbody id="archive-tbody">
           <tr><td colspan="4" style="text-align:center;color:var(--muted)">Chargement…</td></tr>
         </tbody>
       </table>
     </div>
   </div>
-</section>"""
+</article>"""
+
+
+def build_explications_html() -> str:
+    """Page statique (n'affiche aucune donnee du jour) : un glossaire des
+    termes utilises ailleurs dans le rapport. AJOUT (26/09/2026)."""
+    return """
+<div class="page-head" id="guide">
+  <div>
+    <div class="eyebrow">Lire le rapport</div>
+    <h1>Ce que chaque section veut dire</h1>
+    <p>Le même rapport, expliqué terme par terme — à consulter chaque fois qu'un mot n'est pas clair.</p>
+  </div>
+</div>
+
+<div class="expl-grid">
+
+  <article class="expl-item" id="expl-reco">
+    <h3>Les recommandations</h3>
+    <p>Chaque position reçoit un avis, du plus favorable au plus défavorable :</p>
+    <div class="badges">
+      <span class="badge buy-strong">RENFORCER</span>
+      <span class="badge buy-mod">CONSERVER</span>
+      <span class="badge hold">SURVEILLER</span>
+      <span class="badge avoid">ALLÉGER</span>
+      <span class="badge sell">SORTIR</span>
+      <span class="badge unknown">À EXAMINER</span>
+    </div>
+    <p>« À examiner » (ou « données insuffisantes ») signifie que le système ne peut pas conclure faute d'informations — ce n'est ni bon ni mauvais signe, juste une note à prendre avec prudence.</p>
+  </article>
+
+  <article class="expl-item" id="expl-note">
+    <h3>La note et sa confiance</h3>
+    <p>Chaque titre reçoit une note sur 10, construite à partir de plusieurs composantes pondérées (valorisation, momentum, qualité du bilan, sentiment, contexte macro selon le type d'actif). La confiance indique la part de ces critères réellement calculés : un critère non disponible fait baisser la confiance, pas la note elle-même. « Sans objet » (un critère qui n'existe pas pour ce type d'actif) est normal et n'y touche pas.</p>
+  </article>
+
+  <article class="expl-item" id="expl-momentum">
+    <h3>Le momentum</h3>
+    <p>Trois rendements glissants (1 mois, 3 mois, 6 mois) résumés par une étiquette : <span class="badge buy-strong">↗ HAUSSIER</span>, <span class="badge sell">↘ BAISSIER</span>, ou neutre si aucune tendance nette ne se dégage.</p>
+  </article>
+
+  <article class="expl-item" id="expl-stops">
+    <h3>Les types de stop</h3>
+    <p><strong>Suiveur</strong> — monte avec le cours, ne redescend jamais. <strong>Pourcentage</strong> — niveau fixe sous le prix d'achat. <strong>Absolu</strong> — un montant précis choisi à l'avance. <strong>VQ</strong> (volatility quantile) — s'adapte à la volatilité propre du titre. Un stop est déclaré franchi à la clôture, jamais en cours de séance.</p>
+  </article>
+
+  <article class="expl-item" id="expl-dimensionnement">
+    <h3>Le dimensionnement</h3>
+    <p>La taille suggérée d'une ligne = (capital × risque accepté par idée) ÷ distance jusqu'au stop. Deux titres de volatilité différente reçoivent ainsi le même risque en euros, pas le même montant investi. L'« écart » compare ce qui est détenu à ce que ce calcul recommande — un signal à interpréter, jamais un ordre automatique.</p>
+  </article>
+
+  <article class="expl-item" id="expl-correlation">
+    <h3>La corrélation</h3>
+    <p>Mesure si les lignes du portefeuille bougent ensemble ou indépendamment. Un indice proche de 0&nbsp;% signifie une vraie diversification ; proche de 100&nbsp;%, le portefeuille réagit comme un seul actif. Les « groupes » regroupent les lignes les plus corrélées entre elles pour repérer une concentration cachée derrière plusieurs tickers différents.</p>
+  </article>
+
+  <article class="expl-item" id="expl-macro">
+    <h3>Le contexte économique</h3>
+    <p>Les grands indices et les taux souverains à 10 ans (UST pour les États-Unis, OAT pour la France) donnent le climat du jour. Le taux long est le prix de l'argent sans risque : quand il monte, le rendement exigé sur les actions monte avec lui et pèse sur les valorisations.</p>
+  </article>
+
+  <article class="expl-item" id="expl-fiabilite">
+    <h3>La fiabilité des notes</h3>
+    <p>Un suivi indépendant vérifie, avec le recul, si les notes élevées ont vraiment précédé une surperformance. Le niveau de confiance de cette calibration (élevée, moyenne, faible, insuffisante) dépend du nombre d'observations closes disponibles — plus il y en a, plus le chiffre est fiable. Rien n'est conclu tant que l'échantillon est trop mince.</p>
+  </article>
+
+  <article class="expl-item" id="expl-avertissements">
+    <h3>Les avertissements</h3>
+    <p>Bandeau en haut du rapport : un événement demande une décision avant l'ouverture des marchés (stop franchi, alerte de concentration, donnée jugée périmée). Il disparaît dès que la situation qui l'a déclenché n'est plus d'actualité.</p>
+  </article>
+
+  <article class="expl-item" id="expl-historique">
+    <h3>L'historique des rapports</h3>
+    <p>Les 30 derniers rapports quotidiens, consultables en un clic en bas de la page Portefeuille, pour suivre l'évolution de la valeur et du nombre de positions dans le temps. Le graphique de trajectoire, lui, utilise tout l'historique conservé — pas seulement les 30 derniers jours.</p>
+  </article>
+
+</div>"""
+
 
 # ══════════════════════════════════════════════════════
 # CSS
 # ══════════════════════════════════════════════════════
 CSS = """
-:root {
-  --bg:          #0d1117;
-  --surface:     #161b22;
-  --surface-2:   #1c2130;
-  --border:      #21262d;
-  --text:        #e6edf3;
-  --muted:       #7d8590;
-  --faint:       #2d333b;
-  --accent:      #4f98a3;
-  --accent-dim:  rgba(79,152,163,.12);
-  --green:       #3fb950;
-  --green-dim:   rgba(63,185,80,.12);
-  --red:         #f85149;
-  --red-dim:     rgba(248,81,73,.12);
-  --yellow:      #d29922;
-  --yellow-dim:  rgba(210,153,34,.12);
-  --radius:      12px;
-  --radius-sm:   8px;
-  --shadow:      0 4px 24px rgba(0,0,0,.4);
-  --font-body:   'Inter', system-ui, sans-serif;
-  --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+:root, [data-theme="dark"] {
+  --bg:#0B0E0F; --surface:#141B1D; --surface2:#1B2426; --surface3:#212B2E;
+  --border:rgba(237,241,240,.10); --border-strong:rgba(237,241,240,.18);
+  --text:#EDF1F0; --muted:#93A0A2; --faint:#3A4547;
+  --accent:#49D3C4; --accent-h:#7BE6DA; --on-accent:#07211C; --halo:rgba(73,211,196,.18);
+  --success:#58D68D; --danger:#EF6F5B; --warn:#F0B95C; --info:#63B3E8;
+  --radius:14px; --shadow:none;
+  --font:'Bricolage Grotesque',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
+  color-scheme: dark;
 }
 [data-theme="light"] {
-  --bg:          #f6f8fa;
-  --surface:     #ffffff;
-  --surface-2:   #f0f2f5;
-  --border:      #d0d7de;
-  --text:        #1f2328;
-  --muted:       #57606a;
-  --faint:       #d8dee4;
-  --accent:      #0969da;
-  --accent-dim:  rgba(9,105,218,.08);
-  --green:       #1a7f37;
-  --green-dim:   rgba(26,127,55,.08);
-  --red:         #cf222e;
-  --red-dim:     rgba(207,34,46,.08);
-  --yellow:      #9a6700;
-  --shadow:      0 4px 24px rgba(0,0,0,.08);
+  --bg:#F4F7F7; --surface:#FFFFFF; --surface2:#EDF2F1; --surface3:#E2E9E8;
+  --border:rgba(15,30,28,.10); --border-strong:rgba(15,30,28,.18);
+  --text:#0F1E1C; --muted:#5B6D6A; --faint:#9AACA9;
+  --accent:#1B8F82; --accent-h:#177266; --on-accent:#FFFFFF; --halo:rgba(27,143,130,.14);
+  --success:#1F9D63; --danger:#C6493B; --warn:#B9791F; --info:#2A6FA8;
+  --shadow:0 2px 12px rgba(15,30,28,.06);
+  color-scheme: light;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; scroll-padding-top: 68px; }
+html { scroll-behavior: smooth; }
 body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.65;
-  font-size: 14px;
-  min-height: 100dvh;
-  -webkit-font-smoothing: antialiased;
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  line-height: 1.6; font-size: 15px; min-height: 100dvh; -webkit-font-smoothing: antialiased;
 }
-header {
-  position: sticky; top: 0; z-index: 200;
-  background: color-mix(in oklab, var(--bg) 88%, transparent);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  height: 56px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-}
-.logo { font-size: 14px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; }
-.logo-icon { font-size: 18px; }
-.logo-name { color: var(--text); }
-.logo-name span { color: var(--accent); }
-.header-meta { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
-.header-nav  { display: flex; gap: 2px; }
-.header-nav a {
-  font-size: 12px; color: var(--muted); text-decoration: none;
-  padding: 5px 10px; border-radius: var(--radius-sm);
-  transition: color .15s, background .15s;
-}
-.header-nav a:hover { color: var(--text); background: var(--surface-2); }
-.header-actions { display: flex; gap: 6px; align-items: center; }
-.btn-icon {
-  background: var(--surface-2); border: 1px solid var(--border);
-  color: var(--muted); border-radius: var(--radius-sm);
-  padding: 5px 10px; font-size: 13px; cursor: pointer;
-  transition: color .15s, background .15s;
-}
-.btn-icon:hover { color: var(--text); background: var(--faint); }
-.container { max-width: 1040px; margin: 0 auto; padding: 28px 20px 100px; }
-.update-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 5px 14px; font-size: .76rem;
-  color: var(--muted); margin-bottom: 24px;
-}
-.update-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green); box-shadow: 0 0 8px var(--green);
-  flex-shrink: 0;
-  animation: pulse 2.4s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
-.kpi-bar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px; margin-bottom: 36px;
-}
-.kpi-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 18px 20px;
-  transition: border-color .2s, box-shadow .2s;
-  position: relative; overflow: hidden;
-}
-.kpi-card::before {
-  content: ""; position: absolute; inset: 0;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--accent-dim), transparent 60%);
-  opacity: 0; transition: opacity .3s;
-}
-.kpi-card:hover::before { opacity: 1; }
-.kpi-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
-.kpi-val {
-  font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono);
-  letter-spacing: -.5px; line-height: 1.1; position: relative; z-index: 1;
-}
-.kpi-lbl {
-  font-size: .7rem; color: var(--muted); margin-top: 6px;
-  text-transform: uppercase; letter-spacing: .6px; position: relative; z-index: 1;
-}
-.kpi-positive { color: var(--green); }
-.kpi-negative { color: var(--red); }
-.kpi-neutral  { color: var(--accent); }
-.kpi-card.main-card { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 6%, var(--surface)); }
-.section-block { margin-bottom: 48px; }
-.section-title {
-  font-size: .88rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .8px; color: var(--muted); margin-bottom: 16px;
-  padding-bottom: 10px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px;
-}
-.combined-chart-wrap {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
-}
-.combined-chart-img { width: 100%; display: block; max-height: 520px; object-fit: contain; }
-.chart-caption {
-  font-size: .75rem; color: var(--muted);
-  padding: 10px 16px 14px; border-top: 1px solid var(--border);
-  font-style: italic; line-height: 1.5;
-}
-.positions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 16px; }
-.position-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px;
-  transition: border-color .2s, box-shadow .2s;
-}
-.position-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
-.pos-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 8px; }
-.pos-title  { display: flex; flex-direction: column; gap: 4px; }
-.pos-name   { font-size: .95rem; font-weight: 700; color: var(--text); }
-.pos-ticker {
-  font-family: var(--font-mono); font-size: .75rem;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 4px; padding: 1px 6px; color: var(--accent);
-  display: inline-block; width: fit-content;
-}
-.pos-kpis {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 10px; margin-bottom: 14px;
-}
-.pos-kpi { background: var(--surface-2); border-radius: var(--radius-sm); padding: 10px 12px; }
-.pos-kpi-val { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); }
-.pos-kpi-lbl { font-size: .68rem; color: var(--muted); margin-top: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
+a { color: inherit; text-decoration: none; }
+.num, .mono, code { font-family: var(--mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 
-/* --- Indice de confiance et detail de la note (v7.2) --------------------- */
-.conf-badge {
-  display: inline-block; padding: 1px 6px; border-radius: 999px;
-  font-size: .62rem; font-weight: 600; white-space: nowrap;
-}
-.conf-ok    { background: var(--accent-dim); color: var(--accent); }
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 20px 90px; }
 
-/* --- Contexte macro : sous-titre et note explicative (v7.4) ------------- */
-.macro-sub {
-  font-size: .8rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .7px; color: var(--muted); margin: 24px 0 12px;
-}
-.macro-note {
-  font-size: .75rem; color: var(--muted); font-style: italic;
-  line-height: 1.6; margin-top: 10px;
-}
-/* AJOUT (22/09/2026) : "bouton" repliable pour les paragraphes purement
-   explicatifs (comment lire un chiffre, comment un calcul fonctionne),
-   pour ne plus les afficher en permanence -- voir expl(). */
-.expl-toggle { margin: 8px 0 0; }
-.expl-toggle summary {
-  cursor: pointer; font-size: .72rem; color: var(--accent);
-  font-weight: 500; user-select: none; list-style: none;
-  display: inline-flex; align-items: center; gap: 4px;
-}
-.expl-toggle summary::-webkit-details-marker { display: none; }
-.expl-toggle summary::marker { content: ""; }
-.expl-toggle summary:hover { text-decoration: underline; }
-.expl-toggle[open] summary { margin-bottom: 6px; color: var(--muted); }
-.expl-toggle .macro-note,
-.expl-toggle .section-note { margin-top: 0; }
-.vente-date {
-  font-size: .66rem; color: var(--muted); margin-top: 2px; font-weight: 400;
-}
-.ligne-total td { border-top: 2px solid var(--border); }
-.section-note {
-  margin: -.4rem 0 .9rem; font-size: .78rem; color: var(--muted); line-height: 1.6;
-}
-.hors-note  {
-  font-size: .6rem; color: var(--muted); border: 1px solid var(--border);
-  border-radius: 999px; padding: 0 5px; margin-left: 3px; white-space: nowrap;
-}
-.conf-basse { background: var(--yellow-dim); color: var(--yellow); }
+/* ── entete / onglets ─────────────────────────────────────────── */
+.topbar { display:flex; align-items:center; gap:18px; padding:22px 0 10px; flex-wrap:wrap;
+  position: sticky; top:0; z-index:50; background:var(--bg); }
+.brand strong { font-weight:700; font-size:16px; letter-spacing:-.01em; }
+.tabs { display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:4px; }
+.tab { padding:9px 18px; border-radius:999px; font-weight:600; font-size:13.5px; color:var(--muted); transition:background .2s ease,color .2s ease; }
+.tab[aria-selected="true"] { background:var(--accent); color:var(--on-accent); }
+.tab:hover:not([aria-selected="true"]) { color:var(--text); background:var(--surface2); }
+.topbar-actions { display:flex; align-items:center; gap:14px; margin-left:auto; }
+.text-btn { color:var(--muted); font-size:12.5px; font-weight:600; }
+.text-btn:hover { color:var(--accent); }
+.hdr-alert { color:var(--danger); font-size:12.5px; font-weight:700; background:rgba(239,111,91,.12);
+  padding:5px 11px; border-radius:999px; }
+.hdr-alert:hover { background:rgba(239,111,91,.2); }
+.fresh { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:12.5px; font-family:var(--mono);
+  width:100%; padding:6px 0 16px; }
+.dot { width:6px; height:6px; border-radius:50%; background:var(--success); box-shadow:0 0 8px var(--success); }
 
-.pos-detail-note {
-  margin: .75rem 0 0; padding: .6rem .85rem;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.pos-detail-note summary {
-  cursor: pointer; font-size: .78rem; color: var(--muted);
-  font-weight: 500; user-select: none;
-}
-.pos-detail-note summary:hover { color: var(--accent); }
-.pos-detail-note[open] summary { margin-bottom: .7rem; }
+.subnav { display:flex; gap:2px; overflow-x:auto; padding:4px 0 18px; border-bottom:1px solid var(--border);
+  margin-bottom:26px; scrollbar-width:none; }
+.subnav::-webkit-scrollbar { display:none; }
+.subnav a { white-space:nowrap; color:var(--muted); font-size:13px; padding:7px 12px; border-radius:8px; font-weight:500; }
+.subnav a:hover { color:var(--text); background:var(--surface); }
 
-.comp-list { display: flex; flex-direction: column; gap: .35rem; }
-.comp-row {
-  display: grid; grid-template-columns: 8.5rem 1fr 2.2rem 2.4rem;
-  align-items: center; gap: .5rem; font-size: .74rem;
-}
-.comp-name  { color: var(--text); }
-.comp-track {
-  height: 5px; background: var(--faint); border-radius: 999px; overflow: hidden;
-}
-.comp-fill  { display: block; height: 100%; border-radius: 999px; }
-.comp-val   { font-family: var(--font-mono); text-align: right; }
-.comp-w     { color: var(--muted); text-align: right; font-size: .68rem; }
+.view { display:none; }
+.view.active { display:block; animation: enter .35s cubic-bezier(.19,1,.22,1) both; }
+@keyframes enter { from{opacity:0;translate:0 8px} to{opacity:1;translate:0 0} }
 
-.comp-fonda {
-  margin: .7rem 0 0; padding-top: .6rem; border-top: 1px solid var(--border);
-  font-family: var(--font-mono); font-size: .68rem; color: var(--muted);
-  line-height: 1.6;
-}
-.comp-missing { margin: .5rem 0 0; font-size: .68rem; color: var(--yellow); }
-/* AJOUT (21/09/2026) : "Sans objet" est informatif (critere qui n'existe
-   pas pour ce type d'actif) -- a ne pas confondre visuellement avec
-   .comp-missing, qui signale une vraie perte de confiance. */
-.comp-na      { margin: .5rem 0 0; font-size: .68rem; color: var(--muted); }
-.pos-justif {
-  margin: .6rem 0 0; padding-top: .6rem; border-top: 1px solid var(--border);
-  font-size: .78rem; color: var(--text); line-height: 1.5;
-}
-.pos-justif strong { color: var(--muted); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .4px; }
+.page-head { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; flex-wrap:wrap; }
+.eyebrow { font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; font-family:var(--mono); }
+.page-head h1 { font-size:clamp(1.5rem,2.6vw,1.9rem); font-weight:700; letter-spacing:-.03em; margin:5px 0 4px; }
+.page-head p { color:var(--muted); max-width:56ch; font-size:14px; }
 
-@media (max-width: 560px) {
-  .comp-row { grid-template-columns: 6.5rem 1fr 2rem 2.2rem; font-size: .68rem; }
-}
-.pos-details { border-top: 1px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-.pos-detail-item { display: flex; gap: 10px; align-items: baseline; font-size: .82rem; }
-.detail-lbl { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 72px; flex-shrink: 0; }
-.mom-rets { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); margin-left: 6px; }
-.pos-synthesis {
-  margin-top: 12px;
-  background: color-mix(in oklab, var(--accent) 6%, var(--surface-2));
-  border: 1px solid color-mix(in oklab, var(--accent) 20%, var(--border));
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-}
-.synth-header {
-  font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: var(--accent); margin-bottom: 6px;
-  display: flex; align-items: center; gap: 6px;
-}
-.synth-src {
-  font-size: .68rem; font-weight: 400; color: var(--muted);
-  text-transform: none; letter-spacing: 0;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 4px; padding: 1px 6px;
-}
-.synth-text {
-  font-size: .8rem; color: var(--text); line-height: 1.6;
-  font-style: italic; max-width: none;
-}
-.score-wrap { display: flex; flex-direction: column; gap: 4px; }
-.score-num  { font-size: .88rem; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
-.score-bar  { height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
-.score-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(.16,1,.3,1); }
-.bar-green  { background: var(--green); }
-.bar-yellow { background: var(--yellow); }
-.bar-red    { background: var(--red); }
-.table-wrap {
-  overflow-x: auto; border-radius: var(--radius);
-  border: 1px solid var(--border); box-shadow: var(--shadow); margin: 0;
-}
-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-th {
-  background: var(--surface-2); color: var(--muted); font-weight: 600;
-  font-size: .7rem; text-transform: uppercase; letter-spacing: .5px;
-  padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-td {
-  padding: 10px 14px; border-bottom: 1px solid var(--border);
-  vertical-align: middle; color: var(--text);
-}
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--accent-dim); transition: background .12s; }
-.cell-pos { color: var(--green) !important; font-weight: 600; font-family: var(--font-mono); }
-.cell-neg { color: var(--red)   !important; font-weight: 600; font-family: var(--font-mono); }
-.cell-num { font-family: var(--font-mono); white-space: nowrap; }
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: .73rem; font-weight: 700; padding: 3px 10px;
-  border-radius: 20px; white-space: nowrap;
-}
-.buy-strong { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
-.buy-mod    { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,152,163,.3); }
-.hold       { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
-.avoid      { background: rgba(249,115,22,.1); color: #fb923c; border: 1px solid rgba(249,115,22,.3); }
-.sell       { background: var(--red-dim);    color: var(--red);    border: 1px solid rgba(248,81,73,.3); }
-/* BUG CORRIGE (21/09/2026) : etat "on ne sait pas encore conclure"
-   (A EXAMINER / DONNEES INSUFFISANTES / NON COTE), a distinguer visuellement
-   d'un vrai CONSERVER (badge .hold) pour ne pas laisser croire a un avis. */
-.unknown    { background: rgba(125,133,144,.13); color: var(--muted); border: 1px solid var(--border); }
-.up { color: var(--green); font-weight: 700; }
-.dn { color: var(--red);   font-weight: 700; }
-.archive-toggle {
-  font-size: .8rem; color: var(--accent); cursor: pointer;
-  background: none; border: none; padding: 4px 0;
-  transition: color .15s; margin-bottom: 12px; display: block;
-}
-.archive-toggle:hover { color: var(--text); }
-#archive-panel { display: none; margin-bottom: 8px; }
-#archive-panel.open { display: block; }
-hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-/* ════════════════════════════════════════════════════════════
-   STOPS & ALERTES  --  ajout v8
-   Aucune variable de couleur n'est redefinie ici : tout reprend les
-   jetons deja poses en haut du fichier (--bg #0d1117 en tete). Le fond
-   bleu de la page reste donc strictement inchange.
-   ════════════════════════════════════════════════════════════ */
-.alert-box {
-  background: var(--red-dim); border: 1px solid rgba(248,81,73,.35);
-  border-left: 3px solid var(--red);
-  border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px;
-}
-.alert-title { color: var(--red); font-weight: 600; margin-bottom: 6px; }
-.hdr-alert {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 999px; text-decoration: none;
-  background: var(--red-dim); color: var(--red);
-  border: 1px solid rgba(248,81,73,.35);
-  font-size: 12px; font-weight: 600; white-space: nowrap;
-}
-.alert-box ul { margin: 0; padding-left: 18px; }
-.alert-box li { color: var(--text); margin: 2px 0; }
+/* ── cartes ────────────────────────────────────────────────────── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.section { margin-bottom:18px; scroll-margin-top:96px; }
+.section-title { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+.section-title h2 { font-size:17px; font-weight:700; letter-spacing:-.02em; }
+.section-title p { color:var(--muted); font-size:12.5px; }
+.badge-count { background:var(--surface2); color:var(--muted); font-size:11.5px; font-family:var(--mono); padding:4px 9px; border-radius:999px; }
 
-.mini-bar {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px; margin-bottom: 18px;
-}
-.mini-card {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 12px 14px;
-}
-.mini-card.kpi-alert { border-color: rgba(248,81,73,.4); background: var(--red-dim); }
-.mini-card.kpi-alert .mini-val { color: var(--red); }
-.mini-val { font-family: var(--font-mono); font-size: 22px; font-weight: 600; }
-.mini-lbl {
-  color: var(--muted); font-size: 11px; text-transform: uppercase;
-  letter-spacing: .06em; margin-top: 2px;
-}
+/* ── kpis ──────────────────────────────────────────────────────── */
+.kpis { display:grid; grid-template-columns:1.2fr repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.kpi { min-height:96px; display:flex; flex-direction:column; justify-content:space-between; }
+.kpi.featured { background:linear-gradient(155deg,var(--surface3),var(--surface)); border-color:var(--border-strong); position:relative; overflow:hidden; }
+.kpi.featured::after { content:""; position:absolute; width:150px; height:150px; right:-56px; top:-70px; border-radius:50%;
+  background:radial-gradient(closest-side,var(--halo),transparent); }
+.kpi .label { color:var(--muted); font-size:12px; }
+.kpi .value { font-family:var(--mono); font-size:clamp(1.05rem,1.7vw,1.4rem); letter-spacing:-.01em; font-variant-numeric:tabular-nums; margin-top:6px; }
+.kpi .delta { font-size:12px; color:var(--muted); font-family:var(--mono); margin-top:4px; }
+.cell-pos { color:var(--success); font-family:var(--mono); }
+.cell-neg { color:var(--danger); font-family:var(--mono); }
+.cell-num { font-family:var(--mono); white-space:nowrap; }
 
-.sub-lbl { color: var(--muted); font-size: 11px; font-weight: 400; }
-.cfg-cell { color: var(--muted); font-size: 12px; }
-.type-tag {
-  display: inline-block; padding: 2px 8px; border-radius: 999px;
-  background: var(--surface-2); border: 1px solid var(--border);
-  color: var(--muted); font-size: 11px; white-space: nowrap;
-}
+/* ── callouts ──────────────────────────────────────────────────── */
+.callout { border-radius:10px; padding:13px 15px; font-size:13px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); }
+.callout.warn { background:rgba(240,185,92,.08); border-color:rgba(240,185,92,.28); color:var(--warn); }
+.callout.danger { background:rgba(239,111,91,.08); border-color:rgba(239,111,91,.3); color:var(--danger); }
+.callout strong { display:block; color:inherit; margin-bottom:2px; font-size:13px; }
+.callout ul { margin:6px 0 0 18px; }
+.callout li { color:var(--text); margin:2px 0; }
 
-.stop-ok   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
-.stop-ko   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,.35); }
-.stop-none { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
-.stop-warn { background: var(--yellow-dim);color: var(--yellow);border: 1px solid rgba(210,153,34,.3); }
+/* ── layouts 2 colonnes ────────────────────────────────────────── */
+.layout { display:grid; grid-template-columns:1.6fr 1fr; gap:14px; }
+.analysis-grid { display:grid; grid-template-columns:1.55fr .95fr; gap:14px; align-items:start; }
+@media (max-width:900px) { .layout, .analysis-grid { grid-template-columns:1fr; } }
+@media (max-width:880px) { .kpis { grid-template-columns:repeat(2,1fr); } .kpi.featured { grid-column:1/-1; } }
+.stack { display:grid; gap:14px; }
+.sticky { position:sticky; top:96px; }
 
-/* ── Fiabilité des notes (moteur d'apprentissage) ── */
-.lvl-elevee, .lvl-moyenne { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(63,185,80,.3); }
-.lvl-faible               { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
-.lvl-insuffisante         { background: var(--surface-2);  color: var(--muted);  border: 1px solid var(--border); }
-.learn-note {
-  border-left: 3px solid var(--border); padding: 8px 12px; margin: 0 0 14px;
-  color: var(--muted); font-size: 12px; background: var(--surface-2);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-}
-.learn-model { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
-.learn-model b { color: var(--text); }
+/* ── graphiques ────────────────────────────────────────────────── */
+.chart-wrap { position:relative; }
+.chart-wrap svg { width:100%; height:auto; display:block; }
+.chart-caption { color:var(--muted); font-size:12px; margin-top:10px; }
+.chart-empty { color:var(--faint); font-size:13px; padding:40px 0; text-align:center; }
+.combined-chart-wrap { background:var(--surface2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.combined-chart-img { width:100%; display:block; max-height:520px; object-fit:contain; }
 
-.dist-wrap { display: block; min-width: 120px; }
-.dist-rail {
-  display: block; height: 5px; background: var(--faint);
-  border-radius: 999px; overflow: hidden;
-}
-.dist-fill { display: block; height: 100%; border-radius: 999px; }
-.dist-ok    { background: var(--green); }
-.dist-tight { background: var(--yellow); }
-.dist-neg   { background: var(--red); }
-.dist-txt   { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+/* ── répartition / concentration ──────────────────────────────── */
+.alloc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+.alloc-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+.alloc-title { font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-family:var(--mono); margin-bottom:10px; }
+.alloc-row { margin-bottom:11px; }
+.alloc-row:last-child { margin-bottom:0; }
+.alloc-head { display:flex; justify-content:space-between; gap:10px; font-size:13px; margin-bottom:5px; }
+.alloc-lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.alloc-chiffres { display:flex; align-items:baseline; gap:8px; white-space:nowrap; }
+.alloc-part { font-family:var(--mono); font-weight:600; }
+.alloc-val { font-family:var(--mono); font-size:11px; color:var(--muted); }
+.alloc-rail { height:5px; background:var(--surface3); border-radius:99px; overflow:hidden; }
+.alloc-fill { display:block; height:100%; background:var(--accent); border-radius:99px; }
+@media (max-width:560px) { .alloc-val { display:none; } }
 
-/* ── Repartition ──────────────────────────────────────────── */
-.alloc-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 14px;
-}
-.alloc-card {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 14px 16px;
-}
-.alloc-title {
-  font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--muted); margin-bottom: 10px; font-weight: 600;
-}
-.alloc-row { margin: 9px 0; }
-.alloc-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: 10px; margin-bottom: 4px;
-}
-.alloc-lbl {
-  font-size: 13px; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.alloc-chiffres { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
-.alloc-part { font-family: var(--font-mono); font-size: 12.5px; color: var(--text); font-weight: 600; }
-.alloc-val  { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
-.alloc-rail { height: 6px; background: var(--faint); border-radius: 999px; overflow: hidden; }
-.alloc-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+/* ── positions ─────────────────────────────────────────────────── */
+.positions-grid { display:grid; gap:10px; }
+.pos-card { border:1px solid var(--border); border-radius:12px; background:var(--surface2); overflow:hidden; transition:border-color .2s ease; }
+.pos-card:hover { border-color:var(--border-strong); }
+.pos-toggle-news > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:14px; padding:14px 16px; flex-wrap:wrap; }
+.pos-toggle-news > summary::-webkit-details-marker { display:none; }
+.pos-toggle-news > summary::after { content:"actualité"; margin-left:auto; font-size:11.5px; color:var(--faint); font-family:var(--mono); white-space:nowrap; transition:color .2s ease; }
+.pos-toggle-news[open] > summary::after { color:var(--accent); }
+.pos-toggle-news[open] > summary { border-bottom:1px solid var(--border); }
+.pos-id { display:flex; align-items:center; gap:10px; min-width:180px; }
+.ticker-chip { width:38px; height:38px; border-radius:9px; background:var(--surface3); display:grid; place-items:center;
+  font-family:var(--mono); font-weight:600; font-size:10.5px; color:var(--accent); flex-shrink:0; }
+.pos-id strong { display:block; font-size:14px; }
+.pos-id small { color:var(--faint); font-size:11.5px; }
+.pos-quick { display:flex; align-items:center; gap:16px; flex-wrap:wrap; font-size:13px; }
+.pos-news { padding:14px 16px; font-size:13px; }
+.pos-body { display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:0 16px 14px; }
+.pos-kpi { min-width:78px; }
+.pos-kpi .l { font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.05em; font-family:var(--mono); }
+.pos-kpi .v { font-family:var(--mono); font-size:13px; margin-top:2px; }
+.pos-note { border-top:1px solid var(--border); }
+.pos-note > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 16px; flex-wrap:wrap; }
+.pos-note > summary::-webkit-details-marker { display:none; }
+.pos-note > summary::after { content:"détail"; margin-left:auto; font-size:11.5px; color:var(--faint); font-family:var(--mono); }
+.pos-note[open] > summary::after { color:var(--accent); }
+.note-label { font-size:11.5px; color:var(--muted); font-family:var(--mono); white-space:nowrap; }
+.note-detail { padding:4px 16px 16px; }
+.note-extra { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:10px 22px; font-size:12.5px; }
 
-@media (max-width: 560px) { .alloc-val { display: none; } }
+/* ── note : composantes, score, confiance ─────────────────────── */
+.score-wrap { display:flex; align-items:center; gap:9px; flex:1; min-width:140px; }
+.score-num { font-family:var(--mono); font-size:13.5px; min-width:34px; }
+.score-bar { flex:1; height:6px; background:var(--surface3); border-radius:99px; overflow:hidden; max-width:220px; }
+.score-fill { height:100%; border-radius:99px; transition:width 1s cubic-bezier(.16,1,.3,1); }
+.bar-green { background:var(--success); } .bar-yellow { background:var(--warn); } .bar-red { background:var(--danger); }
+.conf-badge { font-size:11px; font-family:var(--mono); padding:3px 8px; border-radius:999px; background:var(--surface3); color:var(--muted); white-space:nowrap; }
+.conf-ok { background:var(--surface3); color:var(--muted); }
+.conf-basse { color:var(--warn); background:rgba(240,185,92,.13); }
+.comp-list { display:flex; flex-direction:column; gap:5px; }
+.comp-row { display:grid; grid-template-columns:9rem 1fr 2.2rem 2.4rem; align-items:center; gap:9px; font-size:12px; }
+.comp-name { color:var(--muted); }
+.comp-track { height:5px; background:var(--surface3); border-radius:99px; overflow:hidden; }
+.comp-fill { display:block; height:100%; border-radius:99px; }
+.comp-val { font-family:var(--mono); text-align:right; }
+.comp-w { font-family:var(--mono); color:var(--faint); text-align:right; font-size:11px; }
+.comp-fonda { margin:10px 0 0; padding-top:10px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+.comp-missing { margin:8px 0 0; font-size:11.5px; color:var(--warn); }
+.comp-na { margin:8px 0 0; font-size:11.5px; color:var(--muted); }
+@media (max-width:560px) { .comp-row { grid-template-columns:6.5rem 1fr 2rem 2.2rem; font-size:11px; } }
+.pos-detail-item { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+.detail-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; min-width:72px; flex-shrink:0; font-family:var(--mono); }
+.mom-rets { font-size:12px; color:var(--muted); font-family:var(--mono); margin-left:4px; }
+.synth-header { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.synth-src { font-size:11px; font-weight:400; color:var(--faint); text-transform:none; letter-spacing:0; background:var(--surface3); border-radius:4px; padding:1px 6px; }
+.synth-text { font-size:13px; color:var(--text); line-height:1.6; }
+.synth-text.sub-lbl { color:var(--faint); font-style:italic; }
+.pos-justif { margin:10px 0 0; padding-top:10px; border-top:1px solid var(--border); font-size:12.5px; color:var(--muted); line-height:1.6; }
+.pos-justif strong { color:var(--text); }
+
+/* ── badges recommandation / statut ───────────────────────────── */
+.badge { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:5px 10px 5px 8px; border-radius:999px; white-space:nowrap; }
+.badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.buy-strong { background:rgba(88,214,141,.13); color:var(--success); }
+.buy-mod { background:rgba(99,179,232,.13); color:var(--info); }
+.hold { background:rgba(240,185,92,.13); color:var(--warn); }
+.avoid { background:rgba(232,147,90,.13); color:#E8935B; }
+.sell { background:rgba(239,111,91,.13); color:var(--danger); }
+.unknown { background:var(--surface3); color:var(--muted); }
+.up { color:var(--success); font-weight:700; } .dn { color:var(--danger); font-weight:700; }
+
+/* ── tables ────────────────────────────────────────────────────── */
+.table-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+.table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
+th { text-align:left; font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:.06em; font-weight:600;
+  padding:10px 14px; background:var(--surface2); border-bottom:1px solid var(--border); font-family:var(--mono); white-space:nowrap; }
+td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:0; }
+tbody tr:hover td { background:var(--surface2); }
+.sub-lbl { display:block; color:var(--faint); font-size:11px; font-weight:400; margin-top:2px; }
+.cfg-cell { color:var(--muted); font-size:12px; }
+.type-tag { display:inline-block; padding:3px 8px; border-radius:999px; background:var(--surface3); border:1px solid var(--border); color:var(--muted); font-size:11px; white-space:nowrap; }
+.vente-date { font-size:11px; color:var(--muted); margin-top:2px; font-weight:400; }
+.ligne-total td { border-top:2px solid var(--border-strong); }
+.section-note { margin:-4px 0 12px; font-size:12.5px; color:var(--muted); line-height:1.6; }
+.hors-note { font-size:10.5px; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:0 5px; margin-left:3px; white-space:nowrap; }
+
+/* ── watchlist ─────────────────────────────────────────────────── */
+.watch-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+@media (max-width:720px) { .watch-grid { grid-template-columns:1fr; } }
+
+/* ── historique ────────────────────────────────────────────────── */
+.archive-toggle { width:100%; text-align:left; padding:11px 14px; border:1px dashed var(--border-strong); border-radius:10px;
+  color:var(--accent); font-size:13px; font-weight:600; background:var(--surface2); margin-bottom:12px; }
+.archive-toggle:hover { background:var(--surface3); }
+#archive-panel { display:none; }
+#archive-panel.open { display:block; }
+
+/* ── stops / technique ────────────────────────────────────────── */
+.mini-bar { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:16px; }
+.mini-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.mini-card.alert { border-color:rgba(239,111,91,.35); background:rgba(239,111,91,.07); }
+.mini-val { font-family:var(--mono); font-size:19px; font-weight:600; }
+.mini-card.alert .mini-val { color:var(--danger); }
+.mini-lbl { color:var(--muted); font-size:11.5px; margin-top:3px; text-transform:uppercase; letter-spacing:.04em; }
+.market { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.market .l { color:var(--muted); font-size:12px; }
+.market .v { font-family:var(--mono); font-size:18px; margin:6px 0 3px; }
+.macro-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+@media (max-width:560px) { .macro-grid { grid-template-columns:1fr; } }
+.macro-list { list-style:none; margin-top:10px; font-size:12.5px; color:var(--muted); display:grid; gap:4px; }
+.macro-sub { font-size:13px; font-weight:700; letter-spacing:-.005em; margin:20px 0 10px; }
+.macro-note { font-size:12.5px; color:var(--muted); line-height:1.6; margin-top:8px; }
+
+.dist-wrap { display:block; min-width:120px; }
+.dist-rail { display:block; height:5px; background:var(--surface3); border-radius:999px; overflow:hidden; }
+.dist-fill { display:block; height:100%; border-radius:999px; }
+.dist-ok { background:var(--success); } .dist-tight { background:var(--warn); } .dist-neg { background:var(--danger); }
+.dist-txt { display:block; color:var(--muted); font-size:11px; margin-top:3px; }
+
+.stop-ok { background:rgba(88,214,141,.13); color:var(--success); }
+.stop-ko { background:rgba(239,111,91,.13); color:var(--danger); }
+.stop-none { background:var(--surface3); color:var(--muted); }
+.stop-warn { background:rgba(240,185,92,.13); color:var(--warn); }
+
+.corr-row { display:flex; align-items:center; gap:22px; flex-wrap:wrap; margin-bottom:16px; }
+.corr-txt { color:var(--muted); font-size:13px; max-width:44ch; }
+
+/* ── jauges rondes (fiabilité / corrélation) ──────────────────── */
+.ring-card { text-align:center; }
+.ring { width:112px; height:112px; border-radius:50%; display:grid; place-items:center; position:relative; flex-shrink:0; }
+.ring::before { content:""; position:absolute; inset:11px; border-radius:50%; background:var(--surface); }
+.ring div { position:relative; display:flex; flex-direction:column; align-items:center; }
+.ring b { font-family:var(--mono); font-size:21px; letter-spacing:-.01em; }
+.ring small { font-size:10px; color:var(--muted); margin-top:2px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.04em; }
+.ring-card .ring { margin:4px auto 16px; }
+.ring-card h3 { font-size:15px; margin-bottom:7px; }
+.ring-card p { color:var(--muted); font-size:12.5px; line-height:1.6; }
+.ring-link { display:inline-block; margin-top:14px; color:var(--accent); font-size:12.5px; font-weight:600; }
+.ring-link:hover { color:var(--accent-h); }
+
+/* ── fiabilité (moteur d'apprentissage) ───────────────────────── */
+.lvl-elevee, .lvl-moyenne { background:rgba(88,214,141,.13); color:var(--success); }
+.lvl-faible { background:rgba(240,185,92,.13); color:var(--warn); }
+.lvl-insuffisante { background:var(--surface3); color:var(--muted); }
+.learn-note { border-left:3px solid var(--border-strong); padding:8px 12px; margin:0 0 14px; color:var(--muted); font-size:12px;
+  background:var(--surface2); border-radius:0 8px 8px 0; }
+.learn-model { margin:12px 0 0; font-size:12px; color:var(--muted); }
+.learn-model b { color:var(--text); }
+
+/* ── explications ──────────────────────────────────────────────── */
+.expl-grid { display:grid; gap:12px; }
+.expl-item { border:1px solid var(--border); border-radius:12px; padding:16px; background:var(--surface2); }
+.expl-item h3 { font-size:14.5px; margin-bottom:7px; }
+.expl-item p { color:var(--muted); font-size:13px; line-height:1.65; }
+.expl-item .badges { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+
+/* ── details generiques ("voir l'explication") ────────────────── */
+.expl-toggle { margin:12px 0 0; }
+.expl-toggle summary { cursor:pointer; font-size:12.5px; color:var(--accent); font-weight:600; list-style:none; }
+.expl-toggle summary::-webkit-details-marker { display:none; }
+.expl-toggle[open] summary { margin-bottom:8px; color:var(--muted); }
+.expl-toggle .macro-note, .expl-toggle .section-note { margin-top:0; }
+
+.footer-note { color:var(--faint); font-size:11.5px; text-align:center; margin:36px 0 0; }
 
 @media print {
-  header, .header-actions, .archive-toggle, #archive-panel,
-  .update-badge { display: none !important; }
-  body { background: #fff; color: #000; font-size: 13px; }
-  .position-card { break-inside: avoid; border: 1px solid #ccc; }
-  .badge { border: 1px solid #ccc !important; color: #000 !important; background: none !important; }
-  .combined-chart-img { max-height: none; }
-  .pos-synthesis { border: 1px solid #ccc !important; background: #f9f9f9 !important; }
+  .topbar, .subnav, .archive-toggle, #archive-panel { display:none !important; }
+  .view { display:block !important; margin-bottom:40px; }
+  body { background:#fff; color:#000; }
+  .card { break-inside:avoid; border:1px solid #ccc; box-shadow:none; }
 }
-@media (max-width: 700px) {
-  header { padding: 0 14px; }
-  .header-nav { display: none; }
-  .container { padding: 16px 12px 80px; }
-  .kpi-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .kpi-val { font-size: 1.25rem; }
-  .positions-grid { grid-template-columns: 1fr; }
-  .pos-kpis { grid-template-columns: repeat(3, 1fr); }
-  td, th { padding: 8px 10px; font-size: .76rem; }
+@media (max-width:640px) {
+  .shell { padding:0 14px 90px; }
+  .topbar { padding:16px 0 8px; gap:10px; }
+  .tabs { width:100%; }
+  .tab { flex:1; text-align:center; padding:9px 6px; }
+  .page-head { flex-direction:column; align-items:flex-start; }
 }
-@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-.kpi-card       { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
-.kpi-card:nth-child(1) { animation-delay: .05s; }
-.kpi-card:nth-child(2) { animation-delay: .1s;  }
-.kpi-card:nth-child(3) { animation-delay: .15s; }
-.kpi-card:nth-child(4) { animation-delay: .2s;  }
-.kpi-card:nth-child(5) { animation-delay: .25s; }
-.position-card  { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
 """
 
 # ══════════════════════════════════════════════════════
@@ -2113,19 +2129,17 @@ JS = r"""
   var btn  = document.querySelector('[data-theme-toggle]');
   function sg(k){try{return localStorage.getItem(k);}catch(e){return null;}}
   function ss(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-  // Le theme sombre (fond bleu nuit #0d1117) est le theme PAR DEFAUT du
-  // rapport, quel que soit le reglage du systeme. Auparavant la page suivait
-  // prefers-color-scheme : ouverte depuis un appareil en mode clair, elle
-  // s'affichait sur fond blanc. Le bouton de bascule reste disponible et le
-  // choix explicite de l'utilisateur, lui, est memorise.
+  // Theme sombre par defaut, comme le reste du site. Le bouton reste
+  // disponible et le choix explicite de l'utilisateur est memorise.
   var theme = sg('theme') || 'dark';
   root.setAttribute('data-theme', theme);
-  if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
-  if(btn) btn.addEventListener('click', function(){
-    theme = theme==='dark' ? 'light' : 'dark';
+  function label(){ return theme === 'dark' ? 'Mode clair' : 'Mode sombre'; }
+  if (btn) btn.textContent = label();
+  if (btn) btn.addEventListener('click', function(){
+    theme = theme === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', theme);
     ss('theme', theme);
-    btn.textContent = theme==='dark' ? '☀️' : '🌙';
+    btn.textContent = label();
   });
 })();
 
@@ -2153,57 +2167,138 @@ function animateCounter(el) {
 }
 document.querySelectorAll('[data-counter]').forEach(function(el){
   var obs = new IntersectionObserver(function(entries, o){
-    if(entries[0].isIntersecting){ animateCounter(el); o.disconnect(); }
+    if (entries[0].isIntersecting) { animateCounter(el); o.disconnect(); }
   }, {threshold: 0.3});
   obs.observe(el);
-});
-
-document.querySelectorAll('td').forEach(function(td){
-  var t = td.textContent.trim();
-  if (/^[+][\d\s].*[€%]/.test(t)) td.classList.add('cell-pos');
-  else if (/^[-][\d\s].*[€%]/.test(t)) td.classList.add('cell-neg');
 });
 
 document.querySelectorAll('.score-fill').forEach(function(bar){
   var w = bar.style.width;
   bar.style.width = '0%';
-  setTimeout(function(){
-    bar.style.width = w;
-  }, 400);
+  setTimeout(function(){ bar.style.width = w; }, 400);
 });
+
+/* ── Onglets et sous-navigation ──────────────────────────────── */
+var NAV_CONFIG = __NAV_CONFIG__;
+var subnav = document.getElementById('subnav');
+function go(id, push) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id === 'view-' + id); });
+  document.querySelectorAll('.tab').forEach(function(b){
+    var on = b.dataset.view === id;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  var items = NAV_CONFIG[id] || [];
+  if (subnav) subnav.innerHTML = items.map(function(x){ return '<a href="' + x[0] + '">' + x[1] + '</a>'; }).join('');
+  if (push !== false) { try { history.replaceState(null, '', '#' + id); } catch(e){} }
+}
+document.querySelectorAll('.tab').forEach(function(b){
+  b.addEventListener('click', function(){ go(b.dataset.view); window.scrollTo({top:0, behavior:'smooth'}); });
+});
+document.querySelectorAll('[data-goto]').forEach(function(b){
+  b.addEventListener('click', function(e){
+    e.preventDefault();
+    go(b.dataset.goto);
+    var anchor = b.dataset.anchor;
+    if (anchor) {
+      setTimeout(function(){
+        var el = document.getElementById(anchor);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 60);
+    }
+  });
+});
+var _start = 'portefeuille';
+try { var h0 = location.hash.replace('#',''); if (NAV_CONFIG[h0]) _start = h0; } catch(e){}
+go(_start, false);
+
+/* ── Archive (fetch partage entre l'historique et la trajectoire) ── */
+var _archiveData = null;
+function fetchArchive() {
+  if (_archiveData) return Promise.resolve(_archiveData);
+  return fetch('./archive.json').then(function(r){ return r.json(); }).then(function(data){ _archiveData = data; return data; });
+}
 
 function toggleArchive() {
   var panel = document.getElementById('archive-panel');
-  var btn   = document.getElementById('archive-btn');
+  var btnA  = document.getElementById('archive-btn');
   var open  = panel.classList.toggle('open');
-  btn.textContent = open ? '\u25b2 Masquer l\'historique' : '\u25bc Afficher les 30 derniers rapports';
+  btnA.textContent = open ? "Masquer l'historique" : 'Afficher les 30 derniers rapports';
   if (open) loadArchive();
 }
 var _archiveLoaded = false;
 function loadArchive() {
   if (_archiveLoaded) return;
   _archiveLoaded = true;
-  fetch('./archive.json')
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var tbody = document.getElementById('archive-tbody');
-      tbody.innerHTML = data.map(function(e, i){
-        var cls = i === 0 ? 'style="background:var(--accent-dim)"' : '';
-        var pnl = e.pnl || '\u2014';
-        var pnlCls = pnl.includes('+') ? 'cell-pos' : pnl.includes('-') ? 'cell-neg' : '';
-        return '<tr ' + cls + '>'
-          + '<td class="cell-num" style="white-space:nowrap">📅 ' + e.date + '</td>'
-          + '<td class="' + pnlCls + '">' + pnl + '</td>'
-          + '<td class="cell-num">' + (e.vm ? e.vm + ' \u20ac' : '\u2014') + '</td>'
-          + '<td class="cell-num">' + (e.nb_pos || '\u2014') + '</td>'
-          + '</tr>';
-      }).join('');
-    })
-    .catch(function(){
-      document.getElementById('archive-tbody').innerHTML =
-        '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Historique non disponible.</td></tr>';
-    });
+  fetchArchive().then(function(data){
+    var tbody = document.getElementById('archive-tbody');
+    var recent = data.slice(0, 30);
+    tbody.innerHTML = recent.map(function(e, i){
+      var cls = i === 0 ? 'style="background:var(--surface3)"' : '';
+      var pnl = e.pnl || '—';
+      var pnlCls = pnl.indexOf('+') !== -1 ? 'cell-pos' : pnl.indexOf('-') !== -1 ? 'cell-neg' : '';
+      return '<tr ' + cls + '>'
+        + '<td class="cell-num" style="white-space:nowrap">' + e.date + '</td>'
+        + '<td class="' + pnlCls + '">' + pnl + '</td>'
+        + '<td class="cell-num">' + (e.vm ? e.vm + ' €' : '—') + '</td>'
+        + '<td class="cell-num">' + (e.nb_pos || '—') + '</td>'
+        + '</tr>';
+    }).join('');
+  }).catch(function(){
+    document.getElementById('archive-tbody').innerHTML =
+      '<tr><td colspan="4" style="text-align:center;color:var(--muted)">Historique non disponible.</td></tr>';
+  });
 }
+
+/* ── Trajectoire du portefeuille (page Portefeuille) ──────────── */
+function parseFrDate(s) {
+  var m = /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/.exec(s || '');
+  if (!m) return null;
+  return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]);
+}
+function parseNum(s) {
+  if (s === undefined || s === null) return NaN;
+  return parseFloat(String(s).replace(/\s/g, '').replace(',', '.'));
+}
+function drawTrajectoire() {
+  var svg = document.getElementById('trajectoire-svg');
+  if (!svg) return;
+  var caption = document.getElementById('trajectoire-caption');
+  var empty   = document.getElementById('trajectoire-empty');
+  fetchArchive().then(function(data){
+    var pts = data.map(function(e){ return { d: parseFrDate(e.date), v: parseNum(e.vm) }; })
+                   .filter(function(p){ return p.d && !isNaN(p.v); });
+    pts.sort(function(a, b){ return a.d - b.d; });
+    if (pts.length < 2) {
+      svg.style.display = 'none';
+      if (empty) empty.style.display = 'block';
+      if (caption) caption.textContent = "L'historique s'allonge chaque jour : la courbe apparaîtra avec quelques rapports de plus.";
+      return;
+    }
+    var W = 720, H = 250, padL = 8, padR = 8, padT = 14, padB = 14;
+    var vals = pts.map(function(p){ return p.v; });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    if (min === max) { min -= 1; max += 1; }
+    var n = pts.length;
+    function x(i){ return padL + (W - padL - padR) * (i / (n - 1)); }
+    function y(v){ return padT + (H - padT - padB) * (1 - (v - min) / (max - min)); }
+    var line = pts.map(function(p, i){ return (i === 0 ? 'M' : 'L') + x(i).toFixed(1) + ' ' + y(p.v).toFixed(1); }).join(' ');
+    var area = 'M' + x(0).toFixed(1) + ' ' + H + ' L' + line.slice(1) + ' L' + x(n - 1).toFixed(1) + ' ' + H + ' Z';
+    svg.innerHTML =
+      '<defs><linearGradient id="fillTraj" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#49D3C4" stop-opacity=".28"/>' +
+      '<stop offset="1" stop-color="#49D3C4" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + area + '" fill="url(#fillTraj)"/>' +
+      '<path d="' + line + '" fill="none" stroke="#49D3C4" stroke-width="3" vector-effect="non-scaling-stroke"/>';
+    if (caption) {
+      var premier = pts[0].d.toLocaleDateString('fr-FR');
+      caption.textContent = 'Valeur nette du portefeuille depuis la première clôture suivie disponible, le ' + premier + '.';
+    }
+  }).catch(function(){
+    if (caption) caption.textContent = 'Historique indisponible pour le moment.';
+  });
+}
+drawTrajectoire();
 """
 
 # ══════════════════════════════════════════════════════
@@ -2218,134 +2313,175 @@ brut_pct_abs= raw_abs(kpi["pnl_brut_pct"])
 vm_val      = kpi["valeur_marche"]
 cout_val    = kpi["cout_total"]
 nb_pos      = str(len(positions))
-
-# Les entrees de navigation n'apparaissent que si la section existe : un
-# rapport d'avant la v8 ne doit pas afficher un lien vers une ancre absente.
-nav_stops = ('<a href="#stops">Stops</a>'
-             if stops_data and stops_data.get("stops") else "")
-nav_repartition = ('<a href="#repartition">Répartition</a>'
-                   if repartition else "")
-nav_watchlist = ('<a href="#watchlist">Watchlist</a>'
-                 if watchlist else "")
-nav_fiabilite = ('<a href="#fiabilite">Fiabilité</a>' if learning else "")
+pnl_class   = "cell-pos" if pnl_positive  else "cell-neg"
+brut_class  = "cell-pos" if brut_positive else "cell-neg"
 
 # Pastille d'alerte dans l'en-tete : le nombre de stops franchis. C'est
-# l'information qu'on veut voir sans faire defiler la page.
+# l'information qu'on veut voir sans faire defiler la page, meme si on
+# n'est pas sur l'onglet Technique.
 _franchis = (stops_data.get("resume") or {}).get("franchis", 0) if stops_data else 0
-badge_alertes = (f'<a class="hdr-alert" href="#stops" title="Stops franchis">'
-                 f'⚠️ {_franchis}</a>') if _franchis else ""
+badge_alertes = (f'<button class="hdr-alert" data-goto="technique" data-anchor="stops">'
+                 f'{_franchis} alerte(s)</button>') if _franchis else ""
+
+# Les entrees de sous-navigation n'apparaissent que si la section
+# correspondante existe : un rapport plus ancien, ou un profil sans
+# donnee sur tel axe, ne doit pas afficher un lien vers une ancre absente.
+_a_correlation = bool(stops_data and (
+    (stops_data.get("expo_indice") or {}).get("valeur") is not None
+    or stops_data.get("expo_groupes")))
+
+nav_portefeuille = [x for x in [
+    ["#vue", "Vue générale"],
+    (["#avertissements", "Avertissements"] if avertissements_donnees else None),
+    ["#trajectoire", "Trajectoire"],
+    ["#positions", "Positions"],
+    (["#repartition", "Répartition"] if repartition else None),
+    (["#synthese", "Synthèse"] if synthese_rows else None),
+    (["#watchlist", "Watchlist"] if watchlist else None),
+    (["#realise", "Plus-values"] if closes_rows else None),
+    ["#historique", "Historique"],
+] if x is not None]
+
+nav_technique = [x for x in [
+    (["#macro", "Contexte"] if (indices or bonds) else None),
+    (["#stops", "Stops"] if stops_data and stops_data.get("stops") else None),
+    (["#dimensionnement", "Dimensionnement"] if stops_data and stops_data.get("tailles") else None),
+    (["#tendances", "Tendances"] if combined_b64 else None),
+    (["#correlation", "Corrélation"] if _a_correlation else None),
+    (["#fiabilite", "Fiabilité"] if learning else None),
+] if x is not None]
+
+nav_explications = [
+    ["#guide", "Sommaire"], ["#expl-reco", "Recommandations"], ["#expl-note", "Note & confiance"],
+    ["#expl-stops", "Stops"], ["#expl-correlation", "Corrélation"], ["#expl-macro", "Macro"],
+]
+
+NAV_CONFIG_JSON = json.dumps(
+    {"portefeuille": nav_portefeuille, "technique": nav_technique, "explications": nav_explications},
+    ensure_ascii=False)
+JS = JS.replace("__NAV_CONFIG__", NAV_CONFIG_JSON)
+
+_concentration = build_concentration_html()
+if _concentration:
+    bloc_trajectoire = f'<div class="layout section" id="trajectoire">{build_trajectoire_html()}{_concentration}</div>'
+else:
+    bloc_trajectoire = f'<div class="section" id="trajectoire">{build_trajectoire_html()}</div>'
 
 html_out = f"""<!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portfolio Analyzer — {report_date}</title>
+  <title>Rapport ProjectOne — {report_date}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap" rel="stylesheet">
   <style>{CSS}</style>
 </head>
 <body>
+<div class="shell">
 
-  <!-- HEADER -->
-  <header>
-    <div style="display:flex;align-items:center;gap:16px">
-      <div class="logo">
-        <span class="logo-icon">📊</span>
-        <span class="logo-name"><span>Portfolio</span> Analyzer</span>
-      </div>
-      <div class="header-meta">v8.0 · {report_date}</div>
+  <header class="topbar" role="tablist" aria-label="Navigation du rapport">
+    <div class="brand"><strong>Rapport ProjectOne</strong></div>
+    <div class="tabs">
+      <button class="tab" id="tab-portefeuille" role="tab" aria-selected="true" data-view="portefeuille">Portefeuille</button>
+      <button class="tab" id="tab-technique" role="tab" aria-selected="false" data-view="technique">Technique</button>
+      <button class="tab" id="tab-explications" role="tab" aria-selected="false" data-view="explications">Explications</button>
+    </div>
+    <div class="topbar-actions">
       {badge_alertes}
+      <button class="text-btn" data-theme-toggle>Mode clair</button>
+      <button class="text-btn" onclick="window.print()">Imprimer</button>
     </div>
-    <nav class="header-nav">
-      <a href="#macro">Macro</a>
-      {nav_stops}
-      {nav_repartition}
-      <a href="#tendances">Tendances</a>
-      <a href="#positions">Positions</a>
-      <a href="#synthese">Synthèse</a>
-      {nav_watchlist}
-      {nav_fiabilite}
-      <a href="#historique">Historique</a>
-    </nav>
-    <div class="header-actions">
-      <button class="btn-icon" onclick="window.print()" title="Imprimer / PDF">🖨️</button>
-      <button class="btn-icon" data-theme-toggle aria-label="Changer de thème">☀️</button>
-    </div>
+    <div class="fresh"><span class="dot"></span>Dernière mise à jour&nbsp;: {report_date}</div>
   </header>
 
-  <div class="container">
+  <nav class="subnav" id="subnav"></nav>
 
-    <div class="update-badge">
-      <span class="update-dot"></span>
-      Dernière mise à jour :&nbsp;<strong>{report_date}</strong>
-    </div>
+  <main>
+  <section class="view active" id="view-portefeuille" role="tabpanel" aria-labelledby="tab-portefeuille">
 
-    <div class="kpi-bar">
-      <div class="kpi-card main-card">
-        <div class="kpi-val {pnl_class}"
-             data-counter data-val="{pnl_abs}"
-             data-suffix=" €" data-prefix="{pnl_prefix}">
-          {pnl_prefix}{pnl_abs} €
-        </div>
-        <div class="kpi-lbl">PnL Net estimé</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val {pnl_class}"
-             data-counter data-val="{pct_abs}"
-             data-suffix=" %" data-prefix="{pnl_prefix}">
-          {pnl_prefix}{pct_abs} %
-        </div>
-        <div class="kpi-lbl">Performance nette</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val {brut_class}"
-             data-counter data-val="{brut_abs}"
-             data-suffix=" €" data-prefix="{brut_prefix}">
-          {brut_prefix}{brut_abs} €
-        </div>
-        <div class="kpi-lbl">P&amp;L Brut</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val kpi-neutral"
-             data-counter data-val="{vm_val}">
-          {vm_val} €
-        </div>
-        <div class="kpi-lbl">Valeur de Marché</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val kpi-neutral"
-             data-counter data-val="{cout_val}">
-          {cout_val} €
-        </div>
-        <div class="kpi-lbl">Coût Total Investi</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-val kpi-neutral">{nb_pos}</div>
-        <div class="kpi-lbl">Positions actives</div>
+    <div class="page-head" id="vue">
+      <div>
+        <div class="eyebrow">Décider avec contexte</div>
+        <h1>Ton portefeuille, en un regard</h1>
+        <p>Performance, positions qui demandent ton attention, et ce qu'il faut surveiller autour d'elles.</p>
       </div>
     </div>
 
-    {build_indices_html()}
+    <div class="kpis">
+      <article class="card kpi featured">
+        <span class="label">PnL net estimé</span>
+        <div class="value {pnl_class}" data-counter data-val="{pnl_abs}" data-suffix=" €" data-prefix="{pnl_prefix}">{pnl_prefix}{pnl_abs} €</div>
+        <div class="delta {pnl_class}">Performance nette {pnl_prefix}{pct_abs} %</div>
+      </article>
+      <article class="card kpi">
+        <span class="label">P&amp;L brut</span>
+        <div class="value {brut_class}" data-counter data-val="{brut_abs}" data-suffix=" €" data-prefix="{brut_prefix}">{brut_prefix}{brut_abs} €</div>
+      </article>
+      <article class="card kpi">
+        <span class="label">Valeur de marché</span>
+        <div class="value" data-counter data-val="{vm_val}">{vm_val} €</div>
+      </article>
+      <article class="card kpi">
+        <span class="label">Coût total investi</span>
+        <div class="value" data-counter data-val="{cout_val}">{cout_val} €</div>
+      </article>
+      <article class="card kpi">
+        <span class="label">Positions actives</span>
+        <div class="value">{nb_pos}</div>
+      </article>
+    </div>
+
     {build_avertissements_html()}
-    {build_stops_html()}
-    {build_repartition_html()}
-    {build_combined_chart_html()}
+
+    {bloc_trajectoire}
+
     {build_positions_html()}
+    {build_repartition_html()}
     {build_synthese_html()}
     {build_watchlist_html()}
-    {build_learning_html()}
     {build_closes_html()}
     {build_archive_html()}
 
-  </div>
+  </section>
 
-  <script>{JS}</script>
+  <section class="view" id="view-technique" role="tabpanel" aria-labelledby="tab-technique">
+
+    <div class="page-head" id="analyse-tete">
+      <div>
+        <div class="eyebrow">Comprendre avant d'agir</div>
+        <h1>Technique &amp; risque</h1>
+        <p>Le contexte de marché, ce qui protège le portefeuille, et la fiabilité du système qui note tes positions.</p>
+      </div>
+    </div>
+
+    <div class="analysis-grid">
+      <div class="stack">
+        {build_indices_html()}
+        {build_stops_html()}
+        {build_dimensionnement_html()}
+        {build_combined_chart_html()}
+        {build_correlation_html()}
+        {build_learning_html()}
+      </div>
+      {build_fiabilite_ring_html()}
+    </div>
+
+  </section>
+
+  <section class="view" id="view-explications" role="tabpanel" aria-labelledby="tab-explications">
+    {build_explications_html()}
+  </section>
+  </main>
+
+  <p class="footer-note">ProjectOne est une aide à la décision, pas un conseil en investissement.</p>
+</div>
+
+<script>{JS}</script>
 </body>
 </html>
 """
 
 Path("docs").mkdir(exist_ok=True)
 HTML_PATH.write_text(html_out, encoding="utf-8")
-sys.exit(0)
