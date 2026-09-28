@@ -20,6 +20,12 @@ _ap.add_argument("--history", default=None, help="Chemin explicite du history.cs
 _ap.add_argument("--output",  default=None, help="Chemin explicite du chart.html de sortie.")
 _args, _ = _ap.parse_known_args()
 
+def _js(valeur) -> str:
+    """JSON sur dans un <script> (28/09/2026) : un nom contenant « </script> »
+    fermait la balise et injectait du code dans la page."""
+    return json.dumps(valeur, ensure_ascii=False).replace("</", "<\\/")
+
+
 def _slug(v):
     return re.sub(r"[^a-zA-Z0-9_-]+", "-", str(v or "default").strip().lower()).strip("-") or "default"
 
@@ -122,7 +128,10 @@ def build_chart_html(rows):
     for r in rows_1m:
         key = f"{r['date']} {r['time']}"
         by_name.setdefault(r["name"], {})
-        by_name[r["name"]][key] = round(r["pnl_net"], 2)
+        # CORRECTION (28/09/2026) : un titre detenu sur plusieurs lignes (3x
+        # MSCI WORLD) ecrasait les precedentes -- la courbe ne montrait que la
+        # derniere. On additionne.
+        by_name[r["name"]][key] = round(by_name[r["name"]].get(key, 0.0) + r["pnl_net"], 2)
 
     # On ne garde que les valeurs encore detenues (presentes au dernier run).
     # Les lignes vendues (ex : JCDecaux) disparaissent du graphique.
@@ -234,13 +243,13 @@ def build_chart_html(rows):
 </div>
 
 <script>
-const labels      = {json.dumps(labels, ensure_ascii=False)};
-const pnlData     = {json.dumps(pnl_data)};
-const colors      = {json.dumps(colors)};
-const bLabels     = {json.dumps(bar_labels, ensure_ascii=False)};
-const bData       = {json.dumps(bar_data)};
-const bColors     = {json.dumps(bar_colors)};
-const lineDatasets = {json.dumps(line_datasets, ensure_ascii=False)};
+const labels      = {_js(labels)};
+const pnlData     = {_js(pnl_data)};
+const colors      = {_js(colors)};
+const bLabels     = {_js(bar_labels)};
+const bData       = {_js(bar_data)};
+const bColors     = {_js(bar_colors)};
+const lineDatasets = {_js(line_datasets)};
 
 const isDark    = () => document.documentElement.getAttribute('data-theme') === 'dark';
 const gridColor = () => isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
