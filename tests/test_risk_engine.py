@@ -417,3 +417,35 @@ def test_evaluer_portefeuille_dimensionne_sur_la_meme_volatilite_que_le_vq():
     l = out["lignes"][0]
     assert l["vol"]["vq_pct"] == l["stop"]["vq_pct"]
     assert l["vol"]["n_obs"] > 1000
+
+
+# -- Corrections du 28/09/2026 -------------------------------------------------
+
+def test_distance_en_pourcentage_du_cours_et_taille_juste():
+    # Stop a 10 % sous le cours : 10 % de distance (et non 11,1 %), donc
+    # 1 % de risque sur 100 000 -> 10 000 EUR (et non 9 000).
+    r = re_.evaluer_stop(ligne={"stop": {"type": "absolute", "value": 90}},
+                         cours=100, cout=80, closes=None)
+    assert abs(r["distance_pct"] - 10.0) < 1e-9
+    t = re_.dimensionner(capital=100_000, cours=100, distance_pct=r["distance_pct"],
+                         poids_max_pct=50)
+    assert abs(t["montant"] - 10_000) < 1e-6
+
+
+def test_volatilite_crypto_annualisee_sur_365_jours():
+    rng = random.Random(2)
+    s = [100.0]
+    for _ in range(800):
+        s.append(s[-1] * (1 + rng.gauss(0, 0.03)))
+    v252 = re_.volatilite(s)["vol_ann_pct"]
+    v365 = re_.volatilite(s, jours_an=365)["vol_ann_pct"]
+    assert abs(v365 / v252 - (365 / 252) ** 0.5) < 1e-3
+
+
+def test_repli_volatilite_garde_la_mention_du_plafond():
+    out = re_.evaluer_portefeuille(
+        [{"cle": "X", "nom": "X", "cours": 100, "cout": 90,
+          "closes": [100.0 + (i % 2) * 0.01 for i in range(60)],
+          "ligne": {"stop": "none"}}],
+        capital=10_000, reglages={"vol_cible_pct": 50})
+    assert "plafonné" in out["lignes"][0]["taille"]["bride"]
