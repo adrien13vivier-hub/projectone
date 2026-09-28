@@ -226,7 +226,7 @@ def extract_positions(md: str) -> list[dict]:
         # sur le fallback "—" / ancienne regex "Momentum" (elle-meme
         # obsolete, plus emise par le generateur actuel).
         m_perf = re.search(
-            r"\*{0,2}Perf\. historique\*{0,2}[^:]*:\*{0,2}\s*1M\s*([^\s|]+)\s*\|\s*3M\s*([^\s|]+)\s*\|\s*6M\s*([^\s|]+)\s*--\s*(\w+)",
+            r"\*{0,2}Perf\. historique\*{0,2}[^:]*:\*{0,2}\s*1M\s*([^\s|]+)\s*\|\s*3M\s*([^\s|]+)\s*\|\s*6M\s*([^\s|]+)\s*--\s*(\w[\w/]*)",
             block)
         if m_perf:
             ret_1m    = m_perf.group(1).strip()
@@ -298,8 +298,8 @@ def extract_positions(md: str) -> list[dict]:
         justification = m_just.group(1).strip() if m_just else ""
 
         m_cons = re.search(
-            r"\*\*Consensus analystes\s*:\*\*\s*(.+?)\s*\*\(source\s*:\s*([^)]+?)\)?\*?\s*(?:\n|$)",
-            block)
+            r"\*\*Consensus analystes\s*:\*\*\s*(.+?)\s*\*\(source\s*:\s*(.+?)\)\*\s*$",
+            block, flags=re.M)
         consensus     = m_cons.group(1).strip() if m_cons else ""
         consensus_src = m_cons.group(2).strip() if m_cons else ""
 
@@ -530,6 +530,11 @@ def var_span(txt: str) -> str:
     t = txt.strip()
     # Supprime le préfixe ^ ou v produit par portfolio_analyzer
     clean = re.sub(r"^[\^v]\s*", "", t)
+    # CORRECTION (28/09/2026) : « -- » (valeur absente) commence par « - » et
+    # s'affichait « ▼ -- » en rouge -- une donnee manquante lue comme une
+    # baisse (taux 10 ans, ecart OAT-UST).
+    if not re.search(r"\d", clean):
+        return "—" if clean.strip("-— ") == "" else esc(clean)
     if clean.startswith("+") or (re.search(r"\+\d", clean)):
         return f'<span class="up">▲ {clean}</span>'
     if clean.startswith("-") or (re.search(r"-\d", clean)):
@@ -827,7 +832,7 @@ def _barre_distance(txt: str) -> str:
     teinte = "dist-tight" if val < 8 else "dist-ok"
     return (f'<span class="dist-wrap"><span class="dist-rail">'
             f'<span class="dist-fill {teinte}" style="width:{pct:.0f}%"></span></span>'
-            f'<span class="dist-txt">{val:.1f}% au-dessus</span></span>')
+            f'<span class="dist-txt">{val:.1f}% de marge</span></span>')
 
 
 
@@ -922,7 +927,7 @@ def build_dimensionnement_html() -> str:
         cell_taille = taille
         if precision:
             cell_taille += f'<div class="sub-lbl">{precision.rstrip(")")}</div>'
-        trows += (f'<tr><td><strong>{t["nom"]}</strong></td>'
+        trows += (f'<tr><td><strong>{esc(t["nom"])}</strong></td>'
                   f'<td>{t["vol"]}</td>'
                   f'<td class="cell-num">{t["atr"]}</td>'
                   f'<td class="cell-num">{t["vq"]}</td>'
@@ -945,9 +950,13 @@ def build_dimensionnement_html() -> str:
   <p class="macro-note">
     «&nbsp;Amplitude/jour&nbsp;» : de combien la valeur bouge en moyenne d'une
     clôture à l'autre — la lecture concrète de la volatilité.<br>
-    Montant&nbsp;= (capital&nbsp;×&nbsp;risque par idée)&nbsp;÷&nbsp;distance au stop.
+    Montant&nbsp;= (capital&nbsp;×&nbsp;risque par idée)&nbsp;÷&nbsp;distance au stop
+    (la baisse, en % du cours, qui déclencherait le stop).
     Deux volatilités différentes reçoivent ainsi le même risque, pas
-    le même montant. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
+    le même montant. Sans stop exploitable, le montant suit le budget de
+    volatilité&nbsp;: capital&nbsp;×&nbsp;budget&nbsp;÷&nbsp;volatilité de la ligne.
+    VQ&nbsp;= 0,65&nbsp;×&nbsp;volatilité annuelle (mesurée sur 5&nbsp;ans), borné
+    entre 8&nbsp;% et 40&nbsp;%. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
     budget de risque justifierait : positif, la ligne est plus grosse que le
     risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
   </p>''')}
@@ -1013,8 +1022,8 @@ def build_correlation_html() -> str:
   {groupes_html}
   {expl('''
   <p class="macro-note">
-    Lignes dont les mouvements quotidiens sont fortement corrélés entre eux —
-    prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
+    Lignes dont les variations à 3 mois sont fortement corrélées entre elles
+    (mesurées sur jusqu'à 5 ans d'historique) — prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
     laisse penser. Un signal d'attention basé sur le passé récent, pas une
     prévision.
   </p>''')}
@@ -1034,7 +1043,7 @@ def build_repartition_html() -> str:
         for e in axe["entrees"]:
             lignes += (f'<div class="alloc-row">'
                        f'<div class="alloc-head">'
-                       f'<span class="alloc-lbl" title="{e["libelle"]}">{e["libelle"]}</span>'
+                       f'<span class="alloc-lbl" title="{esc(e["libelle"])}">{esc(e["libelle"])}</span>'
                        f'<span class="alloc-chiffres">'
                        f'<span class="alloc-part">{e["part_txt"]}</span>'
                        f'<span class="alloc-val">{e["montant"]}</span>'
@@ -1113,7 +1122,7 @@ def build_trajectoire_html() -> str:
     complet (voir ARCHIVE_MAX plus haut)."""
     return """
 <article class="card chart-card">
-  <div class="section-title"><h2>Trajectoire du portefeuille</h2><p>Valeur nette depuis le début du suivi</p></div>
+  <div class="section-title"><h2>Trajectoire du portefeuille</h2><p>Valeur de marché depuis le début du suivi</p></div>
   <div class="chart-wrap">
     <svg id="trajectoire-svg" viewBox="0 0 720 250" preserveAspectRatio="none" role="img"
          aria-label="Valeur du portefeuille depuis le début du suivi"></svg>
@@ -1131,15 +1140,31 @@ def build_trajectoire_html() -> str:
 #   - le détail complet, inchangé, plus bas sur la même page
 # ══════════════════════════════════════════════════════
 
+# Le moteur d'apprentissage nomme ses tranches avec l'ancien vocabulaire
+# (ACHAT FORT...). Le rapport, lui, parle RENFORCER / CONSERVER / ... depuis
+# le 21/09 : on traduit a l'affichage (28/09/2026) pour ne pas avoir deux
+# langages sur la meme page.
+_RECO_FIAB = {
+    "ACHAT FORT":   "Renforcer",
+    "ACHAT MODERE": "Conserver",
+    "GARDER":       "Surveiller",
+    "A EVITER":     "Alléger",
+    "VENDRE":       "Sortir",
+}
+
+
 def build_fiabilite_ring_html() -> str:
     if not learning:
         return ""
     c = learning["counts"]
-    snap = c.get("snapshots", 0) or 0
-    mat  = c.get("matured", 0) or 0
-    pct  = (mat / snap * 100) if snap else 0.0
-
     h  = str(learning.get("horizon"))
+    snap = c.get("snapshots", 0) or 0
+    # CORRECTION (28/09/2026) : `matured` additionne TOUS les horizons
+    # (309 a 20 seances + 154 a 60) alors que `snapshots` compte chaque note
+    # une fois -- la jauge affichait 126 %. On prend l'horizon affiche.
+    mat  = ((c.get("par_horizon") or {}).get(h) or {}).get("closes", 0) or 0
+    pct  = min((mat / snap * 100) if snap else 0.0, 100.0)
+
     hs = learning.get("horizons_stats") or {}
     bloc = hs.get(h)
     titre = "Historique insuffisant"
@@ -1211,7 +1236,7 @@ def _l_table_bandes(stat: dict) -> str:
             continue
         hit = "—" if b["hit"] is None else f'{b["hit"] * 100:.0f}&nbsp;%'
         rows += (f'<tr><td><strong>{b["label"]}</strong>'
-                 f'<div class="sub-lbl">{b["reco"].title()}</div></td>'
+                 f'<div class="sub-lbl">{_RECO_FIAB.get(b["reco"], b["reco"].title())}</div></td>'
                  f'<td class="cell-num">{b["n"]}</td><td class="cell-num">{b["n_indep"]}</td>'
                  f'<td class="cell-num">{_l_pct(b["mean"])}</td>'
                  f'<td class="cell-num">{_l_pct(b["median"])}</td>'
@@ -1242,7 +1267,8 @@ def build_learning_html() -> str:
         f'<div class="mini-card"><div class="mini-val">{v}</div>'
         f'<div class="mini-lbl">{l}</div></div>'
         for v, l in ((c["snapshots"], "Notes enregistrées"),
-                     (c["matured"], "Observations clôturées"),
+                     (c["par_horizon"].get(h, {}).get("closes", 0),
+                      f"Observations clôturées ({h} séances)"),
                      (en_attente, f"En attente ({h} séances)"),
                      (learning.get("score_version", ""), "Version de la note")))
 
@@ -1322,19 +1348,19 @@ def build_learning_html() -> str:
         for p in learning["positions"]:
             pr = (p.get("horizons") or {}).get(h)
             if not pr:
-                prow += (f'<tr><td><strong>{p["name"]}</strong></td>'
+                prow += (f'<tr><td><strong>{esc(p["name"])}</strong></td>'
                          f'<td class="cell-num">{p["score"]}/10</td>'
                          f'<td colspan="4" class="cfg-cell">En attente d\'échéance</td></tr>\n')
                 continue
             proba = "—" if pr["p_outperf"] is None else f'{pr["p_outperf"] * 100:.0f}&nbsp;%'
             att = (_l_pct(pr["estimate"]) if pr["estimate"] is not None
-                   else f'<span class="sub-lbl">{pr.get("reason", "n/d")}</span>')
+                   else f'<span class="sub-lbl">{esc(pr.get("reason", "n/d"))}</span>')
             ml = ""
             if pr.get("modele"):
                 ml = (f'<div class="sub-lbl">Modèle validé : '
                       f'{pr["modele"]["estimate"]:+.1f}&nbsp;%</div>')
-            prow += (f'<tr><td><strong>{p["name"]}</strong>'
-                     f'<div class="sub-lbl">{p.get("sector") or "secteur inconnu"}</div></td>'
+            prow += (f'<tr><td><strong>{esc(p["name"])}</strong>'
+                     f'<div class="sub-lbl">{esc(p.get("sector") or "secteur inconnu")}</div></td>'
                      f'<td class="cell-num">{p["score"]}/10'
                      f'<div class="sub-lbl">tranche {pr["band"]}</div></td>'
                      f'<td class="cell-num">{att}{ml}</td>'
@@ -1342,7 +1368,7 @@ def build_learning_html() -> str:
                      f'<td class="cell-num">{proba}</td>'
                      f'<td>{_l_lvl(pr["confidence"])}'
                      f'<div class="sub-lbl">{pr["n_indep"]} obs. indép. · '
-                     f'{pr["scope"]}{" + héritée" if pr["legacy_included"] else ""}</div></td></tr>\n')
+                     f'{esc(pr["scope"])}{" + héritée" if pr["legacy_included"] else ""}</div></td></tr>\n')
         pos_html = f"""
   <h3 class="macro-sub">Fiabilité par position — horizon {h} séances</h3>
   <div class="table-wrap"><table>
@@ -1773,7 +1799,7 @@ def build_explications_html() -> str:
 
   <article class="expl-item" id="expl-stops">
     <h3>Les types de stop</h3>
-    <p><strong>Suiveur</strong> — monte avec le cours, ne redescend jamais. <strong>Pourcentage</strong> — niveau fixe sous le prix d'achat. <strong>Absolu</strong> — un montant précis choisi à l'avance. <strong>VQ</strong> (volatility quantile) — s'adapte à la volatilité propre du titre. Un stop est déclaré franchi à la clôture, jamais en cours de séance.</p>
+    <p><strong>Suiveur</strong> — monte avec le cours, ne redescend jamais. <strong>Pourcentage</strong> — niveau fixe sous le prix d'achat. <strong>Absolu</strong> — un montant précis choisi à l'avance. <strong>VQ</strong> (volatility quotient) — s'adapte à la volatilité propre du titre : 0,65 × la volatilité annuelle mesurée sur 5 ans (1 an à défaut), bornée entre 8 % et 40 % sous le plus haut. Un stop est déclaré franchi à la clôture, jamais en cours de séance.</p>
   </article>
 
   <article class="expl-item" id="expl-dimensionnement">
@@ -2292,7 +2318,7 @@ function drawTrajectoire() {
       '<path d="' + line + '" fill="none" stroke="#49D3C4" stroke-width="3" vector-effect="non-scaling-stroke"/>';
     if (caption) {
       var premier = pts[0].d.toLocaleDateString('fr-FR');
-      caption.textContent = 'Valeur nette du portefeuille depuis la première clôture suivie disponible, le ' + premier + '.';
+      caption.textContent = 'Valeur de marché du portefeuille depuis la première clôture suivie disponible, le ' + premier + '.';
     }
   }).catch(function(){
     if (caption) caption.textContent = 'Historique indisponible pour le moment.';
