@@ -566,8 +566,16 @@ def normaliser_cloture(op: dict, index: int = 0) -> dict:
     fiche = MARCHES.get(place, MARCHES["us"])
 
     try:
-        qty   = float(op.get("quantity", op.get("qty", 0)))
-        achat = float(op.get("buy_price", op.get("cost_eur", 0)))
+        # CORRECTION (28/09/2026) : l'interface ecrit `qty` / `buy_price_eur`
+        # (et le serveur les stocke ainsi), mais seuls les anciens noms
+        # `quantity` / `buy_price` etaient lus ici. Toute vente saisie depuis
+        # l'interface etait donc rejetee (« quantité et prix doivent être
+        # > 0 ») et ses plus-values n'apparaissaient jamais au rapport --
+        # c'est le cas de la vente Palantir du profil adrien.
+        qty   = float(op.get("qty") if op.get("qty") is not None
+                      else op.get("quantity", 0))
+        achat = float(op.get("buy_price_eur") if op.get("buy_price_eur") is not None
+                      else op.get("buy_price", op.get("cost_eur", 0)))
         vente = float(op.get("sell_price", 0))
     except (TypeError, ValueError):
         raise ValueError(f"Vente {index + 1} ({nom}) : montant invalide")
