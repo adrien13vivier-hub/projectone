@@ -251,6 +251,10 @@ CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mo
 # HISTORY_DAYS, strictement a l'identique -- voir _fenetre_courte().
 VOL_HISTORY_DAYS  = 5 * 365 + 2   # ~5 ans
 VOL_REPLI_DAYS    = 366           # repli : 1 an
+# Correlation (28/09/2026) : nombre minimal de variations a 3 mois communes
+# pour publier une correlation -- ~1 an de recul au-dela de la fenetre de 63
+# seances. En dessous, la mesure est trop dominee par le hasard.
+CORRELATION_MIN_OBS_RAPPORT = 250
 HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
                 "pnl_net_pct", "score", "confiance", "rec"]
@@ -450,7 +454,22 @@ def _get(url: str, params: dict, api_key_name: str, timeout: int = 12) -> tuple:
     try:
         r = requests.get(url, params=params, timeout=timeout)
         if r.status_code == 200:
-            return r.json(), None
+            data = r.json()
+            # AJOUT (28/09/2026) : AlphaVantage et TwelveData signalent le
+            # quota epuise dans une reponse 200, pas par un code HTTP. Sans
+            # cette detection, les appels suivants partaient quand meme et
+            # echouaient un par un.
+            if isinstance(data, dict):
+                msg = str(data.get("Note") or data.get("Information") or "")
+                if api_key_name == "alphavantage" and msg and (
+                        "rate limit" in msg.lower() or "requests per" in msg.lower()
+                        or data.get("Note")):
+                    _quota_epuiser(api_key_name)
+                    return None, "HTTP_429_QUOTA"
+                if api_key_name == "twelvedata" and str(data.get("code")) == "429":
+                    _quota_epuiser(api_key_name)
+                    return None, "HTTP_429_QUOTA"
+            return data, None
         if r.status_code == 429:
             _quota_epuiser(api_key_name)
             return None, "HTTP_429_QUOTA"
@@ -695,6 +714,14 @@ def td_fetch_batch(tickers: list) -> dict:
                          {"symbol": ",".join(batch), "apikey": TWELVEDATA_KEY},
                          "twelvedata")
         _td_last_call = time.time()
+        # TwelveData facture un credit PAR SYMBOLE, pas par requete.
+        for _ in range(len(batch) - 1):
+            _quota_inc("twelvedata")
+        # CORRECTION (28/09/2026) : pour UN seul symbole, TwelveData repond a
+        # plat ({"price": "..."}) et non {"AAPL": {"price": ...}} -- le cours
+        # etait alors perdu et remplace par un appel EODHD.
+        if isinstance(data, dict) and len(batch) == 1 and "price" in data:
+            data = {batch[0]: data}
 
         if isinstance(data, dict):
             for ticker in batch:
@@ -815,7 +842,7 @@ def taux_ligne(asset: dict, eur_usd: float, session_cache: dict = None) -> float
     return 1.0 if taux is None else taux
 
 
-def variation_jour_pct(price_eur, h_closes):
+def variation_jour_pct(price_eur, h_closes, h_dates=None, seance: str = None):
     """Variation du jour en %, recalculee depuis l'historique deja telecharge.
 
     BUG CORRIGE (19/09/2026) : la variation renvoyee par les fournisseurs
@@ -842,6 +869,22 @@ def variation_jour_pct(price_eur, h_closes):
     dernier, avant = closes[-1], closes[-2]
     if not dernier or not avant:
         return None
+    # AJOUT (28/09/2026) : quand les dates de l'historique sont connues, on
+    # SAIT si la derniere cloture est celle de la seance decrite -- plus
+    # besoin de la deviner a 0,5 % pres. L'heuristique restait fausse quand
+    # l'historique avait un jour de retard ET que le titre bougeait de moins
+    # de 0,5 % : elle affichait alors la variation de la VEILLE.
+    if h_dates and seance and len(h_dates) == len(h_closes or []):
+        derniere_date = str(h_dates[-1])[:10]
+        try:
+            jour_ouvre = datetime.strptime(seance, "%Y-%m-%d").weekday() < 5
+        except ValueError:
+            jour_ouvre = False
+        if derniere_date >= seance:
+            return round((dernier - avant) / avant * 100, 2)
+        if jour_ouvre:
+            return round((price_eur - dernier) / dernier * 100, 2)
+        # Week-end / jour ferie : pas de seance ce jour-la -> heuristique.
     if abs(price_eur - dernier) / dernier <= 0.005:
         return round((dernier - avant) / avant * 100, 2)
     return round((price_eur - dernier) / dernier * 100, 2)
@@ -1240,7 +1283,18 @@ def get_macro_news(n: int = 5) -> list:
 
 
 def get_consensus(asset: dict) -> tuple:
-    if FINNHUB_KEY:
+    # AJOUT (28/09/2026) : le consensus ne compte pas dans la note d'un ETF ou
+    # d'une crypto (voir NON_APPLICABLES). L'interroger quand meme brulait un
+    # appel Finnhub et un appel EODHD par ligne et par jour, pour rien.
+    classe = str(asset.get("asset_class") or asset.get("classe") or "action").lower()
+    if "consensus" not in criteres_applicables(classe):
+        return (None, "N/D", "sans objet")
+    # Un 403 est un refus d'abonnement, pas une panne : inutile de retenter
+    # sur la meme place (Finnhub) ou le meme flux (EODHD) pendant ce run.
+    cle_fh = f"403:finnhub_reco:{asset.get('marche', '')}"
+    if FINNHUB_KEY and _MEMO.get(cle_fh):
+        fh_err = "HTTP 403 (abonnement)"
+    elif FINNHUB_KEY:
         data, err = _get(f"{FH_BASE}/stock/recommendation",
                          {"symbol": asset["ticker_fh"], "token": FINNHUB_KEY},
                          "finnhub")
@@ -1252,14 +1306,20 @@ def get_consensus(asset: dict) -> tuple:
             if total > 0:
                 score = (sb*10 + b*7.5 + h*5 + s*2.5) / total
                 return round(score, 2), f"SB:{sb} B:{b} H:{h} S:{s} SS:{ss}", "Finnhub"
+        if err == "HTTP 403":
+            _MEMO[cle_fh] = True
         fh_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
     else:
         fh_err = "cle absente"
 
+    if EODHD_KEY and _MEMO.get("403:eodhd_fundamentals"):
+        return (None, "N/D", f"indisponible (Finnhub:{fh_err}, EODHD:HTTP 403 (abonnement))")
     if EODHD_KEY:
         data, err = _get(f"{EOD_BASE}/fundamentals/{asset['ticker_eod']}",
                          {"api_token": EODHD_KEY, "fmt": "json", "filter": "AnalystRatings"},
                          "eodhd")
+        if err == "HTTP 403":
+            _MEMO["403:eodhd_fundamentals"] = True
         if isinstance(data, dict) and data.get("Rating") and not _is_quota_error(err):
             rat   = data["Rating"]
             label = str(rat.get("Rating", "")).lower()
@@ -1480,9 +1540,13 @@ def _fonda_eodhd(ticker_eod: str) -> tuple:
     Fundamentals — conserve en repli au cas ou l'offre changerait."""
     if not EODHD_KEY:
         return {}, "cle absente"
+    if _MEMO.get("403:eodhd_fundamentals"):
+        return {}, "HTTP 403 (abonnement)"
 
     data, err = _get(f"{EOD_BASE}/fundamentals/{ticker_eod}",
                      {"api_token": EODHD_KEY, "fmt": "json"}, "eodhd")
+    if err == "HTTP 403":
+        _MEMO["403:eodhd_fundamentals"] = True
     if not isinstance(data, dict) or not data or _is_quota_error(err):
         return {}, ("quota atteint" if _is_quota_error(err) else (err or "vide"))
 
@@ -1632,6 +1696,26 @@ def _libelle_fenetre(dates: list) -> str:
     return f"sur {max(1, round(jours / 30.44))} mois"
 
 
+def _cotations_par_an(dates: list):
+    """Nombre de cotations par an de la serie, d'apres ses dates (28/09/2026).
+
+    ~252 pour une action, ~365 pour une crypto (7 j/7). Sert a annualiser la
+    volatilite avec le bon facteur. None si la serie est trop courte pour
+    que l'estimation ait un sens (le moteur retombe alors sur 252).
+    """
+    ds = sorted(str(d)[:10] for d in (dates or []) if d)
+    if len(ds) < 60:
+        return None
+    try:
+        jours = (datetime.strptime(ds[-1], "%Y-%m-%d")
+                 - datetime.strptime(ds[0], "%Y-%m-%d")).days
+    except ValueError:
+        return None
+    if jours < 90:
+        return None
+    return round((len(ds) - 1) / (jours / 365.25), 1)
+
+
 def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -> tuple:
     from_d    = str(date.today() - timedelta(days=days))
     # Debut de la fenetre COURTE (graphiques, momentum, stops) -- sert a
@@ -1645,6 +1729,20 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
     taux = taux_ligne(asset, eur_usd)
 
     if asset.get("marche") == "us":
+        # CORRECTION (28/09/2026) : EODHD passe DEVANT AlphaVantage pour
+        # l'historique US. Dans les rapports reels, AlphaVantage renvoyait
+        # systematiquement une serie vide ("fallback AV:vide") : chaque ligne
+        # US brulait 1 appel AV sur 20/jour avant de retomber sur EODHD. En
+        # prime, EODHD fournit des cours AJUSTES des splits (adjusted_close),
+        # ce qu'AlphaVantage gratuit ne fait pas -- indispensable sur 5 ans
+        # pour la volatilite et le VQ.
+        if EODHD_KEY:
+            dates, closes, eod_err = _eodhd_daily_profond(asset["ticker_eod"], days, to_d, taux)
+            if dates:
+                return dates, closes, "EODHD", False, None
+        else:
+            eod_err = "cle absente"
+
         ticker_av = asset.get("ticker_av")
         if ALPHAVANTAGE_KEY and ticker_av:
             data, err = _get(AV_BASE, {
@@ -1697,7 +1795,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
                     sauts = []
                 saut_suspect = bool(sauts)
                 if len(dates) >= 2 and not saut_suspect:
-                    return dates, closes, "AlphaVantage", False, None
+                    return dates, closes, f"AlphaVantage (fallback EODHD:{eod_err})", False, None
                 if saut_suspect:
                     av_err = "serie ecartee (saut >= 40% -- split non ajuste suspecte)"
                 else:
@@ -1706,13 +1804,6 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
                 av_err = "quota atteint" if _is_quota_error(err) else (err or "vide")
         else:
             av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
-
-        if EODHD_KEY:
-            dates, closes, eod_err = _eodhd_daily_profond(asset["ticker_eod"], days, to_d, taux)
-            if dates:
-                return dates, closes, f"EODHD (fallback AV:{av_err})", False, None
-        else:
-            eod_err = "cle absente"
 
         if FINNHUB_KEY:
             dates, closes, src, cache_flag, err_str = _finnhub_candles(asset, eur_usd, days)
@@ -2755,6 +2846,8 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
                 # doit pas partir d'un sommet vieux de 5 ans.
                 "closes_vol":  d.get("hv_closes") or d.get("h_closes") or [],
                 "vol_fenetre": _libelle_fenetre(d.get("hv_dates") or d.get("h_dates")),
+                "dates_vol":   d.get("hv_dates") or d.get("h_dates") or [],
+                "jours_an":    _cotations_par_an(d.get("hv_dates") or d.get("h_dates")),
                 "ligne":  a,
                 # Rattachee ici, dans le meme ordre que `results` : c'est ce
                 # qui permet de la reaffecter par position plus bas, sans
@@ -2801,26 +2894,47 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
         # fois. On lui fournit le poids ACTUEL (vm / capital), pas la taille
         # suggeree par dimensionner() -- c'est bien de ce qui est deja detenu
         # qu'on veut savoir si ca bouge ensemble.
+        #
+        # CORRECTION (28/09/2026), deux defauts :
+        # 1. Un meme titre detenu sur plusieurs lignes (WPEA x3, ABNX x2)
+        #    produisait autant de candidats -- correles a 100 % avec
+        #    eux-memes. L'indice moyen et les groupes en etaient fausses. On
+        #    regroupe desormais par titre (cle sans le suffixe "#n"), poids
+        #    additionnes.
+        # 2. Les variations a 3 mois etaient mesurees sur ~6 mois
+        #    d'historique : ~60 points qui se chevauchent presque tous. Sur
+        #    deux titres INDEPENDANTS simules, 8,5 % des paires sortaient
+        #    au-dessus de 0,70 -- des alertes de pur hasard. Sur l'historique
+        #    long (5 ans, deja telecharge pour le VQ), ce taux tombe a 0 %.
+        #    Une ligne sans au moins ~1 an de recul est ecartee plutot que
+        #    jugee sur du bruit.
         donnees_par_cle = {e["cle"]: e for e in entrees}
-        candidats = []
+        par_titre = {}
         if capital_ref:
             for l in sortie["lignes"]:
                 vm = _nombre_simple(l.get("vm"))
                 if vm is None:
                     continue
                 e = donnees_par_cle.get(l["cle"]) or {}
-                candidats.append({
+                titre = str(l["cle"]).split("#")[0]
+                if titre in par_titre:
+                    par_titre[titre]["poids_pct"] += vm / capital_ref * 100.0
+                    continue
+                par_titre[titre] = {
                     "nom":       l.get("nom"),
-                    "closes":    e.get("closes") or [],
-                    "dates":     e.get("dates") or [],
+                    "closes":    e.get("closes_vol") or e.get("closes") or [],
+                    "dates":     e.get("dates_vol") or e.get("dates") or [],
                     "poids_pct": vm / capital_ref * 100.0,
-                })
-        exposition_correlee = risk_engine.exposition_correlee(candidats)
+                }
+        candidats = list(par_titre.values())
+        exposition_correlee = risk_engine.exposition_correlee(
+            candidats, min_obs=CORRELATION_MIN_OBS_RAPPORT)
         # Contrairement au groupement ci-dessus, l'indice ne depend pas du
         # poids : une ligne coteE avec un historique suffisant compte, qu'elle
         # pese beaucoup ou peu dans le portefeuille. `candidats` porte deja
         # `closes` pour chaque ligne -- rien a recalculer.
-        indice_correlation = risk_engine.indice_correlation_moyenne(candidats)
+        indice_correlation = risk_engine.indice_correlation_moyenne(
+            candidats, min_obs=CORRELATION_MIN_OBS_RAPPORT)
 
         return {
             "disponible": True, "motif": None,
@@ -2966,6 +3080,17 @@ def _classe_vol(valeur) -> str:
     return ""
 
 
+def _cellule(txt) -> str:
+    """Texte saisi par l'utilisateur, rendu sur une cellule de tableau MD.
+
+    AJOUT (28/09/2026) : un « | » dans un nom, un compte ou une etiquette
+    (« PEA | CTO ») decalait toutes les colonnes suivantes -- generate_html
+    affichait alors, par exemple, une distance au stop inventee sur une ligne
+    qui n'en avait pas.
+    """
+    return str(txt if txt is not None else "").replace("|", "/").replace("\n", " ").strip()
+
+
 def _md_nombre(valeur, decimales: int = 2, defaut: str = "--") -> str:
     """Nombre formate avec espace fine comme separateur de milliers."""
     v = _nombre_simple(valeur)
@@ -3046,8 +3171,8 @@ def bloc_md_stops(risque: dict) -> list:
         dist = st.get("distance_pct")
         dist_s = "--" if dist is None else f"{dist:+.1f}%"
         out.append(
-            f"| {l['nom']} | {l.get('compte') or '--'} "
-            f"| {st.get('type_label', '--')} | {st.get('description', '--')} "
+            f"| {_cellule(l['nom'])} | {_cellule(l.get('compte') or '--')} "
+            f"| {st.get('type_label', '--')} | {_cellule(st.get('description', '--'))} "
             f"| {_md_nombre(st.get('niveau'))} | {_md_nombre(l.get('cours'))} "
             f"| {dist_s} | {statut} |"
         )
@@ -3065,13 +3190,21 @@ def bloc_md_stops(risque: dict) -> list:
         "",
         "Formule : montant = (capital x risque) / distance au stop. Deux valeurs "
         "de volatilités différentes reçoivent ainsi le même risque, pas le même "
-        "montant.",
+        "montant. Sans stop exploitable : montant = capital x budget de "
+        f"volatilité ({reg.get('vol_cible_pct', 2.0):.4g} %) / volatilité de la ligne.",
         "",
         "| Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop "
         "| Taille suggeree | Detenu | Ecart |",
         "|--------|----------------|----------------|-----|---------------"
         "|-----------------|--------|-------|",
     ]
+    vm_par_titre, nb_lignes_titre, deja_affiches = {}, {}, set()
+    for l in lignes_r:
+        titre = str(l.get("cle", "")).split("#")[0]
+        v = _nombre_simple(l.get("vm"))
+        nb_lignes_titre[titre] = nb_lignes_titre.get(titre, 0) + 1
+        if v is not None:
+            vm_par_titre[titre] = vm_par_titre.get(titre, 0.0) + v
     for l in lignes_r:
         vol = l.get("vol") or {}
         t   = l.get("taille") or {}
@@ -3102,21 +3235,39 @@ def bloc_md_stops(risque: dict) -> list:
             taille_s = f"{_md_nombre(montant)} EUR"
             if t.get("bride"):
                 taille_s += f" ({t['bride']})"
-            vm = _nombre_simple(l.get("vm"))
+            vm = vm_par_titre.get(str(l.get("cle", "")).split("#")[0])
+            if vm is None:
+                vm = _nombre_simple(l.get("vm"))
             ecart_s = "--" if vm is None else f"{_md_nombre(vm - montant)} EUR"
+        titre = str(l.get("cle", "")).split("#")[0]
+        if nb_lignes_titre.get(titre, 0) > 1:
+            # CORRECTION (28/09/2026) : un titre detenu sur plusieurs lignes
+            # etait compare ligne par ligne a la taille suggeree -- trois
+            # lignes WPEA de ~200 EUR paraissaient chacune sous-dimensionnees
+            # alors que 650 EUR etaient detenus au total.
+            detenu_s = (f"{_md_nombre(vm_par_titre.get(titre))} EUR "
+                        f"({nb_lignes_titre[titre]} lignes)")
+        else:
+            detenu_s = f"{_md_nombre(l.get('vm'))} EUR"
+        # Lignes d'un meme titre au meme stop : une seule rangee suffit (le
+        # detenu est deja le total du titre).
+        signature = (titre, vol_s, dist_s, taille_s)
+        if signature in deja_affiches:
+            continue
+        deja_affiches.add(signature)
         out.append(
-            f"| {l['nom']} | {vol_s} | {atr_s} | {vq_s} | {dist_s} | {taille_s} "
-            f"| {_md_nombre(l.get('vm'))} EUR | {ecart_s} |"
+            f"| {_cellule(l['nom'])} | {vol_s} | {atr_s} | {vq_s} | {dist_s} | {taille_s} "
+            f"| {detenu_s} | {ecart_s} |"
         )
     out += [
         "",
         "*« Amplitude/jour » : de combien la valeur bouge en moyenne d'une "
         "cloture a l'autre. C'est la lecture concrete de la volatilite.*",
         "",
-        "*« Volatilite an. » et « VQ » : ecart-type des variations journalieres "
-        "sur 5 ans d'historique (1 an a defaut, ou depuis la cotation pour un "
-        "titre recent), annualise. La profondeur reelle est indiquee dans la "
-        "colonne.*",
+        "*« Volatilite an. » : ecart-type des variations journalieres sur 5 ans "
+        "d'historique (1 an a defaut, ou depuis la cotation pour un titre "
+        "recent), annualise ; la profondeur reelle est indiquee dans la "
+        "colonne. « VQ » = 0,65 x cette volatilite, borne entre 8 % et 40 %.*",
         "",
         "*« Écart » = ce qui est détenu moins ce que le budget de risque "
         "justifierait. Positif : la ligne est plus grosse que le risque accepté. "
@@ -3177,16 +3328,17 @@ def bloc_md_exposition_correlee(groupes: list, indice: dict = None) -> list:
         return out
 
     out += [
-        "Lignes dont les mouvements quotidiens sont fortement corrélés entre "
-        "eux -- prises ensemble, elles pèsent plus qu'un plafond de poids par "
-        "ligne ne le laisse penser. Un signal d'attention, pas une prévision.",
+        "Lignes dont les variations à 3 mois sont fortement corrélées entre "
+        "elles (mesurées sur jusqu'à 5 ans d'historique) -- prises ensemble, "
+        "elles pèsent plus qu'un plafond de poids par ligne ne le laisse "
+        "penser. Un signal d'attention, pas une prévision.",
         "",
         "| Groupe | Poids cumulé | Alerte |",
         "|--------|--------------|--------|",
     ]
     for g in groupes:
-        alerte_s = "⚠️ Oui" if g.get("alerte") else "Non"
-        out.append(f"| {', '.join(g.get('lignes') or [])} "
+        alerte_s = "Oui" if g.get("alerte") else "Non"
+        out.append(f"| {_cellule(', '.join(g.get('lignes') or []))} "
                    f"| {_md_nombre(g.get('poids_pct'))} % | {alerte_s} |")
     out += [
         "",
@@ -3219,7 +3371,7 @@ def bloc_md_repartition(repartition: dict) -> list:
                 "| Poste | Montant | Part |",
                 "|-------|---------|------|"]
         for e in entrees:
-            out.append(f"| {e['libelle']} | {_md_nombre(e['montant'])} EUR "
+            out.append(f"| {_cellule(e['libelle'])} | {_md_nombre(e['montant'])} EUR "
                        f"| {e['part']:.1f}% |")
         out.append("")
     out += [
@@ -3504,7 +3656,11 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     COTEES = [a for a in PORTFOLIO if not a.get("manuel")]
 
     # ── 1. EUR/USD ────────────────────────────────────────────────────────────
-    eur_usd, eur_usd_src, eur_usd_cache, eur_usd_warn = get_eur_usd(session_cache)
+    # Memoise pour le run (28/09/2026) : la meme requete AlphaVantage
+    # partait une fois PAR utilisateur, sur un quota de 20 appels par jour.
+    if "fx:eur_usd" not in _MEMO:
+        _MEMO["fx:eur_usd"] = get_eur_usd(session_cache)
+    eur_usd, eur_usd_src, eur_usd_cache, eur_usd_warn = _MEMO["fx:eur_usd"]
     # BUG CORRIGE (19/09/2026) : cette ligne ecrasait le cache MEME quand la
     # valeur venait deja du cache (eur_usd_cache=True) ou d'une valeur de
     # secours codee en dur (0.92, ni mesuree ni fraiche) -- le rafraichissant
@@ -3514,8 +3670,10 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         _cache_set(session_cache, "eur_usd", eur_usd)
 
     # ── 2. Cours US en batch (TwelveData) ─────────────────────────────────────
+    # La watchlist n'est plus chiffree que par Yahoo (voir plus bas) : ses
+    # tickers ne sont plus demandes a TwelveData, ou ils etaient factures
+    # sans jamais etre lus (28/09/2026).
     us_tickers = [a["ticker_td"] for a in COTEES if a.get("ticker_td")]
-    us_tickers += [w["ticker_td"] for w in WATCHLIST if w.get("ticker_td")]
     td_prices = td_fetch_batch(list(set(filter(None, us_tickers)))) if TWELVEDATA_KEY else {}
 
     # ── 3. Cours par position + données parallèles ────────────────────────────
@@ -3694,7 +3852,8 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         # dernieres clotures de l'historique deja telecharge, deja en EUR.
         # Le chiffre fournisseur reste utilise si le recalcul est impossible
         # (historique trop court) : mieux vaut un chiffre imprecis qu'aucun.
-        chg_recalc = variation_jour_pct(price_eur, h_closes)
+        chg_recalc = variation_jour_pct(price_eur, h_closes, h_dates,
+                                        date_seance(datetime.now(PARIS_TZ)))
         if chg_recalc is not None:
             chg_pct = chg_recalc
 
@@ -3973,9 +4132,14 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
 
         note_s = (f"**{r['score']}/10** ({r['confiance']:.0f}%)"
                   if r["score"] is not None else "n/d")
-        ret_1m_s = f"{r['ret_1m']:+.1f}%"
-        ret_3m_s = f"{r['ret_3m']:+.1f}%"
-        ret_6m_s = f"{r['ret_6m']:+.1f}%"
+        if r.get("hist_label") in ("N/D", "INDISPONIBLE"):
+            # Pas d'historique (actif non cote, source en panne) : 0.0 %
+            # serait une performance inventee.
+            ret_1m_s = ret_3m_s = ret_6m_s = "n/d"
+        else:
+            ret_1m_s = f"{r['ret_1m']:+.1f}%"
+            ret_3m_s = f"{r['ret_3m']:+.1f}%"
+            ret_6m_s = f"{r['ret_6m']:+.1f}%"
 
         lines += [
             f"### {asset['name']} `{asset['ticker_eod']}`",
@@ -4126,7 +4290,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         cell_note = (f"{r['score']}/10 | {r['confiance']:.0f}%"
                      if r["score"] is not None else "n/d | -")
         lines.append(
-            f"| {r['asset']['name']} | {r['price_eur']:.2f} | {r['vm']:.2f} "
+            f"| {_cellule(r['asset']['name'])} | {r['price_eur']:.2f} | {r['vm']:.2f} "
             f"| {pnl_b_sign}{abs(r['pnl_brut']):.2f} ({pnl_b_sign}{abs(r['pnl_brut_pct']):.1f}%) "
             f"| {pnl_n_sign}{abs(r['pnl_net']):.2f} ({pnl_n_sign}{abs(r['pnl_net_pct']):.1f}%) "
             f"| {cell_note} | {r['rec']} |"
