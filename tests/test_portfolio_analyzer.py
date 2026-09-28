@@ -224,7 +224,9 @@ def test_bloc_md_exposition_correlee_avec_groupe_en_alerte():
     lignes = pa.bloc_md_exposition_correlee(groupes)
     texte = "\n".join(lignes)
     assert "A, B" in texte
-    assert "⚠️ Oui" in texte
+    # Emoji retire le 28/09/2026 (demande « pas d'emoji ») ; generate_html
+    # lit toujours « Oui ».
+    assert "| Oui |" in texte
     assert "30" in texte
 
 
@@ -393,3 +395,33 @@ def test_get_price_yahoo_echec_sans_cache_est_indisponible(monkeypatch):
         {"ticker_yf": "SNAP", "ticker_eod": "SNAP.US"}, EUR_USD, {})
     assert prix is None
     assert from_cache is False
+
+
+# -- Corrections du 28/09/2026 -------------------------------------------------
+
+def test_variation_jour_utilise_les_dates_quand_elles_sont_connues():
+    # Historique en retard d'un jour, titre qui bouge de moins de 0,5 % :
+    # l'ancienne heuristique affichait la variation de la VEILLE (+2 %).
+    assert pa.variation_jour_pct(102.3, [100, 102], ["2026-09-23", "2026-09-24"],
+                                 "2026-09-25") == 0.29
+    assert pa.variation_jour_pct(102.3, [100, 102], ["2026-09-24", "2026-09-25"],
+                                 "2026-09-25") == 2.0
+
+
+def test_cellule_md_neutralise_le_separateur():
+    assert "|" not in pa._cellule("PEA | CTO")
+
+
+def test_consensus_non_demande_pour_un_etf():
+    assert pa.get_consensus({"asset_class": "etf", "ticker_eod": "X.PA",
+                             "marche": "euronext"})[2] == "sans objet"
+
+
+def test_cotations_par_an_crypto_et_action():
+    from datetime import date, timedelta
+    d0 = date(2024, 1, 1)
+    crypto = [str(d0 + timedelta(days=i)) for i in range(730)]
+    action = [str(d0 + timedelta(days=i)) for i in range(730)
+              if (d0 + timedelta(days=i)).weekday() < 5]
+    assert 360 <= pa._cotations_par_an(crypto) <= 370
+    assert 255 <= pa._cotations_par_an(action) <= 265
