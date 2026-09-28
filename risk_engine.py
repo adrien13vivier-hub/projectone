@@ -211,8 +211,13 @@ def _borner(valeur: float, bas: float, haut: float) -> float:
 # VOLATILITÉ
 # =============================================================================
 
-def volatilite(closes) -> dict:
+def volatilite(closes, jours_an: float = None) -> dict:
     """Mesures de volatilité à partir d'une série de clôtures.
+
+    `jours_an` : nombre de cotations par an de CETTE série (252 pour une
+    action, ~365 pour une crypto qui cote 7 j/7). Défaut : JOURS_BOURSE.
+    CORRECTION (28/09/2026) : une crypto était annualisée avec 252, ce qui
+    sous-estimait sa volatilité (et donc son VQ) d'environ 17 %.
 
     Retourne toujours un dict aux mêmes clés ; les valeurs sont None quand la
     série est trop courte. Jamais d'exception, jamais de zéro trompeur : un
@@ -234,7 +239,10 @@ def volatilite(closes) -> dict:
 
     moy = sum(rends) / len(rends)
     var = sum((r - moy) ** 2 for r in rends) / len(rends)
-    vol_ann_pct = (var ** 0.5) * (JOURS_BOURSE ** 0.5) * 100.0
+    ja = _nombre(jours_an)
+    if ja is None or not (200 <= ja <= 370):
+        ja = JOURS_BOURSE
+    vol_ann_pct = (var ** 0.5) * (ja ** 0.5) * 100.0
 
     # ATR de clôture à clôture, sur les ATR_PERIODE dernières séances.
     fenetre = rends[-ATR_PERIODE:] if len(rends) >= ATR_PERIODE else rends
@@ -388,7 +396,8 @@ def evaluer_stop(ligne: dict,
                  eur_par_devise: float = 1.0,
                  defaut: dict = None,
                  aujourdhui: str = None,
-                 closes_vol: list = None) -> dict:
+                 closes_vol: list = None,
+                 jours_an: float = None) -> dict:
     """Calcule le niveau de stop d'une ligne et son statut.
 
     Paramètres
@@ -458,7 +467,7 @@ def evaluer_stop(ligne: dict,
     base["hwm"] = round(hwm, 6)
 
     # ── Volatilité (nécessaire au type vq) ───────────────────────────────────
-    vol = volatilite(closes_vol if closes_vol else serie)
+    vol = volatilite(closes_vol if closes_vol else serie, jours_an)
     base["vq_pct"] = vol["vq_pct"]
 
     # ── Niveau du stop selon le type ─────────────────────────────────────────
@@ -520,7 +529,11 @@ def evaluer_stop(ligne: dict,
         niveau = max(niveau, niveau_precedent)
 
     base["niveau"] = round(niveau, 4)
-    base["distance_pct"] = round((px - niveau) / niveau * 100.0, 2) if niveau else None
+    # CORRECTION (28/09/2026) : distance exprimee en % du COURS (la baisse
+    # qu'il faut pour toucher le stop), et non plus en % du niveau du stop.
+    # C'est ce qu'attend dimensionner() : avec l'ancienne base, un stop a 10 %
+    # affichait 11,1 % et la taille suggeree etait sous-evaluee d'autant.
+    base["distance_pct"] = round((px - niveau) / px * 100.0, 2) if px else None
 
     # ── Statut + gestion de l'alerte ─────────────────────────────────────────
     sous_le_stop = px < niveau
@@ -647,12 +660,15 @@ def dimensionner_par_volatilite(capital: float,
     if cap is None or cap <= 0 or px is None or px <= 0 or vol is None or vol <= 0:
         return {"montant": None, "quantite": None, "poids_pct": None}
 
-    poids_pct = min(cible / vol * 100.0, _nombre(poids_max_pct) or POIDS_MAX_PCT)
+    plafond   = _nombre(poids_max_pct) or POIDS_MAX_PCT
+    brut      = cible / vol * 100.0
+    poids_pct = min(brut, plafond)
     montant   = cap * poids_pct / 100.0
     return {
         "montant":   round(montant, 2),
         "quantite":  round(montant / px, 4),
         "poids_pct": round(poids_pct, 2),
+        "plafonne":  brut > plafond,
     }
 
 
@@ -786,7 +802,8 @@ def correlation(closes_a: list, closes_b: list,
 def exposition_correlee(lignes: list,
                         seuil: float = CORRELATION_SEUIL,
                         alerte_pct: float = EXPOSITION_ALERTE_PCT,
-                        fenetre: int = CORRELATION_FENETRE_JOURS) -> list:
+                        fenetre: int = CORRELATION_FENETRE_JOURS,
+                        min_obs: int = CORRELATION_MIN_OBS) -> list:
     """Regroupe les lignes dont les variations a 3 mois sont fortement correlees.
 
     `lignes` : liste de dicts avec au moins
@@ -811,7 +828,7 @@ def exposition_correlee(lignes: list,
     candidats = [l for l in (lignes or [])
                 if _nombre(l.get("poids_pct"))
                 and len(_series_propre(l.get("closes")))
-                    >= CORRELATION_MIN_OBS + fenetre]
+                    >= min_obs + fenetre]
     n = len(candidats)
     if n < 2:
         return []
@@ -833,6 +850,7 @@ def exposition_correlee(lignes: list,
     for i in range(n):
         for j in range(i + 1, n):
             c = correlation(candidats[i].get("closes"), candidats[j].get("closes"),
+                            min_obs,
                             dates_a=candidats[i].get("dates"),
                             dates_b=candidats[j].get("dates"),
                             fenetre=fenetre)
@@ -992,10 +1010,12 @@ def evaluer_portefeuille(lignes: list,
                 defaut=defaut,
                 aujourdhui=aujourdhui,
                 closes_vol=item.get("closes_vol"),
+                jours_an=item.get("jours_an"),
             )
             # Même série que le VQ : la taille et le stop doivent parler de la
             # même volatilité.
-            vol = volatilite(item.get("closes_vol") or item.get("closes"))
+            vol = volatilite(item.get("closes_vol") or item.get("closes"),
+                             item.get("jours_an"))
             taille = dimensionner(
                 capital=capital,
                 cours=item.get("cours"),
@@ -1017,7 +1037,12 @@ def evaluer_portefeuille(lignes: list,
                 alt = dimensionner_par_volatilite(
                     capital, item.get("cours"), vol["vol_ann_pct"],
                     reglages.get("vol_cible_pct", VOL_CIBLE_DEFAUT_PCT), poids_max)
-                taille = {**taille, **alt, "bride": "dimensionné par la volatilité"}
+                # CORRECTION (28/09/2026) : le plafond de poids etait masque
+                # par cette etiquette -- on dit les deux quand il joue.
+                bride = "dimensionné par la volatilité"
+                if alt.get("plafonne"):
+                    bride += f", plafonné à {_nombre(poids_max) or POIDS_MAX_PCT:.4g} % du capital"
+                taille = {**taille, **alt, "bride": bride}
 
             sorties.append({
                 "cle":       cle,
@@ -1132,7 +1157,7 @@ def _autotest() -> int:
                      cours=90, cout=100, closes=plat)
     verifie("percent niveau", abs(r["niveau"] - 80) < 1e-6, str(r["niveau"]))
     verifie("percent statut ok", r["statut"] == STATUT_OK, r["statut"])
-    verifie("percent distance", abs(r["distance_pct"] - 12.5) < 0.01, str(r["distance_pct"]))
+    verifie("percent distance", abs(r["distance_pct"] - 11.11) < 0.01, str(r["distance_pct"]))
 
     r = evaluer_stop({"stop": {"type": "percent", "value": 20}},
                      cours=70, cout=100, closes=plat)
