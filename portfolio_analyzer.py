@@ -243,18 +243,19 @@ CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mo
 # AJOUT (28/09/2026) : profondeur SEPAREE pour la volatilite et le VQ.
 # Avant, la volatilite (donc le VQ et le dimensionnement) reposait sur les
 # ~125 seances de HISTORY_DAYS : un semestre agite ou trop calme suffisait a
-# deformer le stop. Elle repose maintenant sur 5 ans de cotations
-# journalieres, avec repli sur 1 an quand la source ne remonte pas si loin.
+# deformer le stop. Elle repose maintenant sur 1 an de cotations
+# journalieres (choix de Gaby le 28/09/2026, apres un premier passage a 5 ans).
 # Aucun appel supplementaire : c'est la MEME requete, sur une plage plus
 # longue. Tout le reste (graphiques, momentum, correlation, amorcage du plus
 # haut des stops, variation du jour) continue de lire la fenetre
 # HISTORY_DAYS, strictement a l'identique -- voir _fenetre_courte().
-VOL_HISTORY_DAYS  = 5 * 365 + 2   # ~5 ans
-VOL_REPLI_DAYS    = 366           # repli : 1 an
+VOL_HISTORY_DAYS  = 366           # 1 an
+VOL_REPLI_DAYS    = 366           # (repli inactif a 1 an : meme profondeur)
 # Correlation (28/09/2026) : nombre minimal de variations a 3 mois communes
-# pour publier une correlation -- ~1 an de recul au-dela de la fenetre de 63
-# seances. En dessous, la mesure est trop dominee par le hasard.
-CORRELATION_MIN_OBS_RAPPORT = 250
+# pour publier une correlation. Sur 1 an (~252 seances) on en a ~189 ; 150
+# exige ~10 mois de recul. En dessous, la mesure est trop dominee par le
+# hasard (8,7 % de fausses alertes sur 6 mois, ~3,6 % sur 1 an, simulees).
+CORRELATION_MIN_OBS_RAPPORT = 150
 HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
                 "pnl_net_pct", "score", "confiance", "rec"]
@@ -1648,7 +1649,7 @@ def _eodhd_daily_profond(ticker_eod: str, days: int, to_d: str, fx: float = 1.0)
     """_eodhd_daily sur `days` jours, avec repli sur 1 an (28/09/2026).
 
     Certains abonnements EODHD limitent la profondeur de l'historique. Si la
-    requete longue (5 ans, pour la volatilite) echoue pour une autre raison
+    requete longue (> 1 an) echoue pour une autre raison
     que le quota, on retente sur VOL_REPLI_DAYS. Pour une requete deja courte
     (<= 1 an), comportement strictement identique a _eodhd_daily.
     """
@@ -1674,7 +1675,7 @@ def _fenetre_courte(dates: list, closes: list, days: int = HISTORY_DAYS) -> tupl
 
 
 def _libelle_fenetre(dates: list) -> str:
-    """« sur 5 ans », « sur 1 an », « sur 7 mois » -- d'apres les dates reelles.
+    """« sur 1 an », « sur 7 mois » -- d'apres les dates reelles.
 
     Calcule sur les dates et non sur le nombre de points : une crypto cote
     365 jours par an, une action ~252 ; seul l'ecart calendaire dit vrai.
@@ -1734,7 +1735,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
         # systematiquement une serie vide ("fallback AV:vide") : chaque ligne
         # US brulait 1 appel AV sur 20/jour avant de retomber sur EODHD. En
         # prime, EODHD fournit des cours AJUSTES des splits (adjusted_close),
-        # ce qu'AlphaVantage gratuit ne fait pas -- indispensable sur 5 ans
+        # ce qu'AlphaVantage gratuit ne fait pas -- indispensable sur 1 an
         # pour la volatilite et le VQ.
         if EODHD_KEY:
             dates, closes, eod_err = _eodhd_daily_profond(asset["ticker_eod"], days, to_d, taux)
@@ -1784,7 +1785,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
                     i for i in range(1, len(closes))
                     if closes[i - 1] and abs(closes[i] - closes[i - 1]) / closes[i - 1] >= 0.40
                 ]
-                # AJOUT (28/09/2026) : avec 5 ans d'historique, un split
+                # AJOUT (28/09/2026) : avec 1 an d'historique, un split
                 # ANCIEN (hors de la fenetre courte) ne doit pas faire rejeter
                 # toute la serie -- on la coupe juste apres le dernier saut.
                 # La fenetre courte reste intacte ; seule la volatilite
@@ -2843,7 +2844,7 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
                 # Historique long, pour la volatilite / le VQ UNIQUEMENT
                 # (28/09/2026). `closes` ci-dessus reste la fenetre courte :
                 # elle sert a amorcer le plus haut du stop suiveur, qui ne
-                # doit pas partir d'un sommet vieux de 5 ans.
+                # doit pas partir d'un sommet vieux d'un an.
                 "closes_vol":  d.get("hv_closes") or d.get("h_closes") or [],
                 "vol_fenetre": _libelle_fenetre(d.get("hv_dates") or d.get("h_dates")),
                 "dates_vol":   d.get("hv_dates") or d.get("h_dates") or [],
@@ -2905,7 +2906,7 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
         #    d'historique : ~60 points qui se chevauchent presque tous. Sur
         #    deux titres INDEPENDANTS simules, 8,5 % des paires sortaient
         #    au-dessus de 0,70 -- des alertes de pur hasard. Sur l'historique
-        #    long (5 ans, deja telecharge pour le VQ), ce taux tombe a 0 %.
+        #    d'un an (deja telecharge pour le VQ), ce taux tombe a ~3,6 %.
         #    Une ligne sans au moins ~1 an de recul est ecartee plutot que
         #    jugee sur du bruit.
         donnees_par_cle = {e["cle"]: e for e in entrees}
@@ -3219,8 +3220,8 @@ def bloc_md_stops(risque: dict) -> list:
                 # sur quoi elle repose plutot que de la presenter comme sure.
                 qualif.append(f"{vol.get('n_obs', 0)} clotures")
             if l.get("vol_fenetre"):
-                # Profondeur reelle de la mesure : 5 ans, ou moins si la
-                # source ne remonte pas si loin (repli 1 an, titre recent).
+                # Profondeur reelle de la mesure : 1 an, ou moins pour un
+                # titre recent ou une source incomplete.
                 qualif.append(l["vol_fenetre"])
             vol_s = f"{vol['vol_ann_pct']:.1f} % ({', '.join(qualif)})"
         atr_s = "--" if vol.get("atr_pct") is None else f"{vol['atr_pct']:.2f} %"
@@ -3264,9 +3265,9 @@ def bloc_md_stops(risque: dict) -> list:
         "*« Amplitude/jour » : de combien la valeur bouge en moyenne d'une "
         "cloture a l'autre. C'est la lecture concrete de la volatilite.*",
         "",
-        "*« Volatilite an. » : ecart-type des variations journalieres sur 5 ans "
-        "d'historique (1 an a defaut, ou depuis la cotation pour un titre "
-        "recent), annualise ; la profondeur reelle est indiquee dans la "
+        "*« Volatilite an. » : ecart-type des variations journalieres sur 1 an "
+        "d'historique (ou depuis la cotation pour un titre recent), "
+        "annualise ; la profondeur reelle est indiquee dans la "
         "colonne. « VQ » = 0,65 x cette volatilite, borne entre 8 % et 40 %.*",
         "",
         "*« Écart » = ce qui est détenu moins ce que le budget de risque "
@@ -3329,7 +3330,7 @@ def bloc_md_exposition_correlee(groupes: list, indice: dict = None) -> list:
 
     out += [
         "Lignes dont les variations à 3 mois sont fortement corrélées entre "
-        "elles (mesurées sur jusqu'à 5 ans d'historique) -- prises ensemble, "
+        "elles (mesurées sur 1 an d'historique) -- prises ensemble, "
         "elles pèsent plus qu'un plafond de poids par ligne ne le laisse "
         "penser. Un signal d'attention, pas une prévision.",
         "",
