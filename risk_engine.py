@@ -49,6 +49,14 @@ ordinaire du marche. Les bornes evitent les deux absurdites : un stop a 2% sur
 une action (on serait sorti a la premiere seance) et un stop a 90% sur une
 crypto (ce n'est plus un stop, c'est une esperance).
 
+PROFONDEUR (28/09/2026) : vol_ann_pct est l'ecart-type des variations
+journalieres sur 5 ANS d'historique (1 an a defaut), annualise. Ce n'est PAS
+la variation de la veille, et ce n'est plus le seul dernier semestre : une
+mesure longue ne bascule pas au gre d'un trimestre agite ou trop calme.
+L'appelant fournit cette serie longue via `closes_vol` ; la serie courte
+`closes` reste celle qui amorce le plus haut du stop suiveur (on ne veut pas
+d'un plus haut vieux de 5 ans). Sans `closes_vol`, repli sur `closes`.
+
 Ce chiffre N'EST PAS le VQ de VectorVest et ne doit pas etre presente comme
 tel. Il s'en approche empiriquement : une action tres volatile ressort autour
 de 30%, le bitcoin autour de 38%, une grande capitalisation stable autour de
@@ -126,6 +134,11 @@ from datetime import datetime
 K_VQ   = 0.65      # facteur appliqué à la volatilité annualisée
 VQ_MIN = 8.0       # plancher, en % : en deçà on sort sur du bruit
 VQ_MAX = 40.0      # plafond, en % : au-delà ce n'est plus un stop
+# Version de la METHODE de calcul du VQ, inscrite dans la signature de config
+# du stop. Changer de methode (ici : volatilite sur 5 ans au lieu de ~6 mois)
+# est une decision, pas une derive : au premier run qui suit, le niveau est
+# recalcule a neuf au lieu d'etre bloque par le cliquet de l'ancienne methode.
+VQ_METHODE = "vol5a"
 
 # -- Volatilité --------------------------------------------------------------
 MIN_OBS_VOL   = 20    # nb minimal de clôtures pour publier une volatilité
@@ -374,7 +387,8 @@ def evaluer_stop(ligne: dict,
                  etat_ligne: dict = None,
                  eur_par_devise: float = 1.0,
                  defaut: dict = None,
-                 aujourdhui: str = None) -> dict:
+                 aujourdhui: str = None,
+                 closes_vol: list = None) -> dict:
     """Calcule le niveau de stop d'une ligne et son statut.
 
     Paramètres
@@ -382,7 +396,9 @@ def evaluer_stop(ligne: dict,
     ligne          : la ligne de portefeuille (dict normalisé)
     cours          : clôture du jour, dans la MÊME devise que `cout`
     cout           : prix de revient unitaire
-    closes         : historique de clôtures, pour le high-water mark et le VQ
+    closes         : historique de clôtures COURT, pour le high-water mark
+    closes_vol     : historique LONG (5 ans) pour la volatilité / le VQ ;
+                     à défaut, `closes` est utilisé
     etat_ligne     : état persistant précédent {hwm, armed, ...}
     eur_par_devise : taux de conversion pour un stop absolu libellé en devise
                      étrangère (ex. 0.86 pour convertir un stop en USD vers EUR)
@@ -442,7 +458,7 @@ def evaluer_stop(ligne: dict,
     base["hwm"] = round(hwm, 6)
 
     # ── Volatilité (nécessaire au type vq) ───────────────────────────────────
-    vol = volatilite(serie)
+    vol = volatilite(closes_vol if closes_vol else serie)
     base["vq_pct"] = vol["vq_pct"]
 
     # ── Niveau du stop selon le type ─────────────────────────────────────────
@@ -496,6 +512,8 @@ def evaluer_stop(ligne: dict,
     # volontairement un stop de 10% à 25% est une décision, pas une dérive, et
     # elle doit s'appliquer. On compare donc une signature de la config.
     signature = f"{typ}:{cfg['value']}:{cfg['devise'] or ''}"
+    if typ == "vq":
+        signature += f":{VQ_METHODE}"
     config_inchangee = etat_ligne.get("cfg") in (None, signature)
     niveau_precedent = _nombre(etat_ligne.get("niveau"))
     if typ in ("trailing", "vq") and niveau_precedent is not None and config_inchangee:
@@ -943,7 +961,8 @@ def evaluer_portefeuille(lignes: list,
         nom        libellé affiché
         cours      clôture du jour
         cout       prix de revient unitaire
-        closes     historique de clôtures (liste)
+        closes     historique de clôtures COURT (liste)
+        closes_vol historique LONG pour la volatilité (facultatif)
         ligne      la ligne de portefeuille brute (pour y lire "stop")
         compte     nom du compte / courtier (facultatif)
         eur_par_devise  taux de conversion (facultatif, défaut 1.0)
@@ -972,8 +991,11 @@ def evaluer_portefeuille(lignes: list,
                 eur_par_devise=item.get("eur_par_devise", 1.0),
                 defaut=defaut,
                 aujourdhui=aujourdhui,
+                closes_vol=item.get("closes_vol"),
             )
-            vol = volatilite(item.get("closes"))
+            # Même série que le VQ : la taille et le stop doivent parler de la
+            # même volatilité.
+            vol = volatilite(item.get("closes_vol") or item.get("closes"))
             taille = dimensionner(
                 capital=capital,
                 cours=item.get("cours"),
@@ -1173,6 +1195,29 @@ def _autotest() -> int:
                       etat_ligne=v1["etat"])
     verifie("vq ne redescend pas", v2["niveau"] >= v1["niveau"] - 1e-9,
             f"{v1['niveau']} -> {v2['niveau']}")
+
+    # VQ sur historique long (28/09/2026) : closes_vol pilote la volatilité,
+    # closes (court) pilote toujours l'amorçage du plus haut.
+    court = [100.0] * 30
+    long_calme = plat * 10
+    rl = evaluer_stop({"stop": "vq"}, cours=100, cout=90, closes=court,
+                      closes_vol=alt)
+    rc = evaluer_stop({"stop": "vq"}, cours=100, cout=90, closes=court)
+    verifie("vq closes_vol utilise", rl["vq_pct"] is not None and rc["vq_pct"] is not None
+            and rl["vq_pct"] > rc["vq_pct"], f"{rl['vq_pct']} vs {rc['vq_pct']}")
+    verifie("vq closes_vol : hwm reste sur la serie courte", rl["hwm"] == 100.0, str(rl["hwm"]))
+    rv = evaluer_stop({"stop": "vq"}, cours=100, cout=90, closes=court,
+                      closes_vol=long_calme)
+    verifie("vq closes_vol calme -> plancher", rv["vq_pct"] == VQ_MIN, str(rv["vq_pct"]))
+    # Changement de méthode : un état écrit par l'ancienne méthode (signature
+    # sans version) n'est pas bloqué par le cliquet.
+    ancien = dict(v2["etat"]); ancien["cfg"] = "vq:None:"; ancien["niveau"] = 99.0
+    rm = evaluer_stop({"stop": "vq"}, cours=100, cout=90, closes=plat,
+                      closes_vol=alt, etat_ligne=ancien)
+    verifie("vq nouvelle methode recalcule a neuf", rm["niveau"] < 99.0, str(rm["niveau"]))
+    rm2 = evaluer_stop({"stop": "vq"}, cours=100, cout=90, closes=plat,
+                       closes_vol=alt, etat_ligne=rm["etat"])
+    verifie("vq cliquet reprend apres migration", rm2["niveau"] >= rm["niveau"] - 1e-9)
 
     # Un changement volontaire de configuration doit s'appliquer, cliquet ou non.
     c1 = evaluer_stop({"stop": {"type": "trailing", "value": 10}},
