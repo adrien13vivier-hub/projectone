@@ -757,6 +757,32 @@ class PortfolioLine(BaseModel):
     # automatique du moteur d'apprentissage, qui s'en sert comme référence.
     sector:       Optional[str] = ""
 
+    # AJOUT (28/09/2026) : NaN / Infinity passaient la validation et
+    # etaient ecrits dans le profil -- la relecture du fichier echouait
+    # ensuite (JSON non standard), et l'interface, n'arrivant plus a charger
+    # le portefeuille, pouvait ecraser l'historique des ventes au prochain
+    # enregistrement. Un nom de 2 millions de caracteres passait aussi.
+    @model_validator(mode="after")
+    def _valeurs_saines(self):
+        _verifier_finis(self, ("quantity", "buy_price", "value", "buy_value", "buy_fx"))
+        _verifier_longueurs(self, ("name", "ticker", "isin", "account", "sector"))
+        return self
+
+def _verifier_finis(modele, champs):
+    import math as _m
+    for c in champs:
+        v = getattr(modele, c, None)
+        if v is not None and (not _m.isfinite(v) or v < 0):
+            raise ValueError(f"{c} : valeur invalide ({v})")
+
+
+def _verifier_longueurs(modele, champs, maxi: int = 200):
+    for c in champs:
+        v = getattr(modele, c, None)
+        if isinstance(v, str) and len(v) > maxi:
+            raise ValueError(f"{c} : {len(v)} caractères (maximum {maxi})")
+
+
 def _pru(achats: list) -> tuple:
     """Quantité totale et prix de revient unitaire moyen.
 
@@ -902,6 +928,12 @@ class ProfileSettings(BaseModel):
     # learning_engine.normalize_settings). Déclaré ici pour ne pas être rejeté
     # ou silencieusement perdu par la validation pydantic à l'enregistrement.
     apprentissage: Optional[dict] = None
+
+    @model_validator(mode="after")
+    def _valeurs_saines(self):
+        _verifier_finis(self, ("risque_pct", "poids_max_pct", "vol_cible_pct",
+                               "liquidites", "capital_reference"))
+        return self
 
 class VenteRealisee(BaseModel):
     """Une position soldee, conservee hors du portefeuille courant.
@@ -1315,6 +1347,17 @@ def _slug_utilisateur(brut: str) -> str:
     return net[:24]
 
 
+def _nom_sur(username: str) -> str:
+    """AJOUT (28/09/2026) : refuse un nom qui n'est pas deja un identifiant
+    sur (« .. », « ../vapid », « r »...). Ces noms finissent dans des chemins
+    de fichiers et dans des rmtree : un compte admin pouvait, par une faute
+    de frappe ou un lien pieege, ecrire hors de data/portfolios/ ou effacer
+    tout docs/ ou reports/."""
+    if not username or _slug_utilisateur(username) != username:
+        raise HTTPException(status_code=404, detail="Utilisateur inconnu")
+    return username
+
+
 def _trouver_utilisateur(con, saisi: str):
     """Retrouve un compte a partir de ce que l'utilisateur a tape.
 
@@ -1379,6 +1422,7 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
 def get_portfolio(username: str, user: dict = Depends(current_user)):
     if user["sub"] != username and user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès interdit")
+    _nom_sur(username)
     pfile = PORTFOLIOS / f"portfolio_{username}.json"
     if not pfile.exists():
         return {"lines": []}
@@ -1395,7 +1439,10 @@ def get_learning(username: str, user: dict = Depends(current_user)):
     if user["sub"] != username and user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès interdit")
     slug = _slug_utilisateur(username) or "default"
-    chemin = Path("reports") / slug / "learning" / "summary.json"
+    # CORRECTION (28/09/2026) : chemin absolu -- relatif, il dependait du
+    # dossier de lancement du service et renvoyait « aucune synthese » des
+    # que uvicorn n'etait pas demarre depuis la racine du projet.
+    chemin = ROOT / "reports" / slug / "learning" / "summary.json"
     try:
         return json.loads(chemin.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -1408,14 +1455,18 @@ def get_learning(username: str, user: dict = Depends(current_user)):
 def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(current_user)):
     if user["sub"] != username and user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Accès interdit")
+    _nom_sur(username)
     pfile = PORTFOLIOS / f"portfolio_{username}.json"
-    settings = data.settings.model_dump() if data.settings else {}
-    if settings.get("watchlist"):
-        settings["watchlist"] = [w for w in settings["watchlist"] if w.get("name")]
-    # Ne pas ecrire de reglage a None : sinon un enregistrement depuis
-    # l'interface ecraserait une valeur choisie a la main dans le JSON par un
-    # null, et la normalisation retomberait sur le defaut sans prevenir.
-    settings = {k: v for k, v in settings.items() if v is not None}
+    # CORRECTION (28/09/2026) : on ne part plus des seuls champs envoyes.
+    # L'interface n'a pas de champ pour `capital_reference` ni `custom_fees` :
+    # ils disparaissaient a CHAQUE enregistrement (le commentaire ci-dessous
+    # promettait le contraire). Regle desormais :
+    #   - champ ENVOYE avec une valeur -> il remplace l'ancien ;
+    #   - champ ENVOYE a null          -> l'utilisateur l'a vide : on l'enleve ;
+    #   - champ NON envoye             -> l'ancienne valeur est conservee.
+    envoyes = data.settings.model_dump(exclude_unset=True) if data.settings else {}
+    if envoyes.get("watchlist"):
+        envoyes["watchlist"] = [w for w in envoyes["watchlist"] if w.get("name")]
 
     # CORRECTION : l'historique des ventes vit dans le meme fichier mais n'est
     # PAS gere par l'interface. Sans cette reprise, chaque enregistrement du
@@ -1427,13 +1478,36 @@ def save_portfolio(username: str, data: PortfolioSave, user: dict = Depends(curr
         except (ValueError, OSError):
             ancien = {}
 
-    # Un reglage d'apprentissage saisi a la main survit a un enregistrement
-    # depuis une interface qui ne le connait pas.
-    if "apprentissage" not in settings and (ancien.get("settings") or {}).get("apprentissage"):
-        settings["apprentissage"] = ancien["settings"]["apprentissage"]
+    settings = dict(ancien.get("settings") or {})
+    for k, v in envoyes.items():
+        if v is None:
+            settings.pop(k, None)
+        else:
+            settings[k] = v
+    # L'interface envoie `apprentissage` sans les cles qu'elle ne connait pas
+    # (horizons supplementaires, classes...) : on fusionne plutot que de
+    # remplacer.
+    anc_app = (ancien.get("settings") or {}).get("apprentissage")
+    if isinstance(anc_app, dict) and isinstance(envoyes.get("apprentissage"), dict):
+        settings["apprentissage"] = {**anc_app, **envoyes["apprentissage"]}
 
     brutes = [{k: v for k, v in l.model_dump().items() if v is not None}
               for l in data.lines]
+
+    # Le secteur saisi a la main n'a pas de champ dans l'interface : il
+    # etait efface a chaque enregistrement. On le reprend de l'ancienne
+    # ligne du meme titre sur le meme compte (28/09/2026).
+    secteurs = {}
+    for l in (ancien.get("lines") or []):
+        if isinstance(l, dict) and l.get("sector"):
+            secteurs[(str(l.get("ticker") or l.get("name") or "").upper(),
+                      str(l.get("account") or ""))] = l["sector"]
+    for b in brutes:
+        if not b.get("sector"):
+            s_anc = secteurs.get((str(b.get("ticker") or b.get("name") or "").upper(),
+                                  str(b.get("account") or "")))
+            if s_anc:
+                b["sector"] = s_anc
 
     # v14 — REGROUPEMENT AU PRU. Fait ici, cote serveur, et non dans la page :
     # ainsi un profil corrige a la main dans le JSON, ou enregistre depuis une
@@ -1872,6 +1946,12 @@ def register(data: Inscription):
 
 @app.post("/api/users", status_code=201)
 def create_user(data: UserCreate, admin: dict = Depends(require_admin)):
+    # CORRECTION (28/09/2026) : le nom n'etait pas assaini ici (il l'est a
+    # l'inscription publique). « ../vapid » ecrivait hors de data/portfolios/.
+    nom = _slug_utilisateur(data.username)
+    if not nom:
+        raise HTTPException(status_code=422, detail="Nom invalide : lettres, chiffres, tirets")
+    data.username = nom
     con = get_db()
     nb = con.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     if nb >= MAX_USERS:
@@ -1944,6 +2024,7 @@ def rotate_link(username: str, admin: dict = Depends(require_admin)):
     dossier docs/r/<ancien_jeton>/ doit etre supprime du depot pour que
     l'ancienne adresse cesse effectivement de repondre.
     """
+    _nom_sur(username)
     from api.load_portfolio import jeton_rapport, dossier_rapport as _dr, charger_liens
     ancien = _dr(username, creer=False)
     jeton_rapport(username, rotation=True)
@@ -2011,7 +2092,15 @@ def delete_user(username: str, admin: dict = Depends(require_admin)):
     """
     if username == "admin":
         raise HTTPException(status_code=400, detail="Impossible de supprimer le compte admin")
+    # CORRECTION (28/09/2026) : sans ces deux gardes, delete_user("..")
+    # visait rmtree(docs/..) et rmtree(reports/..) -- toute l'installation,
+    # base des comptes comprise -- et delete_user("r") effacait tous les
+    # rapports publies.
+    _nom_sur(username)
     con = get_db()
+    if not con.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
+        con.close()
+        raise HTTPException(status_code=404, detail="Utilisateur inconnu")
     con.execute("DELETE FROM users WHERE username=?", (username,))
     con.commit()
     con.close()
