@@ -369,3 +369,51 @@ def test_evaluer_portefeuille_franchi_ne_recoit_pas_de_taille():
     ligne = res["lignes"][0]
     assert ligne["stop"]["statut"] == re_.STATUT_FRANCHI
     assert ligne["taille"]["montant"] is None
+
+
+# -- VQ sur historique long (28/09/2026) ---------------------------------------
+
+def test_vq_utilise_closes_vol_et_garde_le_hwm_court():
+    court = [100.0] * 30
+    rng = random.Random(3)
+    long_nerveux = [100.0]
+    for _ in range(1200):
+        long_nerveux.append(long_nerveux[-1] * (1 + rng.gauss(0, 0.02)))
+    avec = re_.evaluer_stop(ligne={"stop": "vq"}, cours=100, cout=90,
+                            closes=court, closes_vol=long_nerveux)
+    sans = re_.evaluer_stop(ligne={"stop": "vq"}, cours=100, cout=90, closes=court)
+    assert avec["vq_pct"] > sans["vq_pct"]
+    # Le plus haut ne doit pas venir de la serie longue.
+    assert avec["hwm"] == 100.0
+
+
+def test_vq_changement_de_methode_leve_le_cliquet_une_fois():
+    court = [100.0] * 30
+    rng = random.Random(5)
+    long_nerveux = [100.0]
+    for _ in range(1200):
+        long_nerveux.append(long_nerveux[-1] * (1 + rng.gauss(0, 0.02)))
+    etat_ancien = {"hwm": 100.0, "niveau": 99.0, "cfg": "vq:None:", "arme": True}
+    r = re_.evaluer_stop(ligne={"stop": "vq"}, cours=100, cout=90, closes=court,
+                         closes_vol=long_nerveux, etat_ligne=etat_ancien)
+    assert r["niveau"] < 99.0
+    r2 = re_.evaluer_stop(ligne={"stop": "vq"}, cours=100, cout=90, closes=court,
+                          closes_vol=court, etat_ligne=r["etat"])
+    # Meme methode ensuite : le cliquet interdit de redescendre... et ici la
+    # volatilite plus faible remonte le niveau, ce qui est permis.
+    assert r2["niveau"] >= r["niveau"]
+
+
+def test_evaluer_portefeuille_dimensionne_sur_la_meme_volatilite_que_le_vq():
+    rng = random.Random(9)
+    long_nerveux = [100.0]
+    for _ in range(1200):
+        long_nerveux.append(long_nerveux[-1] * (1 + rng.gauss(0, 0.02)))
+    out = re_.evaluer_portefeuille(
+        [{"cle": "X", "nom": "X", "cours": 100, "cout": 90,
+          "closes": [100.0] * 30, "closes_vol": long_nerveux,
+          "ligne": {"stop": "vq"}}],
+        capital=10000)
+    l = out["lignes"][0]
+    assert l["vol"]["vq_pct"] == l["stop"]["vq_pct"]
+    assert l["vol"]["n_obs"] > 1000
