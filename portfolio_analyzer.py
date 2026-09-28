@@ -240,6 +240,17 @@ def _migrate_legacy_files():
 # --- FENETRE HISTORIQUE (1 mois) --------------------------------------------
 HISTORY_DAYS      = 180     # profondeur de collecte, en cotations JOURNALIERES
 CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mois)
+# AJOUT (28/09/2026) : profondeur SEPAREE pour la volatilite et le VQ.
+# Avant, la volatilite (donc le VQ et le dimensionnement) reposait sur les
+# ~125 seances de HISTORY_DAYS : un semestre agite ou trop calme suffisait a
+# deformer le stop. Elle repose maintenant sur 5 ans de cotations
+# journalieres, avec repli sur 1 an quand la source ne remonte pas si loin.
+# Aucun appel supplementaire : c'est la MEME requete, sur une plage plus
+# longue. Tout le reste (graphiques, momentum, correlation, amorcage du plus
+# haut des stops, variation du jour) continue de lire la fenetre
+# HISTORY_DAYS, strictement a l'identique -- voir _fenetre_courte().
+VOL_HISTORY_DAYS  = 5 * 365 + 2   # ~5 ans
+VOL_REPLI_DAYS    = 366           # repli : 1 an
 HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "qty", "vm", "pnl_brut", "pnl_brut_pct", "pnl_net",
                 "pnl_net_pct", "score", "confiance", "rec"]
@@ -1569,8 +1580,63 @@ def _eodhd_daily(ticker_eod: str, from_d: str, to_d: str, fx: float = 1.0) -> tu
     return [], [], ("quota atteint" if _is_quota_error(err) else (err or "vide"))
 
 
+def _eodhd_daily_profond(ticker_eod: str, days: int, to_d: str, fx: float = 1.0) -> tuple:
+    """_eodhd_daily sur `days` jours, avec repli sur 1 an (28/09/2026).
+
+    Certains abonnements EODHD limitent la profondeur de l'historique. Si la
+    requete longue (5 ans, pour la volatilite) echoue pour une autre raison
+    que le quota, on retente sur VOL_REPLI_DAYS. Pour une requete deja courte
+    (<= 1 an), comportement strictement identique a _eodhd_daily.
+    """
+    from_d = str(date.today() - timedelta(days=days))
+    dates, closes, err = _eodhd_daily(ticker_eod, from_d, to_d, fx)
+    if dates or days <= VOL_REPLI_DAYS or err == "quota atteint":
+        return dates, closes, err
+    from_1a = str(date.today() - timedelta(days=VOL_REPLI_DAYS))
+    return _eodhd_daily(ticker_eod, from_1a, to_d, fx)
+
+
+def _fenetre_courte(dates: list, closes: list, days: int = HISTORY_DAYS) -> tuple:
+    """Restreint une serie (dates, closes) aux `days` derniers jours calendaires.
+
+    Sert a rendre, a partir de l'historique long telecharge pour la
+    volatilite, EXACTEMENT la serie que le reste du programme recevait avant
+    (meme borne de depart que get_monthly_history(days=HISTORY_DAYS)).
+    """
+    debut = str(date.today() - timedelta(days=days))
+    paires = [(d, c) for d, c in zip(dates or [], closes or [])
+              if str(d)[:10] >= debut]
+    return [d for d, _ in paires], [c for _, c in paires]
+
+
+def _libelle_fenetre(dates: list) -> str:
+    """« sur 5 ans », « sur 1 an », « sur 7 mois » -- d'apres les dates reelles.
+
+    Calcule sur les dates et non sur le nombre de points : une crypto cote
+    365 jours par an, une action ~252 ; seul l'ecart calendaire dit vrai.
+    """
+    ds = [str(d)[:10] for d in (dates or []) if d]
+    if len(ds) < 2:
+        return ""
+    try:
+        d0 = datetime.strptime(min(ds), "%Y-%m-%d")
+        d1 = datetime.strptime(max(ds), "%Y-%m-%d")
+    except ValueError:
+        return ""
+    jours = (d1 - d0).days
+    ans = jours / 365.25
+    if ans >= 0.95:
+        a = round(ans, 1)
+        txt = f"{a:.1f}".rstrip("0").rstrip(".").replace(".", ",")
+        return f"sur {txt} an{'s' if a >= 2 else ''}"
+    return f"sur {max(1, round(jours / 30.44))} mois"
+
+
 def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -> tuple:
     from_d    = str(date.today() - timedelta(days=days))
+    # Debut de la fenetre COURTE (graphiques, momentum, stops) -- sert a
+    # juger si un split detecte dans l'historique long la concerne.
+    from_court = str(date.today() - timedelta(days=min(days, HISTORY_DAYS)))
     to_d      = str(date.today())
     cache_key = f"hist_{asset['ticker_eod']}"
     # Toutes les series sortent d'ici EN EURO, quelle que soit la place. C'est
@@ -1616,10 +1682,20 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
                 # (ou une fausse envolee) fausser le momentum, la volatilite,
                 # et surtout un stop suiveur qui se calerait sur un plus haut
                 # pre-split. On retombe alors sur EODHD (adjusted_close).
-                saut_suspect = any(
-                    closes[i - 1] and abs(closes[i] - closes[i - 1]) / closes[i - 1] >= 0.40
-                    for i in range(1, len(closes))
-                )
+                sauts = [
+                    i for i in range(1, len(closes))
+                    if closes[i - 1] and abs(closes[i] - closes[i - 1]) / closes[i - 1] >= 0.40
+                ]
+                # AJOUT (28/09/2026) : avec 5 ans d'historique, un split
+                # ANCIEN (hors de la fenetre courte) ne doit pas faire rejeter
+                # toute la serie -- on la coupe juste apres le dernier saut.
+                # La fenetre courte reste intacte ; seule la volatilite
+                # repose alors sur une periode plus breve (affichee au
+                # rapport). Un saut DANS la fenetre courte : rejet, comme avant.
+                if sauts and dates[sauts[-1]] < from_court:
+                    dates, closes = dates[sauts[-1]:], closes[sauts[-1]:]
+                    sauts = []
+                saut_suspect = bool(sauts)
                 if len(dates) >= 2 and not saut_suspect:
                     return dates, closes, "AlphaVantage", False, None
                 if saut_suspect:
@@ -1632,7 +1708,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
             av_err = "cle absente" if not ALPHAVANTAGE_KEY else "ticker_av absent"
 
         if EODHD_KEY:
-            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, taux)
+            dates, closes, eod_err = _eodhd_daily_profond(asset["ticker_eod"], days, to_d, taux)
             if dates:
                 return dates, closes, f"EODHD (fallback AV:{av_err})", False, None
         else:
@@ -1657,7 +1733,7 @@ def get_monthly_history(asset: dict, eur_usd: float, days: int = HISTORY_DAYS) -
 
     else:
         if EODHD_KEY:
-            dates, closes, eod_err = _eodhd_daily(asset["ticker_eod"], from_d, to_d, taux)
+            dates, closes, eod_err = _eodhd_daily_profond(asset["ticker_eod"], days, to_d, taux)
             if dates:
                 return dates, closes, "EODHD", False, None
         else:
@@ -2673,6 +2749,12 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
                 # s'aligne sur les VRAIES dates communes plutot que sur les N
                 # derniers points de chaque serie (voir risk_engine.correlation).
                 "dates":  d.get("h_dates") or [],
+                # Historique long, pour la volatilite / le VQ UNIQUEMENT
+                # (28/09/2026). `closes` ci-dessus reste la fenetre courte :
+                # elle sert a amorcer le plus haut du stop suiveur, qui ne
+                # doit pas partir d'un sommet vieux de 5 ans.
+                "closes_vol":  d.get("hv_closes") or d.get("h_closes") or [],
+                "vol_fenetre": _libelle_fenetre(d.get("hv_dates") or d.get("h_dates")),
                 "ligne":  a,
                 # Rattachee ici, dans le meme ordre que `results` : c'est ce
                 # qui permet de la reaffecter par position plus bas, sans
@@ -2713,6 +2795,7 @@ def evaluer_risque(results: list, asset_data: dict, capital_ref: float,
             "la reaffectation par position n'est plus valide")
         for e, l in zip(entrees, sortie["lignes"]):
             l["vm"] = e.get("vm")
+            l["vol_fenetre"] = e.get("vol_fenetre")
 
         # Exposition correlee : le plafond de poids ne voit qu'une ligne a la
         # fois. On lui fournit le poids ACTUEL (vm / capital), pas la taille
@@ -3002,6 +3085,10 @@ def bloc_md_stops(risque: dict) -> list:
                 # Historique court : la volatilite est publiee, mais on dit
                 # sur quoi elle repose plutot que de la presenter comme sure.
                 qualif.append(f"{vol.get('n_obs', 0)} clotures")
+            if l.get("vol_fenetre"):
+                # Profondeur reelle de la mesure : 5 ans, ou moins si la
+                # source ne remonte pas si loin (repli 1 an, titre recent).
+                qualif.append(l["vol_fenetre"])
             vol_s = f"{vol['vol_ann_pct']:.1f} % ({', '.join(qualif)})"
         atr_s = "--" if vol.get("atr_pct") is None else f"{vol['atr_pct']:.2f} %"
         vq_s  = "--" if vol.get("vq_pct") is None else f"{vol['vq_pct']:.1f} %"
@@ -3025,6 +3112,11 @@ def bloc_md_stops(risque: dict) -> list:
         "",
         "*« Amplitude/jour » : de combien la valeur bouge en moyenne d'une "
         "cloture a l'autre. C'est la lecture concrete de la volatilite.*",
+        "",
+        "*« Volatilite an. » et « VQ » : ecart-type des variations journalieres "
+        "sur 5 ans d'historique (1 an a defaut, ou depuis la cotation pour un "
+        "titre recent), annualise. La profondeur reelle est indiquee dans la "
+        "colonne.*",
         "",
         "*« Écart » = ce qui est détenu moins ce que le budget de risque "
         "justifierait. Positif : la ligne est plus grosse que le risque accepté. "
@@ -3357,13 +3449,18 @@ def _fetch_asset_data(asset: dict, eur_usd: float,
     # run, sur un quota deja serre. La synthese d'actualite (RSS Yahoo, sans
     # cle ni quota) reste affichee via get_news_synthesis.
     cs, cons_str, cons_src = get_consensus(asset)
-    h_dates, h_closes, h_src, h_cache, h_err = get_monthly_history(asset, eur_usd)
+    # Historique LONG (volatilite / VQ), puis fenetre courte habituelle
+    # pour tout le reste -- une seule requete, voir VOL_HISTORY_DAYS.
+    hv_dates, hv_closes, h_src, h_cache, h_err = get_monthly_history(
+        asset, eur_usd, days=VOL_HISTORY_DAYS)
+    h_dates, h_closes = _fenetre_courte(hv_dates, hv_closes)
     synthesis, synth_src = get_news_synthesis(asset)
     fonda, fonda_src = get_fundamentals(asset)
     return {
         "cs": cs, "cons_str": cons_str, "cons_src": cons_src,
         "h_dates": h_dates, "h_closes": h_closes, "h_src": h_src,
         "h_cache": h_cache, "h_err": h_err,
+        "hv_dates": hv_dates, "hv_closes": hv_closes,
         "synthesis": synthesis, "synth_src": synth_src,
         "fonda": fonda, "fonda_src": fonda_src,
     }
@@ -3460,6 +3557,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                     "cs": None, "cons_str": "N/D", "cons_src": "erreur",
                     "h_dates": [], "h_closes": [], "h_src": "erreur",
                     "h_cache": False, "h_err": str(e),
+                    "hv_dates": [], "hv_closes": [],
                         "synthesis": "Données indisponibles.", "synth_src": "",
                         "fonda": {}, "fonda_src": "erreur",
                     }
@@ -3601,7 +3699,12 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             chg_pct = chg_recalc
 
         if h_closes and not d.get("h_cache"):
-            _cache_set(session_cache, f"hist_{key}", {"dates": h_dates, "closes": h_closes})
+            # Serie LONGUE en cache (28/09/2026) : un jour de panne
+            # fournisseur, le VQ doit rester calcule sur la meme profondeur,
+            # sinon il changerait d'un jour a l'autre sans raison de marche.
+            _cache_set(session_cache, f"hist_{key}",
+                       {"dates": d.get("hv_dates") or h_dates,
+                        "closes": d.get("hv_closes") or h_closes})
 
         if price_eur and not price_cache:
             _cache_set(session_cache, f"price_{key}", price_eur)
