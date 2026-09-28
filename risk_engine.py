@@ -50,12 +50,12 @@ une action (on serait sorti a la premiere seance) et un stop a 90% sur une
 crypto (ce n'est plus un stop, c'est une esperance).
 
 PROFONDEUR (28/09/2026) : vol_ann_pct est l'ecart-type des variations
-journalieres sur 5 ANS d'historique (1 an a defaut), annualise. Ce n'est PAS
+journalieres sur 1 AN d'historique, annualise. Ce n'est PAS
 la variation de la veille, et ce n'est plus le seul dernier semestre : une
 mesure longue ne bascule pas au gre d'un trimestre agite ou trop calme.
 L'appelant fournit cette serie longue via `closes_vol` ; la serie courte
 `closes` reste celle qui amorce le plus haut du stop suiveur (on ne veut pas
-d'un plus haut vieux de 5 ans). Sans `closes_vol`, repli sur `closes`.
+d'un plus haut vieux d'un an). Sans `closes_vol`, repli sur `closes`.
 
 Ce chiffre N'EST PAS le VQ de VectorVest et ne doit pas etre presente comme
 tel. Il s'en approche empiriquement : une action tres volatile ressort autour
@@ -135,10 +135,11 @@ K_VQ   = 0.65      # facteur appliqué à la volatilité annualisée
 VQ_MIN = 8.0       # plancher, en % : en deçà on sort sur du bruit
 VQ_MAX = 40.0      # plafond, en % : au-delà ce n'est plus un stop
 # Version de la METHODE de calcul du VQ, inscrite dans la signature de config
-# du stop. Changer de methode (ici : volatilite sur 5 ans au lieu de ~6 mois)
+# du stop. Changer de methode (ici : volatilite sur 1 an ; 5 ans brievement
+# le 28/09, ~6 mois avant)
 # est une decision, pas une derive : au premier run qui suit, le niveau est
 # recalcule a neuf au lieu d'etre bloque par le cliquet de l'ancienne methode.
-VQ_METHODE = "vol5a"
+VQ_METHODE = "vol1a"
 
 # -- Volatilité --------------------------------------------------------------
 MIN_OBS_VOL   = 20    # nb minimal de clôtures pour publier une volatilité
@@ -406,7 +407,7 @@ def evaluer_stop(ligne: dict,
     cours          : clôture du jour, dans la MÊME devise que `cout`
     cout           : prix de revient unitaire
     closes         : historique de clôtures COURT, pour le high-water mark
-    closes_vol     : historique LONG (5 ans) pour la volatilité / le VQ ;
+    closes_vol     : historique LONG (1 an) pour la volatilité / le VQ ;
                      à défaut, `closes` est utilisé
     etat_ligne     : état persistant précédent {hwm, armed, ...}
     eur_par_devise : taux de conversion pour un stop absolu libellé en devise
