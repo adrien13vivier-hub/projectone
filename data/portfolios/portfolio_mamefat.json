@@ -1,14 +1,54 @@
 {
   "username": "mamefat",
-  "saved_at": "2026-09-25T10:41:55.813751+00:00",
+  "saved_at": "2026-09-28T18:47:27.233936+00:00",
   "settings": {
-    "broker": "autre",
+    "broker": "revolut",
     "indices": [
       "S&P 500",
-      "CAC 40"
+      "CAC 40",
+      "Nikkei 225"
     ],
-    "watchlist": []
+    "watchlist": [
+      {
+        "name": "Apple",
+        "ticker": "AAPL",
+        "market": "us",
+        "sector": "Technologie"
+      },
+      {
+        "name": "LVMH",
+        "ticker": "MC",
+        "market": "euronext_paris",
+        "sector": "Luxe"
+      },
+      {
+        "name": "Amundi MSCI World",
+        "ticker": "CW8",
+        "market": "euronext_paris",
+        "sector": "ETF"
+      }
+    ],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0,
+    "apprentissage": {
+      "horizon": 60,
+      "actif": true,
+      "mutualiser": true
+    }
   },
-  "lines": [],
-  "closed": []
+  "closed": [],
+  "lines": [
+    {
+      "name": "Apple",
+      "ticker": "AAPL",
+      "isin": "",
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "sector": ""
+    }
+  ]
 }
