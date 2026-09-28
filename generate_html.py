@@ -955,7 +955,7 @@ def build_dimensionnement_html() -> str:
     Deux volatilités différentes reçoivent ainsi le même risque, pas
     le même montant. Sans stop exploitable, le montant suit le budget de
     volatilité&nbsp;: capital&nbsp;×&nbsp;budget&nbsp;÷&nbsp;volatilité de la ligne.
-    VQ&nbsp;= 0,65&nbsp;×&nbsp;volatilité annuelle (mesurée sur 5&nbsp;ans), borné
+    VQ&nbsp;= 0,65&nbsp;×&nbsp;volatilité annuelle (mesurée sur 1&nbsp;an), borné
     entre 8&nbsp;% et 40&nbsp;%. «&nbsp;Écart&nbsp;» = ce qui est détenu moins ce que le
     budget de risque justifierait : positif, la ligne est plus grosse que le
     risque accepté. Ce n'est pas un ordre de vente, c'est un écart à expliquer.
@@ -1023,7 +1023,7 @@ def build_correlation_html() -> str:
   {expl('''
   <p class="macro-note">
     Lignes dont les variations à 3 mois sont fortement corrélées entre elles
-    (mesurées sur jusqu'à 5 ans d'historique) — prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
+    (mesurées sur 1 an d'historique) — prises ensemble, elles pèsent plus qu'un plafond de poids par ligne ne le
     laisse penser. Un signal d'attention basé sur le passé récent, pas une
     prévision.
   </p>''')}
@@ -1799,7 +1799,7 @@ def build_explications_html() -> str:
 
   <article class="expl-item" id="expl-stops">
     <h3>Les types de stop</h3>
-    <p><strong>Suiveur</strong> — monte avec le cours, ne redescend jamais. <strong>Pourcentage</strong> — niveau fixe sous le prix d'achat. <strong>Absolu</strong> — un montant précis choisi à l'avance. <strong>VQ</strong> (volatility quotient) — s'adapte à la volatilité propre du titre : 0,65 × la volatilité annuelle mesurée sur 5 ans (1 an à défaut), bornée entre 8 % et 40 % sous le plus haut. Un stop est déclaré franchi à la clôture, jamais en cours de séance.</p>
+    <p><strong>Suiveur</strong> — monte avec le cours, ne redescend jamais. <strong>Pourcentage</strong> — niveau fixe sous le prix d'achat. <strong>Absolu</strong> — un montant précis choisi à l'avance. <strong>VQ</strong> (volatility quotient) — s'adapte à la volatilité propre du titre : 0,65 × la volatilité annuelle mesurée sur 1 an, bornée entre 8 % et 40 % sous le plus haut. Un stop est déclaré franchi à la clôture, jamais en cours de séance.</p>
   </article>
 
   <article class="expl-item" id="expl-dimensionnement">
