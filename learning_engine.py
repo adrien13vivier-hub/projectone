@@ -75,6 +75,7 @@ import json
 import math
 import os
 from collections import defaultdict
+from functools import lru_cache
 from datetime import date, datetime, timedelta, timezone
 
 MODULE_VERSION = "1.1"
@@ -273,7 +274,15 @@ def _d(valeur) -> date:
         return valeur.date()
     if isinstance(valeur, date):
         return valeur
-    return datetime.strptime(str(valeur)[:10], "%Y-%m-%d").date()
+    return _d_texte(str(valeur)[:10])
+
+
+@lru_cache(maxsize=65536)
+def _d_texte(texte: str) -> date:
+    # PERF (28/09/2026) : ~75 % du temps de build_summary passait dans
+    # strptime (thin() reparse les memes dates des millions de fois quand
+    # le journal grossit). Memoise : 21 s -> ~9 s mesures a 100 titres x 1 an.
+    return datetime.strptime(texte, "%Y-%m-%d").date()
 
 
 def _iso(d) -> str:
@@ -936,15 +945,33 @@ def band_of(score: float) -> int:
 
 
 def build_observations(store: dict) -> list:
-    """Jointure snapshot x resultat cloture (une ligne par snapshot et horizon)."""
+    """Jointure snapshot x resultat cloture (une ligne par snapshot et horizon).
+
+    CORRECTION (28/09/2026) : une MEME observation (titre, seance de depart,
+    horizon) pouvait figurer deux fois -- un run du week-end cree un snapshot
+    distinct qui retombe sur la seance du vendredi, et un profil qui rejoint
+    le pool reconstitue en « legacy » des dates deja presentes sous la
+    version courante. 12 doublons dans le pool reel : ils gonflaient n, les
+    moyennes et l'entrainement du modele. On n'en garde qu'une, en
+    preferant la version non heritee, puis le snapshot date du jour de
+    seance lui-meme.
+    """
     snaps = {s["id"]: s for s in store["snapshots"]}
-    obs = []
+    retenus = {}
     for o in store["outcomes"]:
         if o.get("status") != "matured":
             continue
         s = snaps.get(o["id"])
         if not s:
             continue
+        cle = (s["ticker"], str(o.get("session_t") or s["as_of"])[:10], o["horizon"])
+        rang = (s.get("score_version") == "legacy",
+                str(s["as_of"])[:10] != str(o.get("session_t") or "")[:10])
+        deja = retenus.get(cle)
+        if deja is None or rang < deja[0]:
+            retenus[cle] = (rang, o, s)
+    obs = []
+    for _, o, s in retenus.values():
         obs.append({
             "id": o["id"], "horizon": o["horizon"], "ticker": s["ticker"],
             "as_of": s["as_of"], "target_date": o["session_t_h"],
@@ -983,7 +1010,21 @@ def thin(obs: list, horizon: int) -> list:
     return garde
 
 
-def confidence_level(n_indep: int, n_tickers: int, legacy: bool = False) -> str:
+def n_periodes(obs: list, horizon: int) -> int:
+    """Nombre de fenetres de H seances DISTINCTES couvertes par `obs`.
+
+    AJOUT (28/09/2026) : thin() rend les observations d'un meme titre
+    independantes entre elles, mais 15 titres notes le MEME jour partagent
+    le meme marche -- une seule periode, vue 15 fois. Sur le pool reel, les
+    « 20 observations independantes » a 20 seances venaient de 4 dates.
+    """
+    pas = max(1, int(math.ceil(horizon * CAL_DAYS_PER_SESSION)))
+    origine = date(2000, 1, 1)
+    return len({(_d(o["as_of"]) - origine).days // pas for o in obs})
+
+
+def confidence_level(n_indep: int, n_tickers: int, legacy: bool = False,
+                     periodes: int = None) -> str:
     if n_indep >= 60 and n_tickers >= 15:
         niveau = "elevee"
     elif n_indep >= 30 and n_tickers >= 8:
@@ -992,11 +1033,27 @@ def confidence_level(n_indep: int, n_tickers: int, legacy: bool = False) -> str:
         niveau = "faible"
     else:
         return "insuffisante"
+    # Beaucoup de titres sur peu de periodes : l'echantillon n'a vu que peu
+    # de climats de marche differents. Plafonne (periodes connues seulement).
+    if periodes is not None:
+        if niveau == "elevee" and periodes < 6:
+            niveau = "moyenne"
+        if niveau == "moyenne" and periodes < 3:
+            niveau = "faible"
     return "faible" if legacy and niveau != "insuffisante" else niveau
 
 
 def _describe(vals: list, vals_indep: list) -> dict:
     ci = mean_ci95(vals_indep)
+    # CORRECTION (28/09/2026) : la moyenne publiee utilise toutes les lignes,
+    # l'intervalle etait centre sur la moyenne des seules lignes
+    # independantes -- la moyenne affichee pouvait sortir de son propre IC
+    # (+5,56 % avec un IC [-10,15 ; +5,63] sur le pool reel). La LARGEUR
+    # reste celle de l'echantillon independant (la seule honnete), le
+    # CENTRE devient la moyenne affichee.
+    if ci and vals:
+        demi, m = (ci[1] - ci[0]) / 2.0, mean(vals)
+        ci = (m - demi, m + demi)
     return {
         "n": len(vals), "n_indep": len(vals_indep),
         "mean": _r(mean(vals)), "median": _r(median(vals)),
@@ -1048,7 +1105,8 @@ def horizon_stats(obs: list, horizon: int, kind: str, key: str,
         bands.append({
             "label": label, "reco": reco, "lo": lo, "hi": min(hi, 10.0), **d,
             "estimate": _r(est), "p_outperf": _r(p_est, 3),
-            "confidence": confidence_level(n_i, len({o["ticker"] for o in b_ind}), legacy),
+            "confidence": confidence_level(n_i, len({o["ticker"] for o in b_ind}), legacy,
+                                           n_periodes(b_ind, horizon)),
         })
 
     sectors = []
@@ -1085,7 +1143,7 @@ def horizon_stats(obs: list, horizon: int, kind: str, key: str,
         "ic_indep": _r(spearman([o["score"] for o in ind], ys_i), 3),
         "slope": {k: _r(v, 4) for k, v in sl.items()} if sl else None,
         "bands": bands, "sectors": sectors, "regions": regions,
-        "confidence": confidence_level(len(ind), n_tk, legacy),
+        "confidence": confidence_level(len(ind), n_tk, legacy, n_periodes(ind, horizon)),
     }
 
 
@@ -1126,6 +1184,19 @@ def predict_position(score: float, sector: str, stats: dict, obs: list,
             out["scope"] = f"secteur {sector}"
             out["n_indep"] = n
             out["ci95"] = None
+            # CORRECTION (28/09/2026) : la probabilite et la confiance
+            # restaient celles de la TRANCHE tous secteurs confondus, a cote
+            # d'une esperance SECTORIELLE -- on pouvait lire « -4,5 %,
+            # 80 % de chances de battre le secteur, confiance elevee » pour un
+            # secteur qui n'avait jamais surperforme. Meme retrecissement que
+            # l'esperance : secteur -> tranche.
+            if b["p_outperf"] is not None:
+                hit = sum(1 for o in s_ind if o[key] > 0) / n
+                out["p_outperf"] = _r((hit * n + SHRINK_PROB_K * b["p_outperf"])
+                                      / (n + SHRINK_PROB_K), 3)
+            out["confidence"] = confidence_level(
+                n, len({o["ticker"] for o in s_ind}), stats["legacy_included"],
+                n_periodes(s_ind, horizon))
     return out
 
 
