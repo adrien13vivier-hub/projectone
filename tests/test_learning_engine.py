@@ -475,3 +475,38 @@ def test_markdown_sans_aucune_observation_cloturee(ldir):
     md = "\n".join(le.render_markdown(s))
     assert "aucune observation cloturee" in md
     assert "Rien n'est conclu avant l'echeance" in md
+
+
+# -- Corrections du 28/09/2026 -------------------------------------------------
+
+def _snap(i, ticker, as_of, version, score=7.0):
+    return {"id": i, "ticker": ticker, "as_of": as_of, "score": score,
+            "score_version": version, "sector": "Tech", "region": "US"}
+
+
+def _out(i, session_t, h=20, y=1.0):
+    return {"id": i, "status": "matured", "horizon": h, "session_t": session_t,
+            "session_t_h": "2026-03-01", "stock_return_pct": y,
+            "sector_excess_pct": y, "market_excess_pct": y}
+
+
+def test_build_observations_deduplique_meme_titre_meme_seance():
+    store = {"snapshots": [_snap("a", "X", "2026-01-10", "legacy"),      # samedi
+                           _snap("b", "X", "2026-01-09", "legacy"),      # vendredi
+                           _snap("c", "X", "2026-01-09", "v14")],
+             "outcomes": [_out("a", "2026-01-09"), _out("b", "2026-01-09"),
+                          _out("c", "2026-01-09")]}
+    obs = le.build_observations(store)
+    assert len(obs) == 1
+    assert obs[0]["version"] == "v14"
+
+
+def test_confiance_plafonnee_par_le_nombre_de_periodes():
+    assert le.confidence_level(80, 20) == "elevee"
+    assert le.confidence_level(80, 20, periodes=2) == "faible"
+    assert le.confidence_level(80, 20, periodes=4) == "moyenne"
+
+
+def test_ic_centre_sur_la_moyenne_affichee():
+    d = le._describe([10.0] * 30 + [0.0] * 10, [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0])
+    assert d["ci95"][0] <= d["mean"] <= d["ci95"][1]
