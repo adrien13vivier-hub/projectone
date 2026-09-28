@@ -751,8 +751,11 @@ td{font-size:13px}
           </div>
           <div class="form-group">
             <label>Stop par défaut</label>
-            <select id="cfg-stopdefaut"></select>
-            <small style="color:var(--muted);font-size:.75rem">Appliqué aux lignes sans stop propre.</small>
+            <div style="display:flex;gap:.5rem">
+              <select id="cfg-stopdefaut" onchange="majStopDefaut()"></select>
+              <input id="cfg-stopdefaut-val" type="number" min="0.5" max="95" step="0.5" placeholder="%" style="max-width:6rem">
+            </div>
+            <small style="color:var(--muted);font-size:.75rem">Appliqué aux lignes réglées sur « Défaut du profil ». Pourcentage et suiveur demandent un %.</small>
           </div>
         </div>
       </div>
@@ -1995,6 +1998,14 @@ let CLASSES = [
   {code:'crypto', label:'Crypto',      manuel:false, place:'crypto'},
   {code:'cash',   label:'Liquidités',  manuel:true}
 ];
+// Choix proposes sur une LIGNE : le defaut du profil en premier.
+// Meme vocabulaire que les recommandations du rapport (28/09/2026).
+const RECO_FIAB = {'ACHAT FORT':'Renforcer','ACHAT MODERE':'Conserver','GARDER':'Surveiller',
+                   'A EVITER':'Alléger','VENDRE':'Sortir'};
+
+function STOP_TYPES_LIGNE(){
+  return [{code:'', label:'Défaut du profil', parametre:null}].concat(STOP_TYPES);
+}
 let STOP_TYPES = [
   {code:'none',    label:'Aucun',           parametre:null},
   {code:'percent', label:'Pourcentage',     parametre:'% sous le prix de revient'},
@@ -2013,6 +2024,14 @@ function placeImposee(code){
   const c = CLASSES.find(x=>x.code===code);
   return (c && c.place) || null;
 }
+function majStopDefaut(){
+  const sel = document.getElementById('cfg-stopdefaut');
+  const val = document.getElementById('cfg-stopdefaut-val');
+  if(!sel || !val) return;
+  const sans = stopSansParametre(sel.value);
+  val.disabled = sans; val.style.opacity = sans ? .45 : 1;
+}
+
 function stopSansParametre(code){
   const t = STOP_TYPES.find(x=>x.code===code);
   return !t || !t.parametre;
@@ -2027,8 +2046,14 @@ async function loadReferentiels(){
   const sel = document.getElementById('cfg-broker');
   sel.innerHTML = BROKERS.map(b=>`<option value="${b.code}">${b.label}</option>`).join('');
 
+  // CORRECTION (28/09/2026) : « Pourcentage » et « Suiveur » etaient
+  // proposes sans champ de valeur -- le serveur recevait {type:'trailing'}
+  // sans %, et le moteur de risque le rejetait en « aucun stop », sans que
+  // rien ne le signale. Un stop « absolu » (un prix) n'a pas de sens comme
+  // defaut commun a toutes les lignes : il n'est plus propose ici.
   document.getElementById('cfg-stopdefaut').innerHTML =
-    STOP_TYPES.map(t=>`<option value="${t.code}">${t.label}</option>`).join('');
+    STOP_TYPES.filter(t=>t.code!=='absolute')
+      .map(t=>`<option value="${t.code}">${t.label}</option>`).join('');
 
   document.getElementById('cfg-indices').innerHTML = INDICES_DISPO.map((n,i)=>
     `<label style="display:flex;align-items:center;gap:.35rem;font-weight:400;margin:0">
@@ -2087,7 +2112,7 @@ function mkRow(l={}){
     <td class="c-place-cell">${mkSelect(MARKETS,l.market||'us','c-place')}</td>
     <td><input class="c-compte" value="${echapper(l.account)}" placeholder="PEA Bourso" style="min-width:120px"></td>
     <td><input class="c-tags" value="${echapper(tags)}" placeholder="dividende, socle" style="min-width:130px"></td>
-    <td>${mkSelect(STOP_TYPES,stop.type||'none','c-stoptype')}</td>
+    <td>${mkSelect(STOP_TYPES_LIGNE(), l.stop ? (stop.type||'none') : '', 'c-stoptype')}</td>
     <td><input class="c-stopval" type="number" value="${stop.value ?? ''}" placeholder="15" min="0" step="any"></td>
     <td style="white-space:nowrap">
       <button class="btn-vendu btn-renfort" onclick="ouvrirRenfort(this)" title="J'ai racheté ce titre">Racheté</button>
@@ -2152,7 +2177,7 @@ function majLigne(tr){
   sv.disabled = sansParam;
   sv.style.opacity = sansParam ? .45 : 1;
   sv.placeholder = type==='absolute' ? 'prix plancher'
-                 : type==='none'     ? '—'
+                 : (type==='none' || type==='') ? '—'
                  : type==='vq'       ? 'auto'
                  : '15';
 }
@@ -2160,10 +2185,10 @@ function majLigne(tr){
 function mkWatchRow(w={}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
-    <td><input value="${w.name||''}" placeholder="NVIDIA"></td>
-    <td><input value="${w.ticker||''}" placeholder="NVDA"></td>
+    <td><input value="${echapper(w.name)}" placeholder="NVIDIA"></td>
+    <td><input value="${echapper(w.ticker)}" placeholder="NVDA"></td>
     <td>${mkSelect(MARKETS,w.market||'us')}</td>
-    <td><input value="${w.sector||''}" placeholder="Semi-conducteurs"></td>
+    <td><input value="${echapper(w.sector)}" placeholder="Semi-conducteurs"></td>
     <td><button class="del-btn" onclick="this.closest('tr').remove()" title="Supprimer">✕</button></td>
   `;
   return tr;
@@ -2193,6 +2218,9 @@ async function loadPortfolio(){
     const sd = cfg.stop_defaut;
     document.getElementById('cfg-stopdefaut').value =
       (sd && (sd.type || sd)) ? (sd.type || sd) : 'none';
+    document.getElementById('cfg-stopdefaut-val').value =
+      (sd && sd.value != null) ? sd.value : '';
+    majStopDefaut();
 
     // Moteur d'apprentissage : reglages a defaut sur, comme cote serveur
     // (learning_engine.normalize_settings) si le profil n'en a pas encore.
@@ -2286,9 +2314,14 @@ function readLines(){
       if(ach.length) ligne.achats = ach;
     }
 
-    // Un stop « none » n'est pas envoye : le champ absent laisse jouer le stop
-    // par defaut du profil, ce qui n'est pas la meme chose que « pas de stop ».
-    if(type && type !== 'none'){
+    // CORRECTION (28/09/2026) : « Défaut du profil » (valeur vide) n'envoie
+    // rien et laisse jouer le stop par defaut ; « Aucun » envoie
+    // explicitement {type:'none'} -- auparavant les deux se confondaient et
+    // il etait impossible de soustraire une ligne (un ETF...) au stop par
+    // defaut.
+    if(type === 'none'){
+      ligne.stop = {type:'none'};
+    }else if(type){
       ligne.stop = stopSansParametre(type) ? {type:type} : {type:type, value:val};
     }
     lines.push(ligne);
@@ -2320,6 +2353,14 @@ function readSettings(){
   });
   const indices=[...document.querySelectorAll('.idx-cb:checked')].map(cb=>cb.value);
   const stopDef = document.getElementById('cfg-stopdefaut').value;
+  const stopDefVal = nombreOuNull(document.getElementById('cfg-stopdefaut-val').value);
+  let stopDefaut = null;
+  if(stopDef && stopDef !== 'none'){
+    if(stopSansParametre(stopDef)) stopDefaut = {type: stopDef};
+    else if(stopDefVal !== null && stopDefVal > 0 && stopDefVal < 100)
+      stopDefaut = {type: stopDef, value: stopDefVal};
+    else LIGNES_IGNOREES.push("stop par défaut « " + stopDef + " » : il manque le pourcentage");
+  }
   return {
     broker: document.getElementById('cfg-broker').value,
     indices, watchlist,
@@ -2327,7 +2368,7 @@ function readSettings(){
     poids_max_pct: nombreOuNull(document.getElementById('cfg-poidsmax').value),
     vol_cible_pct: nombreOuNull(document.getElementById('cfg-volcible').value),
     liquidites:    nombreOuNull(document.getElementById('cfg-liquidites').value),
-    stop_defaut:   (stopDef && stopDef !== 'none') ? {type: stopDef} : null,
+    stop_defaut:   stopDefaut,
     apprentissage: {
       horizon:     Number(document.getElementById('cfg-apprentissage-horizon').value) || 60,
       actif:       document.getElementById('cfg-apprentissage-actif').checked,
@@ -2558,7 +2599,9 @@ async function chargerFiabilite(){
   const enAttente=(c.par_horizon && c.par_horizon[h] && c.par_horizon[h].en_attente) || 0;
   const tuiles=[
     ['Notes enregistrées', nb(c.snapshots,0)],
-    ['Observations clôturées', nb(c.matured,0)],
+    // CORRECTION (28/09/2026) : c.matured additionne tous les horizons.
+    ['Observations clôturées ('+h+' séances)',
+      nb((c.par_horizon && c.par_horizon[h] && c.par_horizon[h].closes) || 0, 0)],
     ['En attente ('+h+' séances)', nb(enAttente,0)],
     ['Version de la note', d.score_version || '—']
   ];
@@ -2592,7 +2635,7 @@ async function chargerFiabilite(){
       if(!b.n) return;
       const hitTxt=(b.hit===null||b.hit===undefined) ? '—' : nb(b.hit*100,0)+' %';
       html += '<tr><td>'+esc(b.label)+' <span style="color:var(--muted);font-size:.78rem">('
-            + esc(b.reco)+')</span></td>'
+            + esc(RECO_FIAB[b.reco] || b.reco)+')</span></td>'
             + '<td style="text-align:right">'+nb(b.n,0)+'</td>'
             + '<td style="text-align:right">'+nb(b.n_indep,0)+'</td>'
             + '<td style="text-align:right" class="'+signe(b.mean)+'">'+pct(b.mean,1)+'</td>'
