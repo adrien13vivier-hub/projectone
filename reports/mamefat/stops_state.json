@@ -1,18 +1,18 @@
 {
   "lignes": {
-    "PSP5.PA": {
+    "AAPL.US": {
       "arme": true,
       "hwm": null
     },
-    "WPEA.PA": {
+    "AMD.US": {
       "arme": true,
       "hwm": null
     },
-    "WPEA.PA#2": {
+    "META.US": {
       "arme": true,
       "hwm": null
     },
-    "WPEA.PA#3": {
+    "TSLA.US": {
       "arme": true,
       "hwm": null
     }

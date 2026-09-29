@@ -4,30 +4,30 @@
   "invalid": 0,
   "legacy": 381,
   "matured": 478,
-  "n_tickers": 9,
+  "n_tickers": 13,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 397,
+    "en_attente": 403,
     "invalides": 0
    },
    "20": {
     "closes": 312,
-    "en_attente": 85,
+    "en_attente": 91,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 397,
+    "en_attente": 403,
     "invalides": 0
    },
    "60": {
     "closes": 166,
-    "en_attente": 231,
+    "en_attente": 237,
     "invalides": 0
    }
   },
-  "snapshots": 397
+  "snapshots": 403
  },
  "generated_for": "2026-09-29",
  "horizon": 60,
@@ -1151,8 +1151,8 @@
  },
  "maturation": {
   "appels": 10,
-  "candidats": 23,
-  "clotures": 6,
+  "candidats": 17,
+  "clotures": 0,
   "en_attente": 17,
   "invalides": 0,
   "symboles_en_echec": []
@@ -1188,15 +1188,15 @@
      "scope": "global"
     }
    },
-   "name": "SM",
-   "score": 7.93,
-   "sector": "Energy",
-   "ticker": "SM.US"
+   "name": "Meta",
+   "score": 7.82,
+   "sector": "Communication Services",
+   "ticker": "META.US"
   },
   {
    "horizons": {
     "20": {
-     "band": "4,5 - 6",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "insuffisante",
      "estimate": null,
@@ -1205,66 +1205,66 @@
      "n_indep": 7,
      "p_outperf": null,
      "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "GARDER",
+     "reco": "ACHAT MODERE",
      "scope": "global"
     },
     "60": {
-     "band": "4,5 - 6",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "insuffisante",
      "estimate": null,
      "kind": "market",
      "legacy_included": true,
-     "n_indep": 5,
+     "n_indep": 3,
      "p_outperf": null,
-     "reason": "echantillon insuffisant (5 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "GARDER",
+     "reason": "echantillon insuffisant (3 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
      "scope": "global"
     }
    },
-   "name": "Credit Agricole SA",
-   "score": 5.64,
-   "sector": "Financials",
-   "ticker": "ACA.PA"
-  },
-  {
-   "horizons": {
-    "20": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "insuffisante",
-     "estimate": null,
-     "kind": "sector",
-     "legacy_included": true,
-     "n_indep": 7,
-     "p_outperf": null,
-     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "GARDER",
-     "scope": "global"
-    },
-    "60": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "insuffisante",
-     "estimate": null,
-     "kind": "market",
-     "legacy_included": true,
-     "n_indep": 5,
-     "p_outperf": null,
-     "reason": "echantillon insuffisant (5 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "GARDER",
-     "scope": "global"
-    }
-   },
-   "name": "CoreWeave",
-   "score": 4.98,
+   "name": "Apple",
+   "score": 6.88,
    "sector": "Information Technology",
-   "ticker": "CRWV.US"
+   "ticker": "AAPL.US"
   },
   {
    "horizons": {
     "20": {
-     "band": "< 3",
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "sector",
+     "legacy_included": true,
+     "n_indep": 7,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
+     "scope": "global"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "market",
+     "legacy_included": true,
+     "n_indep": 3,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (3 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
+     "scope": "global"
+    }
+   },
+   "name": "Advanced micro devices",
+   "score": 6.57,
+   "sector": "Information Technology",
+   "ticker": "AMD.US"
+  },
+  {
+   "horizons": {
+    "20": {
+     "band": "3 - 4,5",
      "ci95": null,
      "confidence": "insuffisante",
      "estimate": null,
@@ -1273,30 +1273,30 @@
      "n_indep": 5,
      "p_outperf": null,
      "reason": "echantillon insuffisant (5 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "VENDRE",
+     "reco": "A EVITER",
      "scope": "global"
     },
     "60": {
-     "band": "< 3",
+     "band": "3 - 4,5",
      "ci95": null,
      "confidence": "insuffisante",
      "estimate": null,
      "kind": "market",
      "legacy_included": true,
-     "n_indep": 1,
+     "n_indep": 2,
      "p_outperf": null,
-     "reason": "echantillon insuffisant (1 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "VENDRE",
+     "reason": "echantillon insuffisant (2 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "A EVITER",
      "scope": "global"
     }
    },
-   "name": "Abionyx Pharma",
-   "score": 1.31,
-   "sector": "Health Care",
-   "ticker": "ABNX.PA"
+   "name": "Tesla",
+   "score": 3.82,
+   "sector": "Consumer Discretionary",
+   "ticker": "TSLA.US"
   }
  ],
  "score_version": "v14-5fd53e",
- "user": "adrien",
+ "user": "mamefat",
  "version": "1.1"
 }

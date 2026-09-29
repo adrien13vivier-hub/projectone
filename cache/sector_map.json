@@ -1,4 +1,10 @@
 {
+ "AAPL.US": {
+  "fetched": "2026-09-29",
+  "industry": "Consumer Electronics",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
  "ABNX.PA": {
   "fetched": "2026-09-25",
   "industry": "Biotechnology",
@@ -11,16 +17,34 @@
   "sector": "Financial Services",
   "src": "yahoo"
  },
+ "AMD.US": {
+  "fetched": "2026-09-29",
+  "industry": "Semiconductors",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
  "CRWV.US": {
   "fetched": "2026-09-25",
   "industry": "Software - Infrastructure",
   "sector": "Technology",
   "src": "yahoo"
  },
+ "META.US": {
+  "fetched": "2026-09-29",
+  "industry": "Internet Content & Information",
+  "sector": "Communication Services",
+  "src": "yahoo"
+ },
  "SM.US": {
   "fetched": "2026-09-25",
   "industry": "Oil & Gas E&P",
   "sector": "Energy",
+  "src": "yahoo"
+ },
+ "TSLA.US": {
+  "fetched": "2026-09-29",
+  "industry": "Auto Manufacturers",
+  "sector": "Consumer Cyclical",
   "src": "yahoo"
  }
 }
