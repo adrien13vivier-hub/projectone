@@ -1874,7 +1874,16 @@ a { color: inherit; text-decoration: none; }
 
 /* ── entete / onglets ─────────────────────────────────────────── */
 .topbar { display:flex; align-items:center; gap:18px; padding:22px 0 10px; flex-wrap:wrap;
-  position: sticky; top:0; z-index:50; background:var(--bg); }
+  position: sticky; top:0; z-index:50; background:var(--bg);
+  transition: transform .28s cubic-bezier(.19,1,.22,1), box-shadow .2s ease; will-change: transform; }
+/* 29/09/2026 : l'entete se retracte quand on descend dans la page et
+   revient des qu'on remonte (voir JS « entete retractable »). */
+.topbar.masque { transform: translateY(-110%); }
+.topbar.defile { box-shadow: 0 8px 20px rgba(0,0,0,.28); }
+/* En remontant au milieu de la page, l'entete revient en version compacte :
+   seulement les onglets. Complet de nouveau en haut de page. */
+.topbar.defile .fresh, .topbar.defile .brand, .topbar.defile .topbar-actions { display:none; }
+.topbar.defile { padding-top:10px; padding-bottom:10px; }
 .brand strong { font-weight:700; font-size:16px; letter-spacing:-.01em; }
 .tabs { display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:4px; }
 .tab { padding:9px 18px; border-radius:999px; font-weight:600; font-size:13.5px; color:var(--muted); transition:background .2s ease,color .2s ease; }
@@ -1935,11 +1944,17 @@ a { color: inherit; text-decoration: none; }
 .callout li { color:var(--text); margin:2px 0; }
 
 /* ── layouts 2 colonnes ────────────────────────────────────────── */
-.layout { display:grid; grid-template-columns:1.6fr 1fr; gap:14px; }
-.analysis-grid { display:grid; grid-template-columns:1.55fr .95fr; gap:14px; align-items:start; }
-@media (max-width:900px) { .layout, .analysis-grid { grid-template-columns:1fr; } }
+/* 29/09/2026 : minmax(0, …) + min-width:0 -- sans eux, une colonne de
+   grille s'elargit a la taille de son contenu le plus large (tableaux,
+   graphique) : la page Technique faisait 1234 px de large sur un iPhone
+   (390 px) et Safari la reduisait en tout petit pour la faire tenir. */
+.layout { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:14px; }
+.analysis-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,.95fr); gap:14px; align-items:start; }
+@media (max-width:900px) { .layout, .analysis-grid { grid-template-columns:minmax(0,1fr); } }
+.layout > *, .analysis-grid > *, .stack > * { min-width:0; }
+img { max-width:100%; height:auto; }
 @media (max-width:880px) { .kpis { grid-template-columns:repeat(2,1fr); } .kpi.featured { grid-column:1/-1; } }
-.stack { display:grid; gap:14px; }
+.stack { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
 .sticky { position:sticky; top:96px; }
 
 /* ── graphiques ────────────────────────────────────────────────── */
@@ -2150,6 +2165,27 @@ tbody tr:hover td { background:var(--surface2); }
 # JS
 # ══════════════════════════════════════════════════════
 JS = r"""
+/* Entete retractable (29/09/2026) : masque en descendant, reapparait en
+   remontant, toujours visible en haut de page. */
+(function(){
+  var h = document.querySelector('.topbar');
+  if (!h) return;
+  var dernier = window.pageYOffset || 0, enCours = false;
+  function maj(){
+    var y = window.pageYOffset || 0;
+    if (y < 80) { h.classList.remove('masque', 'defile'); }
+    else {
+      h.classList.add('defile');
+      if (y > dernier + 6) h.classList.add('masque');
+      else if (y < dernier - 6) h.classList.remove('masque');
+    }
+    dernier = y; enCours = false;
+  }
+  window.addEventListener('scroll', function(){
+    if (!enCours) { enCours = true; window.requestAnimationFrame(maj); }
+  }, {passive: true});
+  h.addEventListener('focusin', function(){ h.classList.remove('masque'); });
+})();
 (function(){
   var root = document.documentElement;
   var btn  = document.querySelector('[data-theme-toggle]');
