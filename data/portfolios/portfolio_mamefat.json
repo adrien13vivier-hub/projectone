@@ -1,6 +1,6 @@
 {
   "username": "mamefat",
-  "saved_at": "2026-09-28T18:51:00.524248+00:00",
+  "saved_at": "2026-09-29T19:21:19.678420+00:00",
   "settings": {
     "broker": "revolut",
     "indices": [
@@ -43,6 +43,8 @@
       "name": "Apple",
       "ticker": "AAPL",
       "isin": "",
+      "quantity": 2.0,
+      "buy_price": 500.0,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
@@ -54,6 +56,8 @@
       "name": "Tesla",
       "ticker": "TSLA",
       "isin": "",
+      "quantity": 5.0,
+      "buy_price": 200.0,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
@@ -65,6 +69,8 @@
       "name": "Meta",
       "ticker": "META",
       "isin": "",
+      "quantity": 8.0,
+      "buy_price": 120.0,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
@@ -76,6 +82,8 @@
       "name": "Advanced micro devices",
       "ticker": "AMD",
       "isin": "",
+      "quantity": 1.0,
+      "buy_price": 650.0,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
