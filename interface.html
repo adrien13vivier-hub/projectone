@@ -2412,8 +2412,18 @@ async function savePortfolio(statusId){
             + 'est conservé.</span></div>';
     }
     if(r.erreurs&&r.erreurs.length){
+      // AJOUT (29/09/2026) : quand TOUTES les lignes sont rejetees, aucun
+      // rapport ne peut etre produit -- on le dit en clair (cas mamefat :
+      // 4 lignes sans quantite ni prix de revient, lien de rapport vide).
+      const toutRejete = r.erreurs.length >= lines.length;
       html+='<div class="info-box error" style="margin-bottom:.75rem">⚠️ Lignes rejetées :<br>'
-           +r.erreurs.map(e=>'• '+e).join('<br>')+'</div>';
+           +r.erreurs.map(e=>'• '+esc(e)).join('<br>')
+           +(toutRejete
+              ? '<br><b>Aucune position ne peut être analysée : ton rapport ne sera pas '
+                + 'généré tant que la quantité et le prix de revient de chaque ligne ne '
+                + 'sont pas renseignés.</b>'
+              : '')
+           +'</div>';
     }
     // La synchronisation GitHub decide si la configuration atteindra le
     // rapport de demain. Un enregistrement local seul est un faux succes :
