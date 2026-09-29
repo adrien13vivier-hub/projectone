@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>ProjectOne - Page introuvable</title>
+<!--
+  AJOUT (29/09/2026) : sans ce fichier, Cloudflare Pages considere le site
+  comme une application a page unique et sert docs/index.html (la page
+  d'accueil publique) pour TOUTE adresse inconnue -- sans ses styles, puisque
+  ses chemins relatifs pointent alors dans le mauvais dossier. Un lien de
+  rapport errone ou pas encore publie ressemblait donc a une page cassee.
+  Sa seule presence suffit a ce que Cloudflare renvoie une vraie 404.
+-->
+<style>
+  :root { --bg:#0b0f14; --card:#131a22; --txt:#e6edf3; --muted:#8b98a5; --acc:#2dd4bf; }
+  @media (prefers-color-scheme: light) { :root { --bg:#f5f7f9; --card:#ffffff; --txt:#16202a; --muted:#5b6b7a; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font:16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width:620px; margin:0 auto; padding:48px 16px; }
+  .marque { color:var(--acc); font-weight:700; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-size:1.6rem; margin:.4rem 0 1rem; }
+  p { color:var(--muted); }
+  a { color:var(--acc); }
+</style></head>
+<body><main>
+  <div class="marque">ProjectOne</div>
+  <h1>Cette page n'existe pas</h1>
+  <p>Le lien est peut-être incomplet, ou ce rapport n'a pas encore été publié.
+     Vérifie l'adresse reçue, ou retrouve ton rapport depuis l'application.</p>
+  <p><a href="/">Retour à l'accueil</a></p>
+</main></body></html>
