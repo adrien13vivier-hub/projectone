@@ -365,22 +365,68 @@ def apply_profile(profile: dict):
     set_user(PROFILE.get("username") or "default")
 
 
-def calc_fee(amount: float, marche: str) -> float:
-    """Frais de courtage pour un montant donne, selon la grille du profil.
+# Plafond legal du courtage sur un PEA : 0,5 % du montant pour un ordre passe
+# en ligne (decret n° 2020-95 du 5 fevrier 2020, en vigueur depuis le
+# 1er juillet 2020). Ajoute le 30/09/2026 : jusque-la, un ordre de 200 EUR sur
+# un PEA pouvait se voir imputer 1,99 EUR (~1 %), soit le double du maximum
+# autorise.
+PLAFOND_PEA = 0.005
+
+
+def est_pea(asset: dict) -> bool:
+    """La ligne est-elle logee dans un PEA (ou PEA-PME) ? Lu dans le compte saisi."""
+    compte = str((asset or {}).get("account") or "")
+    return bool(_re.search(r"\bPEA\b", compte, _re.IGNORECASE))
+
+
+def calc_fee(amount: float, marche: str, pea: bool = False) -> float:
+    """Frais d'UN ordre (courtage + change eventuel), selon la grille du profil.
 
     Un livret, un appartement ou une montre de collection ne passent pas par un
     carnet d'ordres : leur imputer un courtage fausserait la plus-value nette.
     Le marche "manuel" retourne donc toujours zero.
+
+    Grille (data/brokers.json), toutes les cles facultatives :
+      paliers   [[plafond, fixe, pct], ...] croissants : un ordre <= plafond
+                paie fixe + pct x montant (grilles a plusieurs marches,
+                ex. Bourse Direct 0,99 / 1,90 / 2,90 / 3,80 EUR) -- 30/09/2026
+      threshold / flat : ancienne forme a un seul palier (conservee)
+      rate      au-dela des paliers : pourcentage du montant
+      min / max bornes du courtage
+      change    frais de conversion EUR <-> devise, en % du montant (US)
+    Sur un PEA, le courtage est plafonne a 0,5 % (voir PLAFOND_PEA).
     """
-    if marche == "manuel":
+    if marche == "manuel" or not amount or amount <= 0:
         return 0.0
     t = BROKERAGE.get(marche) or BROKERAGE.get("euronext") or DEFAULT_BROKERAGE["euronext"]
-    flat  = float(t.get("flat", 0.0))
-    rate  = float(t.get("rate", 0.0))
-    seuil = float(t.get("threshold", 0.0))
-    mini  = float(t.get("min", 0.0))
-    brut  = flat if (seuil and amount <= seuil) else rate * amount
-    return round(max(brut, mini), 2)
+    flat  = float(t.get("flat", 0.0) or 0.0)
+    rate  = float(t.get("rate", 0.0) or 0.0)
+    seuil = float(t.get("threshold", 0.0) or 0.0)
+    mini  = float(t.get("min", 0.0) or 0.0)
+    maxi  = t.get("max")
+
+    brut = None
+    for palier in (t.get("paliers") or []):
+        try:
+            plafond, fixe = float(palier[0]), float(palier[1])
+            pct = float(palier[2]) if len(palier) > 2 else 0.0
+        except (TypeError, ValueError, IndexError):
+            continue
+        if amount <= plafond:
+            brut = fixe + pct * amount
+            break
+    if brut is None:
+        brut = flat if (seuil and amount <= seuil) else rate * amount
+    courtage = max(brut, mini)
+    if maxi is not None:
+        try:
+            courtage = min(courtage, float(maxi))
+        except (TypeError, ValueError):
+            pass
+    if pea:
+        courtage = min(courtage, PLAFOND_PEA * amount)
+    change = float(t.get("change", 0.0) or 0.0) * amount
+    return round(courtage + change, 2)
 
 
 # =============================================================================
@@ -3880,8 +3926,9 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         pnl_brut  = round((price_eur - cost_eur) * qty, 2)
         pnl_brut_pct = round(pnl_brut / (cost_eur * qty) * 100, 2)
 
-        buy_fee   = calc_fee(cost_eur * qty, asset["marche"])
-        sell_fee  = calc_fee(vm, asset["marche"])
+        pea_ligne = est_pea(asset)
+        buy_fee   = calc_fee(cost_eur * qty, asset["marche"], pea_ligne)
+        sell_fee  = calc_fee(vm, asset["marche"], pea_ligne)
         pnl_net   = round(pnl_brut - buy_fee - sell_fee, 2)
         pnl_net_pct = round(pnl_net / (cost_eur * qty) * 100, 2)
 
