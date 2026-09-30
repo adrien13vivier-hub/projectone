@@ -425,3 +425,39 @@ def test_cotations_par_an_crypto_et_action():
               if (d0 + timedelta(days=i)).weekday() < 5]
     assert 360 <= pa._cotations_par_an(crypto) <= 370
     assert 255 <= pa._cotations_par_an(action) <= 265
+
+
+# -- Frais de courtage (30/09/2026) ---------------------------------------------
+
+def _grille(g):
+    pa.BROKERAGE = {k: dict(v) for k, v in g.items()}
+
+
+def test_frais_paliers_bourse_direct():
+    _grille({"euronext": {"paliers": [[500, 0.99], [1000, 1.90], [2000, 2.90], [4400, 3.80]],
+                          "threshold": 0, "flat": 0, "rate": 0.0009, "min": 0.99}})
+    assert pa.calc_fee(400, "euronext") == 0.99
+    assert pa.calc_fee(800, "euronext") == 1.90
+    assert pa.calc_fee(4000, "euronext") == 3.80
+    assert pa.calc_fee(10000, "euronext") == 9.0
+
+
+def test_frais_plafond_pea_et_detection():
+    _grille({"euronext": {"threshold": 500, "flat": 1.99, "rate": 0.006, "min": 1.99}})
+    assert pa.calc_fee(200, "euronext") == 1.99
+    assert pa.calc_fee(200, "euronext", pea=True) == 1.0      # 0,5 % de 200
+    assert pa.est_pea({"account": "PEA CA"}) and pa.est_pea({"account": "pea-pme"})
+    assert not pa.est_pea({"account": "CTO"}) and not pa.est_pea({"account": "Peapod"})
+
+
+def test_frais_change_sur_titres_us():
+    _grille({"us": {"threshold": 6000, "flat": 6.95, "rate": 0.0012, "min": 6.95, "change": 0.0021}})
+    assert pa.calc_fee(1000, "us") == round(6.95 + 2.1, 2)
+
+
+def test_catalogue_courtiers_revolut_frais_fixes():
+    import json
+    cat = json.load(open("data/brokers.json", encoding="utf-8"))
+    _grille(cat["revolut"]["fees"])
+    assert pa.calc_fee(5000, "us") == 1.0
+    assert pa.calc_fee(50, "euronext") == 1.0
