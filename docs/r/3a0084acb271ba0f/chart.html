@@ -39,7 +39,7 @@
 <button class="toggle" data-theme-toggle onclick="toggleTheme()">🌙 Sombre</button>
 <a class="back" href="index.html">← Retour au rapport</a>
 <h1>📈 Historique du Portefeuille</h1>
-<p class="meta">Mis à jour le 30/09/2026 à 01:56 · 1 sessions · 30 derniers jours</p>
+<p class="meta">Mis à jour le 01/10/2026 à 02:09 · 2 sessions · 30 derniers jours</p>
 
 <div class="grid">
   <div class="card">
@@ -60,13 +60,13 @@
 </div>
 
 <script>
-const labels      = ["2026-09-29 01:56"];
-const pnlData     = [4245.41];
-const colors      = ["rgba(34,197,94,0.8)"];
+const labels      = ["2026-09-29 01:56", "2026-09-30 02:09"];
+const pnlData     = [4245.41, 4195.53];
+const colors      = ["rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)"];
 const bLabels     = ["Apple", "Tesla", "Meta", "Advanced micro devices"];
-const bData       = [-422.86, 549.09, 4236.37, -117.19];
+const bData       = [-414.28, 563.83, 4158.16, -112.18];
 const bColors     = ["rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)", "rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)"];
-const lineDatasets = [{"label": "Advanced micro devices", "data": [-117.19], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Apple", "data": [-422.86], "borderColor": "#16a34a", "backgroundColor": "rgba(22,163,74,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Meta", "data": [4236.37], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Tesla", "data": [549.09], "borderColor": "#d97706", "backgroundColor": "rgba(217,119,6,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}];
+const lineDatasets = [{"label": "Advanced micro devices", "data": [-117.19, -112.18], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Apple", "data": [-422.86, -414.28], "borderColor": "#16a34a", "backgroundColor": "rgba(22,163,74,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Meta", "data": [4236.37, 4158.16], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Tesla", "data": [549.09, 563.83], "borderColor": "#d97706", "backgroundColor": "rgba(217,119,6,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}];
 
 const isDark    = () => document.documentElement.getAttribute('data-theme') === 'dark';
 const gridColor = () => isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
