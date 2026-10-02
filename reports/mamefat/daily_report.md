@@ -1,25 +1,25 @@
-# Rapport de Portefeuille v7.5 -- 02/10/2026 02:10 (Paris)
+# Rapport de Portefeuille v7.5 -- 03/10/2026 01:59 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.62/10
-**EUR/USD :** 1 EUR = 1.1244 USD
+**Tendance : Neutre** | Score macro : 5.2/10
+**EUR/USD :** 1 EUR = 1.1257 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.19% | 7 666.45 |
-| CAC 40 | v -1.62% | 7 835.31 |
-| Nikkei 225 | ^ +3.30% | 68 956.72 |
+| S&P 500 | ^ +0.73% | 7 722.72 |
+| CAC 40 | ^ +0.79% | 7 897.19 |
+| Nikkei 225 | v -0.94% | 68 309.46 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 5.24% | -- |
-| OAT 10 ans (FR) | -- | 4.90% | -- |
-| Ecart OAT - UST | -- | -34 pb | -- |
+| UST 10 ans (US) | -- | 5.28% | -- |
+| OAT 10 ans (FR) | -- | 4.87% | -- |
+| Ecart OAT - UST | -- | -42 pb | -- |
 
 **Manchettes macro :**
 
@@ -39,23 +39,23 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| Meta | -- | Aucun | Aucun stop défini | -- | 645.44 | -- | Aucun |
-| Apple | CTO | Aucun | Aucun stop défini | -- | 293.92 | -- | Aucun |
-| Advanced micro devices | -- | Aucun | Aucun stop défini | -- | 547.55 | -- | Aucun |
-| Tesla | -- | Aucun | Aucun stop défini | -- | 315.02 | -- | Aucun |
+| Meta | -- | Aucun | Aucun stop défini | -- | 646.77 | -- | Aucun |
+| Apple | CTO | Aucun | Aucun stop défini | -- | 296.52 | -- | Aucun |
+| Advanced micro devices | -- | Aucun | Aucun stop défini | -- | 562.99 | -- | Aucun |
+| Tesla | -- | Aucun | Aucun stop défini | -- | 329.31 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **7 873.97 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **78.74 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **7 976.76 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **79.77 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| Meta | 41.8 % (Élevée, sur 1 an) | 2.75 % | 27.1 % | -- | 377.02 EUR (dimensionné par la volatilité) | 5 163.50 EUR | 4 786.48 EUR |
-| Apple | 24.6 % (Modérée, sur 1 an) | 0.84 % | 16.0 % | -- | 639.64 EUR (dimensionné par la volatilité) | 587.84 EUR | -51.80 EUR |
-| Advanced micro devices | 72.8 % (Extrême, sur 1 an) | 2.69 % | 40.0 % | -- | 216.44 EUR (dimensionné par la volatilité) | 547.55 EUR | 331.11 EUR |
-| Tesla | 45.5 % (Élevée, sur 1 an) | 1.29 % | 29.6 % | -- | 345.80 EUR (dimensionné par la volatilité) | 1 575.08 EUR | 1 229.28 EUR |
+| Meta | 41.7 % (Élevée, sur 1 an) | 2.58 % | 27.1 % | -- | 382.40 EUR (dimensionné par la volatilité) | 5 174.19 EUR | 4 791.79 EUR |
+| Apple | 24.6 % (Modérée, sur 1 an) | 0.90 % | 16.0 % | -- | 648.52 EUR (dimensionné par la volatilité) | 593.04 EUR | -55.48 EUR |
+| Advanced micro devices | 72.7 % (Extrême, sur 1 an) | 2.59 % | 40.0 % | -- | 219.44 EUR (dimensionné par la volatilité) | 562.99 EUR | 343.55 EUR |
+| Tesla | 45.7 % (Élevée, sur 1 an) | 1.50 % | 29.7 % | -- | 349.02 EUR (dimensionné par la volatilité) | 1 646.54 EUR | 1 297.52 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -66,7 +66,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ### Exposition corrélée
 
-**Corrélation moyenne du portefeuille : +34.0 %** (Modérée) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -12.9 % à +70.7 %.
+**Corrélation moyenne du portefeuille : +33.7 %** (Modérée) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -13.2 % à +70.6 %.
 
 *Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment les unes des autres -- une diversification qui se voit dans les mouvements réels, pas seulement dans les étiquettes de classe d'actif ou de secteur. Un chiffre élevé et négatif est aussi une forme de concentration, sur le pari inverse.*
 
@@ -74,7 +74,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Groupe | Poids cumulé | Alerte |
 |--------|--------------|--------|
-| Apple, Advanced micro devices | 14.42 % | Non |
+| Apple, Advanced micro devices | 14.49 % | Non |
 
 *Seuil de corrélation : 0.70. Seuil d'alerte sur le poids cumulé : 25 %.*
 
@@ -87,14 +87,14 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 7 873.97 EUR | 100.0% |
+| Actions | 7 976.76 EUR | 100.0% |
 
 **Par compte**
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Non affecté | 7 286.13 EUR | 92.5% |
-| CTO | 587.84 EUR | 7.5% |
+| Non affecté | 7 383.72 EUR | 92.6% |
+| CTO | 593.04 EUR | 7.4% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -107,7 +107,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 **Apprentissage mutualise** : calibre sur 13 titre(s) suivis par l'ensemble des profils participants. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 423** (dont 381 herites de history.csv) | **Clotures : 488** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 433** (dont 381 herites de history.csv) | **Clotures : 495** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance vs marche
 
@@ -115,42 +115,42 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Tranche | N | N indep. | Surperf. moyenne | Mediane | % positifs | IC 95 % | Esperance calibree | Confiance |
 |---------|---|----------|------------------|---------|------------|---------|--------------------|-----------|
-| < 3 (VENDRE) | 29 | 1 | -18.4% | -20.9% | 0% | -- | -- | insuffisante |
+| < 3 (VENDRE) | 30 | 1 | -18.0% | -19.2% | 0% | -- | -- | insuffisante |
 | 3 - 4,5 (A EVITER) | 15 | 2 | +34.5% | +32.9% | 100% | -- | -- | insuffisante |
-| 4,5 - 6 (GARDER) | 71 | 5 | +15.5% | +20.4% | 90% | -- | -- | insuffisante |
-| 6 - 7,5 (ACHAT MODERE) | 44 | 3 | -1.2% | -6.5% | 45% | -- | -- | insuffisante |
+| 4,5 - 6 (GARDER) | 73 | 5 | +15.7% | +20.4% | 90% | -- | -- | insuffisante |
+| 6 - 7,5 (ACHAT MODERE) | 46 | 3 | -0.8% | -3.6% | 46% | -- | -- | insuffisante |
 | >= 7,5 (ACHAT FORT) | 10 | 1 | -27.1% | -27.4% | 0% | -- | -- | insuffisante |
 
-**Lien note -> surperformance :** IC de rang -0.11 (echantillon independant : +0.14) | pente -4.16 pt par point de note | 6 titre(s) sur 34 seance(s).
+**Lien note -> surperformance :** IC de rang -0.10 (echantillon independant : +0.14) | pente -4.16 pt par point de note | 6 titre(s) sur 35 seance(s).
 
 | Secteur | N | N indep. | Surperf. moyenne | % positifs | IC de rang |
 |---------|---|----------|------------------|------------|------------|
-| Financials | 33 | 1 | +9.4% | 100% | -0.31 |
-| Health Care | 33 | 1 | -22.2% | 0% | -0.89 |
-| Information Technology | 30 | 1 | -17.4% | 10% | -0.65 |
+| Financials | 34 | 1 | +9.2% | 100% | -0.28 |
+| Health Care | 34 | 1 | -21.8% | 0% | -0.89 |
+| Information Technology | 31 | 1 | -17.0% | 10% | -0.67 |
 
 *Ventilation par region, a titre indicatif (n'entre pas dans le calcul de l'esperance calibree) :*
 
 | Region | N | N indep. | Surperf. moyenne | % positifs |
 |--------|---|----------|------------------|------------|
-| EUROPE | 99 | 3 | +5.1% | 67% |
-| US | 70 | 3 | +3.6% | 47% |
+| EUROPE | 102 | 3 | +5.1% | 67% |
+| US | 72 | 3 | +4.1% | 47% |
 
 ### Quel horizon colle le mieux a la note ?
 
 | Horizon (seances) | N indep. | IC de rang | Notes >= 7,5 | Notes < 4,5 | Cible |
 |-------------------|----------|------------|--------------|-------------|-------|
-| 20 | 12 | -0.18 | -5.5% | -5.1% | surperformance sectorielle |
-| 60 | 6 | -0.11 | -27.1% | +8.1% | surperformance vs marche |
+| 20 | 14 | -0.18 | -5.5% | -5.2% | surperformance sectorielle |
+| 60 | 6 | -0.10 | -27.1% | +8.3% | surperformance vs marche |
 
 ### Fiabilite par position (horizon 60 seances)
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| Meta | 7.85/10 | n/d | -- | -- | insuffisante | 1 | global + heritee |
-| Apple | 6.75/10 | n/d | -- | -- | insuffisante | 3 | global + heritee |
-| Advanced micro devices | 6.65/10 | n/d | -- | -- | insuffisante | 3 | global + heritee |
-| Tesla | 3.84/10 | n/d | -- | -- | insuffisante | 2 | global + heritee |
+| Meta | 7.82/10 | n/d | -- | -- | insuffisante | 1 | global + heritee |
+| Apple | 6.88/10 | n/d | -- | -- | insuffisante | 3 | global + heritee |
+| Advanced micro devices | 6.56/10 | n/d | -- | -- | insuffisante | 3 | global + heritee |
+| Tesla | 4.22/10 | n/d | -- | -- | insuffisante | 2 | global + heritee |
 
 **Modele : non active** -- historique insuffisant : 0/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
@@ -163,11 +163,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 645.44 EUR | ^ +0.10% | 5163.50 EUR | + +4203.50 EUR (+437.9%) | + +4201.50 EUR (+437.7%) | **7.85/10** (100%) | RENFORCER |
+| 646.77 EUR | ^ +0.30% | 5174.19 EUR | + +4214.19 EUR (+439.0%) | + +4212.19 EUR (+438.8%) | **7.82/10** (100%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Dow Jones Futures: Stocks Rise Off Support As Yields Skid, Micron In Buy Area; Tesla, Jobs Report Due | Mark Zuckerberg's Muse Could Charge You for Saving You Money — META President Reveals AI Agent's Potential Monetization… | Can Reality Labs Ever Earn Enough to Justify Meta’s Spending?
+> Nscale hires Meta veteran Justin Osofsky as COO ahead of planned IPO - Bloomberg | CHAI offers engineers 50% more total compensation, paid in cash | Nscale Hires Meta’s Justin Osofsky to Be COO Ahead of IPO
 
 **Detail de la note :**
 
@@ -178,14 +178,14 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Croissance | 6.4/10 | 16% |
 | Momentum | 9.8/10 | 21% |
 | Consensus | 7.9/10 | 15% |
-| Risque | 6.0/10 | 5% |
+| Risque | 5.5/10 | 5% |
 
 **Fondamentaux :** PER 27.4 | PEG 1.0 | EV/EBITDA 17.1 | P/B 7.1 | Marge nette 29.8% | ROE 29.8% | Croiss. CA 28.0% | Beta 1.2 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:20 B:42 H:9 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M +25.6% | 3M +24.6% | 6M +26.9% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +22.9% | 3M +25.0% | 6M +27.3% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** historique insuffisant a 60 seances (1 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
 
-**Justification :** Note 7.8/10 (confiance 100%). Points forts : sante financiere 10.0, momentum 9.8. Momentum HAUSSIER. Position : +4201.50 EUR (+437.7%) apres frais.
+**Justification :** Note 7.8/10 (confiance 100%). Points forts : sante financiere 10.0, momentum 9.8. Momentum HAUSSIER. Position : +4212.19 EUR (+438.8%) apres frais.
 
 ---
 
@@ -193,11 +193,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 293.92 EUR | v -0.81% | 587.84 EUR | - -412.16 EUR (-41.2%) | - -414.16 EUR (-41.4%) | **6.75/10** (100%) | CONSERVER |
+| 296.52 EUR | ^ +1.02% | 593.04 EUR | - -406.96 EUR (-40.7%) | - -408.96 EUR (-40.9%) | **6.88/10** (100%) | CONSERVER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Apple's new CEO plans to send shocking memo to Apple employees | Apple Stock’s Upside May Be Limited as AI Agents Could Disrupt Business | Warren Buffett's Successor Has Billions Invested in These 2 Tech Stocks. Here's the Better Buy.
+> Apple Says Some AT&T iPhone 18 Pro Max Users Must Replace Phones After Service-Loss Bug | Jefferies Sees Signs of Softer iPhone 18 Demand in Resale Pricing | How Much Upside Is Left In Apple Stock?
 
 **Detail de la note :**
 
@@ -206,16 +206,16 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 2.7/10 | 24% |
 | Sante financiere | 9.6/10 | 19% |
 | Croissance | 8.1/10 | 16% |
-| Momentum | 7.8/10 | 21% |
+| Momentum | 8.4/10 | 21% |
 | Consensus | 6.9/10 | 15% |
 | Risque | 6.2/10 | 5% |
 
-**Fondamentaux :** PER 37.8 | PEG 2.7 | EV/EBITDA 28.8 | P/B 44.9 | Marge nette 27.6% | ROE 148.8% | Croiss. CA 16.4% | Beta 1.1 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 38.3 | PEG 2.6 | EV/EBITDA 29.1 | P/B 45.3 | Marge nette 27.6% | ROE 148.8% | Croiss. CA 16.4% | Beta 1.1 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:12 B:22 H:15 S:3 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M +1.6% | 3M +7.1% | 6M +27.8% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +2.7% | 3M +8.2% | 6M +29.1% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** historique insuffisant a 60 seances (3 observation(s) independante(s) dans la tranche 6 - 7,5) -- aucune esperance publiee.
 
-**Justification :** Note 6.8/10 (confiance 100%). Points forts : sante financiere 9.6, croissance 8.1. Points faibles : valorisation 2.7. Momentum HAUSSIER. Position : -414.16 EUR (-41.4%) apres frais.
+**Justification :** Note 6.9/10 (confiance 100%). Points forts : sante financiere 9.6, momentum 8.4. Points faibles : valorisation 2.7. Momentum HAUSSIER. Position : -408.96 EUR (-40.9%) apres frais.
 
 ---
 
@@ -223,29 +223,29 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 547.55 EUR | ^ +0.65% | 547.55 EUR | - -102.45 EUR (-15.8%) | - -104.45 EUR (-16.1%) | **6.65/10** (100%) | CONSERVER |
+| 562.99 EUR | ^ +2.95% | 562.99 EUR | - -87.01 EUR (-13.4%) | - -89.01 EUR (-13.7%) | **6.56/10** (100%) | CONSERVER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Applied Materials vs. AMD: Which AI Semiconductor Stock Is a Better Buy in 2026? | Advanced Micro Devices (AMD) Benefit from Surging CPU Demand in Autonomous AI | AMD Just Bought the Research That Defines What Its Chips Are For
+> AMD's $8.2B World Labs deal signals buy-over-build era for world models | Got $1,000? 2 Growth Stocks Building the Data Centers of the AI Infrastructure Supercycle. | If You Invest $10,000 in AMD Today, Here’s What It Could Be Worth by 2030
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Valorisation | 4.0/10 | 24% |
+| Valorisation | 3.6/10 | 24% |
 | Sante financiere | 7.3/10 | 19% |
 | Croissance | 10.0/10 | 16% |
 | Momentum | 6.8/10 | 21% |
 | Consensus | 7.8/10 | 15% |
 | Risque | 2.4/10 | 5% |
 
-**Fondamentaux :** PER 157.1 | PEG 0.6 | EV/EBITDA 104.2 | P/B 14.9 | Marge nette 15.6% | ROE 10.2% | Croiss. CA 50.1% | Beta 2.5 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 160.5 | PEG 0.6 | EV/EBITDA 107.3 | P/B 15.4 | Marge nette 15.6% | ROE 10.2% | Croiss. CA 50.1% | Beta 2.5 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:17 B:32 H:10 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M +34.0% | 3M +18.9% | 6M +179.6% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +38.7% | 3M +22.4% | 6M +187.9% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** historique insuffisant a 60 seances (3 observation(s) independante(s) dans la tranche 6 - 7,5) -- aucune esperance publiee.
 
-**Justification :** Note 6.7/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.8. Points faibles : valorisation 4.0, profil de risque 2.4. Momentum HAUSSIER. Position : -104.45 EUR (-16.1%) apres frais.
+**Justification :** Note 6.6/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.8. Points faibles : valorisation 3.6, profil de risque 2.4. Momentum HAUSSIER. Position : -89.01 EUR (-13.7%) apres frais.
 
 ---
 
@@ -253,11 +253,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 315.02 EUR | v -0.20% | 1575.08 EUR | + +575.08 EUR (+57.5%) | + +573.08 EUR (+57.3%) | **3.84/10** (100%) | ALLEGER |
+| 329.31 EUR | ^ +4.65% | 1646.54 EUR | + +646.54 EUR (+64.7%) | + +644.54 EUR (+64.5%) | **4.22/10** (100%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Dow Jones Futures: Stocks Rise Off Support As Yields Skid, Micron In Buy Area; Tesla, Jobs Report Due | Why the Tesla Roadster Event Was Delayed—and What It Means for the Stock | Tesla Delivery Results Are Coming. What to Expect.
+> Stock Market Today, Oct. 2: Tesla Rises on Q3 Delivery Beat | Nvidia, Tesla, Rivian, On Semi, Seagate, HPE, Nike, and More Stocks That Explain Today’s Market | Tesla Just Lined Up $30 Billion in Credit: What It Means for AI, Capex, and the Investment Case
 
 **Detail de la note :**
 
@@ -266,16 +266,16 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 1.0/10 | 24% |
 | Sante financiere | 3.6/10 | 19% |
 | Croissance | 6.4/10 | 16% |
-| Momentum | 3.4/10 | 21% |
+| Momentum | 5.2/10 | 21% |
 | Consensus | 6.3/10 | 15% |
 | Risque | 4.7/10 | 5% |
 
-**Fondamentaux :** PER 334.1 | PEG 4.2 | EV/EBITDA 127.5 | P/B 16.1 | Marge nette 3.7% | ROE 4.7% | Croiss. CA 25.5% | Beta 1.8 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 349.6 | PEG 4.2 | EV/EBITDA 133.6 | P/B 16.8 | Marge nette 3.7% | ROE 4.7% | Croiss. CA 25.5% | Beta 1.8 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:10 B:20 H:25 S:5 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -0.6% | 3M -10.0% | 6M +0.4% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M +3.8% | 3M -5.8% | 6M +5.0% -- NEUTRE *(source : EODHD)*
 **Fiabilite de la note :** historique insuffisant a 60 seances (2 observation(s) independante(s) dans la tranche 3 - 4,5) -- aucune esperance publiee.
 
-**Justification :** Note 3.8/10 (confiance 100%). Points faibles : momentum 3.4, valorisation 1.0. Momentum BAISSIER. Position : +573.08 EUR (+57.3%) apres frais.
+**Justification :** Note 4.2/10 (confiance 100%). Points faibles : sante financiere 3.6, valorisation 1.0. Momentum NEUTRE. Position : +644.54 EUR (+64.5%) apres frais.
 
 ---
 
@@ -283,11 +283,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| Meta | 645.44 | 5163.50 | +4203.50 (+437.9%) | +4201.50 (+437.7%) | 7.85/10 | 100% | RENFORCER |
-| Apple | 293.92 | 587.84 | -412.16 (-41.2%) | -414.16 (-41.4%) | 6.75/10 | 100% | CONSERVER |
-| Advanced micro devices | 547.55 | 547.55 | -102.45 (-15.8%) | -104.45 (-16.1%) | 6.65/10 | 100% | CONSERVER |
-| Tesla | 315.02 | 1575.08 | +575.08 (+57.5%) | +573.08 (+57.3%) | 3.84/10 | 100% | ALLEGER |
-| **TOTAL** | — | **7873.97** | **+4263.97 (+118.1%)** | **+4255.97 (+117.9%)** | — | — | — |
+| Meta | 646.77 | 5174.19 | +4214.19 (+439.0%) | +4212.19 (+438.8%) | 7.82/10 | 100% | RENFORCER |
+| Apple | 296.52 | 593.04 | -406.96 (-40.7%) | -408.96 (-40.9%) | 6.88/10 | 100% | CONSERVER |
+| Advanced micro devices | 562.99 | 562.99 | -87.01 (-13.4%) | -89.01 (-13.7%) | 6.56/10 | 100% | CONSERVER |
+| Tesla | 329.31 | 1646.54 | +646.54 (+64.7%) | +644.54 (+64.5%) | 4.22/10 | 100% | ALLEGER |
+| **TOTAL** | — | **7976.76** | **+4366.76 (+121.0%)** | **+4358.76 (+120.7%)** | — | — | — |
 
 ---
 
@@ -295,9 +295,9 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| Apple | Technologie | 293.79 EUR | v -0.81% | Apple's new CEO plans to send shocking memo to Apple employees / Apple Stock’s U… |
-| LVMH | Luxe | 379.50 EUR | v -2.69% | Major retailer adds over 100 new stores in major chain / LVMH: Share transaction… |
-| Amundi MSCI World | ETF | 700.42 EUR | v -0.24% | Aucune actualite disponible via RSS. |
+| Apple | Technologie | 296.43 EUR | ^ +1.02% | Apple Says Some AT&T iPhone 18 Pro Max Users Must Replace Phones After Service-L… |
+| LVMH | Luxe | 378.55 EUR | v -0.25% | Major retailer adds over 100 new stores in major chain / LVMH: Share transaction… |
+| Amundi MSCI World | ETF | 706.96 EUR | ^ +0.93% | Aucune actualite disponible via RSS. |
 
 ---
 
