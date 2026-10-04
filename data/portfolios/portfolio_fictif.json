@@ -1,14 +1,163 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-04T19:05:51.993280+00:00",
+  "saved_at": "2026-10-04T19:30:47.643983+00:00",
   "settings": {
-    "broker": "autre",
+    "broker": "xtb",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": []
+    "watchlist": [],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0,
+    "apprentissage": {
+      "horizon": 60,
+      "actif": true,
+      "mutualiser": true
+    }
   },
-  "lines": [],
-  "closed": []
+  "closed": [],
+  "lines": [
+    {
+      "name": "Newmont Corporation",
+      "ticker": "NEM",
+      "isin": "",
+      "quantity": 3.0,
+      "buy_price": 102.651948,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "air liquide",
+      "ticker": "AI.PA",
+      "isin": "",
+      "quantity": 10.0,
+      "buy_price": 170.16,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "sector": ""
+    },
+    {
+      "name": "Bloom Energy",
+      "ticker": "BE",
+      "isin": "",
+      "quantity": 5.0,
+      "buy_price": 256.851945,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "Ouster",
+      "ticker": "OUST",
+      "isin": "",
+      "quantity": 2.0,
+      "buy_price": 39.431637,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "Vale",
+      "ticker": "VALE",
+      "isin": "",
+      "quantity": 15.0,
+      "buy_price": 12.223008,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "Infineon Technologies AG",
+      "ticker": "IFX",
+      "isin": "",
+      "quantity": 2.0,
+      "buy_price": 64.55,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "sector": ""
+    },
+    {
+      "name": "Fluence Energy Inc",
+      "ticker": "FLNC",
+      "isin": "",
+      "quantity": 10.0,
+      "buy_price": 6.759963,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "Exosens",
+      "ticker": "EXENS.PA",
+      "isin": "",
+      "quantity": 5.0,
+      "buy_price": 59.2,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "sector": ""
+    },
+    {
+      "name": "First Solar",
+      "ticker": "FSLR",
+      "isin": "",
+      "quantity": 2.0,
+      "buy_price": 155.106063,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "liquidité",
+      "isin": "",
+      "asset_type": "action",
+      "asset_class": "cash",
+      "account": "",
+      "tags": [],
+      "value": 1.0,
+      "buy_value": 1000.0,
+      "sector": ""
+    }
+  ]
 }
