@@ -1,6 +1,6 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-04T19:30:47.643983+00:00",
+  "saved_at": "2026-10-04T19:35:30.592893+00:00",
   "settings": {
     "broker": "xtb",
     "indices": [
@@ -8,9 +8,10 @@
       "CAC 40"
     ],
     "watchlist": [],
-    "risque_pct": 1.0,
-    "poids_max_pct": 15.0,
-    "vol_cible_pct": 2.0,
+    "risque_pct": 5.0,
+    "poids_max_pct": 18.0,
+    "vol_cible_pct": 3.0,
+    "liquidites": 1000.0,
     "apprentissage": {
       "horizon": 60,
       "actif": true,
@@ -45,6 +46,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "percent",
+        "value": 5
+      },
       "sector": ""
     },
     {
@@ -58,6 +63,9 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "vq"
+      },
       "buy_currency": "USD",
       "buy_fx": 0.8883,
       "sector": ""
@@ -103,6 +111,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 64
+      },
       "sector": ""
     },
     {
