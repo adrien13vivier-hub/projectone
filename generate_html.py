@@ -1784,17 +1784,21 @@ def build_explications_html() -> str:
       <span class="badge sell">SORTIR</span>
       <span class="badge unknown">À EXAMINER</span>
     </div>
-    <p>« À examiner » (ou « données insuffisantes ») signifie que le système ne peut pas conclure faute d'informations — ce n'est ni bon ni mauvais signe, juste une note à prendre avec prudence.</p>
+    <p>L'avis découle directement de la note sur 10 : <strong>RENFORCER</strong> à 7,5 et plus, <strong>CONSERVER</strong> de 6 à 7,5, <strong>SURVEILLER</strong> de 4,5 à 6 (précisé « en moins-value » si la ligne est en perte après frais), <strong>ALLÉGER</strong> de 3 à 4,5, <strong>SORTIR</strong> sous 3.</p>
+    <p>« À examiner » : le système refuse de trancher, soit parce que la note repose sur moins de 40&nbsp;% des critères attendus, soit parce qu'elle ne repose que sur un ou deux critères — c'est toujours le cas d'un ETF ou d'une crypto, notés sur le seul momentum et le risque. « Données insuffisantes » : aucun critère n'a pu être calculé. Ni bon ni mauvais signe, juste une note à prendre avec prudence.</p>
   </article>
 
   <article class="expl-item" id="expl-note">
     <h3>La note et sa confiance</h3>
-    <p>Chaque titre reçoit une note sur 10, construite à partir de plusieurs composantes pondérées (valorisation, momentum, qualité du bilan, sentiment, contexte macro selon le type d'actif). La confiance indique la part de ces critères réellement calculés : un critère non disponible fait baisser la confiance, pas la note elle-même. « Sans objet » (un critère qui n'existe pas pour ce type d'actif) est normal et n'y touche pas.</p>
+    <p>La note décrit le <strong>titre</strong>, pas ta position : deux personnes qui détiennent la même action ont la même note, quel que soit leur prix d'achat. Elle combine six critères, chacun noté sur 10 puis pondéré :</p>
+    <p><strong>Valorisation 24&nbsp;%</strong> (PEG, PER, valeur d'entreprise/EBITDA, cours/actif net, cours/chiffre d'affaires — moins c'est cher, meilleure est la note) · <strong>Momentum 21&nbsp;%</strong> (évolution du cours sur 1, 3 et 6 mois) · <strong>Santé financière 19&nbsp;%</strong> (marges nette et opérationnelle, rentabilité des capitaux propres et des actifs) · <strong>Croissance 16&nbsp;%</strong> (chiffre d'affaires et bénéfices comparés à l'an dernier) · <strong>Consensus des analystes 15&nbsp;%</strong> · <strong>Risque 5&nbsp;%</strong> (bêta, position entre le plus bas et le plus haut de l'année, volatilité sur 6 mois).</p>
+    <p>Un critère introuvable n'est jamais remplacé par une valeur « neutre » : il est retiré et les poids des autres sont recalculés. La <strong>confiance</strong> est la part des poids attendus qui ont réellement été calculés — par exemple 85&nbsp;% quand seul le consensus manque. Un critère « sans objet » (fondamentaux et consensus pour un ETF ou une crypto) sort du calcul sans faire baisser la confiance.</p>
+    <p>N'entrent <strong>pas</strong> dans la note : ton prix de revient, l'actualité (affichée pour information seulement) et le contexte économique.</p>
   </article>
 
   <article class="expl-item" id="expl-momentum">
     <h3>Le momentum</h3>
-    <p>Trois rendements glissants (1 mois, 3 mois, 6 mois) résumés par une étiquette : <span class="badge buy-strong">↗ HAUSSIER</span>, <span class="badge sell">↘ BAISSIER</span>, ou neutre si aucune tendance nette ne se dégage.</p>
+    <p>Une note sur 10 qui part de 5, puis gagne ou perd des points selon l'évolution du cours sur 1, 3 et 6 mois. Une hausse trop rapide est pénalisée (−1 au-delà de +40&nbsp;% en 6 mois, −2 au-delà de +60&nbsp;%, −3 au-delà de +100&nbsp;%) : un titre qui s'envole est plus exposé à une correction. Après une chute de plus de 50&nbsp;% en 6 mois, un point est rendu. Étiquette : <span class="badge buy-strong">↗ HAUSSIER</span> à 6,5 et plus, <span class="badge sell">↘ BAISSIER</span> à 3,5 ou moins, neutre entre les deux.</p>
   </article>
 
   <article class="expl-item" id="expl-stops">
@@ -1809,17 +1813,17 @@ def build_explications_html() -> str:
 
   <article class="expl-item" id="expl-correlation">
     <h3>La corrélation</h3>
-    <p>Mesure si les lignes du portefeuille bougent ensemble ou indépendamment. Un indice proche de 0&nbsp;% signifie une vraie diversification ; proche de 100&nbsp;%, le portefeuille réagit comme un seul actif. Les « groupes » regroupent les lignes les plus corrélées entre elles pour repérer une concentration cachée derrière plusieurs tickers différents.</p>
+    <p>Mesure si les lignes du portefeuille bougent ensemble ou indépendamment. Un indice proche de 0&nbsp;% signifie une vraie diversification ; proche de 100&nbsp;%, le portefeuille réagit comme un seul actif. Les « groupes » regroupent les lignes les plus corrélées entre elles pour repérer une concentration cachée derrière plusieurs tickers différents. Calculée sur environ un an de variations quotidiennes.</p>
   </article>
 
   <article class="expl-item" id="expl-macro">
     <h3>Le contexte économique</h3>
-    <p>Les grands indices et les taux souverains à 10 ans (UST pour les États-Unis, OAT pour la France) donnent le climat du jour. Le taux long est le prix de l'argent sans risque : quand il monte, le rendement exigé sur les actions monte avec lui et pèse sur les valorisations.</p>
+    <p>Les grands indices et les taux souverains à 10 ans (UST pour les États-Unis, OAT pour la France) donnent le climat du jour. Le taux long est le prix de l'argent sans risque : quand il monte, le rendement exigé sur les actions monte avec lui et pèse sur les valorisations. Ces données n'entrent pas dans la note des titres : elles changent la barre à franchir pour toutes les actions à la fois.</p>
   </article>
 
   <article class="expl-item" id="expl-fiabilite">
     <h3>La fiabilité des notes</h3>
-    <p>Un suivi indépendant vérifie, avec le recul, si les notes élevées ont vraiment précédé une surperformance. Le niveau de confiance de cette calibration (élevée, moyenne, faible, insuffisante) dépend du nombre d'observations closes disponibles — plus il y en a, plus le chiffre est fiable. Rien n'est conclu tant que l'échantillon est trop mince.</p>
+    <p>Chaque note est enregistrée le jour où elle est donnée. 20, 60, 120 et 252 séances plus tard, on mesure si le titre a fait mieux ou moins bien que son secteur (ou que le marché, à défaut). On voit ainsi, avec le recul, si les notes élevées ont vraiment précédé une surperformance. Le niveau de confiance (élevée, moyenne, faible, insuffisante) dépend du nombre d'observations indépendantes : rien n'est conclu tant que l'échantillon est trop mince. Ce suivi ne modifie jamais la note.</p>
   </article>
 
   <article class="expl-item" id="expl-avertissements">
@@ -2135,6 +2139,7 @@ tbody tr:hover td { background:var(--surface2); }
 .expl-item { border:1px solid var(--border); border-radius:12px; padding:16px; background:var(--surface2); }
 .expl-item h3 { font-size:14.5px; margin-bottom:7px; }
 .expl-item p { color:var(--muted); font-size:13px; line-height:1.65; }
+.expl-item p + p { margin-top:8px; }
 .expl-item .badges { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
 
 /* ── details generiques ("voir l'explication") ────────────────── */
