@@ -1,6 +1,6 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-04T19:37:54.116813+00:00",
+  "saved_at": "2026-10-04T19:38:05.338744+00:00",
   "settings": {
     "broker": "xtb",
     "indices": [
@@ -158,6 +158,17 @@
       "tags": [],
       "buy_currency": "USD",
       "buy_fx": 0.8883,
+      "sector": ""
+    },
+    {
+      "name": "liquidité",
+      "isin": "",
+      "asset_type": "action",
+      "asset_class": "cash",
+      "account": "",
+      "tags": [],
+      "value": 1.0,
+      "buy_value": 1000.0,
       "sector": ""
     }
   ]
