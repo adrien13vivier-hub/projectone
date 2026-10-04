@@ -1,0 +1,14 @@
+{
+  "username": "pierre-palmade",
+  "saved_at": "2026-10-04T10:18:29.869528+00:00",
+  "settings": {
+    "broker": "autre",
+    "indices": [
+      "S&P 500",
+      "CAC 40"
+    ],
+    "watchlist": []
+  },
+  "lines": [],
+  "closed": []
+}
