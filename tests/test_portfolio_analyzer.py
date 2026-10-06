@@ -461,3 +461,34 @@ def test_catalogue_courtiers_revolut_frais_fixes():
     _grille(cat["revolut"]["fees"])
     assert pa.calc_fee(5000, "us") == 1.0
     assert pa.calc_fee(50, "euronext") == 1.0
+
+
+# -- Quotas et debit par minute (05/10/2026) ------------------------------------
+
+def test_cout_eodhd_selon_endpoint():
+    assert pa._cout_appel("eodhd", "https://eodhd.com/api/eod/AAPL.US") == 1
+    assert pa._cout_appel("eodhd", "https://eodhd.com/api/news") == 5
+    assert pa._cout_appel("eodhd", "https://eodhd.com/api/fundamentals/AI.PA") == 10
+    assert pa._cout_appel("finnhub", "https://finnhub.io/api/v1/news") == 1
+
+
+def test_debit_par_minute_fait_attendre(monkeypatch):
+    horloge = {"t": 1000.0}
+    attentes = []
+    monkeypatch.setattr(pa.time, "monotonic", lambda: horloge["t"])
+    def dormir(d):
+        attentes.append(d); horloge["t"] += d
+    monkeypatch.setattr(pa.time, "sleep", dormir)
+    pa._debit_hist["twelvedata"].clear()
+    pa._attendre_debit("twelvedata", 8)          # lot de 8 : passe
+    assert attentes == []
+    pa._attendre_debit("twelvedata", 3)          # depasserait 8/min : attend ~60 s
+    assert len(attentes) == 1 and 59 < attentes[0] <= 61
+    pa._debit_hist["twelvedata"].clear()
+
+
+def test_quota_compte_le_cout_reel():
+    sauvegarde = dict(pa._QUOTA["eodhd"])
+    pa._QUOTA["eodhd"].update(used=96, limit=100)
+    assert pa._quota_ok("eodhd", 1) and not pa._quota_ok("eodhd", 5)
+    pa._QUOTA["eodhd"].update(sauvegarde)
