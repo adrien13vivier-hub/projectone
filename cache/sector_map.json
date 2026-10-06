@@ -17,10 +17,22 @@
   "sector": "Financial Services",
   "src": "yahoo"
  },
+ "AI.PA": {
+  "fetched": "2026-10-05",
+  "industry": "Specialty Chemicals",
+  "sector": "Basic Materials",
+  "src": "yahoo"
+ },
  "AMD.US": {
   "fetched": "2026-09-29",
   "industry": "Semiconductors",
   "sector": "Technology",
+  "src": "yahoo"
+ },
+ "BE.US": {
+  "fetched": "2026-10-05",
+  "industry": "Electrical Equipment & Parts",
+  "sector": "Industrials",
   "src": "yahoo"
  },
  "CRWV.US": {
@@ -29,10 +41,40 @@
   "sector": "Technology",
   "src": "yahoo"
  },
+ "EXENS.PA": {
+  "fetched": "2026-10-05",
+  "industry": "Aerospace & Defense",
+  "sector": "Industrials",
+  "src": "yahoo"
+ },
+ "FLNC.US": {
+  "fetched": "2026-10-05",
+  "industry": "Utilities - Renewable",
+  "sector": "Utilities",
+  "src": "yahoo"
+ },
+ "FSLR.US": {
+  "fetched": "2026-10-05",
+  "industry": "Solar",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
  "META.US": {
   "fetched": "2026-09-29",
   "industry": "Internet Content & Information",
   "sector": "Communication Services",
+  "src": "yahoo"
+ },
+ "NEM.US": {
+  "fetched": "2026-10-05",
+  "industry": "Gold",
+  "sector": "Basic Materials",
+  "src": "yahoo"
+ },
+ "OUST.US": {
+  "fetched": "2026-10-05",
+  "industry": "Electronic Components",
+  "sector": "Technology",
   "src": "yahoo"
  },
  "SM.US": {
@@ -45,6 +87,12 @@
   "fetched": "2026-09-29",
   "industry": "Auto Manufacturers",
   "sector": "Consumer Cyclical",
+  "src": "yahoo"
+ },
+ "VALE.US": {
+  "fetched": "2026-10-05",
+  "industry": "Other Industrial Metals & Mining",
+  "sector": "Basic Materials",
   "src": "yahoo"
  }
 }

@@ -4,30 +4,30 @@
   "invalid": 0,
   "legacy": 381,
   "matured": 501,
-  "n_tickers": 13,
+  "n_tickers": 21,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 437,
+    "en_attente": 447,
     "invalides": 0
    },
    "20": {
     "closes": 315,
-    "en_attente": 122,
+    "en_attente": 132,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 437,
+    "en_attente": 447,
     "invalides": 0
    },
    "60": {
     "closes": 186,
-    "en_attente": 251,
+    "en_attente": 261,
     "invalides": 0
    }
   },
-  "snapshots": 437
+  "snapshots": 447
  },
  "generated_for": "2026-10-05",
  "horizon": 60,
@@ -1151,8 +1151,8 @@
  },
  "maturation": {
   "appels": 10,
-  "candidats": 26,
-  "clotures": 6,
+  "candidats": 20,
+  "clotures": 0,
   "en_attente": 20,
   "invalides": 0,
   "symboles_en_echec": []
@@ -1162,36 +1162,70 @@
   {
    "horizons": {
     "20": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "insuffisante",
      "estimate": null,
      "kind": "sector",
      "legacy_included": true,
-     "n_indep": 1,
+     "n_indep": 7,
      "p_outperf": null,
-     "reason": "echantillon insuffisant (1 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "ACHAT FORT",
+     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
      "scope": "global"
     },
     "60": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "insuffisante",
      "estimate": null,
      "kind": "market",
      "legacy_included": true,
-     "n_indep": 1,
+     "n_indep": 3,
      "p_outperf": null,
-     "reason": "echantillon insuffisant (1 observation(s) independante(s) dans cette tranche, 8 requises)",
-     "reco": "ACHAT FORT",
+     "reason": "echantillon insuffisant (3 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
      "scope": "global"
     }
    },
-   "name": "SM",
-   "score": 8.39,
-   "sector": "Energy",
-   "ticker": "SM.US"
+   "name": "Newmont Corporation",
+   "score": 7.08,
+   "sector": "Materials",
+   "ticker": "NEM.US"
+  },
+  {
+   "horizons": {
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "sector",
+     "legacy_included": true,
+     "n_indep": 7,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
+     "scope": "global"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "market",
+     "legacy_included": true,
+     "n_indep": 3,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (3 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "ACHAT MODERE",
+     "scope": "global"
+    }
+   },
+   "name": "Bloom Energy",
+   "score": 6.46,
+   "sector": "Industrials",
+   "ticker": "BE.US"
   },
   {
    "horizons": {
@@ -1222,10 +1256,10 @@
      "scope": "global"
     }
    },
-   "name": "Credit Agricole SA",
-   "score": 4.99,
-   "sector": "Financials",
-   "ticker": "ACA.PA"
+   "name": "Vale",
+   "score": 5.84,
+   "sector": "Materials",
+   "ticker": "VALE.US"
   },
   {
    "horizons": {
@@ -1256,10 +1290,112 @@
      "scope": "global"
     }
    },
-   "name": "CoreWeave",
-   "score": 4.6,
+   "name": "First Solar",
+   "score": 5.84,
    "sector": "Information Technology",
-   "ticker": "CRWV.US"
+   "ticker": "FSLR.US"
+  },
+  {
+   "horizons": {
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "sector",
+     "legacy_included": true,
+     "n_indep": 7,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "GARDER",
+     "scope": "global"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "market",
+     "legacy_included": true,
+     "n_indep": 5,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (5 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "GARDER",
+     "scope": "global"
+    }
+   },
+   "name": "air liquide",
+   "score": 5.22,
+   "sector": "Materials",
+   "ticker": "AI.PA"
+  },
+  {
+   "horizons": {
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "sector",
+     "legacy_included": true,
+     "n_indep": 7,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "GARDER",
+     "scope": "global"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "market",
+     "legacy_included": true,
+     "n_indep": 5,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (5 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "GARDER",
+     "scope": "global"
+    }
+   },
+   "name": "Exosens",
+   "score": 5.09,
+   "sector": "Industrials",
+   "ticker": "EXENS.PA"
+  },
+  {
+   "horizons": {
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "sector",
+     "legacy_included": true,
+     "n_indep": 7,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (7 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "GARDER",
+     "scope": "global"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "insuffisante",
+     "estimate": null,
+     "kind": "market",
+     "legacy_included": true,
+     "n_indep": 5,
+     "p_outperf": null,
+     "reason": "echantillon insuffisant (5 observation(s) independante(s) dans cette tranche, 8 requises)",
+     "reco": "GARDER",
+     "scope": "global"
+    }
+   },
+   "name": "Ouster",
+   "score": 4.66,
+   "sector": "Information Technology",
+   "ticker": "OUST.US"
   },
   {
    "horizons": {
@@ -1290,13 +1426,13 @@
      "scope": "global"
     }
    },
-   "name": "Abionyx Pharma",
-   "score": 1.31,
-   "sector": "Health Care",
-   "ticker": "ABNX.PA"
+   "name": "Fluence Energy Inc",
+   "score": 2.97,
+   "sector": "Utilities",
+   "ticker": "FLNC.US"
   }
  ],
  "score_version": "v14-5fd53e",
- "user": "adrien",
+ "user": "fictif",
  "version": "1.1"
 }

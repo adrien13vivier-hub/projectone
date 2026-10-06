@@ -1,0 +1,48 @@
+{
+  "lignes": {
+    "AI.PA": {
+      "arme": true,
+      "cfg": "percent:5.0:",
+      "derniere_alerte": null,
+      "hwm": 180.3,
+      "maj": "2026-10-05",
+      "niveau": 161.652,
+      "statut": "ok"
+    },
+    "BE.US": {
+      "arme": true,
+      "cfg": "vq:None::vol1a",
+      "derniere_alerte": null,
+      "hwm": 308.0011,
+      "maj": "2026-10-05",
+      "niveau": 184.8007,
+      "statut": "ok"
+    },
+    "EXENS.PA": {
+      "arme": true,
+      "hwm": null
+    },
+    "FLNC.US": {
+      "arme": true,
+      "hwm": null
+    },
+    "FSLR.US": {
+      "arme": true,
+      "hwm": null
+    },
+    "NEM.US": {
+      "arme": true,
+      "hwm": null
+    },
+    "OUST.US": {
+      "arme": true,
+      "hwm": null
+    },
+    "VALE.US": {
+      "arme": true,
+      "hwm": null
+    }
+  },
+  "maj": "2026-10-06 01:25",
+  "schema": 1
+}
