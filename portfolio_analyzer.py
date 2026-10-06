@@ -261,26 +261,85 @@ HISTORY_COLS = ["date", "time", "ticker", "name", "price_eur", "cost_eur",
                 "pnl_net_pct", "score", "confiance", "rec"]
 
 # --- QUOTAS JOURNALIERS PAR CLE ----------------------------------------------
+# REVU le 05/10/2026, d'apres les VRAIES limites des offres gratuites :
+#   AlphaVantage : 25 appels / jour            -> plafond 20 (marge)
+#   TwelveData   : 800 credits / jour, 8 / min -> plafond 780
+#   Finnhub      : AUCUNE limite par jour, 60 appels / min -> plafond 3000
+#   EODHD        : 20 appels / jour gratuits, puis le PAQUET d'appels achete
+#                  (100 000 appels qui n'expirent jamais, consommes une fois
+#                  les 20 gratuits epuises). Le plafond EODHD n'est donc plus
+#                  une limite du fournisseur mais un GARDE-FOU de budget :
+#                  combien d'appels du paquet on accepte de bruler par jour au
+#                  maximum. Reglable sans toucher au code via la variable
+#                  d'environnement EODHD_PLAFOND_JOUR (secret/variable GitHub).
+# Les limites PAR MINUTE sont respectees par _attendre_debit() ci-dessous : le
+# programme fait une pause plutot que de se faire refuser des appels.
+def _plafond_env(nom: str, defaut: int) -> int:
+    try:
+        v = int(str(os.getenv(nom, "")).strip() or defaut)
+        return v if v > 0 else defaut
+    except ValueError:
+        return defaut
+
+
 _QUOTA = {
-    "alphavantage": {"used": 0, "limit": 20},
-    "twelvedata":   {"used": 0, "limit": 60},
-    "eodhd":        {"used": 0, "limit": 80},
-    "finnhub":      {"used": 0, "limit": 55},
+    "alphavantage": {"used": 0, "limit": _plafond_env("ALPHAVANTAGE_PLAFOND_JOUR", 20)},
+    "twelvedata":   {"used": 0, "limit": _plafond_env("TWELVEDATA_PLAFOND_JOUR", 780)},
+    "eodhd":        {"used": 0, "limit": _plafond_env("EODHD_PLAFOND_JOUR", 300)},
+    "finnhub":      {"used": 0, "limit": _plafond_env("FINNHUB_PLAFOND_JOUR", 3000)},
 }
 
 _quota_lock = threading.Lock()
 
+# Cout reel d'une requete EODHD, en appels decomptes (grille officielle) :
+# cours/historique = 1, actualites = 5, fondamentaux = 10. Le compteur
+# comptait 1 partout : le budget reel etait sous-estime.
+def _cout_appel(key: str, url: str) -> int:
+    if key == "eodhd":
+        if "/fundamentals/" in url:
+            return 10
+        if "/news" in url:
+            return 5
+    return 1
 
-def _quota_ok(key: str) -> bool:
+
+def _quota_ok(key: str, cout: int = 1) -> bool:
     with _quota_lock:
         q = _QUOTA.get(key)
-        return q["used"] < q["limit"] if q else True
+        return (q["used"] + cout) <= q["limit"] if q else True
 
 
-def _quota_inc(key: str):
+def _quota_inc(key: str, cout: int = 1):
     with _quota_lock:
         if key in _QUOTA:
-            _QUOTA[key]["used"] += 1
+            _QUOTA[key]["used"] += cout
+
+
+# --- DEBIT PAR MINUTE (05/10/2026) --------------------------------------------
+# Fenetre glissante de 60 s par fournisseur. Quand la limite est atteinte, le
+# fil qui appelle ATTEND que de la place se libere au lieu d'envoyer une
+# requete qui serait refusee (et compterait quand meme). Seuils legerement
+# sous les limites officielles, par prudence.
+_DEBIT_MINUTE = {"twelvedata": 8, "finnhub": 55, "alphavantage": 5, "eodhd": 900}
+_debit_hist  = {k: [] for k in _DEBIT_MINUTE}
+_debit_locks = {k: threading.Lock() for k in _DEBIT_MINUTE}
+
+
+def _attendre_debit(key: str, cout: int = 1):
+    maxi = _DEBIT_MINUTE.get(key)
+    if not maxi:
+        return
+    cout = min(max(int(cout), 1), maxi)
+    with _debit_locks[key]:
+        hist = _debit_hist[key]
+        while True:
+            maintenant = time.monotonic()
+            while hist and maintenant - hist[0][0] >= 60:
+                hist.pop(0)
+            if sum(c for _, c in hist) + cout <= maxi:
+                hist.append((maintenant, cout))
+                return
+            time.sleep(max(60 - (maintenant - hist[0][0]) + 0.05, 0.05))
 
 
 def _quota_status() -> dict:
@@ -494,10 +553,13 @@ def _cache_date(session_cache: dict, cle: str) -> str:
 # COUCHE HTTP  (quota-aware)
 # =============================================================================
 
-def _get(url: str, params: dict, api_key_name: str, timeout: int = 12) -> tuple:
-    if not _quota_ok(api_key_name):
+def _get(url: str, params: dict, api_key_name: str, timeout: int = 12,
+         cout: int = None) -> tuple:
+    cout = cout or _cout_appel(api_key_name, url)
+    if not _quota_ok(api_key_name, cout):
         return None, "QUOTA_REACHED"
-    _quota_inc(api_key_name)
+    _attendre_debit(api_key_name, cout)
+    _quota_inc(api_key_name, cout)
     try:
         r = requests.get(url, params=params, timeout=timeout)
         if r.status_code == 200:
@@ -750,20 +812,18 @@ def td_fetch_batch(tickers: list) -> dict:
     if not to_fetch:
         return {t: _td_cache.get(t) for t in tickers if t}
 
-    elapsed = time.time() - _td_last_call
-    if elapsed < 3 and _td_last_call > 0:
-        time.sleep(3 - elapsed)
-
+    # Lots de 8 symboles = la limite gratuite de 8 credits par minute ; la
+    # pause entre deux lots est geree par _attendre_debit (05/10/2026). Avant,
+    # une pause fixe de 3 s laissait partir jusqu'a 18 credits par minute des
+    # 9 valeurs US, et les lots suivants etaient refuses.
     results = {}
-    for i in range(0, len(to_fetch), 6):
-        batch = to_fetch[i:i+6]
+    for i in range(0, len(to_fetch), 8):
+        batch = to_fetch[i:i+8]
+        # TwelveData facture un credit PAR SYMBOLE, pas par requete.
         data, err = _get(f"{TD_BASE}/price",
                          {"symbol": ",".join(batch), "apikey": TWELVEDATA_KEY},
-                         "twelvedata")
+                         "twelvedata", cout=len(batch))
         _td_last_call = time.time()
-        # TwelveData facture un credit PAR SYMBOLE, pas par requete.
-        for _ in range(len(batch) - 1):
-            _quota_inc("twelvedata")
         # CORRECTION (28/09/2026) : pour UN seul symbole, TwelveData repond a
         # plat ({"price": "..."}) et non {"AAPL": {"price": ...}} -- le cours
         # etait alors perdu et remplace par un appel EODHD.
@@ -790,8 +850,6 @@ def td_fetch_batch(tickers: list) -> dict:
                 results[ticker]    = None
                 _td_errors[ticker] = err or "Reponse invalide"
 
-        if i + 6 < len(to_fetch):
-            time.sleep(3)
 
     for t in tickers:
         if t and t not in results:
