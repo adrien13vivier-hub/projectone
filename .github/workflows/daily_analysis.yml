@@ -225,6 +225,10 @@ jobs:
           EODHD_API_KEY:        ${{ secrets.EODHD_API_KEY }}
           TWELVEDATA_API_KEY:   ${{ secrets.TWELVEDATA_API_KEY }}
           ALPHAVANTAGE_API_KEY: ${{ secrets.ALPHAVANTAGE_API_KEY }}
+          # Budget EODHD par analyse (05/10/2026) : nombre maximum d'appels du
+          # paquet achete que l'analyse peut consommer par jour. Vide = 300.
+          # A regler dans Settings > Secrets and variables > Actions > Variables.
+          EODHD_PLAFOND_JOUR:   ${{ vars.EODHD_PLAFOND_JOUR }}
           # Alerte de franchissement de stop. Entierement optionnel : sans ces
           # secrets, l'alerte reste visible dans le rapport et rien n'est envoye.
           MAIL_SERVER:          ${{ secrets.MAIL_SERVER }}
