@@ -835,18 +835,28 @@ def compute_outcome(snap: dict, horizon: int, stock, sector_series, market_serie
     }
 
 
-def mature(ldir: str, horizons, fetch, today) -> dict:
+def mature(ldir: str, horizons, fetch, today, ignorer=None) -> dict:
     """Cloture toutes les observations arrivees a echeance. Retourne un bilan.
 
     `fetch` = CachedFetcher (ou toute fonction (symbole, debut, fin) -> serie).
     Un seul appel par symbole, sur la plage necessaire, quel que soit le
     nombre d'observations a cloturer : cout reseau independant de l'historique.
+
+    `ignorer` (07/10/2026) : symboles a laisser de cote CE jour-la. Sert a
+    l'univers d'apprentissage : ses titres ne sont charges que le jour ou ils
+    sont notes (une fois par semaine), leurs echeances sont closes ce jour-la.
+    Une observation ignoree n'est jamais perdue : elle reste ouverte et sera
+    close au passage suivant, avec exactement le meme resultat (le calcul
+    lit les seances t et t + H, pas la date du jour).
     """
     today = _d(today)
     store = load_store(ldir)
     faits = {(o["id"], o["horizon"]) for o in store["outcomes"]}
+    ignorer = set(ignorer or ())
     ouverts = []
     for s in store["snapshots"]:
+        if ignorer and s.get("symbol") in ignorer:
+            continue
         for h in horizons:
             if (s["id"], h) in faits:
                 continue
@@ -1535,9 +1545,11 @@ def render_markdown(summary: dict) -> list:
     ]
     if summary.get("mutualise"):
         out += [f"**Apprentissage mutualise** : calibre sur {c.get('n_tickers', '?')} "
-                f"titre(s) suivis par l'ensemble des profils participants. Seuls le "
-                f"titre, la date, la note et le resultat sont partages -- jamais "
-                f"l'identite, les quantites ni les prix de revient.", ""]
+                f"titre(s) : ceux des profils participants et un univers de reference "
+                f"d'environ 220 actions (US et zone euro, 11 secteurs) note chaque "
+                f"semaine. Seuls le titre, la date, la note et le resultat sont "
+                f"partages -- jamais l'identite, les quantites ni les prix de "
+                f"revient.", ""]
     out += [
         f"**Snapshots : {c['snapshots']}** (dont {c['legacy']} herites de "
         f"history.csv) | **Clotures : {c['matured']}** | **Invalides : {c['invalid']}** "
