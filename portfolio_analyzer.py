@@ -239,7 +239,8 @@ def _migrate_legacy_files():
 
 # --- FENETRE HISTORIQUE (1 mois) --------------------------------------------
 HISTORY_DAYS      = 180     # profondeur de collecte, en cotations JOURNALIERES
-CHART_WINDOW_DAYS = 30      # fenetre reellement affichee sur le graphique (1 mois)
+# CHART_WINDOW_DAYS (30 jours glissants) a ete retire le 07/10/2026 : le
+# graphique base 100 part desormais de la date d'achat, sur VOL_HISTORY_DAYS.
 # AJOUT (28/09/2026) : profondeur SEPAREE pour la volatilite et le VQ.
 # Avant, la volatilite (donc le VQ et le dimensionnement) reposait sur les
 # ~125 seances de HISTORY_DAYS : un semestre agite ou trop calme suffisait a
@@ -2522,179 +2523,342 @@ def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
 
 
 # =============================================================================
-# GRAPHIQUE COMBINE  — FIX v6.3
+# GRAPHIQUE COMBINE -- base 100 = prix de revient (07/10/2026)
 # =============================================================================
+#
+# AVANT : chaque courbe etait ramenee a 100 au PREMIER JOUR d'une fenetre
+# glissante de 30 jours. Le point de reference changeait donc chaque soir : la
+# meme position pouvait afficher +4 % un jour et -2 % le lendemain sans avoir
+# bouge, simplement parce que la reference avait glisse d'une seance.
+#
+# MAINTENANT : la reference est FIXE, et c'est celle qui compte pour
+# l'investisseur -- son prix de revient. 100 = ce que la position a coute ;
+# 112 = +12 % de plus-value latente, le meme chiffre que dans le tableau des
+# positions. Chaque courbe demarre a la DATE D'ACHAT (saisie dans
+# l'interface, ou lue dans le detail des achats ; a defaut, le premier jour
+# ou la ligne apparait dans le suivi). Une courbe « Portefeuille » agrege le
+# tout en rendement pondere dans le temps (voir donnees_base100).
+#
+# Profondeur : jusqu'a un an, la serie deja telechargee pour la volatilite
+# (VOL_HISTORY_DAYS) -- aucun appel API de plus.
 
-_CHART_COLORS = [
-    "#2563eb", "#16a34a", "#dc2626", "#d97706",
-    "#7c3aed", "#0891b2", "#db2777", "#65a30d",
+CHART_COULEURS = [
+    "#2563eb", "#16a34a", "#dc2626", "#d97706", "#7c3aed", "#0891b2",
+    "#db2777", "#65a30d", "#ea580c", "#4f46e5", "#0d9488", "#a16207",
 ]
+CHART_COULEUR_PORTEFEUILLE = "#111827"
+# Ligne absente de history.csv pendant au moins ce nombre de RUNS (soirs ou
+# le programme a tourne pour d'autres lignes) = revente puis rachat : le suivi
+# repart du rachat. Une absence plus courte (cours introuvable un soir) ne
+# compte pas, ni une periode ou le programme n'a pas tourne du tout.
+SUIVI_INTERRUPTION_RUNS = 5
 
 
-def generate_combined_chart(assets_history: dict, chart_path: str) -> bool:
+def _date_iso(valeur):
+    """'2026-03-14' -> date ; vide, mal forme ou dans le futur -> None."""
     try:
-        import os
+        d = date.fromisoformat(str(valeur or "").strip()[:10])
+    except ValueError:
+        return None
+    return d if d <= date.today() + timedelta(days=1) else None
+
+
+def dates_debut_suivi(chemin: str = None) -> dict:
+    """{ticker_eod: date} : debut de la detention EN COURS, d'apres history.csv.
+
+    Sert de date d'achat par defaut aux lignes pour lesquelles aucune date
+    n'a ete saisie : c'est le premier soir ou le programme les a vues.
+    """
+    vus = {}
+    try:
+        with open(chemin or HISTORY_PATH, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                d = _date_iso(row.get("date"))
+                t = (row.get("ticker") or "").strip()
+                if d and t:
+                    vus.setdefault(t, set()).add(d)
+    except (OSError, csv.Error, UnicodeDecodeError):
+        return {}
+    runs = sorted(set().union(*vus.values())) if vus else []
+    rang = {d: i for i, d in enumerate(runs)}
+    debuts = {}
+    for t, ds in vus.items():
+        ds = sorted(ds)
+        debut = ds[0]
+        for avant, apres in zip(ds, ds[1:]):
+            if rang[apres] - rang[avant] - 1 >= SUIVI_INTERRUPTION_RUNS:
+                debut = apres
+        debuts[t] = debut
+    return debuts
+
+
+def calendrier_detention(asset: dict, debut_defaut=None) -> list:
+    """[(date ou None, quantite)] : ce qui a ete achete, et quand.
+
+    Ordre de priorite pour la date de chaque achat : la date du detail des
+    achats (renforts), sinon la date d'achat saisie sur la ligne, sinon
+    `debut_defaut` (debut du suivi). None = date inconnue : la ligne est
+    alors consideree comme detenue depuis le debut du graphique.
+
+    Les quantites sont ramenees a la quantite detenue aujourd'hui -- une
+    vente partielle reduit chaque achat au prorata, exactement comme pour le
+    PRU -- donc leur somme vaut toujours `qty`.
+    """
+    try:
+        qty = float(asset.get("qty") or 0)
+    except (TypeError, ValueError):
+        return []
+    if qty <= 0:
+        return []
+    defaut = _date_iso(asset.get("achat_date")) or debut_defaut
+    achats = []
+    for a in asset.get("achats") or []:
+        try:
+            q = float(a.get("qte") or 0)
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if q > 0:
+            achats.append((_date_iso(a.get("date")) or defaut, q))
+    total = sum(q for _, q in achats)
+    if not achats or total <= 0:
+        return [(defaut, qty)]
+    f = qty / total
+    return sorted(((d, q * f) for d, q in achats),
+                  key=lambda x: (x[0] is not None, x[0] or date.min))
+
+
+def donnees_base100(positions: list, seance=None,
+                    profondeur_jours: int = VOL_HISTORY_DAYS):
+    """Courbes base 100 = prix de revient, et courbe du portefeuille.
+
+    positions : [{"nom", "dates", "closes", "pru", "cours", "calendrier"}]
+      - dates/closes : serie journaliere EN EUROS (celle de la volatilite)
+      - pru          : prix de revient unitaire en euros
+      - cours        : cours du jour (ajoute en bout de serie s'il manque,
+                       pour que le dernier point colle au tableau du rapport)
+      - calendrier   : sortie de calendrier_detention()
+
+    Renvoie None si rien n'est tracable, sinon
+      {"dates", "lignes": {nom: [valeur ou None]}, "portefeuille": [...],
+       "debut", "tronque"}.
+    Une valeur de ligne ne depend QUE du cours du jour et du prix de revient :
+    elle ne change pas d'un soir a l'autre quand la fenetre avance. La courbe
+    du portefeuille est un rendement pondere dans le temps, base 100 au
+    premier jour de detention.
+    """
+    seance = _date_iso(seance) or date.today()
+    plancher = seance - timedelta(days=profondeur_jours)
+
+    series = []
+    for p in positions:
+        try:
+            pru = float(p.get("pru") or 0)
+        except (TypeError, ValueError):
+            continue
+        cal = p.get("calendrier") or []
+        if pru <= 0 or not cal:
+            continue
+        pts = {}
+        for d, c in zip(p.get("dates") or [], p.get("closes") or []):
+            dd = _date_iso(d)
+            try:
+                v = float(c)
+            except (TypeError, ValueError):
+                continue
+            if dd and plancher <= dd <= seance and v > 0:
+                pts[dd] = v
+        try:
+            cours = float(p.get("cours") or 0)
+        except (TypeError, ValueError):
+            cours = 0
+        if pts and cours > 0 and seance > max(pts) and seance.weekday() < 5:
+            pts[seance] = cours
+        if len(pts) < 2:
+            continue
+        dates_achat = [d for d, _ in cal if d is not None]
+        series.append({
+            "nom": p.get("nom") or "?", "pru": pru, "pts": pts, "cal": cal,
+            "achat": min(dates_achat) if len(dates_achat) == len(cal) else None,
+            "achat_connu": min(dates_achat) if dates_achat else None,
+        })
+    if not series:
+        return None
+
+    premiere = min(min(s["pts"]) for s in series)
+    if all(s["achat"] is not None for s in series):
+        debut = max(premiere, min(s["achat"] for s in series))
+    else:
+        debut = premiere
+    axe = sorted({d for s in series for d in s["pts"] if d >= debut})
+    if len(axe) < 2:
+        return None
+    debut = axe[0]
+
+    lignes = {}
+    for s in series:
+        # Amorcage sur le dernier cours connu AVANT le debut, puis report du
+        # dernier cours les jours ou la place est fermee.
+        avant = [d for d in s["pts"] if d < debut]
+        dernier = s["pts"][max(avant)] if avant else None
+        rempli = []
+        for d in axe:
+            if d in s["pts"]:
+                dernier = s["pts"][d]
+            rempli.append(dernier)
+        s["rempli"] = rempli
+        depart = s["achat"] or debut
+        nom, k = s["nom"], 2
+        while nom in lignes:              # meme titre sur deux comptes
+            nom = f"{s['nom']} ({k})"
+            k += 1
+        lignes[nom] = [round(v / s["pru"] * 100, 2) if (v is not None and d >= depart)
+                       else None for d, v in zip(axe, rempli)]
+
+    # COURBE PORTEFEUILLE : rendement pondere dans le temps (TWR), la mesure
+    # des gerants. Chaque jour, on applique la variation des titres detenus
+    # LA VEILLE, ponderes par leur valeur. Un achat ou un renfort ne fait donc
+    # pas sauter la courbe -- avec un simple rapport valeur / cout, entrer sur
+    # une nouvelle ligne la tirait mecaniquement vers 100, sans qu'aucun cours
+    # n'ait bouge. Base 100 au premier jour ou quelque chose est detenu.
+    def _qte(s, d):
+        return sum(q for da, q in s["cal"] if da is None or da <= d)
+
+    portefeuille, indice = [], None
+    for i, d in enumerate(axe):
+        if indice is None:
+            if any(_qte(s, d) > 0 and s["rempli"][i] is not None for s in series):
+                indice = 100.0
+            portefeuille.append(indice)
+            continue
+        veille = axe[i - 1]
+        gain = base = 0.0
+        for s in series:
+            p0, p1 = s["rempli"][i - 1], s["rempli"][i]
+            q = _qte(s, veille)
+            if p0 is None or p1 is None or q <= 0:
+                continue
+            gain += q * (p1 - p0)
+            base += q * p0
+        if base > 0:
+            indice *= 1 + gain / base
+        portefeuille.append(round(indice, 2))
+
+    tronque = any(s["achat_connu"] is not None and s["achat_connu"] < debut
+                  for s in series)
+    return {"dates": axe, "lignes": lignes, "portefeuille": portefeuille,
+            "debut": debut, "tronque": tronque}
+
+
+def generate_combined_chart(positions: list, chart_path: str, seance=None) -> bool:
+    """PNG « Performance depuis l'achat -- base 100 = prix de revient »."""
+    try:
+        data = donnees_base100(positions, seance)
+        if not data:
+            return False
+
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
-        from datetime import datetime, timedelta
 
-        cutoff = datetime.now() - timedelta(days=CHART_WINDOW_DAYS)
+        nan = float("nan")
+        x = [datetime(d.year, d.month, d.day) for d in data["dates"]]
+        os.makedirs(os.path.dirname(chart_path) or ".", exist_ok=True)
 
-        # --- 1. Parsing de TOUT l'historique disponible, actif par actif ------
-        #     (pas de filtre ici : les points anterieurs a la fenetre servent
-        #      a amorcer les courbes qui demarrent tard)
-        series = {}
-        for name, (dates, closes) in assets_history.items():
-            points = {}
-            for d, c in zip(dates or [], closes or []):
-                try:
-                    s = str(d)
-                    iso = s + "-01" if len(s) == 7 else s[:10]
-                    dt  = datetime.strptime(iso, "%Y-%m-%d")
-                    val = float(c)
-                    if val > 0:
-                        points[dt] = val
-                except Exception:
-                    continue
-            if points:
-                series[name] = points
-
-        if not series:
-            return False
-
-        # --- 2. Axe X COMMUN : les dates situees dans la fenetre 1 mois ------
-        common_dates = sorted({dt for pts in series.values() for dt in pts if dt >= cutoff})
-        if len(common_dates) < 2:
-            # Aucune donnee recente : on retombe sur le dernier mois
-            # reellement disponible plutot que d'abandonner le graphique.
-            toutes = sorted({dt for pts in series.values() for dt in pts})
-            if len(toutes) < 2:
-                return False
-            borne = toutes[-1] - timedelta(days=CHART_WINDOW_DAYS)
-            common_dates = [dt for dt in toutes if dt >= borne]
-            if len(common_dates) < 2:
-                common_dates = toutes[-2:]
-
-        debut = common_dates[0]
-
-        # --- 3. Projection de CHAQUE actif sur l'axe complet ------------------
-        #     amorcage sur le dernier cours connu AVANT la fenetre, puis
-        #     forward-fill. Toute valeur ayant au moins 1 cotation est tracee
-        #     et couvre 100% de l'axe X.
-        valid = {}
-        for name, pts in series.items():
-            avant = [px for dt, px in sorted(pts.items()) if dt < debut]
-            last  = avant[-1] if avant else None
-
-            filled = []
-            for dt in common_dates:
-                v = pts.get(dt)
-                if v is not None:
-                    last = v
-                filled.append(last)
-
-            first_known = next((v for v in filled if v is not None), None)
-            if first_known is None or first_known <= 0:
-                continue
-            filled = [v if v is not None else first_known for v in filled]
-
-            base = filled[0]
-            if base <= 0:
-                continue
-
-            valid[name] = (common_dates, [round(v / base * 100, 2) for v in filled])
-
-        if not valid:
-            return False
-
-        os.makedirs(os.path.dirname(chart_path), exist_ok=True)
-
-        fig, ax = plt.subplots(figsize=(12, 5))
+        fig, ax = plt.subplots(figsize=(12, 5.6))
         fig.patch.set_facecolor("#f9f8f5")
         ax.set_facecolor("#f9f8f5")
 
-        colors = [
-            "#2563eb", "#16a34a", "#dc2626", "#d97706",
-            "#7c3aed", "#0891b2", "#db2777", "#65a30d",
-        ]
+        def _dernier(vals):
+            return next((v for v in reversed(vals) if v is not None), None)
 
-        all_y = []
-        all_x = []
+        # Lignes classees de la meilleure a la moins bonne : la legende se lit
+        # alors comme un palmares.
+        ordre = sorted(data["lignes"].items(),
+                       key=lambda kv: -(_dernier(kv[1]) or 0))
+        peu_de_points = len(x) <= 45
+        tous_y = []
+        for idx, (nom, vals) in enumerate(ordre):
+            fin = _dernier(vals)
+            if fin is None:
+                continue
+            couleur = CHART_COULEURS[idx % len(CHART_COULEURS)]
+            style = "-" if idx < len(CHART_COULEURS) else "--"
+            y = [v if v is not None else nan for v in vals]
+            tous_y.extend(v for v in vals if v is not None)
+            ax.plot(x, y, color=couleur, linewidth=1.6, linestyle=style,
+                    alpha=0.9, zorder=3,
+                    marker="o" if peu_de_points else None, markersize=3,
+                    label=f"{nom} ({fin - 100:+.1f} %)")
+            # Point d'entree : la ou la courbe commence.
+            i0 = next(i for i, v in enumerate(vals) if v is not None)
+            ax.plot([x[i0]], [vals[i0]], marker="o", markersize=5.5,
+                    color=couleur, markeredgecolor="white", zorder=4)
 
-        for idx, (name, (dt_list, normalized)) in enumerate(valid.items()):
-            color = colors[idx % len(colors)]
-            perf_finale = normalized[-1] - 100
-            all_y.extend(normalized)
-            all_x.extend(dt_list)
+        pf = data["portefeuille"]
+        fin_pf = _dernier(pf)
+        if fin_pf is not None and len(data["lignes"]) > 1:
+            y = [v if v is not None else nan for v in pf]
+            tous_y.extend(v for v in pf if v is not None)
+            ax.fill_between(x, y, 100, where=[v is not None and v >= 100 for v in pf],
+                            color="#16a34a", alpha=0.07, interpolate=True, zorder=1)
+            ax.fill_between(x, y, 100, where=[v is not None and v < 100 for v in pf],
+                            color="#dc2626", alpha=0.07, interpolate=True, zorder=1)
+            ax.plot(x, y, color=CHART_COULEUR_PORTEFEUILLE, linewidth=2.8, zorder=5,
+                    label=f"Portefeuille, rendement pondéré dans le temps ({fin_pf - 100:+.1f} %)")
+            ax.annotate(f"{fin_pf:.0f}", (x[-1], fin_pf),
+                        textcoords="offset points", xytext=(7, 0), va="center",
+                        fontsize=8.5, color=CHART_COULEUR_PORTEFEUILLE,
+                        fontweight="bold")
 
-            ax.plot(
-                dt_list, normalized,
-                color=color, linewidth=2.2,
-                marker="o", markersize=4,
-                label=f"{name} ({perf_finale:+.1f}%)",
-                zorder=3,
-            )
-            ax.annotate(
-                f"{normalized[-1]:.0f}",
-                (dt_list[-1], normalized[-1]),
-                textcoords="offset points", xytext=(6, 0),
-                fontsize=7.5, color=color, fontweight="bold",
-            )
+        ax.axhline(y=100, color="#6b7280", linestyle="--", linewidth=1.1,
+                   alpha=0.85, zorder=2, label="100 = prix de revient")
 
-        ax.axhline(
-            y=100, color="#9ca3af", linestyle="--",
-            linewidth=1.2, alpha=0.8,
-            label="Base 100 (début de période)", zorder=2
-        )
-
-        ax.relim()
-        ax.autoscale_view()
-
-        if all_y:
-            y_min = min(min(all_y), 100)
-            y_max = max(max(all_y), 100)
-            pad = max((y_max - y_min) * 0.12, 3)
+        if tous_y:
+            y_min, y_max = min(min(tous_y), 100), max(max(tous_y), 100)
+            pad = max((y_max - y_min) * 0.08, 2)
             ax.set_ylim(y_min - pad, y_max + pad)
+        marge = max(timedelta(days=1), (x[-1] - x[0]) * 0.03)
+        ax.set_xlim(x[0] - marge / 3, x[-1] + marge)
 
-        if all_x:
-            ax.set_xlim(min(all_x) - timedelta(days=1), max(all_x) + timedelta(days=2))
-
-        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
-        formatter = mdates.ConciseDateFormatter(locator)
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=9)
         ax.xaxis.set_major_locator(locator)
-        ax.xaxis.set_major_formatter(formatter)
-
+        ax.xaxis.set_major_formatter(mdates.ConciseDateFormatter(locator))
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}"))
-        ax.tick_params(axis="y", labelsize=8)
-        ax.set_ylabel("Performance (base 100)", fontsize=8, color="#6b7280")
+        ax.tick_params(axis="both", labelsize=8)
+        ax.set_ylabel("Base 100 = prix de revient", fontsize=8, color="#6b7280")
+        ax.grid(axis="y", linestyle=":", alpha=0.5, color="#d1d5db")
+        ax.grid(axis="x", linestyle=":", alpha=0.25, color="#d1d5db")
+        for cote in ("top", "right"):
+            ax.spines[cote].set_visible(False)
+        for cote in ("left", "bottom"):
+            ax.spines[cote].set_color("#e5e7eb")
 
-        ax.grid(axis="y", linestyle=":", alpha=0.4, color="#d1d5db")
-        ax.grid(axis="x", linestyle=":", alpha=0.2, color="#d1d5db")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_color("#e5e7eb")
-        ax.spines["bottom"].set_color("#e5e7eb")
+        jours = (data["dates"][-1] - data["dates"][0]).days
+        periode = (f"{jours} jours" if jours < 62 else f"{round(jours / 30.44)} mois")
+        titre = f"Performance depuis l'achat — base 100 = prix de revient ({periode}, EUR)"
+        if data["tronque"]:
+            titre += " · historique limité à 12 mois"
+        ax.set_title(titre, fontsize=11, fontweight="bold", color="#111827", pad=12)
 
-        ax.set_title(
-            "Performance comparée du portefeuille — base 100 (30 derniers jours, EUR)",
-            fontsize=11, fontweight="bold", color="#111827", pad=14,
-        )
-        ax.legend(
-            fontsize=8, framealpha=0.7, loc="upper left",
-            bbox_to_anchor=(0.01, 0.99), ncol=2,
-        )
+        poignees, libelles = ax.get_legend_handles_labels()
+        # Portefeuille en tete, repere 100 en dernier.
+        rang = {l: (0 if l.startswith("Portefeuille") else
+                    2 if l.startswith("100 =") else 1) for l in libelles}
+        couples = sorted(zip(poignees, libelles), key=lambda hl: rang[hl[1]])
+        ax.legend([h for h, _ in couples], [l for _, l in couples],
+                  fontsize=8, framealpha=0.85, loc="upper center",
+                  bbox_to_anchor=(0.5, -0.09), ncol=min(4, len(couples)),
+                  frameon=False)
 
         plt.tight_layout()
-        plt.savefig(
-            chart_path, dpi=130, bbox_inches="tight",
-            facecolor=fig.get_facecolor()
-        )
+        plt.savefig(chart_path, dpi=130, bbox_inches="tight",
+                    facecolor=fig.get_facecolor())
         plt.close(fig)
         return True
 
-    except Exception:
+    except Exception as e:
+        _log.warning("Graphique base 100 non genere : %s", e)
         return False
 
 
@@ -4117,8 +4281,6 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         **{n: indices_data[n]["source"] for n in indices_data},
         **{n: bonds_data[n]["source"] for n in bonds_data},
     }
-    assets_history = {}
-
     for asset in PORTFOLIO:
         key = asset["ticker_eod"]
 
@@ -4269,8 +4431,6 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "fondamentaux": d.get("fonda_src", "N/D"),
         }
 
-        assets_history[asset["name"]] = (h_dates, h_closes)
-
         results.append({
             "asset":        asset,
             "price_eur":    price_eur,
@@ -4344,8 +4504,30 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
                             jour_seance, session_cache)
 
     # ── 10. Graphique combiné ─────────────────────────────────────────────────
+    # Base 100 = prix de revient, depuis la date d'achat (07/10/2026). Les
+    # lignes sans date saisie partent du debut de leur suivi ; une ligne
+    # jamais vue avant ce soir est une ligne NOUVELLE : elle part d'aujourd'hui
+    # (sauf au tout premier run, ou aucun suivi n'existe encore).
     chart_path   = os.path.join(CHARTS_DIR, "portfolio_combined.png")
-    chart_ok     = generate_combined_chart(assets_history, chart_path)
+    suivi        = dates_debut_suivi()
+    positions_graph = []
+    for r in results:
+        a = r["asset"]
+        if a.get("manuel"):
+            continue
+        d = asset_data.get(a["ticker_eod"], {})
+        debut_suivi = suivi.get(a["ticker_eod"])
+        if debut_suivi is None and suivi:
+            debut_suivi = _date_iso(jour_seance)
+        positions_graph.append({
+            "nom":        a["name"],
+            "dates":      d.get("hv_dates") or d.get("h_dates") or [],
+            "closes":     d.get("hv_closes") or d.get("h_closes") or [],
+            "pru":        a.get("cost_eur"),
+            "cours":      r.get("price_eur"),
+            "calendrier": calendrier_detention(a, debut_suivi),
+        })
+    chart_ok     = generate_combined_chart(positions_graph, chart_path, seance=jour_seance)
 
     # ── 11. Sauvegarde cache ──────────────────────────────────────────────────
     if save_cache:
