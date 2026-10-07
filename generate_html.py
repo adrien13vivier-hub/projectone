@@ -1275,9 +1275,11 @@ def build_learning_html() -> str:
     mutu = ""
     if learning.get("mutualise"):
         mutu = (f'<div class="learn-note"><b>Apprentissage mutualisé</b> : calibré sur '
-                f'{c.get("n_tickers", "?")} titre(s) suivis par l&#39;ensemble des profils '
-                f'participants. Seuls le titre, la date, la note et le résultat sont '
-                f'partagés — jamais l&#39;identité, les quantités ni les prix de revient.</div>')
+                f'{c.get("n_tickers", "?")} titre(s) : ceux des profils participants et un '
+                f'univers de référence d&#39;environ 220 actions (États-Unis et zone euro, '
+                f'11 secteurs) noté chaque semaine. Seuls le titre, la date, la note et le '
+                f'résultat sont partagés — jamais l&#39;identité, les quantités ni les prix '
+                f'de revient.</div>')
 
     corps = ""
     bloc = hs.get(h)
