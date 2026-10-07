@@ -4,7 +4,7 @@ generate_html.py  v3.8
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
 • KPIs animés (compteurs au chargement)
-• Graphique combiné normalisé base 100 (section Tendances)
+• Graphique base 100 = prix de revient, depuis la date d'achat (section Tendances)
 • Tableaux positions + synthèse extraits du Markdown
 • Synthèse IA par position (bloc > blockquote dans le Markdown)  ← v3.2
   - v3.3 : capture multi-lignes (toutes les lignes ">") concaténées
@@ -1501,16 +1501,19 @@ def build_combined_chart_html() -> str:
         return ""
     return f"""
 <article class="card chart-card section" id="tendances">
-  <div class="section-title"><h2>Tendances — performance normalisée (base 100)</h2><p>Graphique généré, par position</p></div>
+  <div class="section-title"><h2>Tendances — performance depuis l'achat (base 100)</h2><p>100 = votre prix de revient</p></div>
   <div class="combined-chart-wrap">
     <img src="data:image/png;base64,{combined_b64}"
-         alt="Performance normalisée base 100 de toutes les positions"
+         alt="Performance de chaque position depuis sa date d'achat, base 100 = prix de revient"
          loading="lazy" class="combined-chart-img"
          width="900" height="500">
   </div>
   <p class="chart-caption">
-    Chaque courbe représente la performance d'une valeur normalisée à 100 au premier jour disponible.
-    La ligne pointillée à 100 est la référence (prix d'entrée).
+    Chaque courbe part de la date d'achat de la ligne et se lit directement en plus-value
+    latente : 100 = prix de revient, 120 = +20 %. La référence ne bouge plus d'un jour à l'autre.
+    La courbe noire suit l'ensemble du portefeuille en rendement pondéré dans le temps : un achat
+    ou une vente ne la fait pas sauter, seuls les cours la font bouger. Sans date d'achat saisie,
+    une ligne part du premier soir où elle apparaît dans le suivi. Historique : jusqu'à 12 mois.
   </p>
 </article>"""
 
