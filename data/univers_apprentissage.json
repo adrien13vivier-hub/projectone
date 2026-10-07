@@ -1,0 +1,1339 @@
+{
+ "_lisez_moi": [
+  "Univers d'apprentissage (07/10/2026) : actions notees chaque nuit UNIQUEMENT pour",
+  "alimenter le journal commun du moteur de fiabilite des notes (reports/@pool/learning).",
+  "Elles n'apparaissent dans aucun rapport ni portefeuille.",
+  "20 titres par secteur GICS x 11 secteurs = 220 titres, Etats-Unis + zone euro (EUR/USD",
+  "uniquement : pas de Londres ni de Suisse, pour eviter les problemes de devise).",
+  "Materials, Utilities, Real Estate et Communication Services comptent davantage de",
+  "valeurs US : la reference sectorielle europeenne n'existe pas encore pour ces quatre",
+  "secteurs (voir data/learning_config.json).",
+  "Chaque titre est note une fois tous les `pas_seances` jours de bourse (5 = une fois",
+  "par semaine), par groupes tournants : environ 44 titres par nuit.",
+  "Pour retirer un titre : supprimer sa ligne. Pour en ajouter : meme format.",
+  "`market` = code de place de api/load_portfolio.MARCHES."
+ ],
+ "pas_seances": 5,
+ "titres": [
+  {
+   "name": "Apple",
+   "ticker": "AAPL",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Microsoft",
+   "ticker": "MSFT",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "NVIDIA",
+   "ticker": "NVDA",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Broadcom",
+   "ticker": "AVGO",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Oracle",
+   "ticker": "ORCL",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Salesforce",
+   "ticker": "CRM",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Adobe",
+   "ticker": "ADBE",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Advanced Micro Devices",
+   "ticker": "AMD",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Cisco Systems",
+   "ticker": "CSCO",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Texas Instruments",
+   "ticker": "TXN",
+   "market": "us",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "SAP",
+   "ticker": "SAP",
+   "market": "xetra",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "ASML Holding",
+   "ticker": "ASML",
+   "market": "euronext_ams",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Infineon Technologies",
+   "ticker": "IFX",
+   "market": "xetra",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Capgemini",
+   "ticker": "CAP",
+   "market": "euronext_paris",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "STMicroelectronics",
+   "ticker": "STMPA",
+   "market": "euronext_paris",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Dassault Systemes",
+   "ticker": "DSY",
+   "market": "euronext_paris",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "ASM International",
+   "ticker": "ASM",
+   "market": "euronext_ams",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "BE Semiconductor",
+   "ticker": "BESI",
+   "market": "euronext_ams",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Nemetschek",
+   "ticker": "NEM",
+   "market": "xetra",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Sopra Steria",
+   "ticker": "SOP",
+   "market": "euronext_paris",
+   "sector": "Information Technology"
+  },
+  {
+   "name": "Eli Lilly",
+   "ticker": "LLY",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "UnitedHealth",
+   "ticker": "UNH",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Johnson & Johnson",
+   "ticker": "JNJ",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "AbbVie",
+   "ticker": "ABBV",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Merck & Co",
+   "ticker": "MRK",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Pfizer",
+   "ticker": "PFE",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Thermo Fisher Scientific",
+   "ticker": "TMO",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Abbott Laboratories",
+   "ticker": "ABT",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Amgen",
+   "ticker": "AMGN",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Intuitive Surgical",
+   "ticker": "ISRG",
+   "market": "us",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Sanofi",
+   "ticker": "SAN",
+   "market": "euronext_paris",
+   "sector": "Health Care"
+  },
+  {
+   "name": "EssilorLuxottica",
+   "ticker": "EL",
+   "market": "euronext_paris",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Bayer",
+   "ticker": "BAYN",
+   "market": "xetra",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Merck KGaA",
+   "ticker": "MRK",
+   "market": "xetra",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Fresenius",
+   "ticker": "FRE",
+   "market": "xetra",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Fresenius Medical Care",
+   "ticker": "FME",
+   "market": "xetra",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Siemens Healthineers",
+   "ticker": "SHL",
+   "market": "xetra",
+   "sector": "Health Care"
+  },
+  {
+   "name": "Philips",
+   "ticker": "PHIA",
+   "market": "euronext_ams",
+   "sector": "Health Care"
+  },
+  {
+   "name": "argenx",
+   "ticker": "ARGX",
+   "market": "euronext_bru",
+   "sector": "Health Care"
+  },
+  {
+   "name": "UCB",
+   "ticker": "UCB",
+   "market": "euronext_bru",
+   "sector": "Health Care"
+  },
+  {
+   "name": "JPMorgan Chase",
+   "ticker": "JPM",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Bank of America",
+   "ticker": "BAC",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Wells Fargo",
+   "ticker": "WFC",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Goldman Sachs",
+   "ticker": "GS",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Morgan Stanley",
+   "ticker": "MS",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Visa",
+   "ticker": "V",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Mastercard",
+   "ticker": "MA",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "American Express",
+   "ticker": "AXP",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "BlackRock",
+   "ticker": "BLK",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "Citigroup",
+   "ticker": "C",
+   "market": "us",
+   "sector": "Financials"
+  },
+  {
+   "name": "BNP Paribas",
+   "ticker": "BNP",
+   "market": "euronext_paris",
+   "sector": "Financials"
+  },
+  {
+   "name": "Societe Generale",
+   "ticker": "GLE",
+   "market": "euronext_paris",
+   "sector": "Financials"
+  },
+  {
+   "name": "Credit Agricole SA",
+   "ticker": "ACA",
+   "market": "euronext_paris",
+   "sector": "Financials"
+  },
+  {
+   "name": "AXA",
+   "ticker": "CS",
+   "market": "euronext_paris",
+   "sector": "Financials"
+  },
+  {
+   "name": "Allianz",
+   "ticker": "ALV",
+   "market": "xetra",
+   "sector": "Financials"
+  },
+  {
+   "name": "Deutsche Bank",
+   "ticker": "DBK",
+   "market": "xetra",
+   "sector": "Financials"
+  },
+  {
+   "name": "Munich Re",
+   "ticker": "MUV2",
+   "market": "xetra",
+   "sector": "Financials"
+  },
+  {
+   "name": "ING Groep",
+   "ticker": "INGA",
+   "market": "euronext_ams",
+   "sector": "Financials"
+  },
+  {
+   "name": "Intesa Sanpaolo",
+   "ticker": "ISP",
+   "market": "euronext_mil",
+   "sector": "Financials"
+  },
+  {
+   "name": "Banco Santander",
+   "ticker": "SAN",
+   "market": "madrid",
+   "sector": "Financials"
+  },
+  {
+   "name": "Amazon",
+   "ticker": "AMZN",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Tesla",
+   "ticker": "TSLA",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Home Depot",
+   "ticker": "HD",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "McDonald's",
+   "ticker": "MCD",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Nike",
+   "ticker": "NKE",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Starbucks",
+   "ticker": "SBUX",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Lowe's",
+   "ticker": "LOW",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Booking Holdings",
+   "ticker": "BKNG",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "TJX Companies",
+   "ticker": "TJX",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "General Motors",
+   "ticker": "GM",
+   "market": "us",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "LVMH",
+   "ticker": "MC",
+   "market": "euronext_paris",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Hermes",
+   "ticker": "RMS",
+   "market": "euronext_paris",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Kering",
+   "ticker": "KER",
+   "market": "euronext_paris",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Michelin",
+   "ticker": "ML",
+   "market": "euronext_paris",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Renault",
+   "ticker": "RNO",
+   "market": "euronext_paris",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "BMW",
+   "ticker": "BMW",
+   "market": "xetra",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Mercedes-Benz Group",
+   "ticker": "MBG",
+   "market": "xetra",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Adidas",
+   "ticker": "ADS",
+   "market": "xetra",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Inditex",
+   "ticker": "ITX",
+   "market": "madrid",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Ferrari",
+   "ticker": "RACE",
+   "market": "euronext_mil",
+   "sector": "Consumer Discretionary"
+  },
+  {
+   "name": "Procter & Gamble",
+   "ticker": "PG",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Coca-Cola",
+   "ticker": "KO",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "PepsiCo",
+   "ticker": "PEP",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Walmart",
+   "ticker": "WMT",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Costco",
+   "ticker": "COST",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Philip Morris International",
+   "ticker": "PM",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Altria",
+   "ticker": "MO",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Mondelez",
+   "ticker": "MDLZ",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Colgate-Palmolive",
+   "ticker": "CL",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Kimberly-Clark",
+   "ticker": "KMB",
+   "market": "us",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "L'Oreal",
+   "ticker": "OR",
+   "market": "euronext_paris",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Danone",
+   "ticker": "BN",
+   "market": "euronext_paris",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Pernod Ricard",
+   "ticker": "RI",
+   "market": "euronext_paris",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Carrefour",
+   "ticker": "CA",
+   "market": "euronext_paris",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Ahold Delhaize",
+   "ticker": "AD",
+   "market": "euronext_ams",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Heineken",
+   "ticker": "HEIA",
+   "market": "euronext_ams",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "AB InBev",
+   "ticker": "ABI",
+   "market": "euronext_bru",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Beiersdorf",
+   "ticker": "BEI",
+   "market": "xetra",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Henkel",
+   "ticker": "HEN3",
+   "market": "xetra",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "Unilever",
+   "ticker": "UNA",
+   "market": "euronext_ams",
+   "sector": "Consumer Staples"
+  },
+  {
+   "name": "GE Aerospace",
+   "ticker": "GE",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Caterpillar",
+   "ticker": "CAT",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Honeywell",
+   "ticker": "HON",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Union Pacific",
+   "ticker": "UNP",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "RTX",
+   "ticker": "RTX",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Lockheed Martin",
+   "ticker": "LMT",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Deere",
+   "ticker": "DE",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "UPS",
+   "ticker": "UPS",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Boeing",
+   "ticker": "BA",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Eaton",
+   "ticker": "ETN",
+   "market": "us",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Airbus",
+   "ticker": "AIR",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Schneider Electric",
+   "ticker": "SU",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Safran",
+   "ticker": "SAF",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Vinci",
+   "ticker": "DG",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Siemens",
+   "ticker": "SIE",
+   "market": "xetra",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Rheinmetall",
+   "ticker": "RHM",
+   "market": "xetra",
+   "sector": "Industrials"
+  },
+  {
+   "name": "DHL Group",
+   "ticker": "DHL",
+   "market": "xetra",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Thales",
+   "ticker": "HO",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Legrand",
+   "ticker": "LR",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Saint-Gobain",
+   "ticker": "SGO",
+   "market": "euronext_paris",
+   "sector": "Industrials"
+  },
+  {
+   "name": "Exxon Mobil",
+   "ticker": "XOM",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Chevron",
+   "ticker": "CVX",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "ConocoPhillips",
+   "ticker": "COP",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Schlumberger",
+   "ticker": "SLB",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "EOG Resources",
+   "ticker": "EOG",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Occidental Petroleum",
+   "ticker": "OXY",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Phillips 66",
+   "ticker": "PSX",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Marathon Petroleum",
+   "ticker": "MPC",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Valero Energy",
+   "ticker": "VLO",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "Halliburton",
+   "ticker": "HAL",
+   "market": "us",
+   "sector": "Energy"
+  },
+  {
+   "name": "TotalEnergies",
+   "ticker": "TTE",
+   "market": "euronext_paris",
+   "sector": "Energy"
+  },
+  {
+   "name": "Eni",
+   "ticker": "ENI",
+   "market": "euronext_mil",
+   "sector": "Energy"
+  },
+  {
+   "name": "Repsol",
+   "ticker": "REP",
+   "market": "madrid",
+   "sector": "Energy"
+  },
+  {
+   "name": "Shell",
+   "ticker": "SHELL",
+   "market": "euronext_ams",
+   "sector": "Energy"
+  },
+  {
+   "name": "Galp Energia",
+   "ticker": "GALP",
+   "market": "euronext_lis",
+   "sector": "Energy"
+  },
+  {
+   "name": "Tenaris",
+   "ticker": "TEN",
+   "market": "euronext_mil",
+   "sector": "Energy"
+  },
+  {
+   "name": "SBM Offshore",
+   "ticker": "SBMO",
+   "market": "euronext_ams",
+   "sector": "Energy"
+  },
+  {
+   "name": "Vallourec",
+   "ticker": "VK",
+   "market": "euronext_paris",
+   "sector": "Energy"
+  },
+  {
+   "name": "Technip Energies",
+   "ticker": "TE",
+   "market": "euronext_paris",
+   "sector": "Energy"
+  },
+  {
+   "name": "GTT",
+   "ticker": "GTT",
+   "market": "euronext_paris",
+   "sector": "Energy"
+  },
+  {
+   "name": "Linde",
+   "ticker": "LIN",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Sherwin-Williams",
+   "ticker": "SHW",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Air Products",
+   "ticker": "APD",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Ecolab",
+   "ticker": "ECL",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Freeport-McMoRan",
+   "ticker": "FCX",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Newmont",
+   "ticker": "NEM",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Nucor",
+   "ticker": "NUE",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Dow",
+   "ticker": "DOW",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "DuPont",
+   "ticker": "DD",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "PPG Industries",
+   "ticker": "PPG",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Corteva",
+   "ticker": "CTVA",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Martin Marietta",
+   "ticker": "MLM",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Vulcan Materials",
+   "ticker": "VMC",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "International Paper",
+   "ticker": "IP",
+   "market": "us",
+   "sector": "Materials"
+  },
+  {
+   "name": "Air Liquide",
+   "ticker": "AI",
+   "market": "euronext_paris",
+   "sector": "Materials"
+  },
+  {
+   "name": "BASF",
+   "ticker": "BAS",
+   "market": "xetra",
+   "sector": "Materials"
+  },
+  {
+   "name": "ArcelorMittal",
+   "ticker": "MT",
+   "market": "euronext_ams",
+   "sector": "Materials"
+  },
+  {
+   "name": "Akzo Nobel",
+   "ticker": "AKZA",
+   "market": "euronext_ams",
+   "sector": "Materials"
+  },
+  {
+   "name": "Heidelberg Materials",
+   "ticker": "HEI",
+   "market": "xetra",
+   "sector": "Materials"
+  },
+  {
+   "name": "Symrise",
+   "ticker": "SY1",
+   "market": "xetra",
+   "sector": "Materials"
+  },
+  {
+   "name": "NextEra Energy",
+   "ticker": "NEE",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Duke Energy",
+   "ticker": "DUK",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Southern Company",
+   "ticker": "SO",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Dominion Energy",
+   "ticker": "D",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "American Electric Power",
+   "ticker": "AEP",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Exelon",
+   "ticker": "EXC",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Sempra",
+   "ticker": "SRE",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Xcel Energy",
+   "ticker": "XEL",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "PG&E",
+   "ticker": "PCG",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Consolidated Edison",
+   "ticker": "ED",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "PSEG",
+   "ticker": "PEG",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "WEC Energy",
+   "ticker": "WEC",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Edison International",
+   "ticker": "EIX",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "American Water Works",
+   "ticker": "AWK",
+   "market": "us",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Engie",
+   "ticker": "ENGI",
+   "market": "euronext_paris",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Veolia",
+   "ticker": "VIE",
+   "market": "euronext_paris",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Iberdrola",
+   "ticker": "IBE",
+   "market": "madrid",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Enel",
+   "ticker": "ENEL",
+   "market": "euronext_mil",
+   "sector": "Utilities"
+  },
+  {
+   "name": "E.ON",
+   "ticker": "EOAN",
+   "market": "xetra",
+   "sector": "Utilities"
+  },
+  {
+   "name": "RWE",
+   "ticker": "RWE",
+   "market": "xetra",
+   "sector": "Utilities"
+  },
+  {
+   "name": "Prologis",
+   "ticker": "PLD",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "American Tower",
+   "ticker": "AMT",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Equinix",
+   "ticker": "EQIX",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Crown Castle",
+   "ticker": "CCI",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Public Storage",
+   "ticker": "PSA",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Realty Income",
+   "ticker": "O",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Simon Property Group",
+   "ticker": "SPG",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Welltower",
+   "ticker": "WELL",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Digital Realty",
+   "ticker": "DLR",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "VICI Properties",
+   "ticker": "VICI",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "AvalonBay",
+   "ticker": "AVB",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Equity Residential",
+   "ticker": "EQR",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Extra Space Storage",
+   "ticker": "EXR",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Alexandria Real Estate",
+   "ticker": "ARE",
+   "market": "us",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Unibail-Rodamco-Westfield",
+   "ticker": "URW",
+   "market": "euronext_paris",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Vonovia",
+   "ticker": "VNA",
+   "market": "xetra",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Klepierre",
+   "ticker": "LI",
+   "market": "euronext_paris",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Gecina",
+   "ticker": "GFC",
+   "market": "euronext_paris",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Covivio",
+   "ticker": "COV",
+   "market": "euronext_paris",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Merlin Properties",
+   "ticker": "MRL",
+   "market": "madrid",
+   "sector": "Real Estate"
+  },
+  {
+   "name": "Alphabet",
+   "ticker": "GOOGL",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Meta Platforms",
+   "ticker": "META",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Netflix",
+   "ticker": "NFLX",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Walt Disney",
+   "ticker": "DIS",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Comcast",
+   "ticker": "CMCSA",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "AT&T",
+   "ticker": "T",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Verizon",
+   "ticker": "VZ",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "T-Mobile US",
+   "ticker": "TMUS",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Charter Communications",
+   "ticker": "CHTR",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Spotify",
+   "ticker": "SPOT",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Take-Two Interactive",
+   "ticker": "TTWO",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Omnicom",
+   "ticker": "OMC",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Fox Corp",
+   "ticker": "FOXA",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Live Nation",
+   "ticker": "LYV",
+   "market": "us",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Orange",
+   "ticker": "ORA",
+   "market": "euronext_paris",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Deutsche Telekom",
+   "ticker": "DTE",
+   "market": "xetra",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Publicis",
+   "ticker": "PUB",
+   "market": "euronext_paris",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Telefonica",
+   "ticker": "TEF",
+   "market": "madrid",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "KPN",
+   "ticker": "KPN",
+   "market": "euronext_ams",
+   "sector": "Communication Services"
+  },
+  {
+   "name": "Universal Music Group",
+   "ticker": "UMG",
+   "market": "euronext_ams",
+   "sector": "Communication Services"
+  }
+ ]
+}
