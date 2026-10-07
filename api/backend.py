@@ -335,7 +335,8 @@ def require_admin(user: dict = Depends(current_user)) -> dict:
     return user
 
 # ── Analyse d'un utilisateur ─────────────────────────────────────────
-from api.load_portfolio import lien_rapport, dossier_rapport, ecrire_json_atomique
+from api.load_portfolio import (lien_rapport, dossier_rapport, ecrire_json_atomique,
+                                normaliser_date_achat)
 
 
 def run_analysis_for(username: str) -> dict:
@@ -756,6 +757,9 @@ class PortfolioLine(BaseModel):
     # Secteur saisi à la main (facultatif) : prioritaire sur la lecture
     # automatique du moteur d'apprentissage, qui s'en sert comme référence.
     sector:       Optional[str] = ""
+    # 07/10/2026 — date du premier achat (facultative, « AAAA-MM-JJ ») :
+    # point de départ du graphique « base 100 = prix de revient ».
+    achat_date:   Optional[str] = None
 
     # AJOUT (28/09/2026) : NaN / Infinity passaient la validation et
     # etaient ecrits dans le profil -- la relecture du fichier echouait
@@ -766,6 +770,13 @@ class PortfolioLine(BaseModel):
     def _valeurs_saines(self):
         _verifier_finis(self, ("quantity", "buy_price", "value", "buy_value", "buy_fx"))
         _verifier_longueurs(self, ("name", "ticker", "isin", "account", "sector"))
+        if self.achat_date not in (None, ""):
+            d = normaliser_date_achat(self.achat_date)
+            if not d:
+                raise ValueError(f"achat_date : date invalide ou future ({self.achat_date[:20]})")
+            self.achat_date = d
+        else:
+            self.achat_date = None
         return self
 
 def _verifier_finis(modele, champs):
@@ -879,6 +890,13 @@ def fusionner_lignes(lignes: list) -> tuple:
         base["quantity"] = qte
         base["buy_price"] = pru
         base["achats"] = achats
+        # La date d'achat d'une ligne regroupee est celle du PREMIER achat
+        # (07/10/2026) : c'est le depart du graphique base 100.
+        dates = [normaliser_date_achat(a.get("date")) for a in achats]
+        dates += [normaliser_date_achat(m.get("achat_date")) for m in membres]
+        dates = [d for d in dates if d]
+        if dates:
+            base["achat_date"] = min(dates)
         # Le PRU est un montant en euros issu de plusieurs achats, parfois
         # faits a des taux differents. Le reexprimer dans une devise de saisie
         # unique n'aurait pas de sens : la ligne fusionnee repasse en euros.
