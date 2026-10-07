@@ -285,7 +285,8 @@ def _plafond_env(nom: str, defaut: int) -> int:
 _QUOTA = {
     "alphavantage": {"used": 0, "limit": _plafond_env("ALPHAVANTAGE_PLAFOND_JOUR", 20)},
     "twelvedata":   {"used": 0, "limit": _plafond_env("TWELVEDATA_PLAFOND_JOUR", 780)},
-    "eodhd":        {"used": 0, "limit": _plafond_env("EODHD_PLAFOND_JOUR", 300)},
+    # 600 depuis le 07/10/2026 (univers d'apprentissage, ~45 appels/nuit en plus).
+    "eodhd":        {"used": 0, "limit": _plafond_env("EODHD_PLAFOND_JOUR", 600)},
     "finnhub":      {"used": 0, "limit": _plafond_env("FINNHUB_PLAFOND_JOUR", 3000)},
 }
 
@@ -3650,8 +3651,11 @@ def executer_apprentissage(results: list, jour_seance: str) -> tuple:
                 json.dump({"done": aujourdhui.isoformat(), **bilan_a}, f)
 
         # 3. Echeances : cloture des observations arrivees a terme
+        detenus = {r["asset"]["ticker_eod"] for r in results
+                   if not r["asset"].get("manuel")}
         bilan = learning_engine.mature(
-            ldir, reglages["horizons"], _fetcher_apprentissage(jour_seance), aujourdhui)
+            ldir, reglages["horizons"], _fetcher_apprentissage(jour_seance), aujourdhui,
+            ignorer=_univers_ignorer(aujourdhui, detenus) if mutualise else None)
 
         # 4. Statistiques, calibration, modele conditionnel
         positions = [{"ticker": r["asset"]["ticker_eod"], "name": r["asset"]["name"],
@@ -3666,6 +3670,223 @@ def executer_apprentissage(results: list, jour_seance: str) -> tuple:
     except Exception as e:                       # jamais fatal pour le rapport
         _log.warning("Moteur d'apprentissage : %s: %s", type(e).__name__, e)
         return entete + [f"> Section indisponible : {type(e).__name__}: {e}", ""], None
+
+
+# =============================================================================
+# UNIVERS D'APPRENTISSAGE (07/10/2026)
+# =============================================================================
+# Le moteur de fiabilite a besoin de BEAUCOUP de titres differents, repartis
+# sur les 11 secteurs, pour juger une note secteur par secteur -- bien plus que
+# ce que detiennent quelques utilisateurs. data/univers_apprentissage.json liste
+# ~220 actions (20 par secteur, US + zone euro) notees avec EXACTEMENT la meme
+# formule que les positions, puis versees dans le journal commun. Elles
+# n'apparaissent dans aucun rapport.
+#
+# Cout maitrise : chaque titre n'est note qu'une fois tous les `pas_seances`
+# jours de bourse (5 = une fois par semaine), par groupes tournants -- environ
+# 44 titres par nuit, 1 appel EODHD chacun (l'historique sert a la fois a la
+# note et a la cloture des echeances). Les echeances d'un titre de l'univers ne
+# sont closes que le jour ou il est note : aucun appel supplementaire.
+# Desactivable sans toucher au code : variable d'environnement
+# UNIVERS_APPRENTISSAGE=0.
+
+UNIVERS_PATH = "data/univers_apprentissage.json"
+UNIVERS_PAS_DEFAUT = 5
+UNIVERS_HISTO_JOURS = 400      # couvre la note (180 j) ET les echeances a 252 seances
+UNIVERS_FRAICHEUR_JOURS = 6    # derniere cotation trop ancienne -> titre ecarte ce jour
+UNIVERS_MARGE_EODHD = 20       # appels EODHD jamais entames par l'univers
+UNIVERS_PAUSE_YAHOO = 0.4      # secondes entre deux lectures Yahoo (pas de quota officiel)
+UNIVERS_EPOQUE = date(2026, 1, 5)   # un lundi : origine du decompte des seances
+
+_UNIVERS: dict = {"charge": False, "titres": [], "pas": UNIVERS_PAS_DEFAUT}
+
+
+def univers_actif() -> bool:
+    return str(os.getenv("UNIVERS_APPRENTISSAGE", "1")).strip().lower() not in (
+        "0", "false", "non", "off")
+
+
+def charger_univers(chemin: str = None) -> tuple:
+    """(titres normalises, pas en seances). Jamais d'exception : un fichier
+    absent ou illisible donne un univers vide, le reste du programme tourne."""
+    # Chemin absolu : le fichier est lu meme si le dossier courant change
+    # (tests, lancement depuis un autre repertoire).
+    chemin = chemin or os.path.join(os.path.dirname(os.path.abspath(__file__)), UNIVERS_PATH)
+    try:
+        with open(chemin, encoding="utf-8") as f:
+            brut = json.load(f)
+        from api.load_portfolio import normaliser_watchlist, MARCHES
+    except Exception as e:
+        _log.warning("Univers d'apprentissage indisponible : %s", e)
+        return [], UNIVERS_PAS_DEFAUT
+    try:
+        pas = max(1, int(brut.get("pas_seances") or UNIVERS_PAS_DEFAUT))
+    except (TypeError, ValueError):
+        pas = UNIVERS_PAS_DEFAUT
+    titres, vus = [], set()
+    for it in (brut.get("titres") or []):
+        if not isinstance(it, dict) or not it.get("sector"):
+            continue
+        norm = normaliser_watchlist([it])
+        if not norm:
+            continue
+        a = norm[0]
+        if a["ticker_eod"] in vus:
+            continue
+        vus.add(a["ticker_eod"])
+        fiche = MARCHES.get(a.get("place"), {})
+        a.update({
+            "asset_class": "action", "asset_type": "action",
+            "devise": fiche.get("devise", "EUR"),
+            "sector": str(it["sector"]).strip(),
+        })
+        titres.append(a)
+    return titres, pas
+
+
+def _univers() -> tuple:
+    if not _UNIVERS["charge"]:
+        _UNIVERS["titres"], _UNIVERS["pas"] = charger_univers()
+        _UNIVERS["charge"] = True
+    return _UNIVERS["titres"], _UNIVERS["pas"]
+
+
+def _numero_seance(jour) -> int:
+    """Nombre de jours ouvres (lun-ven) entre UNIVERS_EPOQUE et `jour`."""
+    jour = jour if isinstance(jour, date) else date.fromisoformat(str(jour)[:10])
+    jours = (jour - UNIVERS_EPOQUE).days
+    semaines, reste = divmod(jours, 7)
+    return semaines * 5 + min(reste, 5)
+
+
+def univers_du_jour(titres: list, pas: int, jour) -> list:
+    """Titres notes CE jour : rotation par groupes, chacun une fois tous les
+    `pas` jours ouvres (k = rang du titre dans le fichier)."""
+    n = _numero_seance(jour)
+    return [a for k, a in enumerate(titres) if (n + k) % pas == 0]
+
+
+def _univers_ignorer(jour, detenus: set = None) -> set:
+    """Titres de l'univers a NE PAS charger ce jour pour clore leurs echeances :
+    ceux qui ne sont pas notes aujourd'hui et qu'aucun profil ne detient."""
+    if not univers_actif():
+        return set()
+    try:
+        titres, pas = _univers()
+        du_jour = {a["ticker_eod"] for a in univers_du_jour(titres, pas, jour)}
+        return {a["ticker_eod"] for a in titres} - du_jour - set(detenus or ())
+    except Exception as e:
+        _log.warning("Univers : liste a ignorer non calculee (%s)", e)
+        return set()
+
+
+def _noter_titre_univers(asset: dict, fetch, jour: date) -> tuple:
+    """(snapshot | None, motif). Meme formule que les positions (main())."""
+    # Serie deja chargee ce soir (cloture des echeances d'un profil) et assez
+    # longue pour la note : on la reprend, sans nouvel appel. Sinon on charge
+    # 400 jours d'un coup, qui serviront aussi a clore les echeances du titre.
+    deja = (getattr(fetch, "cache", None) or {}).get(asset["ticker_eod"])
+    assez = jour - timedelta(days=HISTORY_DAYS + 20)
+    debut = deja[0] if (deja and deja[0] <= assez) else jour - timedelta(days=UNIVERS_HISTO_JOURS)
+    serie = fetch(asset["ticker_eod"], debut, jour)
+    if not serie or not serie[0]:
+        return None, "historique indisponible"
+    dates_l, closes_l = serie
+    if (jour - date.fromisoformat(str(dates_l[-1])[:10])).days > UNIVERS_FRAICHEUR_JOURS:
+        return None, f"derniere cotation trop ancienne ({dates_l[-1]})"
+    # Meme fenetre que les positions : la note se calcule sur 180 jours. La
+    # serie est en devise LOCALE, ce qui ne change rien aux rendements (les
+    # positions multiplient tout l'historique par un taux constant) et reste
+    # coherent avec les plus hauts / plus bas 52 semaines de Yahoo, eux aussi
+    # en devise locale (d'ou taux = 1.0 pour score_risque).
+    h_dates, h_closes = _fenetre_courte(dates_l, closes_l)
+    if len(h_closes) < 20:
+        return None, "historique trop court"
+
+    fonda, _src = get_fundamentals(asset)
+    time.sleep(UNIVERS_PAUSE_YAHOO)
+    cs, _cons, _csrc = get_consensus(asset)
+    sc_hist, _lab, _r1, _r3, _r6 = score_history(h_dates, h_closes)
+    composantes = {
+        "valorisation": score_valorisation(fonda),
+        "sante":        score_sante(fonda),
+        "croissance":   score_croissance(fonda),
+        "momentum":     sc_hist,
+        "consensus":    cs,
+        "risque":       score_risque(fonda, h_dates, h_closes, 1.0),
+    }
+    note, confiance, detail, _na, _manq = note_titre(composantes, "action")
+    if note is None:
+        return None, "note incalculable"
+
+    dernier = closes_l[-1]
+    taux = 1.0
+    if str(asset.get("devise", "EUR")).upper() == "USD":
+        eur_usd = (_MEMO.get("fx:eur_usd") or (None,))[0]
+        taux = eur_usd if eur_usd else 1.0
+    config = learning_engine.load_config()
+    snap = learning_engine.build_snapshot(
+        learning_engine.POOL_USER, asset["ticker_eod"], asset["name"], jour, note,
+        confiance, detail, SCORE_VERSION, "action", asset.get("sector", ""), "",
+        config, price=round(dernier * taux, 4), source="univers",
+        devise=asset.get("devise"))
+    return snap, None
+
+
+def apprendre_univers(jour_seance: str, detenus: set = None,
+                      session_cache: dict = None) -> dict:
+    """Note les titres de l'univers prevus ce jour, les verse dans le journal
+    commun, puis clot leurs echeances. Ne leve jamais : au pire, un bilan
+    avec `motif`. A appeler APRES les profils (leurs rapports passent en
+    premier dans le budget d'appels)."""
+    bilan = {"prevus": 0, "notes": 0, "deja_suivis": 0, "ecartes": [], "motif": None}
+    if not univers_actif():
+        bilan["motif"] = "desactive (UNIVERS_APPRENTISSAGE=0)"
+        return bilan
+    if not LEARNING_OK:
+        bilan["motif"] = f"moteur d'apprentissage indisponible ({LEARNING_ERR})"
+        return bilan
+    try:
+        titres, pas = _univers()
+        if not titres:
+            bilan["motif"] = "univers vide ou illisible"
+            return bilan
+        jour = date.fromisoformat(jour_seance)
+        if "fx:eur_usd" not in _MEMO and session_cache is not None:
+            _MEMO["fx:eur_usd"] = get_eur_usd(session_cache)
+        fetch = _fetcher_apprentissage(jour_seance)
+        du_jour = univers_du_jour(titres, pas, jour)
+        bilan["prevus"] = len(du_jour)
+        detenus = set(detenus or ())
+        snaps = []
+        for a in du_jour:
+            # Deja note ce soir pour un profil : son snapshot est deja au journal.
+            if a["ticker_eod"] in detenus or f"ad:{a['ticker_eod']}" in _MEMO:
+                bilan["deja_suivis"] += 1
+                continue
+            q = _QUOTA["eodhd"]
+            if q["limit"] - q["used"] <= UNIVERS_MARGE_EODHD:
+                bilan["ecartes"].append((a["ticker_eod"], "budget EODHD du jour atteint"))
+                continue
+            try:
+                snap, motif = _noter_titre_univers(a, fetch, jour)
+            except Exception as e:
+                snap, motif = None, f"{type(e).__name__}: {e}"
+            if snap:
+                snaps.append(snap)
+            else:
+                bilan["ecartes"].append((a["ticker_eod"], motif))
+        pool = learning_engine.pool_dir()
+        bilan["enregistres"] = learning_engine.record_snapshots(pool, snaps)
+        bilan["notes"] = len(snaps)
+        reglages = learning_engine.normalize_settings(None)
+        bilan["echeances"] = learning_engine.mature(
+            pool, reglages["horizons"], fetch, jour,
+            ignorer=_univers_ignorer(jour, detenus))
+    except Exception as e:
+        _log.error("Univers d'apprentissage en echec : %s", e)
+        bilan["motif"] = str(e)
+    return bilan
 
 
 def ligne_fiabilite_md(synthese: dict, ticker: str) -> str:
@@ -4548,6 +4769,13 @@ def run_all_users() -> int:
         return 1
 
     cache = load_session_cache()
+    # Titres detenus par au moins un profil participant : leurs echeances se
+    # closent comme avant, chaque soir, meme s'ils figurent dans l'univers.
+    detenus_tous = set()
+    for prof in profils:
+        for l in (prof.get("lines") or []):
+            if l.get("ticker_eod") and not l.get("manuel"):
+                detenus_tous.add(l["ticker_eod"])
     ok_count = 0
     for prof in profils:
         uname = prof.get("username", "?")
@@ -4557,6 +4785,19 @@ def run_all_users() -> int:
                 ok_count += 1
         except Exception as e:
             _log.error("Echec pour %s : %s", uname, e)
+
+    # Univers d'apprentissage : APRES les profils, pour que leurs rapports
+    # passent en premier dans le budget d'appels du jour.
+    bilan_u = apprendre_univers(date_seance(datetime.now(PARIS_TZ)),
+                                detenus_tous, cache)
+    if bilan_u.get("motif"):
+        print(f"\nUnivers d'apprentissage : non execute -- {bilan_u['motif']}")
+    else:
+        print(f"\nUnivers d'apprentissage : {bilan_u['notes']} titre(s) note(s) sur "
+              f"{bilan_u['prevus']} prevu(s) ce jour ({bilan_u['deja_suivis']} deja "
+              f"suivi(s) par un profil).")
+        for t, m in bilan_u["ecartes"]:
+            print(f"   - {t} ecarte : {m}")
 
     save_session_cache(cache)
     print(f"\n{ok_count}/{len(profils)} profil(s) traite(s). "
