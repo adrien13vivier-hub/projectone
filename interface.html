@@ -96,7 +96,7 @@ img{display:block;max-width:100%}
 /* Le tableau du portefeuille porte 12 colonnes depuis la v8. Plutot que de le
    comprimer jusqu'a l'illisible, on lui donne une largeur minimale et on
    assume le defilement horizontal — le conteneur .table-wrap le gere deja. */
-#panel-portfolio .pf-table{min-width:1150px}
+#panel-portfolio .pf-table{min-width:1290px}
 #panel-portfolio .pf-table input, #panel-portfolio .pf-table select{
   min-width:0;width:100%;box-sizing:border-box;font-size:.82rem;padding:.35rem .45rem}
 #panel-portfolio .pf-table th{white-space:nowrap;font-size:.72rem}
@@ -113,6 +113,7 @@ img{display:block;max-width:100%}
 #panel-portfolio .pf-table td:nth-child(10){min-width:100px}
 #panel-portfolio .pf-table td:nth-child(11){min-width:78px}
 #panel-portfolio .pf-table td:nth-child(12){min-width:44px;text-align:center}
+#panel-portfolio .pf-table td.c-date-cell{min-width:132px}
 .scroll-hint{color:var(--muted);font-size:.75rem;margin:.4rem 0 0}
 table{width:100%;border-collapse:collapse;font-size:.82rem}
 th{background:var(--surface2);padding:.5rem .6rem;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
@@ -694,7 +695,7 @@ td{font-size:13px}
             <thead>
               <tr>
                 <th>Nom</th><th>Classe</th><th>Ticker</th><th>ISIN</th>
-                <th>Qté / Valeur</th><th>Prix de revient</th><th>Devise</th><th>Taux → EUR</th><th>Place de cotation</th>
+                <th>Qté / Valeur</th><th>Prix de revient</th><th>Devise</th><th>Taux → EUR</th><th>Date d'achat</th><th>Place de cotation</th>
                 <th>Compte</th><th>Étiquettes</th><th>Stop</th><th>Param.</th><th></th>
               </tr>
             </thead>
@@ -952,6 +953,7 @@ td{font-size:13px}
             <tr><td>Ticker</td><td>Le code de la valeur : <code>AI.PA</code>, <code>AAPL</code>, <code>BTC</code></td></tr>
             <tr><td>Qté / Valeur</td><td>Le nombre de titres — ou, pour un actif non coté, sa valeur actuelle en euros</td></tr>
             <tr><td>Prix de revient</td><td>Ce que vous avez payé par titre — ou le prix d'acquisition pour un actif non coté</td></tr>
+            <tr><td>Date d'achat</td><td>Facultatif. Le jour du premier achat : c'est là que démarre la courbe de la ligne dans le graphique de performance du rapport (base 100 = prix de revient). Sans date, la courbe part du premier soir où le programme a vu la ligne</td></tr>
             <tr><td>Compte</td><td>Où l'actif est détenu (PEA, assurance-vie, Ledger…). Sert de regroupement dans le rapport</td></tr>
             <tr><td>Étiquettes</td><td>Vos propres catégories, séparées par des virgules : <code>dividende, socle</code></td></tr>
           </tbody>
@@ -2117,6 +2119,9 @@ function mkRow(l={}){
     <td>${mkSelect(DEVISES_SAISIE, deviseSaisie, 'c-devise')}</td>
     <td class="c-taux-cell"><input class="c-taux" type="number" value="${tauxSaisie}"
         placeholder="0.92" min="0" step="any" title="Combien vaut 1 dollar en euros, au jour de l'achat"></td>
+    <td class="c-date-cell"><input class="c-date" type="date" value="${echapper(l.achat_date || '')}"
+        max="${new Date().toISOString().slice(0, 10)}"
+        title="Facultatif : date du premier achat. Point de départ du graphique de performance (base 100)."></td>
     <td class="c-place-cell">${mkSelect(MARKETS,l.market||'us','c-place')}</td>
     <td><input class="c-compte" value="${echapper(l.account)}" placeholder="PEA Bourso" style="min-width:120px"></td>
     <td><input class="c-tags" value="${echapper(tags)}" placeholder="dividende, socle" style="min-width:130px"></td>
@@ -2300,6 +2305,9 @@ function readLines(){
       account: tr.querySelector('.c-compte').value.trim(),
       tags: tags
     };
+    // Date d'achat facultative : point de départ du graphique base 100.
+    const dAchat = tr.querySelector('.c-date') ? tr.querySelector('.c-date').value : '';
+    if(/^\d{4}-\d{2}-\d{2}$/.test(dAchat)) ligne.achat_date = dAchat;
 
     if(manuel){
       ligne.value = qte;
@@ -3755,8 +3763,10 @@ function detailCoherent(achats, qte, pru){
 function achatsUtilisables(tr, qte, pru){
   const achats = lireAchats(tr);
   if(detailCoherent(achats, qte, pru)) return {achats, reinitialise: false};
+  // Le premier achat reprend la date d'achat saisie sur la ligne, s'il y en a une.
+  const dLigne = tr.querySelector('.c-date') ? tr.querySelector('.c-date').value : '';
   if(qte > 0 && pru > 0)
-    return {achats: [{qte: qte, prix: pru, date: ''}], reinitialise: !!achats.length};
+    return {achats: [{qte: qte, prix: pru, date: dLigne}], reinitialise: !!achats.length};
   return {achats: [], reinitialise: !!achats.length};
 }
 
