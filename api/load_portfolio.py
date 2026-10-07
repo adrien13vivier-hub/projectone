@@ -366,6 +366,23 @@ def _nombre(valeur, defaut=None):
     return defaut if v != v else v
 
 
+def normaliser_date_achat(valeur) -> str:
+    """'AAAA-MM-JJ' valide et pas dans le futur, sinon '' (07/10/2026).
+
+    La date d'achat est facultative : elle sert de point de depart au
+    graphique « base 100 = prix de revient ». Une date illisible est ignoree
+    plutot que de faire echouer toute la ligne.
+    """
+    from datetime import date, timedelta
+    try:
+        d = date.fromisoformat(str(valeur or "").strip()[:10])
+    except ValueError:
+        return ""
+    if d > date.today() + timedelta(days=1) or d.year < 1970:
+        return ""
+    return d.isoformat()
+
+
 def normaliser_tags(valeur) -> list:
     """Étiquettes libres, dédoublonnées, ordre de saisie conservé.
 
@@ -443,6 +460,10 @@ def normaliser_ligne(ligne: dict, index: int = 0) -> dict:
         # puisse montrer d'ou vient le prix de revient moyen.
         "achats":      [a for a in (ligne.get("achats") or [])
                         if isinstance(a, dict)],
+        # 07/10/2026 : date du premier achat (facultative), depart du
+        # graphique base 100.
+        "achat_date":  normaliser_date_achat(ligne.get("achat_date")
+                                             or ligne.get("date_achat")),
         # v15 : trace de la devise de saisie. `cost_eur` reste en euros ;
         # ces deux champs ne servent qu'a la verification humaine.
         "devise_saisie": str(ligne.get("buy_currency") or "EUR").upper(),
