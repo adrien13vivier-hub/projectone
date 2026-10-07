@@ -11,6 +11,11 @@
   "Chaque titre est note une fois tous les `pas_seances` jours de bourse (5 = une fois",
   "par semaine), par groupes tournants : environ 44 titres par nuit.",
   "Pour retirer un titre : supprimer sa ligne. Pour en ajouter : meme format.",
+  "Les 220 symboles ont ete verifies un par un sur EODHD le 07/10/2026 (bonne societe,",
+  "bonne place, devise EUR/USD, cotation active). Pas de titre de Milan (.MI) : EODHD ne",
+  "couvre pas la Borsa Italiana. Ecartes aussi : les societes en cours de rachat ou de",
+  "fusion (Dominion, Akzo Nobel) et celles dont l'historique d'un an contient une",
+  "scission (Corteva, DuPont), qui fausserait la volatilite et le momentum.",
   "`market` = code de place de api/load_portfolio.MARCHES."
  ],
  "pas_seances": 5,
@@ -364,9 +369,9 @@
    "sector": "Financials"
   },
   {
-   "name": "Intesa Sanpaolo",
-   "ticker": "ISP",
-   "market": "euronext_mil",
+   "name": "BBVA",
+   "ticker": "BBVA",
+   "market": "madrid",
    "sector": "Financials"
   },
   {
@@ -490,9 +495,9 @@
    "sector": "Consumer Discretionary"
   },
   {
-   "name": "Ferrari",
-   "ticker": "RACE",
-   "market": "euronext_mil",
+   "name": "Accor",
+   "ticker": "AC",
+   "market": "euronext_paris",
    "sector": "Consumer Discretionary"
   },
   {
@@ -802,9 +807,9 @@
    "sector": "Energy"
   },
   {
-   "name": "Eni",
-   "ticker": "ENI",
-   "market": "euronext_mil",
+   "name": "Vopak",
+   "ticker": "VPK",
+   "market": "euronext_ams",
    "sector": "Energy"
   },
   {
@@ -826,9 +831,9 @@
    "sector": "Energy"
   },
   {
-   "name": "Tenaris",
-   "ticker": "TEN",
-   "market": "euronext_mil",
+   "name": "Maurel & Prom",
+   "ticker": "MAU",
+   "market": "euronext_paris",
    "sector": "Energy"
   },
   {
@@ -904,8 +909,8 @@
    "sector": "Materials"
   },
   {
-   "name": "DuPont",
-   "ticker": "DD",
+   "name": "Steel Dynamics",
+   "ticker": "STLD",
    "market": "us",
    "sector": "Materials"
   },
@@ -916,8 +921,8 @@
    "sector": "Materials"
   },
   {
-   "name": "Corteva",
-   "ticker": "CTVA",
+   "name": "CF Industries",
+   "ticker": "CF",
    "market": "us",
    "sector": "Materials"
   },
@@ -958,9 +963,9 @@
    "sector": "Materials"
   },
   {
-   "name": "Akzo Nobel",
-   "ticker": "AKZA",
-   "market": "euronext_ams",
+   "name": "Arkema",
+   "ticker": "AKE",
+   "market": "euronext_paris",
    "sector": "Materials"
   },
   {
@@ -994,8 +999,8 @@
    "sector": "Utilities"
   },
   {
-   "name": "Dominion Energy",
-   "ticker": "D",
+   "name": "Ameren",
+   "ticker": "AEE",
    "market": "us",
    "sector": "Utilities"
   },
@@ -1078,9 +1083,9 @@
    "sector": "Utilities"
   },
   {
-   "name": "Enel",
-   "ticker": "ENEL",
-   "market": "euronext_mil",
+   "name": "Endesa",
+   "ticker": "ELE",
+   "market": "madrid",
    "sector": "Utilities"
   },
   {
@@ -1335,5 +1340,6 @@
    "market": "euronext_ams",
    "sector": "Communication Services"
   }
- ]
+ ],
+ "verifie_le": "2026-10-07"
 }
