@@ -1578,6 +1578,14 @@ td{font-size:13px}
           ci-dessous ; votre suivi reste alors privé, mais progresse plus
           lentement.
         </p>
+        <p>
+          Pour ne pas dépendre du nombre d'utilisateurs, le journal commun est
+          aussi alimenté par un <strong>univers de référence</strong> d'environ
+          220 actions (20 par secteur, États-Unis et zone euro), notées chaque
+          semaine avec exactement la même formule. Elles ne servent qu'à
+          mesurer la fiabilité des notes : elles n'apparaissent dans aucun
+          rapport.
+        </p>
 
         <h4 id="fiab-horizon">L'horizon</h4>
         <p>
@@ -2621,8 +2629,9 @@ async function chargerFiabilite(){
   let html='';
   if(d.mutualise){
     html += '<div class="info-box neutral" style="margin-bottom:1rem">Apprentissage mutualisé : '
-          + 'calibré sur '+nb(c.n_tickers,0)+' titre(s) suivi(s) par l’ensemble des profils '
-          + 'participants.</div>';
+          + 'calibré sur '+nb(c.n_tickers,0)+' titre(s) : ceux des profils participants et un '
+          + 'univers de référence d’environ 220 actions (États-Unis et zone euro, 11 secteurs) '
+          + 'noté chaque semaine.</div>';
   }
 
   const bloc=hs[h];
