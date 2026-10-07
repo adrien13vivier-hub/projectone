@@ -33,6 +33,17 @@ def test_fichier_univers_220_titres_11_secteurs():
             assert refs["sector_ref"], a["ticker_eod"]
 
 
+def test_univers_sans_place_ni_titre_ecarte_a_la_verification():
+    # Verification du 07/10/2026 sur EODHD : la Borsa Italiana (.MI) n'est pas
+    # couverte (fiches 404) ; Dominion (rachat NextEra) et Akzo Nobel (fusion
+    # Axalta) vont disparaitre de la cote ; Corteva et DuPont ont une scission
+    # dans leur historique d'un an.
+    titres, _ = pa.charger_univers()
+    assert not [a for a in titres if a["ticker_eod"].endswith(".MI")]
+    ecartes = {"D.US", "AKZA.AS", "CTVA.US", "DD.US"}
+    assert not ecartes & {a["ticker_eod"] for a in titres}
+
+
 def test_rotation_chaque_titre_une_fois_par_semaine():
     titres, pas = pa.charger_univers()
     vus = collections.Counter()
