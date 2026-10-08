@@ -61,6 +61,17 @@ reports/@pool/learning/, sur lequel tout le monde calibre ses notes.
 * Un profil qui refuse (`mutualiser: false`) garde un journal PRIVE, isole : il
   ne contribue pas au pool et ne l'utilise pas.
 
+AMORCAGE SUR LE PASSE (08/10/2026)
+--------------------------------------------------------------------------------
+amorcage_apprentissage.py rejoue ~3 ans de notes des actions US de l'univers
+(cours TwelveData, comptes SEC dates par publication : aucune fuite du futur)
+et les range dans reports/@pool/learning/amorcage/. Ces observations
+« reconstituees » ne sont lues que par les statistiques (load_store(...,
+avec_amorcage=True)), jamais par mature() ni record_snapshots(). Elles
+s'effacent d'un horizon des que les vraies y suffisent (RELAIS_RECONSTITUE_N),
+et le modele Ridge ne s'entraine jamais dessus (notes sans avis d'analystes).
+APPRENTISSAGE_AMORCAGE=0 les ignore sans rien supprimer.
+
 ZERO DEPENDANCE : bibliotheque standard uniquement (le workflow n'installe que
 requests et matplotlib). Aucun appel reseau ici : les cours arrivent par une
 fonction `fetch(symbole, debut, fin)` injectee par l'appelant.
@@ -115,6 +126,13 @@ MIN_CI_N = 8              # ... pour publier un intervalle de confiance
 MIN_PROB_N = 30           # ... pour publier une probabilite
 MIN_SECTOR_N = 12         # ... pour utiliser une cohorte sectorielle
 LEGACY_MIN_N = 30         # sous ce seuil (version courante), on ajoute la cohorte heritee
+# AMORCAGE (08/10/2026) : notes PASSEES rejouees par amorcage_apprentissage.py,
+# rangees a part dans <journal>/amorcage/. Utilisees tant que les VRAIES
+# observations independantes d'un horizon restent sous ce seuil, puis
+# laissees de cote : les vraies notes prennent le relais d'elles-memes.
+AMORCAGE_DIRNAME = "amorcage"
+SOURCE_RECONSTITUE = "reconstitue"
+RELAIS_RECONSTITUE_N = 60
 
 CAL_DAYS_PER_SESSION = 1.4     # jours calendaires par seance (borne basse ~1,4)
 BENCH_GAP_DAYS = 5             # ecart tolere entre une date et un cours de reference
@@ -585,10 +603,30 @@ def prediction_id(user: str, ticker: str, as_of, score_version: str) -> str:
     return hashlib.sha1(brut.encode("utf-8")).hexdigest()[:16]
 
 
-def load_store(ldir: str) -> dict:
+def amorcage_actif() -> bool:
+    return str(os.getenv("APPRENTISSAGE_AMORCAGE", "1")).strip().lower() not in (
+        "0", "false", "non", "off")
+
+
+def amorcage_dir(ldir: str) -> str:
+    return os.path.join(ldir, AMORCAGE_DIRNAME)
+
+
+def load_store(ldir: str, avec_amorcage: bool = False) -> dict:
+    """Journal d'un dossier. `avec_amorcage` : y ajoute les notes rejouees du
+    sous-dossier amorcage/ (statistiques uniquement -- voir en-tete). Le
+    journal vivant passe toujours en premier : a identifiant egal, il gagne."""
     p = _paths(ldir)
     snaps, bad_s = read_jsonl(p["predictions"])
     outs, bad_o = read_jsonl(p["outcomes"])
+    if avec_amorcage and amorcage_actif():
+        pa_ = _paths(amorcage_dir(ldir))
+        s_a, b1 = read_jsonl(pa_["predictions"])
+        o_a, b2 = read_jsonl(pa_["outcomes"])
+        snaps += [dict(x, source=SOURCE_RECONSTITUE) for x in s_a]
+        outs += o_a
+        bad_s += b1
+        bad_o += b2
     # Premier arrive, premier servi : un doublon ne peut pas reecrire l'histoire.
     vus, uniques = set(), []
     for s in snaps:
@@ -976,6 +1014,7 @@ def build_observations(store: dict) -> list:
             continue
         cle = (s["ticker"], str(o.get("session_t") or s["as_of"])[:10], o["horizon"])
         rang = (s.get("score_version") == "legacy",
+                s.get("source") == SOURCE_RECONSTITUE,
                 str(s["as_of"])[:10] != str(o.get("session_t") or "")[:10])
         deja = retenus.get(cle)
         if deja is None or rang < deja[0]:
@@ -992,6 +1031,7 @@ def build_observations(store: dict) -> list:
             "sector_y": o.get("sector_excess_pct"),
             "market_y": o.get("market_excess_pct"),
             "delisted": bool(o.get("delisted_proxy")),
+            "reconstitue": s.get("source") == SOURCE_RECONSTITUE,
         })
     return obs
 
@@ -1079,6 +1119,13 @@ def select_cohort(obs: list, current_version: str, horizon: int) -> tuple:
     """(observations, heritee ?) : version courante ; si l'echantillon
     independant est trop mince, on y ajoute la cohorte heritee -- et on le dit."""
     de_h = [o for o in obs if o["horizon"] == horizon]
+    # Relais amorcage -> vraies notes : des que les vraies observations
+    # independantes suffisent a elles seules, les reconstituees sortent.
+    vivantes = [o for o in de_h if not o.get("reconstitue")]
+    if len(vivantes) < len(de_h) and len(thin(
+            [o for o in vivantes if o["version"] == current_version],
+            horizon)) >= RELAIS_RECONSTITUE_N:
+        de_h = vivantes
     courante = [o for o in de_h if o["version"] == current_version]
     if len(thin(courante, horizon)) >= LEGACY_MIN_N:
         return courante, False
@@ -1154,6 +1201,8 @@ def horizon_stats(obs: list, horizon: int, kind: str, key: str,
         "slope": {k: _r(v, 4) for k, v in sl.items()} if sl else None,
         "bands": bands, "sectors": sectors, "regions": regions,
         "confidence": confidence_level(len(ind), n_tk, legacy, n_periodes(ind, horizon)),
+        "n_reconstitues": sum(1 for o in cohorte if o.get("reconstitue")),
+        "n_reconstitues_indep": sum(1 for o in ind if o.get("reconstitue")),
     }
 
 
@@ -1425,8 +1474,10 @@ def build_summary(user: str, ldir: str, positions: list, score_version: str,
                   today, settings: dict, maturation: dict = None,
                   train_models: bool = True, mutualise: bool = False) -> dict:
     """Tout ce que le rapport affiche, dans un dictionnaire serialisable."""
-    store = load_store(ldir)
-    obs = build_observations(store)
+    store = load_store(ldir)                          # journal vivant : compteurs
+    complet = load_store(ldir, avec_amorcage=True)    # + notes rejouees : statistiques
+    obs = build_observations(complet)
+    n_reconstitues = len(complet["snapshots"]) - len(store["snapshots"])
     horizons = settings["horizons"]
     main_h = settings["horizon"]
 
@@ -1458,6 +1509,9 @@ def build_summary(user: str, ldir: str, positions: list, score_version: str,
         if train_models and head in ("sector", "market"):
             key = dict((k, kk) for k, kk, _ in KINDS)[head]
             cohorte, _l = select_cohort(obs, score_version, h)
+            # Le modele ne s'entraine que sur de VRAIES notes : les notes
+            # rejouees n'ont pas d'avis d'analystes (sous-note figee a 5).
+            cohorte = [o for o in cohorte if not o.get("reconstitue")]
             try:
                 modele = train_and_register(ldir, cohorte, key, head, h,
                                             score_version, today)
@@ -1491,7 +1545,8 @@ def build_summary(user: str, ldir: str, positions: list, score_version: str,
         "mutualise": bool(mutualise),
         "generated_for": _iso(today), "horizon": main_h, "horizons": horizons,
         "counts": {"snapshots": len(store["snapshots"]),
-                   "n_tickers": len({s["ticker"] for s in store["snapshots"]}),
+                   "n_tickers": len({s["ticker"] for s in complet["snapshots"]}),
+                   "reconstitues": n_reconstitues,
                    "matured": par_statut.get("matured", 0),
                    "invalid": par_statut.get("invalid", 0),
                    "corrompus": store["corrompus"],
@@ -1552,7 +1607,8 @@ def render_markdown(summary: dict) -> list:
                 f"revient.", ""]
     out += [
         f"**Snapshots : {c['snapshots']}** (dont {c['legacy']} herites de "
-        f"history.csv) | **Clotures : {c['matured']}** | **Invalides : {c['invalid']}** "
+        f"history.csv) | **Reconstitues (amorcage) : {c.get('reconstitues', 0)}** "
+        f"| **Clotures : {c['matured']}** | **Invalides : {c['invalid']}** "
         f"| Version de la note : `{summary['score_version']}`",
         "",
     ]
@@ -1571,6 +1627,13 @@ def render_markdown(summary: dict) -> list:
         if st["legacy_included"]:
             out += ["*Echantillon inclut la cohorte HERITEE (formules anterieures, "
                     "reconstituee depuis history.csv) : confiance plafonnee a \"faible\".*", ""]
+        if st.get("n_reconstitues_indep"):
+            out += [f"*Dont {st['n_reconstitues_indep']} observation(s) independante(s) "
+                    f"RECONSTITUEE(S) sur {st['global']['n_indep']} : notes recalculees sur "
+                    f"le passe (actions US, comptes dates par publication, sans l'avis des "
+                    f"analystes, biais de selection retire). Elles s'effacent d'elles-memes "
+                    f"quand les vraies notes atteignent {RELAIS_RECONSTITUE_N} observations "
+                    f"independantes.*", ""]
         out += ["| Tranche | N | N indep. | Surperf. moyenne | Mediane | % positifs "
                 "| IC 95 % | Esperance calibree | Confiance |",
                 "|---------|---|----------|------------------|---------|------------"
