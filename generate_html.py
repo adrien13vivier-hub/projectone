@@ -1273,13 +1273,19 @@ def build_learning_html() -> str:
                      (learning.get("score_version", ""), "Version de la note")))
 
     mutu = ""
+    n_rec = f'{c.get("reconstitues") or 0:,}'.replace(",", "\u202f")
     if learning.get("mutualise"):
         mutu = (f'<div class="learn-note"><b>Apprentissage mutualisé</b> : calibré sur '
                 f'{c.get("n_tickers", "?")} titre(s) : ceux des profils participants et un '
                 f'univers de référence d&#39;environ 220 actions (États-Unis et zone euro, '
                 f'11 secteurs) noté chaque semaine. Seuls le titre, la date, la note et le '
                 f'résultat sont partagés — jamais l&#39;identité, les quantités ni les prix '
-                f'de revient.</div>')
+                f'de revient.'
+                + (f' Pour démarrer sans attendre, {n_rec} notes passées des '
+                   f'actions américaines de cet univers ont été <b>reconstituées</b> sur '
+                   f'trois ans, avec uniquement ce qui était public à chaque date.'
+                   if c.get("reconstitues") else "")
+                + '</div>')
 
     corps = ""
     bloc = hs.get(h)
@@ -1294,6 +1300,13 @@ def build_learning_html() -> str:
                    '<b>héritée</b> (formules antérieures, reconstituée depuis '
                    'l\'historique) : la confiance est plafonnée à «&nbsp;faible&nbsp;».</div>'
                    if st["legacy_included"] else "")
+        if st.get("n_reconstitues_indep"):
+            heritee += (f'<div class="learn-note">Dont <b>{st["n_reconstitues_indep"]}</b> '
+                        f'observation(s) indépendante(s) <b>reconstituée(s)</b> sur '
+                        f'{st["global"]["n_indep"]} : notes recalculées sur le passé '
+                        f'(actions américaines, comptes pris à leur date de publication, sans '
+                        f'l&#39;avis des analystes, biais de sélection retiré). Elles '
+                        f's&#39;effacent d&#39;elles-mêmes dès que les vraies notes suffisent.</div>')
         sl = st.get("slope")
         ic = "—" if st["ic"] is None else f'{st["ic"]:+.2f}'
         ici = "—" if st["ic_indep"] is None else f'{st["ic_indep"]:+.2f}'
