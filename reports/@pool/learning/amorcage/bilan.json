@@ -1,0 +1,35 @@
+{
+ "annees": 3,
+ "appels": {
+  "sec": 6,
+  "twelvedata": 12
+ },
+ "correction_selection_moyenne_pct": {},
+ "dates_rejouees": 38,
+ "ecartes": [],
+ "genere_le": "2026-10-08T17:48:43Z",
+ "horizons": [
+  20,
+  60,
+  120,
+  252
+ ],
+ "motifs_dates": {},
+ "observations_par_horizon": {
+  "120": 165,
+  "20": 190,
+  "252": 130,
+  "60": 180
+ },
+ "periode": [
+  "2023-11-02",
+  "2026-09-03"
+ ],
+ "sans_comptes": [],
+ "score_version": "v14-5fd53e",
+ "seance": "2026-10-08",
+ "sec_user_agent_defaut": false,
+ "snapshots": 190,
+ "titres_notes": 5,
+ "titres_us": 5
+}
