@@ -1,0 +1,102 @@
+# Amorcage du moteur d'apprentissage (08/10/2026) -- lancement MANUEL.
+#
+# Rejoue ~3 ans de notes passees des 126 actions americaines de l'univers
+# d'apprentissage (voir amorcage_apprentissage.py) et les range dans
+# reports/@pool/learning/amorcage/. Le moteur s'en sert des le rapport suivant.
+#
+# A lancer une fois (onglet Actions > « Amorcage de l'apprentissage » > Run
+# workflow). Relancer remplace tout proprement, sans doublon -- utile apres un
+# changement de la formule de la note (nouvelle version) pour rejouer le passe
+# avec la nouvelle formule.
+#
+# Pre-requis :
+#   * secret TWELVEDATA_API_KEY (deja en place pour l'analyse du soir) ;
+#   * secret SEC_USER_AGENT : la SEC exige qu'un programme s'identifie, avec un
+#     e-mail de contact, ex. « projectone prenom.nom@exemple.fr ». Un SECRET
+#     (et non une variable) : le depot est public, l'e-mail reste masque.
+#
+# Cout : ~265 credits TwelveData (sur 800/jour, a 8 par minute : ~35 min),
+# ~130 requetes SEC (gratuites), 0 appel EODHD.
+name: Amorcage de l'apprentissage (manuel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      annees:
+        description: "Nombre d'annees a rejouer"
+        default: "3"
+        type: string
+      max_titres:
+        description: "Limiter a N titres pour un essai (0 = les 126)"
+        default: "0"
+        type: string
+
+# Meme groupe que l'analyse du soir : jamais les deux en meme temps (ils
+# ecrivent dans le meme depot).
+concurrency:
+  group: analyse-quotidienne-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  amorcage:
+    name: Rejouer les notes passees
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 10
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests matplotlib
+
+      - name: Rejouer les notes passees
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          SEC_USER_AGENT:     ${{ secrets.SEC_USER_AGENT }}
+          ANNEES:             ${{ github.event.inputs.annees }}
+          MAX_TITRES:         ${{ github.event.inputs.max_titres }}
+        run: |
+          set -euo pipefail
+          [ -n "$SEC_USER_AGENT" ] || echo "⚠️  Secret SEC_USER_AGENT absent : la SEC risque de refuser l'acces."
+          python amorcage_apprentissage.py --annees "${ANNEES:-3}" --max-titres "${MAX_TITRES:-0}"
+
+      - name: Publier
+        run: |
+          set -euo pipefail
+          git config user.name  "Portfolio Bot"
+          git config user.email "bot@portfolio-analyzer"
+          git add reports/@pool/learning/amorcage/
+          if git diff --cached --quiet; then
+            echo "ℹ️ Rien de nouveau a publier."
+            exit 0
+          fi
+          git commit -m "🧠 Amorcage de l'apprentissage : notes passees reconstituees"
+          for essai in 1 2 3; do
+            if git push; then
+              echo "✅ Publie (tentative $essai)."
+              break
+            fi
+            if [ "$essai" = "3" ]; then
+              echo "❌ Echec de publication apres 3 tentatives."
+              exit 1
+            fi
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort
+              echo "❌ Rebase impossible (conflit reel)."
+              exit 1
+            fi
+          done
