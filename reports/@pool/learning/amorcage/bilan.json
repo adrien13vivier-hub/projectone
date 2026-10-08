@@ -1,25 +1,45 @@
 {
  "annees": 3,
  "appels": {
-  "sec": 6,
-  "twelvedata": 12
+  "sec": 125,
+  "twelvedata": 264
  },
- "correction_selection_moyenne_pct": {},
+ "correction_selection_moyenne_pct": {
+  "120:market_excess_pct": -1.69,
+  "120:sector_excess_pct": 0.52,
+  "20:market_excess_pct": -0.22,
+  "20:sector_excess_pct": 0.11,
+  "252:market_excess_pct": -2.77,
+  "252:sector_excess_pct": 1.4,
+  "60:market_excess_pct": -0.84,
+  "60:sector_excess_pct": 0.29
+ },
  "dates_rejouees": 38,
- "ecartes": [],
- "genere_le": "2026-10-08T17:48:43Z",
+ "ecartes": [
+  [
+   "AVB.US",
+   "cours : **symbol** or **figi** parameter is missing or invalid. Please provide a valid symbol according to API documentation: https://twelvedata.com"
+  ],
+  [
+   "EQR.US",
+   "cours : This symbol is available starting with the Grow or Venture plan. Consider upgrading now at https://twelvedata.com/pricing"
+  ]
+ ],
+ "genere_le": "2026-10-08T17:58:54Z",
  "horizons": [
   20,
   60,
   120,
   252
  ],
- "motifs_dates": {},
+ "motifs_dates": {
+  "comptes indisponibles a cette date": 50
+ },
  "observations_par_horizon": {
-  "120": 165,
-  "20": 190,
-  "252": 130,
-  "60": 180
+  "120": 4045,
+  "20": 4662,
+  "252": 3184,
+  "60": 4414
  },
  "periode": [
   "2023-11-02",
@@ -29,7 +49,7 @@
  "score_version": "v14-5fd53e",
  "seance": "2026-10-08",
  "sec_user_agent_defaut": false,
- "snapshots": 190,
- "titres_notes": 5,
- "titres_us": 5
+ "snapshots": 4662,
+ "titres_notes": 124,
+ "titres_us": 126
 }
