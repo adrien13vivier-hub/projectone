@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 08/10/2026 02:23 (Paris)
+# Rapport de Portefeuille v7.5 -- 09/10/2026 02:37 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 4.28/10
-**EUR/USD :** 1 EUR = 1.1198 USD
+**Tendance : Neutre** | Score macro : 4.51/10
+**EUR/USD :** 1 EUR = 1.1216 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.22% | 7 801.77 |
-| CAC 40 | v -1.22% | 7 769.21 |
+| S&P 500 | v -0.47% | 7 765.36 |
+| CAC 40 | v -0.51% | 7 729.69 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 5.29% | -- |
+| UST 10 ans (US) | -- | 5.24% | -- |
 | OAT 10 ans (FR) | -- | 4.89% | -- |
-| Ecart OAT - UST | -- | -40 pb | -- |
+| Ecart OAT - UST | -- | -35 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,21 +38,21 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| S&P500 | PEA CA | Aucun | Aucun stop défini | -- | 61.15 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.20 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.20 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.20 | -- | Aucun |
+| S&P500 | PEA CA | Aucun | Aucun stop défini | -- | 61.01 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.18 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.18 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.18 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **784.79 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **7.85 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **782.58 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **7.83 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| S&P500 | 11.4 % (Faible, sur 1 an) | 0.45 % | 8.0 % | -- | 117.72 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 122.30 EUR | 4.58 EUR |
-| MSCI WORLD | 10.9 % (Faible, sur 1 an) | 0.45 % | 8.0 % | -- | 117.72 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 662.49 EUR (3 lignes) | 544.77 EUR |
+| S&P500 | 11.4 % (Faible, sur 1 an) | 0.46 % | 8.0 % | -- | 117.39 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 122.02 EUR | 4.63 EUR |
+| MSCI WORLD | 11.0 % (Faible, sur 1 an) | 0.50 % | 8.0 % | -- | 117.39 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 660.56 EUR (3 lignes) | 543.17 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -84,7 +84,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| ETF / Fonds | 784.79 EUR | 100.0% |
+| ETF / Fonds | 782.58 EUR | 100.0% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -95,52 +95,55 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 *Cette section mesure la valeur PASSEE de la note ; elle ne la modifie pas et ne predit rien. Une esperance historique n'est pas une promesse.*
 
-**Apprentissage mutualise** : calibre sur 21 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
+**Apprentissage mutualise** : calibre sur 158 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 475** (dont 381 herites de history.csv) | **Clotures : 517** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 537** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 525** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
-### Notes par tranche -- horizon 60 seances, cible : surperformance vs marche
+### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
-*Echantillon inclut la cohorte HERITEE (formules anterieures, reconstituee depuis history.csv) : confiance plafonnee a "faible".*
+*Dont 1472 observation(s) independante(s) RECONSTITUEE(S) sur 1472 : notes recalculees sur le passe (actions US, comptes dates par publication, sans l'avis des analystes, biais de selection retire). Elles s'effacent d'elles-memes quand les vraies notes atteignent 60 observations independantes.*
 
 | Tranche | N | N indep. | Surperf. moyenne | Mediane | % positifs | IC 95 % | Esperance calibree | Confiance |
 |---------|---|----------|------------------|---------|------------|---------|--------------------|-----------|
-| < 3 (VENDRE) | 33 | 1 | -17.2% | -15.1% | 0% | -- | -- | insuffisante |
-| 3 - 4,5 (A EVITER) | 17 | 2 | +35.6% | +41.5% | 100% | -- | -- | insuffisante |
-| 4,5 - 6 (GARDER) | 79 | 5 | +15.3% | +13.3% | 91% | -- | -- | insuffisante |
-| 6 - 7,5 (ACHAT MODERE) | 50 | 3 | +0.5% | -2.1% | 48% | -- | -- | insuffisante |
-| >= 7,5 (ACHAT FORT) | 10 | 1 | -27.1% | -27.4% | 0% | -- | -- | insuffisante |
+| < 3 (VENDRE) | 34 | 21 | +3.7% | +1.1% | 53% | [-1.8 ; +9.2] | +2.1% | faible |
+| 3 - 4,5 (A EVITER) | 340 | 189 | +0.2% | -0.1% | 49% | [-2.0 ; +2.5] | +0.2% | elevee |
+| 4,5 - 6 (GARDER) | 1827 | 844 | +0.0% | -0.6% | 47% | [-0.8 ; +0.8] | +0.0% | elevee |
+| 6 - 7,5 (ACHAT MODERE) | 2012 | 879 | -0.3% | -1.2% | 45% | [-1.0 ; +0.4] | -0.3% | elevee |
+| >= 7,5 (ACHAT FORT) | 201 | 110 | +1.9% | +0.5% | 52% | [-0.2 ; +3.9] | +1.6% | elevee |
 
-**Lien note -> surperformance :** IC de rang -0.10 (echantillon independant : +0.14) | pente -4.16 pt par point de note | 6 titre(s) sur 38 seance(s).
+**Lien note -> surperformance :** IC de rang -0.01 (echantillon independant : -0.04) | pente -0.34 pt par point de note | 123 titre(s) sur 36 seance(s).
 
 | Secteur | N | N indep. | Surperf. moyenne | % positifs | IC de rang |
 |---------|---|----------|------------------|------------|------------|
-| Financials | 37 | 1 | +8.6% | 100% | -0.38 |
-| Health Care | 37 | 1 | -20.8% | 0% | -0.85 |
-| Information Technology | 34 | 1 | -15.2% | 15% | -0.70 |
-
-*Ventilation par region, a titre indicatif (n'entre pas dans le calcul de l'esperance calibree) :*
-
-| Region | N | N indep. | Surperf. moyenne | % positifs |
-|--------|---|----------|------------------|------------|
-| EUROPE | 111 | 3 | +5.1% | 67% |
-| US | 78 | 3 | +5.6% | 50% |
+| Communication Services | 504 | 168 | -0.6% | 44% | -0.11 |
+| Consumer Discretionary | 360 | 120 | -0.4% | 48% | -0.04 |
+| Consumer Staples | 360 | 120 | +0.6% | 49% | +0.07 |
+| Energy | 324 | 108 | -0.9% | 37% | -0.09 |
+| Financials | 346 | 116 | +2.5% | 57% | +0.04 |
+| Health Care | 360 | 120 | +0.6% | 51% | -0.04 |
+| Industrials | 360 | 120 | +0.5% | 49% | -0.03 |
+| Information Technology | 360 | 120 | -0.0% | 44% | +0.02 |
+| Materials | 504 | 168 | +0.5% | 47% | +0.02 |
+| Real Estate | 432 | 144 | -0.4% | 46% | +0.05 |
+| Utilities | 504 | 168 | -1.6% | 41% | -0.04 |
 
 ### Quel horizon colle le mieux a la note ?
 
 | Horizon (seances) | N indep. | IC de rang | Notes >= 7,5 | Notes < 4,5 | Cible |
 |-------------------|----------|------------|--------------|-------------|-------|
-| 20 | 15 | -0.16 | -5.5% | -5.8% | surperformance sectorielle |
-| 60 | 6 | -0.10 | -27.1% | +9.2% | surperformance vs marche |
+| 20 | 4662 | -0.02 | +0.1% | +0.7% | surperformance sectorielle |
+| 60 | 1472 | -0.01 | +1.9% | +2.0% | surperformance sectorielle |
+| 120 | 736 | +0.04 | +5.8% | +2.0% | surperformance sectorielle |
+| 252 | 245 | +0.00 | +9.7% | +5.4% | surperformance sectorielle |
 
 ### Fiabilite par position (horizon 60 seances)
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| S&P500 | 8.13/10 | n/d | -- | -- | insuffisante | 1 | global + heritee |
-| MSCI WORLD | 7.72/10 | n/d | -- | -- | insuffisante | 1 | global + heritee |
-| MSCI WORLD | 7.72/10 | n/d | -- | -- | insuffisante | 1 | global + heritee |
-| MSCI WORLD | 7.72/10 | n/d | -- | -- | insuffisante | 1 | global + heritee |
+| S&P500 | 8.13/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| MSCI WORLD | 7.72/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| MSCI WORLD | 7.72/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| MSCI WORLD | 7.72/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
 
 **Modele : non active** -- historique insuffisant : 0/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
@@ -153,7 +156,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 61.15 EUR | ^ +0.51% | 122.30 EUR | + +6.56 EUR (+5.7%) | + +5.37 EUR (+4.6%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
+| 61.01 EUR | v -0.28% | 122.02 EUR | + +6.28 EUR (+5.4%) | + +5.09 EUR (+4.4%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
@@ -165,10 +168,10 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +5.1% | 3M +5.8% | 6M +19.8% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** historique insuffisant a 60 seances (1 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
+**Perf. historique :** 1M +4.9% | 3M +5.2% | 6M +19.5% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +5.37 EUR (+4.6%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +5.09 EUR (+4.4%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -176,7 +179,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 7.20 EUR | ^ +0.17% | 216.03 EUR | + +12.93 EUR (+6.4%) | + +10.83 EUR (+5.3%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
+| 7.18 EUR | v -0.65% | 215.40 EUR | + +12.30 EUR (+6.1%) | + +10.20 EUR (+5.0%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
@@ -188,10 +191,10 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +3.2% | 3M +4.5% | 6M +16.3% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** historique insuffisant a 60 seances (1 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
+**Perf. historique :** 1M +3.0% | 3M +3.9% | 6M +15.9% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +10.83 EUR (+5.3%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +10.20 EUR (+5.0%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -199,7 +202,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 7.20 EUR | ^ +0.17% | 432.06 EUR | + +36.66 EUR (+9.3%) | + +32.69 EUR (+8.3%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
+| 7.18 EUR | v -0.65% | 430.80 EUR | + +35.40 EUR (+8.9%) | + +31.43 EUR (+8.0%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
@@ -211,10 +214,10 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +3.2% | 3M +4.5% | 6M +16.3% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** historique insuffisant a 60 seances (1 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
+**Perf. historique :** 1M +3.0% | 3M +3.9% | 6M +15.9% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +32.69 EUR (+8.3%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +31.43 EUR (+8.0%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -222,7 +225,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 7.20 EUR | ^ +0.17% | 14.40 EUR | + +1.44 EUR (+11.1%) | + +1.31 EUR (+10.1%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
+| 7.18 EUR | v -0.65% | 14.36 EUR | + +1.40 EUR (+10.8%) | + +1.27 EUR (+9.8%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
@@ -234,10 +237,10 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +3.2% | 3M +4.5% | 6M +16.3% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** historique insuffisant a 60 seances (1 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
+**Perf. historique :** 1M +3.0% | 3M +3.9% | 6M +15.9% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +1.31 EUR (+10.1%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +1.27 EUR (+9.8%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -245,11 +248,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| S&P500 | 61.15 | 122.30 | +6.56 (+5.7%) | +5.37 (+4.6%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
-| MSCI WORLD | 7.20 | 216.03 | +12.93 (+6.4%) | +10.83 (+5.3%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
-| MSCI WORLD | 7.20 | 432.06 | +36.66 (+9.3%) | +32.69 (+8.3%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
-| MSCI WORLD | 7.20 | 14.40 | +1.44 (+11.1%) | +1.31 (+10.1%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
-| **TOTAL** | — | **784.79** | **+57.59 (+7.9%)** | **+50.20 (+6.9%)** | — | — | — |
+| S&P500 | 61.01 | 122.02 | +6.28 (+5.4%) | +5.09 (+4.4%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 7.18 | 215.40 | +12.30 (+6.1%) | +10.20 (+5.0%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 7.18 | 430.80 | +35.40 (+8.9%) | +31.43 (+8.0%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 7.18 | 14.36 | +1.40 (+10.8%) | +1.27 (+9.8%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
+| **TOTAL** | — | **782.58** | **+55.38 (+7.6%)** | **+47.99 (+6.6%)** | — | — | — |
 
 ---
 

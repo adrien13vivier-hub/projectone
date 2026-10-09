@@ -39,7 +39,7 @@
 <button class="toggle" data-theme-toggle onclick="toggleTheme()">🌙 Sombre</button>
 <a class="back" href="index.html">← Retour au rapport</a>
 <h1>📈 Historique du Portefeuille</h1>
-<p class="meta">Mis à jour le 08/10/2026 à 02:25 · 3 sessions · 30 derniers jours</p>
+<p class="meta">Mis à jour le 09/10/2026 à 02:38 · 4 sessions · 30 derniers jours</p>
 
 <div class="grid">
   <div class="card">
@@ -60,13 +60,13 @@
 </div>
 
 <script>
-const labels      = ["2026-10-05 03:25", "2026-10-06 02:05", "2026-10-07 02:23"];
-const pnlData     = [-3.4, 4.8, -34.56];
-const colors      = ["rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)"];
+const labels      = ["2026-10-05 03:25", "2026-10-06 02:05", "2026-10-07 02:23", "2026-10-08 02:37"];
+const pnlData     = [-3.4, 4.8, -34.56, -137.58];
+const colors      = ["rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)"];
 const bLabels     = ["Newmont Corporation", "air liquide", "Bloom Energy", "Ouster", "Vale", "Fluence Energy Inc", "Exosens", "First Solar"];
-const bData       = [-6.85, -15.4, 3.32, -5.22, -2.81, 0.21, -16.0, 8.19];
-const bColors     = ["rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)", "rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)"];
-const lineDatasets = [{"label": "Bloom Energy", "data": [-20.53, 16.99, 3.32], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Exosens", "data": [9.5, -12.75, -16.0], "borderColor": "#16a34a", "backgroundColor": "rgba(22,163,74,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "First Solar", "data": [0.36, 6.15, 8.19], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Fluence Energy Inc", "data": [-0.11, 3.22, 0.21], "borderColor": "#d97706", "backgroundColor": "rgba(217,119,6,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Newmont Corporation", "data": [-1.57, -0.78, -6.85], "borderColor": "#7c3aed", "backgroundColor": "rgba(124,58,237,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Ouster", "data": [-0.99, 0.14, -5.22], "borderColor": "#0891b2", "backgroundColor": "rgba(8,145,178,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Vale", "data": [3.94, 2.43, -2.81], "borderColor": "#db2777", "backgroundColor": "rgba(219,39,119,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "air liquide", "data": [6.0, -10.6, -15.4], "borderColor": "#65a30d", "backgroundColor": "rgba(101,163,13,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}];
+const bData       = [-1.97, -22.2, -81.33, -9.17, -5.49, -1.8, -21.25, 5.63];
+const bColors     = ["rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(239,68,68,0.8)", "rgba(34,197,94,0.8)"];
+const lineDatasets = [{"label": "Bloom Energy", "data": [-20.53, 16.99, 3.32, -81.33], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Exosens", "data": [9.5, -12.75, -16.0, -21.25], "borderColor": "#16a34a", "backgroundColor": "rgba(22,163,74,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "First Solar", "data": [0.36, 6.15, 8.19, 5.63], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Fluence Energy Inc", "data": [-0.11, 3.22, 0.21, -1.8], "borderColor": "#d97706", "backgroundColor": "rgba(217,119,6,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Newmont Corporation", "data": [-1.57, -0.78, -6.85, -1.97], "borderColor": "#7c3aed", "backgroundColor": "rgba(124,58,237,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Ouster", "data": [-0.99, 0.14, -5.22, -9.17], "borderColor": "#0891b2", "backgroundColor": "rgba(8,145,178,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "Vale", "data": [3.94, 2.43, -2.81, -5.49], "borderColor": "#db2777", "backgroundColor": "rgba(219,39,119,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}, {"label": "air liquide", "data": [6.0, -10.6, -15.4, -22.2], "borderColor": "#65a30d", "backgroundColor": "rgba(101,163,13,0.08)", "borderWidth": 2, "pointRadius": 3, "fill": false, "tension": 0.3, "spanGaps": true}];
 
 const isDark    = () => document.documentElement.getAttribute('data-theme') === 'dark';
 const gridColor = () => isDark() ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
