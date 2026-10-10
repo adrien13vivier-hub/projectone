@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 525,
-  "n_tickers": 158,
+  "matured": 536,
+  "n_tickers": 175,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 537,
+    "en_attente": 597,
     "invalides": 0
    },
    "20": {
-    "closes": 324,
-    "en_attente": 213,
+    "closes": 330,
+    "en_attente": 267,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 537,
+    "en_attente": 597,
     "invalides": 0
    },
    "60": {
-    "closes": 201,
-    "en_attente": 336,
+    "closes": 206,
+    "en_attente": 391,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 537
+  "snapshots": 597
  },
- "generated_for": "2026-10-08",
+ "generated_for": "2026-10-09",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,14 +3894,82 @@
  },
  "maturation": {
   "appels": 10,
-  "candidats": 10,
+  "candidats": 6,
   "clotures": 0,
-  "en_attente": 10,
+  "en_attente": 6,
   "invalides": 0,
   "symboles_en_echec": []
  },
  "mutualise": true,
  "positions": [
+  {
+   "horizons": {
+    "120": {
+     "band": ">= 7,5",
+     "ci95": [
+      1.4502,
+      10.1134
+     ],
+     "confidence": "elevee",
+     "estimate": 4.8277,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 76,
+     "p_outperf": 0.576,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "20": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.8348,
+      1.021
+     ],
+     "confidence": "elevee",
+     "estimate": 0.0875,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 233,
+     "p_outperf": 0.485,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "252": {
+     "band": ">= 7,5",
+     "ci95": [
+      0.1609,
+      19.174
+     ],
+     "confidence": "moyenne",
+     "estimate": 7.2099,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 44,
+     "p_outperf": 0.455,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "60": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.2233,
+      3.9435
+     ],
+     "confidence": "elevee",
+     "estimate": 1.6374,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 110,
+     "p_outperf": 0.497,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    }
+   },
+   "name": "MSCI WORLD",
+   "score": 8.13,
+   "sector": "",
+   "ticker": "WPEA.PA"
+  },
   {
    "horizons": {
     "120": {
@@ -4034,7 +4102,7 @@
     }
    },
    "name": "MSCI WORLD",
-   "score": 7.72,
+   "score": 8.13,
    "sector": "",
    "ticker": "WPEA.PA"
   },
@@ -4102,75 +4170,7 @@
     }
    },
    "name": "MSCI WORLD",
-   "score": 7.72,
-   "sector": "",
-   "ticker": "WPEA.PA"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": ">= 7,5",
-     "ci95": [
-      1.4502,
-      10.1134
-     ],
-     "confidence": "elevee",
-     "estimate": 4.8277,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "20": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.8348,
-      1.021
-     ],
-     "confidence": "elevee",
-     "estimate": 0.0875,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "252": {
-     "band": ">= 7,5",
-     "ci95": [
-      0.1609,
-      19.174
-     ],
-     "confidence": "moyenne",
-     "estimate": 7.2099,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "60": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.2233,
-      3.9435
-     ],
-     "confidence": "elevee",
-     "estimate": 1.6374,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    }
-   },
-   "name": "MSCI WORLD",
-   "score": 7.72,
+   "score": 8.13,
    "sector": "",
    "ticker": "WPEA.PA"
   }

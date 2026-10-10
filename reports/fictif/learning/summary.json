@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 525,
-  "n_tickers": 158,
+  "matured": 536,
+  "n_tickers": 175,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 545,
+    "en_attente": 605,
     "invalides": 0
    },
    "20": {
-    "closes": 324,
-    "en_attente": 221,
+    "closes": 330,
+    "en_attente": 275,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 545,
+    "en_attente": 605,
     "invalides": 0
    },
    "60": {
-    "closes": 201,
-    "en_attente": 344,
+    "closes": 206,
+    "en_attente": 399,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 545
+  "snapshots": 605
  },
- "generated_for": "2026-10-08",
+ "generated_for": "2026-10-09",
  "horizon": 20,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 10,
-  "candidats": 10,
+  "candidats": 6,
   "clotures": 0,
-  "en_attente": 10,
+  "en_attente": 6,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3954,7 +3954,7 @@
     }
    },
    "name": "Newmont Corporation",
-   "score": 7.08,
+   "score": 7.03,
    "sector": "Materials",
    "ticker": "NEM.US"
   },
@@ -4010,7 +4010,7 @@
     }
    },
    "name": "Bloom Energy",
-   "score": 6.37,
+   "score": 6.71,
    "sector": "Industrials",
    "ticker": "BE.US"
   },
@@ -4121,10 +4121,10 @@
      "scope": "secteur Materials"
     }
    },
-   "name": "Vale",
-   "score": 5.53,
+   "name": "air liquide",
+   "score": 5.62,
    "sector": "Materials",
-   "ticker": "VALE.US"
+   "ticker": "AI.PA"
   },
   {
    "horizons": {
@@ -4177,131 +4177,122 @@
      "scope": "secteur Materials"
     }
    },
-   "name": "air liquide",
-   "score": 5.07,
+   "name": "Vale",
+   "score": 5.53,
    "sector": "Materials",
-   "ticker": "AI.PA"
+   "ticker": "VALE.US"
   },
   {
    "horizons": {
     "120": {
-     "band": "3 - 4,5",
+     "band": "4,5 - 6",
      "ci95": null,
-     "confidence": "faible",
-     "estimate": -0.1535,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 12,
-     "p_outperf": 0.438,
-     "reco": "A EVITER",
-     "scope": "secteur Information Technology"
-    },
-    "20": {
-     "band": "3 - 4,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": 0.9301,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 34,
-     "p_outperf": 0.451,
-     "reco": "A EVITER",
-     "scope": "secteur Information Technology"
-    },
-    "252": {
-     "band": "3 - 4,5",
-     "ci95": [
-      -9.4594,
-      8.6737
-     ],
      "confidence": "moyenne",
-     "estimate": -0.3225,
+     "estimate": -0.9199,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 69,
-     "p_outperf": 0.45,
-     "reco": "A EVITER",
-     "scope": "global"
-    },
-    "60": {
-     "band": "3 - 4,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": 2.3156,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 19,
-     "p_outperf": 0.528,
-     "reco": "A EVITER",
-     "scope": "secteur Information Technology"
-    }
-   },
-   "name": "Ouster",
-   "score": 4.45,
-   "sector": "Information Technology",
-   "ticker": "OUST.US"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": "3 - 4,5",
-     "ci95": [
-      -4.0123,
-      3.5334
-     ],
-     "confidence": "elevee",
-     "estimate": -0.2149,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 127,
-     "p_outperf": 0.464,
-     "reco": "A EVITER",
-     "scope": "global"
+     "n_indep": 46,
+     "p_outperf": 0.458,
+     "reco": "GARDER",
+     "scope": "secteur Industrials"
     },
     "20": {
-     "band": "3 - 4,5",
+     "band": "4,5 - 6",
      "ci95": null,
-     "confidence": "faible",
-     "estimate": 0.4653,
+     "confidence": "moyenne",
+     "estimate": 0.2339,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 29,
-     "p_outperf": 0.483,
-     "reco": "A EVITER",
+     "n_indep": 175,
+     "p_outperf": 0.47,
+     "reco": "GARDER",
      "scope": "secteur Industrials"
     },
     "252": {
-     "band": "3 - 4,5",
-     "ci95": [
-      -9.4594,
-      8.6737
-     ],
-     "confidence": "moyenne",
-     "estimate": -0.3225,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 69,
-     "p_outperf": 0.45,
-     "reco": "A EVITER",
-     "scope": "global"
-    },
-    "60": {
-     "band": "3 - 4,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 2.0379,
+     "estimate": -2.0767,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 17,
-     "p_outperf": 0.567,
-     "reco": "A EVITER",
+     "n_indep": 20,
+     "p_outperf": 0.421,
+     "reco": "GARDER",
+     "scope": "secteur Industrials"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.2114,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 79,
+     "p_outperf": 0.492,
+     "reco": "GARDER",
      "scope": "secteur Industrials"
     }
    },
    "name": "Exosens",
-   "score": 4.28,
+   "score": 4.96,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.2247,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 47,
+     "p_outperf": 0.467,
+     "reco": "GARDER",
+     "scope": "secteur Information Technology"
+    },
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.3903,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 187,
+     "p_outperf": 0.457,
+     "reco": "GARDER",
+     "scope": "secteur Information Technology"
+    },
+    "252": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 9.6425,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 19,
+     "p_outperf": 0.539,
+     "reco": "GARDER",
+     "scope": "secteur Information Technology"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.4724,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 78,
+     "p_outperf": 0.418,
+     "reco": "GARDER",
+     "scope": "secteur Information Technology"
+    }
+   },
+   "name": "Ouster",
+   "score": 4.69,
+   "sector": "Information Technology",
+   "ticker": "OUST.US"
   },
   {
    "horizons": {

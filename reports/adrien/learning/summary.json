@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 525,
-  "n_tickers": 158,
+  "matured": 536,
+  "n_tickers": 175,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 535,
+    "en_attente": 595,
     "invalides": 0
    },
    "20": {
-    "closes": 324,
-    "en_attente": 211,
+    "closes": 330,
+    "en_attente": 265,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 535,
+    "en_attente": 595,
     "invalides": 0
    },
    "60": {
-    "closes": 201,
-    "en_attente": 334,
+    "closes": 206,
+    "en_attente": 389,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 535
+  "snapshots": 595
  },
- "generated_for": "2026-10-08",
+ "generated_for": "2026-10-09",
  "horizon": 60,
  "horizons": [
   20,
@@ -3895,8 +3895,8 @@
  "maturation": {
   "appels": 10,
   "candidats": 18,
-  "clotures": 8,
-  "en_attente": 10,
+  "clotures": 11,
+  "en_attente": 7,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -4081,7 +4081,7 @@
     }
    },
    "name": "CoreWeave",
-   "score": 3.71,
+   "score": 3.77,
    "sector": "Information Technology",
    "ticker": "CRWV.US"
   },

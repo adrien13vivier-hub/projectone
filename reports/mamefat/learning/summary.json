@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 525,
-  "n_tickers": 158,
+  "matured": 536,
+  "n_tickers": 175,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 549,
+    "en_attente": 609,
     "invalides": 0
    },
    "20": {
-    "closes": 324,
-    "en_attente": 225,
+    "closes": 330,
+    "en_attente": 279,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 549,
+    "en_attente": 609,
     "invalides": 0
    },
    "60": {
-    "closes": 201,
-    "en_attente": 348,
+    "closes": 206,
+    "en_attente": 403,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 549
+  "snapshots": 609
  },
- "generated_for": "2026-10-08",
+ "generated_for": "2026-10-09",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 10,
-  "candidats": 10,
+  "candidats": 6,
   "clotures": 0,
-  "en_attente": 10,
+  "en_attente": 6,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -4016,7 +4016,7 @@
     }
    },
    "name": "Apple",
-   "score": 6.96,
+   "score": 6.86,
    "sector": "Information Technology",
    "ticker": "AAPL.US"
   },
@@ -4131,7 +4131,7 @@
     }
    },
    "name": "Tesla",
-   "score": 4.07,
+   "score": 4.32,
    "sector": "Consumer Discretionary",
    "ticker": "TSLA.US"
   }
