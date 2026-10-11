@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-11T18:38:08.369339+00:00",
+  "saved_at": "2026-10-11T18:38:37.691474+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -31,6 +31,7 @@
       "ticker": "TTE",
       "isin": "FR0000120271",
       "quantity": 80.0,
+      "buy_price": 1000.0,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
