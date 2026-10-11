@@ -1,14 +1,42 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-11T18:32:03.912746+00:00",
+  "saved_at": "2026-10-11T18:38:08.369339+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
       "S&P 500",
       "CAC 40"
     ],
-    "watchlist": []
+    "watchlist": [
+      {
+        "name": "TotalEnergies",
+        "ticker": "TTE",
+        "market": "euronext_paris",
+        "sector": "énergie"
+      }
+    ],
+    "risque_pct": 1.0,
+    "poids_max_pct": 15.0,
+    "vol_cible_pct": 2.0,
+    "apprentissage": {
+      "horizon": 60,
+      "actif": true,
+      "mutualiser": true
+    }
   },
-  "lines": [],
-  "closed": []
+  "closed": [],
+  "lines": [
+    {
+      "name": "TotalEnergies",
+      "ticker": "TTE",
+      "isin": "FR0000120271",
+      "quantity": 80.0,
+      "market": "us",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "",
+      "tags": [],
+      "sector": ""
+    }
+  ]
 }
