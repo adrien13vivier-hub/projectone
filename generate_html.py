@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 generate_html.py  v3.8
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Convertit reports/daily_report.md  →  docs/index.html
