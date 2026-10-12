@@ -3,6 +3,16 @@
 backtest_score.py -- Le score du jour a-t-il predit la performance a venir ?
 ================================================================================
 
+REMPLACE (11/10/2026) par learning_engine.py
+--------------------------------------------------------------------------------
+Ce script est le premier controle de la note (v8.2). Il compare le score au
+rendement BRUT qui suit, sans reference de marche ni de secteur, et compte
+comme independantes des observations qui se chevauchent presque entierement.
+Le moteur d'apprentissage (section « Fiabilite des notes » du rapport) mesure
+la surperformance face au secteur et au marche, ecarte les chevauchements et
+juge hors echantillon. Ce script n'est garde que pour memoire : ne pas citer
+ses chiffres comme une mesure du pouvoir predictif de la note.
+
 CE QUE CE SCRIPT REPOND, ET POURQUOI IL MANQUAIT
 --------------------------------------------------------------------------------
 Le rapport quotidien sort une note sur 10 et une recommandation (ACHAT FORT,
@@ -214,6 +224,9 @@ def main() -> int:
     ap.add_argument("--horizon", type=int, default=30,
                     help="Horizon de performance future, en jours (défaut 30).")
     args = ap.parse_args()
+    print("⚠️  Outil historique (rendement brut, observations chevauchantes) : la "
+          "mesure de reference est la section « Fiabilite des notes » du rapport "
+          "(learning_engine.py).\n")
 
     if args.all_users or not args.user:
         chemins = sorted(glob.glob("reports/*/history.csv"))
