@@ -1,0 +1,74 @@
+# Tests automatiques (11/10/2026).
+#
+# A chaque modification du code poussee sur GitHub (y compris un fichier
+# colle a la main depuis le site), on verifie que :
+#   1. tout le code Python se compile, sans avertissement ;
+#   2. l'autotest du moteur de risque passe ;
+#   3. la suite pytest passe (aucun reseau, aucune cle API).
+# Un echec apparait en rouge dans l'onglet Actions -- et sur la page du
+# commit -- AVANT que l'analyse du soir ne tourne avec le code casse.
+#
+# Ne se declenche pas sur les rapports ni sur les donnees ecrits chaque nuit :
+# seulement sur le code et les fichiers de reference qu'il lit.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.py"
+      - "requirements*.txt"
+      - "data/univers_apprentissage.json"
+      - "data/learning_config.json"
+      - "data/brokers.json"
+      - ".github/workflows/tests.yml"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Compilation, moteur de risque, pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Compilation sans avertissement
+        run: |
+          python - <<'FIN'
+          import glob, sys, warnings
+          warnings.simplefilter("error", SyntaxWarning)
+          erreurs = []
+          for f in sorted(glob.glob("*.py") + glob.glob("api/*.py") + glob.glob("tests/*.py")):
+              try:
+                  compile(open(f, encoding="utf-8").read(), f, "exec")
+              except SyntaxError as e:
+                  erreurs.append(f"{f}:{e.lineno}: {e.msg}")
+          print("\n".join(erreurs) or "Compilation propre.")
+          sys.exit(1 if erreurs else 0)
+          FIN
+
+      - name: Autotest du moteur de risque
+        run: python risk_engine.py
+
+      - name: Suite pytest
+        run: pytest -q
