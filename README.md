@@ -1,21 +1,94 @@
-# 📊 Portfolio Analyzer v8.1
+# 📊 ProjectOne — Portfolio Analyzer
 
-Rapport quotidien automatisé à **16h00 Paris (CEST)** via GitHub Actions — 4 sources de données avec validation croisée et fallback en cascade.
+Un rapport par utilisateur, chaque soir de bourse à **22h37 (Paris)**, une fois
+New York et Euronext fermés. Le serveur YunoHost donne le top départ, l'analyse
+tourne sur GitHub Actions (où vivent les clés API), les rapports sont publiés
+sur Cloudflare Pages. Plusieurs sources de données gratuites, croisées, avec
+repli en cascade et cache.
+
+> **Statut de la note sur 10 : expérimentale.** Le programme mesure lui-même ce
+> que ses notes ont valu (section « Fiabilité des notes »). Sur 4 662 notes
+> reconstituées sur trois ans (octobre 2026), le lien entre la note et la
+> surperformance qui suit est **quasi nul**. ProjectOne est un outil de suivi
+> et de discipline du risque ; la note est une aide à la lecture, pas un signal
+> prouvé, et rien ici n'est un conseil en investissement.
 
 ## Ce que fait le programme
 
-Un rapport quotidien qui répond à quatre questions, dans cet ordre :
-
 | Question | Section du rapport |
 |----------|--------------------|
-| Dans quel décor je navigue ? | **Contexte économique** — indices, taux 10 ans US/OAT, manchettes |
-| Est-ce qu'une position est sortie de sa zone ? | **Stops & Alertes** |
+| Dans quel décor je navigue ? | **Contexte économique** — indices, taux 10 ans US et OAT, manchettes |
+| Est-ce qu'une position est sortie de sa zone ? | **Stops & Alertes**, exposition corrélée |
 | À quoi je suis exposé ? | **Répartition** — classe, devise, compte, étiquette |
 | Que valent mes titres, un par un ? | **Analyse par valeur** + **Synthèse** |
+| Comment évolue ma performance ? | **Tendances** — base 100 = prix de revient, depuis la date d'achat |
+| La note a-t-elle eu raison par le passé ? | **Fiabilité des notes** (moteur d'apprentissage) |
 
 ---
 
-## Gestion du risque (v8)
+## La note sur 10
+
+Six critères, chacun noté sur 10, puis une moyenne pondérée
+(`portfolio_analyzer.note_titre`, poids dans `POIDS_NOTE`) :
+
+| Critère | Poids | Ce qui est mesuré (poids internes) |
+|---------|-------|------------------------------------|
+| Valorisation | 24 % | PEG (3), PER anticipé sinon PER (2,5), EV/EBITDA (2), cours/actif net (1), cours/ventes (1) — paliers absolus |
+| Santé financière | 19 % | marge nette (2,5), marge opérationnelle (2), ROE (2,5 ; non récompensé au-delà de 40 %), ROA (1,5) |
+| Croissance | 16 % | chiffre d'affaires sur un an (3), bénéfice sur un an (2) |
+| Tendance | 21 % | performance à 1, 3 et 6 mois ; pénalité de surchauffe (+40 %, +60 %, +100 % en 6 mois) ; plancher après une chute de plus de 50 % |
+| Avis des analystes | 15 % | recommandations Finnhub : achat fort 10, achat 7,5, conserver 5, vente 2,5, vente forte 0 |
+| Risque | 5 % | bêta (2), position dans le canal 52 semaines (1,5), volatilité réalisée (2) |
+
+**Absent n'est pas non applicable.** Un critère sans donnée sort du calcul et
+les autres poids sont renormalisés ; la **confiance** est la part des poids
+applicables réellement calculés. Pour un ETF ou une crypto, valorisation,
+santé, croissance et avis des analystes sont *non applicables* : ils sortent
+sans pénaliser la confiance.
+
+| Note | Recommandation |
+|------|----------------|
+| ≥ 7,5 | RENFORCER |
+| ≥ 6,0 | CONSERVER |
+| ≥ 4,5 | SURVEILLER |
+| ≥ 3,0 | ALLÉGER |
+| < 3,0 | SORTIR |
+
+Garde-fous : sous 40 % de confiance, ou avec moins de trois critères, la
+recommandation devient « À EXAMINER ». Chaque note porte une **version**
+(`SCORE_VERSION` = formule + empreinte des poids) : changer un poids ouvre une
+nouvelle cohorte dans le moteur d'apprentissage.
+
+---
+
+## Fiabilité des notes (moteur d'apprentissage)
+
+`learning_engine.py` traite chaque note comme une prévision datée, puis la
+juge à 20, 60, 120 et 252 séances :
+
+* **Surperformance** face à l'ETF sectoriel (et au marché), cours ajustés des
+  dividendes et des splits, même devise des deux côtés.
+* **Observations indépendantes** : un même titre n'est compté qu'une fois par
+  fenêtre (`thin`), et le nombre de périodes de marché distinctes plafonne la
+  confiance.
+* **Journal commun anonyme** (`reports/@pool/learning`) alimenté par les
+  profils qui l'acceptent et par un **univers de référence** de 220 actions
+  (11 secteurs, États-Unis et zone euro, `data/univers_apprentissage.json`),
+  noté chaque semaine par rotation.
+* **Amorçage** (`amorcage_apprentissage.py`, workflow manuel) : ~4 700 notes
+  passées des actions américaines rejouées sur trois ans, sans fuite du futur
+  (cours TwelveData, comptes SEC pris à leur date de publication, biais de
+  sélection retiré). Rangées à part, elles s'effacent d'elles-mêmes quand les
+  vraies notes atteignent 60 observations indépendantes.
+* **Modèle** : une régression Ridge sur les sous-notes, activée **seulement**
+  si elle bat la moyenne hors échantillon (validation chronologique avec
+  purge). Elle n'apprend que sur de vraies notes.
+* **Étude des critères** (`python etude_note.py`, hors ligne) : pouvoir de
+  classement (IC par date) de chaque critère, version relative au secteur,
+  pondérations apprises sur la première moitié des dates et jugées sur la
+  seconde.
+
+## Gestion du risque
 
 ### Multi-actifs
 
@@ -61,8 +134,9 @@ transparente, entièrement écrite dans `risk_engine.py` :
 VQ % = borne( 0,65 × volatilité annualisée , 8 % , 40 % )
 ```
 
-Empiriquement, une grande capitalisation stable ressort autour de 12-15 %, une
-valeur très volatile autour de 30 %, le bitcoin autour de 38 %.
+La volatilité est mesurée sur **un an** de cotations journalières (depuis le
+28/09/2026). Empiriquement, une grande capitalisation stable ressort autour de
+12-15 %, une valeur très volatile autour de 30 %, le bitcoin autour de 38 %.
 
 ### Dimensionnement des positions
 
@@ -132,33 +206,31 @@ n'est pas évaluée plutôt que de publier un chiffre instable.
 
 ---
 
-## Architecture des sources
+## Sources de données
 
-```
-EUR/USD (forex)  : AlphaVantage (principal) → cache session
-COURS US         : TwelveData (batch par 6) → EODHD real-time → cache
-COURS EU (.PA)   : EODHD (principal) → cache
-INDICES MACRO    : EODHD → Finnhub → cache
-SENTIMENT presse : Finnhub /news-sentiment → analyse lexicale EODHD
-CONSENSUS        : Finnhub /recommendation → EODHD fundamentals
-NEWS sociétés    : EODHD → Finnhub
-```
+| Donnée | Source principale | Repli |
+|--------|-------------------|-------|
+| Cours US | TwelveData (lots de 8) | EODHD, cache |
+| Cours Europe, indices, taux 10 ans | EODHD | cache (AlphaVantage pour le taux US) |
+| Historique (volatilité, tendance, échéances) | EODHD, 1 an | cache |
+| EUR/USD | AlphaVantage | cache |
+| Ratios d'entreprise | Yahoo Finance | EODHD (non inclus dans l'offre gratuite) |
+| Avis des analystes | Finnhub (actions US) | EODHD (non inclus) |
+| Actualités | flux RSS Yahoo Finance | — |
+| Amorçage (passé) | TwelveData + SEC EDGAR | — |
 
-## Protocole de validation croisée
+Deux cours d'un même titre qui divergent de plus de **2 %** : la médiane est
+retenue et la divergence est signalée dans le rapport.
 
-Si deux sources retournent un écart > **2%** sur un même cours :
-- ⚠️ Divergence signalée dans le rapport (section dédiée)
-- La **médiane** des deux valeurs est utilisée automatiquement
-- Un email d'alerte est envoyé immédiatement
-
-## Secrets GitHub requis (4)
+## Secrets GitHub
 
 | Nom | Rôle |
 |-----|------|
-| `ALPHAVANTAGE_API_KEY` | Taux EUR/USD (forex principal) |
-| `EODHD_API_KEY` | Cours Euronext, indices, news, fundamentals |
-| `TWELVEDATA_API_KEY` | Cours US en temps réel (batch) |
-| `FINNHUB_API_KEY` | Sentiment presse, consensus analystes |
+| `EODHD_API_KEY` | Cours Europe, indices, taux, historique |
+| `TWELVEDATA_API_KEY` | Cours US, amorçage |
+| `FINNHUB_API_KEY` | Avis des analystes (US) |
+| `ALPHAVANTAGE_API_KEY` | EUR/USD, repli du taux US |
+| `SEC_USER_AGENT` | Amorçage : identification exigée par la SEC (« projet e-mail ») |
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
@@ -167,12 +239,8 @@ Si deux sources retournent un écart > **2%** sur un même cours :
 Sans ces secrets, **rien n'est envoyé** et ce n'est pas une erreur : l'alerte
 reste visible dans la section « Stops & Alertes » du rapport. Avec eux, un
 courriel part le jour où une position clôture sous son stop, et uniquement ce
-jour-là.
-
-Le port 465 (SMTPS) est recommandé. Sur un autre port, STARTTLS est exigé dès
-qu'un identifiant est fourni : le programme refuse d'envoyer un mot de passe en
-clair, quitte à ne pas envoyer l'alerte.
-
+jour-là. Port 465 (SMTPS) recommandé ; sur un autre port, STARTTLS est exigé
+dès qu'un identifiant est fourni.
 
 | Nom | Description |
 |-----|-------------|
@@ -183,69 +251,61 @@ clair, quitte à ne pas envoyer l'alerte.
 | `MAIL_FROM` | Adresse affichée en expéditeur |
 | `MAIL_TO` | Adresse destinataire |
 
-## Limites des plans gratuits
+## Quotas (offres gratuites)
 
-| API | Quota gratuit | Usages dans le projet |
-|-----|---------------|-----------------------|
-| **AlphaVantage** | 25 req/jour | 1 req/run (EUR/USD) |
-| **TwelveData** | 800 req/jour · 8 req/min | ~6 req/run (cours US batch) |
-| **EODHD** | 100 000 req/jour | Cours EU + indices + news + fundamentals |
-| **Finnhub** | 60 req/min | Sentiment + consensus |
+| API | Limite | Plafond du programme |
+|-----|--------|----------------------|
+| EODHD | 20 appels/jour + paquet d'appels acheté ; 1 an d'historique | `EODHD_PLAFOND_JOUR` (600 par défaut) |
+| TwelveData | 800 crédits/jour, 8/minute, actions US | 780/jour |
+| Finnhub | 60/minute | 3 000/jour |
+| AlphaVantage | 25/jour | 20/jour |
 
-> **Note** : TwelveData plan Free couvre uniquement les bourses US et crypto. Les actions Euronext (`.PA`, `.AS`, etc.) et les indices (CAC40, SPX) nécessitent le plan Grow (29$/mois).
+Chaque fournisseur a aussi un limiteur par minute (fenêtre glissante) : le
+programme attend plutôt que d'envoyer une requête qui serait refusée.
 
-## Algorithme de décision v5.1
+## Tests
 
-| Composante | Poids |
-|------------|-------|
-| Prix vs. prix de revient (historique) | 30% |
-| Tendance historique (performance mensuelle) | 30% |
-| Sentiment presse + consensus analystes | 20% |
-| Consensus analystes | 20% |
+```bash
+pip install -r requirements-dev.txt
+pytest                    # suite complète, sans réseau ni clé
+python risk_engine.py     # autotest du moteur de risque
+```
 
-| Score | Recommandation |
-|-------|----------------|
-| ≥ 7.5 | 🟢 ACHAT FORT |
-| ≥ 6.0 | 🔵 ACHAT MODÉRÉ |
-| ≥ 4.5 | 🟡 GARDER |
-| ≥ 3.0 | 🟠 À ÉVITER |
-| < 3.0 | 🔴 VENDRE |
+Le workflow **Tests** les lance à chaque modification poussée sur GitHub.
 
 ## Fichiers générés
 
 | Fichier | Description |
 |---------|-------------|
-| `reports/<user>/daily_report.md` | Rapport Markdown complet du jour |
+| `reports/<user>/daily_report.md` | Rapport Markdown du jour |
+| `reports/<user>/history.csv` | Historique quotidien par ligne |
 | `reports/<user>/stops_state.json` | Plus hauts atteints + armement des alertes |
-| `reports/charts/*.png` | Graphiques de performance mensuels |
-| `reports/history.csv` | Historique des PnL quotidiens |
-| `docs/index.html` | Rapport HTML interactif (Cloudflare Pages) |
-| `cache/session_cache.json` | Cache fallback des derniers cours valides |
+| `reports/<user>/charts/portfolio_combined.png` | Graphique base 100 |
+| `reports/<user>/learning/summary.json` | Synthèse « Fiabilité des notes » du profil |
+| `reports/@pool/learning/` | Journal commun ; `amorcage/` = notes reconstituées |
+| `docs/r/<jeton>/index.html` | Rapport HTML publié (Cloudflare Pages) |
+| `cache/` | Derniers cours valides, secteurs |
 
-## Tests & vérification
+## Outil historique : `backtest_score.py`
 
-```bash
-# Moteur de risque seul, sans dependance -- doit passer partout, tout le temps
-python risk_engine.py
-
-# Suite pytest (fonctions pures de risk_engine.py et portfolio_analyzer.py)
-pip install -r requirements-dev.txt
-pytest
-
-# Le score du jour predit-il vraiment la performance a venir ?
-python backtest_score.py --user adrien
-python backtest_score.py --all-users --horizon 14
-```
-
-`backtest_score.py` compare, pour chaque valeur et chaque jour passé, le score
-publié à la performance réellement observée `--horizon` jours plus tard
-(`reports/<user>/history.csv` en contient déjà tout l'historique). Il ne
-corrige rien : il mesure si l'algorithme de décision a raison, ce qu'aucun
-autre outil du projet ne faisait jusqu'ici. En dessous de 5 paires
-score/performance exploitables, il le dit plutôt que de publier une
-corrélation instable calculée sur un échantillon minuscule.
+Premier contrôle de la note (v8.2) : il corrèle le score de `history.csv` au
+rendement **brut** qui suit, sans référence de marché ni correction des
+chevauchements. Il est **remplacé** par le moteur d'apprentissage et n'est
+gardé que pour mémoire.
 
 ## Changelog
+
+### Octobre 2026 — état actuel
+
+- ✅ Note à six critères (le sentiment de presse a été retiré en v8.1), version
+      gravée dans chaque note.
+- ✅ Moteur d'apprentissage mutualisé, univers de référence de 220 actions,
+      amorçage sur trois ans (actions US).
+- ✅ Graphique base 100 = prix de revient, depuis la date d'achat (colonne
+      « Date d'achat » dans l'interface).
+- ✅ VQ et volatilité sur un an ; frais de courtage vérifiés par courtier.
+- ✅ Tests lancés automatiquement sur GitHub ; 181 tests + 98 vérifications du
+      moteur de risque.
 
 ### v8.2 — Exposition corrélée, backtest du score, tests automatisés
 
