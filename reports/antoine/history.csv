@@ -1,0 +1,2 @@
+date,time,ticker,name,price_eur,cost_eur,qty,vm,pnl_brut,pnl_brut_pct,pnl_net,pnl_net_pct,score,confiance,rec
+2026-10-12,04:13,TTE.US,TotalEnergies,79.0821,1000.0,80.0,6326.57,-73673.43,-92.09,-73777.02,-92.22,7.47,100.0,CONSERVER

@@ -89,6 +89,12 @@
   "sector": "Consumer Cyclical",
   "src": "yahoo"
  },
+ "TTE.US": {
+  "fetched": "2026-10-12",
+  "industry": "Oil & Gas Integrated",
+  "sector": "Energy",
+  "src": "yahoo"
+ },
  "VALE.US": {
   "fetched": "2026-10-05",
   "industry": "Other Industrial Metals & Mining",

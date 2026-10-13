@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 536,
-  "n_tickers": 175,
+  "matured": 541,
+  "n_tickers": 193,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 595,
+    "en_attente": 654,
     "invalides": 0
    },
    "20": {
     "closes": 330,
-    "en_attente": 265,
+    "en_attente": 324,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 595,
+    "en_attente": 654,
     "invalides": 0
    },
    "60": {
-    "closes": 206,
-    "en_attente": 389,
+    "closes": 211,
+    "en_attente": 443,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 595
+  "snapshots": 654
  },
- "generated_for": "2026-10-09",
+ "generated_for": "2026-10-12",
  "horizon": 60,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 10,
-  "candidats": 18,
-  "clotures": 11,
-  "en_attente": 7,
+  "appels": 12,
+  "candidats": 22,
+  "clotures": 5,
+  "en_attente": 17,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -4022,7 +4022,7 @@
     }
    },
    "name": "Credit Agricole SA",
-   "score": 4.8,
+   "score": 5.08,
    "sector": "Financials",
    "ticker": "ACA.PA"
   },
@@ -4081,7 +4081,7 @@
     }
    },
    "name": "CoreWeave",
-   "score": 3.77,
+   "score": 3.96,
    "sector": "Information Technology",
    "ticker": "CRWV.US"
   },

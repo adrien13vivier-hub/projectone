@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 536,
-  "n_tickers": 175,
+  "matured": 541,
+  "n_tickers": 194,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 605,
+    "en_attente": 665,
     "invalides": 0
    },
    "20": {
     "closes": 330,
-    "en_attente": 275,
+    "en_attente": 335,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 605,
+    "en_attente": 665,
     "invalides": 0
    },
    "60": {
-    "closes": 206,
-    "en_attente": 399,
+    "closes": 211,
+    "en_attente": 454,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 605
+  "snapshots": 665
  },
- "generated_for": "2026-10-09",
+ "generated_for": "2026-10-12",
  "horizon": 20,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 10,
-  "candidats": 6,
+  "appels": 12,
+  "candidats": 14,
   "clotures": 0,
-  "en_attente": 6,
+  "en_attente": 14,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3954,7 +3954,7 @@
     }
    },
    "name": "Newmont Corporation",
-   "score": 7.03,
+   "score": 7.15,
    "sector": "Materials",
    "ticker": "NEM.US"
   },
@@ -4010,7 +4010,7 @@
     }
    },
    "name": "Bloom Energy",
-   "score": 6.71,
+   "score": 6.23,
    "sector": "Industrials",
    "ticker": "BE.US"
   },
@@ -4121,10 +4121,10 @@
      "scope": "secteur Materials"
     }
    },
-   "name": "air liquide",
-   "score": 5.62,
+   "name": "Vale",
+   "score": 5.53,
    "sector": "Materials",
-   "ticker": "AI.PA"
+   "ticker": "VALE.US"
   },
   {
    "horizons": {
@@ -4177,10 +4177,10 @@
      "scope": "secteur Materials"
     }
    },
-   "name": "Vale",
-   "score": 5.53,
+   "name": "air liquide",
+   "score": 5.52,
    "sector": "Materials",
-   "ticker": "VALE.US"
+   "ticker": "AI.PA"
   },
   {
    "horizons": {
@@ -4234,7 +4234,7 @@
     }
    },
    "name": "Exosens",
-   "score": 4.96,
+   "score": 5.08,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
   },
@@ -4290,7 +4290,7 @@
     }
    },
    "name": "Ouster",
-   "score": 4.69,
+   "score": 4.66,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },

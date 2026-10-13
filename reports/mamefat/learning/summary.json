@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 536,
-  "n_tickers": 175,
+  "matured": 541,
+  "n_tickers": 194,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 609,
+    "en_attente": 669,
     "invalides": 0
    },
    "20": {
     "closes": 330,
-    "en_attente": 279,
+    "en_attente": 339,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 609,
+    "en_attente": 669,
     "invalides": 0
    },
    "60": {
-    "closes": 206,
-    "en_attente": 403,
+    "closes": 211,
+    "en_attente": 458,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 609
+  "snapshots": 669
  },
- "generated_for": "2026-10-09",
+ "generated_for": "2026-10-12",
  "horizon": 60,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 10,
-  "candidats": 6,
+  "appels": 12,
+  "candidats": 14,
   "clotures": 0,
-  "en_attente": 6,
+  "en_attente": 14,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -4131,7 +4131,7 @@
     }
    },
    "name": "Tesla",
-   "score": 4.32,
+   "score": 4.09,
    "sector": "Consumer Discretionary",
    "ticker": "TSLA.US"
   }
