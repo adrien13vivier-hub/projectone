@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 13/10/2026 04:13 (Paris)
+# Rapport de Portefeuille v7.5 -- 14/10/2026 01:51 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.16/10
-**EUR/USD :** 1 EUR = 1.1173 USD
+**Tendance : Neutre** | Score macro : 4.96/10
+**EUR/USD :** 1 EUR = 1.1202 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.06% | 7 807.24 |
-| CAC 40 | ^ +0.38% | 7 832.88 |
+| S&P 500 | v -0.02% | 7 805.45 |
+| CAC 40 | v -0.07% | 7 827.63 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
 | UST 10 ans (US) | -- | 5.22% | -- |
-| OAT 10 ans (FR) | -- | 4.91% | -- |
-| Ecart OAT - UST | -- | -31 pb | -- |
+| OAT 10 ans (FR) | -- | 4.84% | -- |
+| Ecart OAT - UST | -- | -39 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,17 +38,17 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| TotalEnergies | -- | Aucun | Aucun stop défini | -- | 79.08 | -- | Aucun |
+| TotalEnergies | -- | Aucun | Aucun stop défini | -- | 79.41 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **6 326.57 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **63.27 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **6 352.43 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **63.52 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| TotalEnergies | 24.7 % (Modérée, sur 1 an) | 1.08 % | 16.0 % | -- | 512.69 EUR (dimensionné par la volatilité) | 6 326.57 EUR | 5 813.88 EUR |
+| TotalEnergies | 24.6 % (Modérée, sur 1 an) | 0.99 % | 16.0 % | -- | 515.41 EUR (dimensionné par la volatilité) | 6 352.43 EUR | 5 837.02 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -70,7 +70,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 6 326.57 EUR | 100.0% |
+| Actions | 6 352.43 EUR | 100.0% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -81,9 +81,9 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 *Cette section mesure la valeur PASSEE de la note ; elle ne la modifie pas et ne predit rien. Une esperance historique n'est pas une promesse.*
 
-**Apprentissage mutualise** : calibre sur 194 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
+**Apprentissage mutualise** : calibre sur 212 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 657** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 541** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 717** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 551** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
@@ -139,11 +139,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 79.08 EUR | ^ +2.62% | 6326.57 EUR | - -73673.43 EUR (-92.1%) | - -73777.02 EUR (-92.2%) | **7.47/10** (100%) | CONSERVER |
+| 79.41 EUR | ^ +0.66% | 6352.43 EUR | - -73647.57 EUR (-92.1%) | - -73751.19 EUR (-92.2%) | **7.47/10** (100%) | CONSERVER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> TotalEnergies SE: Disclosure of Transactions in Own Shares | TotalEnergies (ENXTPA:TTE) Lands $1.2 Billion Solar Deal For 700 MW ԱՄՆ Growth | SLB Secures 15-Year Digital Drilling Agreement With TotalEnergies
+> KKR (KKR) Adds Solar Capacity Following JV Expansion While Fair Value Stays In Focus | KKR (KKR) Adds $1.2 Billion Solar Portfolio to Its U.S. Renewables Venture | TTE Expands U.S. Renewable Portfolio Through KKR Joint Venture
 
 **Detail de la note :**
 
@@ -158,10 +158,10 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 **Fondamentaux :** PER 11.1 | PEG 0.7 | EV/EBITDA 5.8 | P/B 1.5 | Marge nette 9.1% | ROE 14.5% | Croiss. CA 27.8% | Beta 0.1 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:6 B:13 H:10 S:4 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -2.7% | 3M +10.5% | 6M +2.2% -- NEUTRE *(source : EODHD)*
+**Perf. historique :** 1M -2.1% | 3M +12.0% | 6M +2.9% -- NEUTRE *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -1.0% de surperformance sectorielle a 60 seances, P(surperf.) 37% -- confiance moyenne, 69 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.5/10 (confiance 100%). Points forts : croissance 9.4, valorisation 9.0. Momentum NEUTRE. Position : -73777.02 EUR (-92.2%) apres frais.
+**Justification :** Note 7.5/10 (confiance 100%). Points forts : croissance 9.4, valorisation 9.0. Momentum NEUTRE. Position : -73751.19 EUR (-92.2%) apres frais.
 
 ---
 
@@ -169,8 +169,8 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| TotalEnergies | 79.08 | 6326.57 | -73673.43 (-92.1%) | -73777.02 (-92.2%) | 7.47/10 | 100% | CONSERVER |
-| **TOTAL** | — | **6326.57** | **-73673.43 (-92.1%)** | **-73777.02 (-92.2%)** | — | — | — |
+| TotalEnergies | 79.41 | 6352.43 | -73647.57 (-92.1%) | -73751.19 (-92.2%) | 7.47/10 | 100% | CONSERVER |
+| **TOTAL** | — | **6352.43** | **-73647.57 (-92.1%)** | **-73751.19 (-92.2%)** | — | — | — |
 
 ---
 
@@ -178,7 +178,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| TotalEnergies | énergie | 78.98 EUR | ^ +0.57% | TotalEnergies SE: Disclosure of Transactions in Own Shares / Sector Update: Fina… |
+| TotalEnergies | énergie | 79.89 EUR | ^ +1.15% | KKR (KKR) Adds Solar Capacity Following JV Expansion While Fair Value Stays In F… |
 
 ---
 
@@ -191,6 +191,6 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 - **OAT 10 ans (FR)** : EODHD
 - **TTE.US** : cours: TwelveData, consensus: Finnhub, historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '3/780', 'eodhd': '44/600', 'finnhub': '5/3000'}
+**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '3/780', 'eodhd': '54/600', 'finnhub': '5/3000'}
 
 **Profil :** antoine | **Courtier :** Autre / personnalisé

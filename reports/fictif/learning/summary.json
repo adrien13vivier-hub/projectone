@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 541,
-  "n_tickers": 194,
+  "matured": 551,
+  "n_tickers": 212,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 665,
+    "en_attente": 725,
     "invalides": 0
    },
    "20": {
-    "closes": 330,
-    "en_attente": 335,
+    "closes": 335,
+    "en_attente": 390,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 665,
+    "en_attente": 725,
     "invalides": 0
    },
    "60": {
-    "closes": 211,
-    "en_attente": 454,
+    "closes": 216,
+    "en_attente": 509,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 665
+  "snapshots": 725
  },
- "generated_for": "2026-10-12",
+ "generated_for": "2026-10-13",
  "horizon": 20,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 12,
-  "candidats": 14,
+  "candidats": 10,
   "clotures": 0,
-  "en_attente": 14,
+  "en_attente": 10,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3954,7 +3954,7 @@
     }
    },
    "name": "Newmont Corporation",
-   "score": 7.15,
+   "score": 7.08,
    "sector": "Materials",
    "ticker": "NEM.US"
   },
@@ -4010,63 +4010,63 @@
     }
    },
    "name": "Bloom Energy",
-   "score": 6.23,
+   "score": 6.46,
    "sector": "Industrials",
    "ticker": "BE.US"
   },
   {
    "horizons": {
     "120": {
-     "band": "4,5 - 6",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.2247,
+     "estimate": -0.2151,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 47,
-     "p_outperf": 0.467,
-     "reco": "GARDER",
+     "n_indep": 38,
+     "p_outperf": 0.426,
+     "reco": "ACHAT MODERE",
      "scope": "secteur Information Technology"
     },
     "20": {
-     "band": "4,5 - 6",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.3903,
+     "estimate": 0.0947,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 187,
-     "p_outperf": 0.457,
-     "reco": "GARDER",
+     "n_indep": 157,
+     "p_outperf": 0.49,
+     "reco": "ACHAT MODERE",
      "scope": "secteur Information Technology"
     },
     "252": {
-     "band": "4,5 - 6",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 9.6425,
+     "estimate": 4.789,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 19,
-     "p_outperf": 0.539,
-     "reco": "GARDER",
+     "n_indep": 17,
+     "p_outperf": 0.374,
+     "reco": "ACHAT MODERE",
      "scope": "secteur Information Technology"
     },
     "60": {
-     "band": "4,5 - 6",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.4724,
+     "estimate": 0.8709,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 78,
-     "p_outperf": 0.418,
-     "reco": "GARDER",
+     "n_indep": 65,
+     "p_outperf": 0.434,
+     "reco": "ACHAT MODERE",
      "scope": "secteur Information Technology"
     }
    },
    "name": "First Solar",
-   "score": 5.84,
+   "score": 6.01,
    "sector": "Information Technology",
    "ticker": "FSLR.US"
   },
@@ -4234,7 +4234,7 @@
     }
    },
    "name": "Exosens",
-   "score": 5.08,
+   "score": 5.04,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
   },
@@ -4290,7 +4290,7 @@
     }
    },
    "name": "Ouster",
-   "score": 4.66,
+   "score": 4.6,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },

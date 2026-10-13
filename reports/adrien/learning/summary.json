@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 541,
-  "n_tickers": 193,
+  "matured": 551,
+  "n_tickers": 212,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 654,
+    "en_attente": 714,
     "invalides": 0
    },
    "20": {
-    "closes": 330,
-    "en_attente": 324,
+    "closes": 335,
+    "en_attente": 379,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 654,
+    "en_attente": 714,
     "invalides": 0
    },
    "60": {
-    "closes": 211,
-    "en_attente": 443,
+    "closes": 216,
+    "en_attente": 498,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 654
+  "snapshots": 714
  },
- "generated_for": "2026-10-12",
+ "generated_for": "2026-10-13",
  "horizon": 60,
  "horizons": [
   20,
@@ -3895,8 +3895,8 @@
  "maturation": {
   "appels": 12,
   "candidats": 22,
-  "clotures": 5,
-  "en_attente": 17,
+  "clotures": 10,
+  "en_attente": 12,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3963,7 +3963,7 @@
     }
    },
    "name": "SM",
-   "score": 8.36,
+   "score": 8.59,
    "sector": "Energy",
    "ticker": "SM.US"
   },
@@ -4022,7 +4022,7 @@
     }
    },
    "name": "Credit Agricole SA",
-   "score": 5.08,
+   "score": 5.25,
    "sector": "Financials",
    "ticker": "ACA.PA"
   },

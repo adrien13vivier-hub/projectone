@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 13/10/2026 04:13 (Paris)
+# Rapport de Portefeuille v7.5 -- 14/10/2026 01:51 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.16/10
-**EUR/USD :** 1 EUR = 1.1173 USD
+**Tendance : Neutre** | Score macro : 4.96/10
+**EUR/USD :** 1 EUR = 1.1202 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.06% | 7 807.24 |
-| CAC 40 | ^ +0.38% | 7 832.88 |
+| S&P 500 | v -0.02% | 7 805.45 |
+| CAC 40 | v -0.07% | 7 827.63 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
 | UST 10 ans (US) | -- | 5.22% | -- |
-| OAT 10 ans (FR) | -- | 4.91% | -- |
-| Ecart OAT - UST | -- | -31 pb | -- |
+| OAT 10 ans (FR) | -- | 4.84% | -- |
+| Ecart OAT - UST | -- | -39 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,23 +38,23 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| SM | -- | Aucun | Aucun stop défini | -- | 33.74 | -- | Aucun |
-| Credit Agricole SA | -- | Aucun | Aucun stop défini | -- | 16.33 | -- | Aucun |
-| CoreWeave | -- | Aucun | Aucun stop défini | -- | 71.86 | -- | Aucun |
-| Abionyx Pharma | -- | Aucun | Aucun stop défini | -- | 1.52 | -- | Aucun |
+| SM | -- | Aucun | Aucun stop défini | -- | 34.41 | -- | Aucun |
+| Credit Agricole SA | -- | Aucun | Aucun stop défini | -- | 15.91 | -- | Aucun |
+| CoreWeave | -- | Aucun | Aucun stop défini | -- | 69.45 | -- | Aucun |
+| Abionyx Pharma | -- | Aucun | Aucun stop défini | -- | 1.43 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **682.43 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **6.82 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **677.94 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **6.78 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| SM | 51.4 % (Élevée, sur 1 an) | 1.71 % | 33.4 % | -- | 26.53 EUR (dimensionné par la volatilité) | 337.42 EUR | 310.89 EUR |
-| Credit Agricole SA | 21.5 % (Modérée, sur 1 an) | 1.22 % | 14.0 % | -- | 63.54 EUR (dimensionné par la volatilité) | 163.30 EUR | 99.76 EUR |
-| CoreWeave | 94.2 % (Extrême, sur 1 an) | 2.60 % | 40.0 % | -- | 14.49 EUR (dimensionné par la volatilité) | 143.71 EUR | 129.22 EUR |
-| Abionyx Pharma | 60.4 % (Extrême, sur 1 an) | 2.33 % | 39.3 % | -- | 22.60 EUR (dimensionné par la volatilité) | 38.00 EUR | 15.40 EUR |
+| SM | 51.4 % (Élevée, sur 1 an) | 1.79 % | 33.4 % | -- | 26.38 EUR (dimensionné par la volatilité) | 344.09 EUR | 317.71 EUR |
+| Credit Agricole SA | 21.5 % (Modérée, sur 1 an) | 1.26 % | 13.9 % | -- | 63.15 EUR (dimensionné par la volatilité) | 159.15 EUR | 96.00 EUR |
+| CoreWeave | 94.1 % (Extrême, sur 1 an) | 2.81 % | 40.0 % | -- | 14.41 EUR (dimensionné par la volatilité) | 138.90 EUR | 124.49 EUR |
+| Abionyx Pharma | 60.6 % (Extrême, sur 1 an) | 2.48 % | 39.4 % | -- | 22.39 EUR (dimensionné par la volatilité) | 35.80 EUR | 13.41 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -65,7 +65,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ### Exposition corrélée
 
-**Corrélation moyenne du portefeuille : -9.9 %** (Négative (les lignes s'amortissent entre elles)) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -77.9 % à +51.9 %.
+**Corrélation moyenne du portefeuille : -9.7 %** (Négative (les lignes s'amortissent entre elles)) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -77.6 % à +51.9 %.
 
 *Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment les unes des autres -- une diversification qui se voit dans les mouvements réels, pas seulement dans les étiquettes de classe d'actif ou de secteur. Un chiffre élevé et négatif est aussi une forme de concentration, sur le pari inverse.*
 
@@ -80,14 +80,14 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 682.43 EUR | 100.0% |
+| Actions | 677.94 EUR | 100.0% |
 
 **Par devise**
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| USD | 481.13 EUR | 70.5% |
-| EUR | 201.30 EUR | 29.5% |
+| USD | 482.99 EUR | 71.2% |
+| EUR | 194.95 EUR | 28.8% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -98,9 +98,9 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 *Cette section mesure la valeur PASSEE de la note ; elle ne la modifie pas et ne predit rien. Une esperance historique n'est pas une promesse.*
 
-**Apprentissage mutualise** : calibre sur 193 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
+**Apprentissage mutualise** : calibre sur 212 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 654** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 541** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 714** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 551** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
@@ -143,8 +143,8 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| SM | 8.36/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
-| Credit Agricole SA | 5.08/10 | +2.9% | -- | 51% | moyenne | 35 | secteur Financials |
+| SM | 8.59/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| Credit Agricole SA | 5.25/10 | +2.9% | -- | 51% | moyenne | 35 | secteur Financials |
 | CoreWeave | 3.96/10 | +2.3% | -- | 53% | faible | 19 | secteur Information Technology |
 | Abionyx Pharma | 1.31/10 | +2.1% | [-1.8 ; +9.2] | -- | faible | 21 | global |
 
@@ -159,11 +159,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 33.74 EUR | ^ +1.86% | 337.42 EUR | - -42.68 EUR (-11.2%) | - -58.09 EUR (-15.3%) | **8.36/10** (100%) | RENFORCER |
+| 34.41 EUR | ^ +2.26% | 344.09 EUR | - -36.01 EUR (-9.5%) | - -51.43 EUR (-13.5%) | **8.59/10** (100%) | RENFORCER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> SM Energy (SM) Advances While Market Declines: Some Information for Investors | Is SM Energy (SM) Outperforming Other Oils-Energy Stocks This Year? | Should Value Investors Buy SM Energy (SM) Stock?
+> Why SM Energy (SM) is Poised to Beat Earnings Estimates Again | SM Energy Company (SM) Is a Trending Stock: Facts to Know Before Betting on It | SM Energy (SM) Advances While Market Declines: Some Information for Investors
 
 **Detail de la note :**
 
@@ -172,16 +172,16 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 8.9/10 | 24% |
 | Sante financiere | 8.4/10 | 19% |
 | Croissance | 10.0/10 | 16% |
-| Momentum | 7.8/10 | 21% |
+| Momentum | 8.9/10 | 21% |
 | Consensus | 7.5/10 | 15% |
 | Risque | 5.3/10 | 5% |
 
-**Fondamentaux :** PER 6.7 | PEG 0.6 | EV/EBITDA 4.9 | P/B 1.1 | Marge nette 20.2% | ROE 16.1% | Croiss. CA 176.1% | Beta 1.0 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 6.8 | PEG 0.6 | EV/EBITDA 5.0 | P/B 1.2 | Marge nette 20.2% | ROE 16.1% | Croiss. CA 176.1% | Beta 1.0 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:5 B:13 H:5 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -1.1% | 3M +27.6% | 6M +35.9% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +1.2% | 3M +29.5% | 6M +39.0% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.4/10 (confiance 100%). Points forts : croissance 10.0, valorisation 8.9. Momentum HAUSSIER. Position : -58.09 EUR (-15.3%) apres frais.
+**Justification :** Note 8.6/10 (confiance 100%). Points forts : croissance 10.0, momentum 8.9. Momentum HAUSSIER. Position : -51.43 EUR (-13.5%) apres frais.
 
 ---
 
@@ -189,7 +189,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 16.33 EUR | ^ +0.06% | 163.30 EUR | - -5.70 EUR (-3.4%) | - -9.68 EUR (-5.7%) | **5.08/10** (85%) | SURVEILLER (en moins-value) |
+| 15.91 EUR | ^ +0.98% | 159.15 EUR | - -9.85 EUR (-5.8%) | - -13.83 EUR (-8.2%) | **5.25/10** (85%) | SURVEILLER (en moins-value) |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -202,17 +202,17 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 7.5/10 | 28% |
 | Sante financiere | 7.5/10 | 22% |
 | Croissance | 2.5/10 | 19% |
-| Momentum | 1.6/10 | 25% |
+| Momentum | 2.3/10 | 25% |
 | Risque | 7.2/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 8.2 | PEG 1.5 | P/B 0.7 | Marge nette 25.3% | ROE 8.6% | Croiss. CA -6.3% | Beta 0.8 *(source : Yahoo Finance)*
-**Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M -12.3% | 3M -8.4% | 6M +1.0% -- BAISSIER *(source : EODHD)*
+**Fondamentaux :** PER 8.0 | PEG 1.5 | P/B 0.7 | Marge nette 25.3% | ROE 8.6% | Croiss. CA -6.3% | Beta 0.8 *(source : Yahoo Finance)*
+**Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
+**Perf. historique :** 1M -11.5% | 3M -7.2% | 6M +2.0% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +2.9% de surperformance sectorielle a 60 seances, P(surperf.) 51% -- confiance moyenne, 35 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 5.1/10 (confiance 85%). Points forts : valorisation 7.5, sante financiere 7.5. Points faibles : croissance 2.5, momentum 1.6. Momentum BAISSIER. Position : -9.68 EUR (-5.7%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 5.2/10 (confiance 85%). Points forts : valorisation 7.5, sante financiere 7.5. Points faibles : croissance 2.5, momentum 2.3. Momentum BAISSIER. Position : -13.83 EUR (-8.2%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -220,11 +220,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 71.86 EUR | v -2.22% | 143.71 EUR | - -44.11 EUR (-23.5%) | - -58.70 EUR (-31.2%) | **3.96/10** (100%) | ALLEGER |
+| 69.45 EUR | v -3.05% | 138.90 EUR | - -48.92 EUR (-26.1%) | - -63.50 EUR (-33.8%) | **3.96/10** (100%) | ALLEGER |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> CoreWeave (CRWV) Has a $104B Backlog. Can Its Balance Sheet Keep Up? | CRWV Shares Slide 25% in 6 Months: Time to Buy, Hold or Cut Losses? | Nebius Slides 3% Despite Rosenblatt’s New Buy Rating; CoreWeave Slips
+> Prediction: CoreWeave Could Be One of the Most Explosive AI Stocks of the Decade | CoreWeave Imploded 20% Over 6 Months: This Analyst Predicts It Will Triple in Price Over the Coming Year | CoreWeave (CRWV) Has a $104B Backlog. Can Its Balance Sheet Keep Up?
 
 **Detail de la note :**
 
@@ -237,12 +237,12 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Consensus | 7.1/10 | 15% |
 | Risque | 2.7/10 | 5% |
 
-**Fondamentaux :** EV/EBITDA 23.8 | P/B 8.8 | Marge nette -25.4% | ROE -43.6% | Croiss. CA 112.5% *(source : Yahoo Finance)*
+**Fondamentaux :** EV/EBITDA 23.5 | P/B 8.5 | Marge nette -25.4% | ROE -43.6% | Croiss. CA 112.5% *(source : Yahoo Finance)*
 **Consensus analystes :** SB:10 B:22 H:12 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -9.8% | 3M +0.4% | 6M -32.9% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -12.6% | 3M +0.9% | 6M -34.9% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 3 - 4,5 a valu +2.3% de surperformance sectorielle a 60 seances, P(surperf.) 53% -- confiance faible, 19 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 4.0/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.1. Points faibles : momentum 1.2, sante financiere 1.1. Momentum BAISSIER. Position : -58.70 EUR (-31.2%) apres frais.
+**Justification :** Note 4.0/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.1. Points faibles : momentum 1.2, sante financiere 1.1. Momentum BAISSIER. Position : -63.50 EUR (-33.8%) apres frais.
 
 ---
 
@@ -250,7 +250,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.52 EUR | v -1.30% | 38.00 EUR | - -29.20 EUR (-43.5%) | - -33.18 EUR (-49.4%) | **1.31/10** (85%) | SORTIR |
+| 1.43 EUR | v -5.79% | 35.80 EUR | - -31.40 EUR (-46.7%) | - -35.38 EUR (-52.6%) | **1.31/10** (85%) | SORTIR |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -268,12 +268,12 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** EV/EBITDA -9.9 | P/B 11.9 | Marge nette -136.6% | ROE -92.3% | Croiss. CA -11.9% | Beta 0.5 *(source : Yahoo Finance)*
+**Fondamentaux :** EV/EBITDA -9.4 | P/B 11.2 | Marge nette -136.6% | ROE -92.3% | Croiss. CA -11.9% | Beta 0.5 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -17.4% | 3M -18.8% | 6M -59.4% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -22.2% | 3M -23.0% | 6M -61.8% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche < 3 a valu +2.1% de surperformance sectorielle a 60 seances, IC 95 % [-1.8 ; +9.2] -- confiance faible, 21 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 1.3/10 (confiance 85%). Points faibles : croissance 1.0, momentum 0.0. Momentum BAISSIER. Position : -33.18 EUR (-49.4%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 1.3/10 (confiance 85%). Points faibles : croissance 1.0, momentum 0.0. Momentum BAISSIER. Position : -35.38 EUR (-52.6%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -294,11 +294,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| SM | 33.74 | 337.42 | -42.68 (-11.2%) | -58.09 (-15.3%) | 8.36/10 | 100% | RENFORCER |
-| Credit Agricole SA | 16.33 | 163.30 | -5.70 (-3.4%) | -9.68 (-5.7%) | 5.08/10 | 85% | SURVEILLER (en moins-value) |
-| CoreWeave | 71.86 | 143.71 | -44.11 (-23.5%) | -58.70 (-31.2%) | 3.96/10 | 100% | ALLEGER |
-| Abionyx Pharma | 1.52 | 38.00 | -29.20 (-43.5%) | -33.18 (-49.4%) | 1.31/10 | 85% | SORTIR |
-| **TOTAL** | — | **682.43** | **-121.69 (-15.1%)** | **-159.65 (-19.9%)** | — | — | — |
+| SM | 34.41 | 344.09 | -36.01 (-9.5%) | -51.43 (-13.5%) | 8.59/10 | 100% | RENFORCER |
+| Credit Agricole SA | 15.91 | 159.15 | -9.85 (-5.8%) | -13.83 (-8.2%) | 5.25/10 | 85% | SURVEILLER (en moins-value) |
+| CoreWeave | 69.45 | 138.90 | -48.92 (-26.1%) | -63.50 (-33.8%) | 3.96/10 | 100% | ALLEGER |
+| Abionyx Pharma | 1.43 | 35.80 | -31.40 (-46.7%) | -35.38 (-52.6%) | 1.31/10 | 85% | SORTIR |
+| **TOTAL** | — | **677.94** | **-126.18 (-15.7%)** | **-164.14 (-20.4%)** | — | — | — |
 
 ---
 
@@ -306,8 +306,8 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| SNAP | tech | 5.84 EUR | ^ +4.82% | Why Every Snap Investor Is Looking At This One Number / SNAP Stock Sees Large Op… |
-| Apple | Tech | 305.17 EUR | ^ +1.29% | SpaceX's Starlink could pose 3 big risks to Apple, BofA warns / Dow Jones Future… |
+| SNAP | tech | 5.79 EUR | v -0.61% | Why Every Snap Investor Is Looking At This One Number / SNAP Stock Sees Large Op… |
+| Apple | Tech | 304.65 EUR | ^ +0.09% | Apple may have a way to dominate the smart home space / Apple Takes on Amazon Wi… |
 
 ---
 
@@ -319,10 +319,10 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 - **UST 10 ans (US)** : EODHD
 - **OAT 10 ans (FR)** : EODHD
 - **CRWV.US** : cours: TwelveData, consensus: Finnhub, historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
-- **ACA.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403, EODHD:HTTP 403 (abonnement)), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
+- **ACA.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 - **ABNX.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 - **SM.US** : cours: TwelveData, consensus: Finnhub, historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '39/600', 'finnhub': '4/3000'}
+**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '49/600', 'finnhub': '4/3000'}
 
 **Profil :** adrien | **Courtier :** BoursoBank

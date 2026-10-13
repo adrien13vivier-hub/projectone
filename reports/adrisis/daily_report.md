@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 13/10/2026 04:13 (Paris)
+# Rapport de Portefeuille v7.5 -- 14/10/2026 01:51 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.16/10
-**EUR/USD :** 1 EUR = 1.1173 USD
+**Tendance : Neutre** | Score macro : 4.96/10
+**EUR/USD :** 1 EUR = 1.1202 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.06% | 7 807.24 |
-| CAC 40 | ^ +0.38% | 7 832.88 |
+| S&P 500 | v -0.02% | 7 805.45 |
+| CAC 40 | v -0.07% | 7 827.63 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
 | UST 10 ans (US) | -- | 5.22% | -- |
-| OAT 10 ans (FR) | -- | 4.91% | -- |
-| Ecart OAT - UST | -- | -31 pb | -- |
+| OAT 10 ans (FR) | -- | 4.84% | -- |
+| Ecart OAT - UST | -- | -39 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,21 +38,21 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.25 | -- | Aucun |
-| S&P500 | PEA CA | Aucun | Aucun stop défini | -- | 61.51 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.25 | -- | Aucun |
-| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.25 | -- | Aucun |
+| S&P500 | PEA CA | Aucun | Aucun stop défini | -- | 61.19 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.22 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.22 | -- | Aucun |
+| MSCI WORLD | PEA CA | Aucun | Aucun stop défini | -- | 7.22 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **789.93 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **7.90 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **786.34 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **7.86 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| MSCI WORLD | 10.8 % (Faible, sur 1 an) | 0.44 % | 8.0 % | -- | 118.49 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 666.91 EUR (3 lignes) | 548.42 EUR |
-| S&P500 | 11.2 % (Faible, sur 1 an) | 0.38 % | 8.0 % | -- | 118.49 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 123.02 EUR | 4.53 EUR |
+| S&P500 | 11.2 % (Faible, sur 1 an) | 0.34 % | 8.0 % | -- | 117.95 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 122.38 EUR | 4.43 EUR |
+| MSCI WORLD | 10.7 % (Faible, sur 1 an) | 0.39 % | 8.0 % | -- | 117.95 EUR (dimensionné par la volatilité, plafonné à 15 % du capital) | 663.96 EUR (3 lignes) | 546.01 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -63,7 +63,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ### Exposition corrélée
 
-**Corrélation moyenne du portefeuille : +97.8 %** (Très élevée (le portefeuille bouge comme un bloc)) -- calculée sur 1 paire(s) de lignes (2 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de +97.8 % à +97.8 %.
+**Corrélation moyenne du portefeuille : +97.7 %** (Très élevée (le portefeuille bouge comme un bloc)) -- calculée sur 1 paire(s) de lignes (2 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de +97.7 % à +97.7 %.
 
 *Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment les unes des autres -- une diversification qui se voit dans les mouvements réels, pas seulement dans les étiquettes de classe d'actif ou de secteur. Un chiffre élevé et négatif est aussi une forme de concentration, sur le pari inverse.*
 
@@ -71,7 +71,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Groupe | Poids cumulé | Alerte |
 |--------|--------------|--------|
-| MSCI WORLD, S&P500 | 100.00 % | Oui |
+| S&P500, MSCI WORLD | 100.00 % | Oui |
 
 *Seuil de corrélation : 0.70. Seuil d'alerte sur le poids cumulé : 25 %.*
 
@@ -84,7 +84,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| ETF / Fonds | 789.93 EUR | 100.0% |
+| ETF / Fonds | 786.34 EUR | 100.0% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -95,9 +95,9 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 *Cette section mesure la valeur PASSEE de la note ; elle ne la modifie pas et ne predit rien. Une esperance historique n'est pas une promesse.*
 
-**Apprentissage mutualise** : calibre sur 193 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
+**Apprentissage mutualise** : calibre sur 212 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 656** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 541** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 716** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 551** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
@@ -140,10 +140,10 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| MSCI WORLD | 8.13/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
 | S&P500 | 8.13/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
-| MSCI WORLD | 8.13/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
-| MSCI WORLD | 8.13/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| MSCI WORLD | 7.72/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| MSCI WORLD | 7.72/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| MSCI WORLD | 7.72/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
 
 **Modele : non active** -- historique insuffisant : 0/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
@@ -152,34 +152,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 ## Analyse par Valeur
 
-### MSCI WORLD `WPEA.PA`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
-|-------|-----------|-----|----------|---------|------------------|---------|
-| 7.25 EUR | ^ +0.47% | 217.47 EUR | + +14.37 EUR (+7.1%) | + +12.26 EUR (+6.0%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
-
-**Detail de la note :**
-
-| Composante | Note | Poids |
-|------------|------|-------|
-| Momentum | 7.8/10 | 81% |
-| Risque | 9.5/10 | 19% |
-
-*Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
-
-**Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +4.4% | 3M +4.9% | 6M +14.7% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
-
-**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +12.26 EUR (+6.0%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
-
----
-
 ### S&P500 `PSP5.PA`
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 61.51 EUR | ^ +0.47% | 123.02 EUR | + +7.28 EUR (+6.3%) | + +6.08 EUR (+5.2%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
+| 61.19 EUR | v -0.05% | 122.38 EUR | + +6.64 EUR (+5.7%) | + +5.45 EUR (+4.7%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
@@ -191,10 +168,10 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +5.9% | 3M +6.3% | 6M +17.5% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +5.3% | 3M +5.4% | 6M +16.8% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +6.08 EUR (+5.2%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +5.45 EUR (+4.7%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -202,22 +179,22 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 7.25 EUR | ^ +0.47% | 434.94 EUR | + +39.54 EUR (+10.0%) | + +35.57 EUR (+9.0%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
+| 7.22 EUR | ^ +0.03% | 216.51 EUR | + +13.41 EUR (+6.6%) | + +11.31 EUR (+5.6%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 7.8/10 | 81% |
+| Momentum | 7.3/10 | 81% |
 | Risque | 9.5/10 | 19% |
 
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +4.4% | 3M +4.9% | 6M +14.7% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +4.0% | 3M +4.2% | 6M +14.1% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +35.57 EUR (+9.0%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +11.31 EUR (+5.6%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -225,22 +202,45 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 7.25 EUR | ^ +0.47% | 14.50 EUR | + +1.54 EUR (+11.9%) | + +1.41 EUR (+10.9%) | **8.13/10** (100%) | A EXAMINER (peu de criteres) |
+| 7.22 EUR | ^ +0.03% | 433.02 EUR | + +37.62 EUR (+9.5%) | + +33.65 EUR (+8.5%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Momentum | 7.8/10 | 81% |
+| Momentum | 7.3/10 | 81% |
 | Risque | 9.5/10 | 19% |
 
 *Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
 
 **Consensus analystes :** N/D *(source : sans objet)*
-**Perf. historique :** 1M +4.4% | 3M +4.9% | 6M +14.7% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +4.0% | 3M +4.2% | 6M +14.1% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.1/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.8. Momentum HAUSSIER. Position : +1.41 EUR (+10.9%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +33.65 EUR (+8.5%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
+
+---
+
+### MSCI WORLD `WPEA.PA`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 7.22 EUR | ^ +0.03% | 14.43 EUR | + +1.47 EUR (+11.3%) | + +1.34 EUR (+10.3%) | **7.72/10** (100%) | A EXAMINER (peu de criteres) |
+
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Momentum | 7.3/10 | 81% |
+| Risque | 9.5/10 | 19% |
+
+*Sans objet pour un actif de type etf / fonds : Valorisation, Sante financiere, Croissance, Consensus. Ces criteres n'existent pas pour ce type d'actif : ils sont exclus du calcul et ne font PAS baisser l'indice de confiance.*
+
+**Consensus analystes :** N/D *(source : sans objet)*
+**Perf. historique :** 1M +4.0% | 3M +4.2% | 6M +14.1% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
+
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : profil de risque 9.5, momentum 7.3. Momentum HAUSSIER. Position : +1.34 EUR (+10.3%) apres frais. 4 critere(s) sans objet pour un actif de type etf / fonds (consensus analystes, croissance, sante financiere, valorisation) : ils sont exclus du calcul, pas comptes comme manquants.
 
 ---
 
@@ -248,11 +248,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| MSCI WORLD | 7.25 | 217.47 | +14.37 (+7.1%) | +12.26 (+6.0%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
-| S&P500 | 61.51 | 123.02 | +7.28 (+6.3%) | +6.08 (+5.2%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
-| MSCI WORLD | 7.25 | 434.94 | +39.54 (+10.0%) | +35.57 (+9.0%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
-| MSCI WORLD | 7.25 | 14.50 | +1.54 (+11.9%) | +1.41 (+10.9%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
-| **TOTAL** | — | **789.93** | **+62.73 (+8.6%)** | **+55.32 (+7.6%)** | — | — | — |
+| S&P500 | 61.19 | 122.38 | +6.64 (+5.7%) | +5.45 (+4.7%) | 8.13/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 7.22 | 216.51 | +13.41 (+6.6%) | +11.31 (+5.6%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 7.22 | 433.02 | +37.62 (+9.5%) | +33.65 (+8.5%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
+| MSCI WORLD | 7.22 | 14.43 | +1.47 (+11.3%) | +1.34 (+10.3%) | 7.72/10 | 100% | A EXAMINER (peu de criteres) |
+| **TOTAL** | — | **786.34** | **+59.14 (+8.1%)** | **+51.75 (+7.1%)** | — | — | — |
 
 ---
 
@@ -273,6 +273,6 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 - **WPEA.PA** : cours: EODHD, consensus: sans objet, historique: EODHD, synthese: RSS Yahoo vide, fondamentaux: non applicable (etf)
 - **PSP5.PA** : cours: EODHD, consensus: sans objet, historique: EODHD, synthese: RSS Yahoo vide, fondamentaux: non applicable (etf)
 
-**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '43/600', 'finnhub': '4/3000'}
+**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '53/600', 'finnhub': '4/3000'}
 
 **Profil :** adrisis | **Courtier :** Autre / personnalisé
