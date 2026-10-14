@@ -2,47 +2,131 @@
   "lignes": {
     "AI.PA": {
       "arme": true,
-      "cfg": "percent:5.0:",
+      "cfg": "percent:3.0:",
       "derniere_alerte": null,
       "hwm": 180.3,
-      "maj": "2026-10-13",
-      "niveau": 161.652,
+      "maj": "2026-10-14",
+      "niveau": 165.0552,
       "statut": "ok"
+    },
+    "AMZN.US": {
+      "arme": false,
+      "cfg": "absolute:242.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 254.0131,
+      "maj": "2026-10-14",
+      "niveau": 242.0,
+      "statut": "franchi"
     },
     "BE.US": {
       "arme": true,
       "cfg": "vq:None::vol1a",
       "derniere_alerte": null,
       "hwm": 308.0011,
-      "maj": "2026-10-13",
+      "maj": "2026-10-14",
       "niveau": 184.8007,
       "statut": "ok"
     },
     "EXENS.PA": {
-      "arme": true,
-      "hwm": null
+      "arme": false,
+      "cfg": "trailing:5.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 69.2,
+      "maj": "2026-10-14",
+      "niveau": 65.74,
+      "statut": "franchi"
     },
     "FLNC.US": {
-      "arme": true,
-      "hwm": null
+      "arme": false,
+      "cfg": "trailing:5.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 24.9613,
+      "maj": "2026-10-14",
+      "niveau": 23.7132,
+      "statut": "franchi"
     },
     "FSLR.US": {
-      "arme": true,
-      "hwm": null
+      "arme": false,
+      "cfg": "trailing:5.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 284.6267,
+      "maj": "2026-10-14",
+      "niveau": 270.3954,
+      "statut": "franchi"
+    },
+    "GOOGL.US": {
+      "arme": false,
+      "cfg": "absolute:333.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 359.6369,
+      "maj": "2026-10-14",
+      "niveau": 333.0,
+      "statut": "franchi"
+    },
+    "LLY.US": {
+      "arme": false,
+      "cfg": "absolute:1095.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 1145.0714,
+      "maj": "2026-10-14",
+      "niveau": 1095.0,
+      "statut": "franchi"
+    },
+    "META.US": {
+      "arme": false,
+      "cfg": "absolute:705.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 695.4372,
+      "maj": "2026-10-14",
+      "niveau": 705.0,
+      "statut": "franchi"
     },
     "NEM.US": {
-      "arme": true,
-      "hwm": null
+      "arme": false,
+      "cfg": "trailing:5.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 120.6113,
+      "maj": "2026-10-14",
+      "niveau": 114.5807,
+      "statut": "franchi"
+    },
+    "NVDA.US": {
+      "arme": false,
+      "cfg": "absolute:217.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 213.9642,
+      "maj": "2026-10-14",
+      "niveau": 217.0,
+      "statut": "franchi"
     },
     "OUST.US": {
+      "arme": false,
+      "cfg": "trailing:5.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 55.9147,
+      "maj": "2026-10-14",
+      "niveau": 53.119,
+      "statut": "franchi"
+    },
+    "SAP.US": {
       "arme": true,
-      "hwm": null
+      "cfg": "absolute:179.0:",
+      "derniere_alerte": null,
+      "hwm": 198.1342,
+      "maj": "2026-10-14",
+      "niveau": 179.0,
+      "statut": "ok"
     },
     "VALE.US": {
-      "arme": true,
-      "hwm": null
+      "arme": false,
+      "cfg": "trailing:5.0:",
+      "derniere_alerte": "2026-10-14",
+      "hwm": 15.4952,
+      "maj": "2026-10-14",
+      "niveau": 14.7204,
+      "statut": "franchi"
     }
   },
-  "maj": "2026-10-13 23:52",
+  "maj": "2026-10-14 23:27",
   "schema": 1
 }

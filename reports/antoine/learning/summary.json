@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 551,
-  "n_tickers": 212,
+  "matured": 561,
+  "n_tickers": 233,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 717,
+    "en_attente": 779,
     "invalides": 0
    },
    "20": {
-    "closes": 335,
-    "en_attente": 382,
+    "closes": 340,
+    "en_attente": 439,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 717,
+    "en_attente": 779,
     "invalides": 0
    },
    "60": {
-    "closes": 216,
-    "en_attente": 501,
+    "closes": 221,
+    "en_attente": 558,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 717
+  "snapshots": 779
  },
- "generated_for": "2026-10-13",
+ "generated_for": "2026-10-14",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 12,
-  "candidats": 10,
+  "candidats": 6,
   "clotures": 0,
-  "en_attente": 10,
+  "en_attente": 6,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3905,56 +3905,65 @@
   {
    "horizons": {
     "120": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -2.3026,
+     "band": ">= 7,5",
+     "ci95": [
+      1.4502,
+      10.1134
+     ],
+     "confidence": "elevee",
+     "estimate": 4.8277,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 39,
-     "p_outperf": 0.315,
-     "reco": "ACHAT MODERE",
-     "scope": "secteur Energy"
+     "n_indep": 76,
+     "p_outperf": 0.576,
+     "reco": "ACHAT FORT",
+     "scope": "global"
     },
     "20": {
-     "band": "6 - 7,5",
+     "band": ">= 7,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.4097,
+     "confidence": "faible",
+     "estimate": 1.3826,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 158,
-     "p_outperf": 0.427,
-     "reco": "ACHAT MODERE",
+     "n_indep": 22,
+     "p_outperf": 0.527,
+     "reco": "ACHAT FORT",
      "scope": "secteur Energy"
     },
     "252": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": -8.5812,
+     "band": ">= 7,5",
+     "ci95": [
+      0.1609,
+      19.174
+     ],
+     "confidence": "moyenne",
+     "estimate": 7.2099,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 16,
-     "p_outperf": 0.196,
-     "reco": "ACHAT MODERE",
-     "scope": "secteur Energy"
+     "n_indep": 44,
+     "p_outperf": 0.455,
+     "reco": "ACHAT FORT",
+     "scope": "global"
     },
     "60": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.9758,
+     "band": ">= 7,5",
+     "ci95": [
+      -0.2233,
+      3.9435
+     ],
+     "confidence": "elevee",
+     "estimate": 1.6374,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 69,
-     "p_outperf": 0.374,
-     "reco": "ACHAT MODERE",
-     "scope": "secteur Energy"
+     "n_indep": 110,
+     "p_outperf": 0.497,
+     "reco": "ACHAT FORT",
+     "scope": "global"
     }
    },
    "name": "TotalEnergies",
-   "score": 7.47,
+   "score": 7.79,
    "sector": "Energy",
    "ticker": "TTE.US"
   }

@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 551,
-  "n_tickers": 212,
+  "matured": 561,
+  "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 725,
+    "en_attente": 793,
     "invalides": 0
    },
    "20": {
-    "closes": 335,
-    "en_attente": 390,
+    "closes": 340,
+    "en_attente": 453,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 725,
+    "en_attente": 793,
     "invalides": 0
    },
    "60": {
-    "closes": 216,
-    "en_attente": 509,
+    "closes": 221,
+    "en_attente": 572,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 725
+  "snapshots": 793
  },
- "generated_for": "2026-10-13",
+ "generated_for": "2026-10-14",
  "horizon": 20,
  "horizons": [
   20,
@@ -3894,14 +3894,203 @@
  },
  "maturation": {
   "appels": 12,
-  "candidats": 10,
+  "candidats": 6,
   "clotures": 0,
-  "en_attente": 10,
+  "en_attente": 6,
   "invalides": 0,
   "symboles_en_echec": []
  },
  "mutualise": true,
  "positions": [
+  {
+   "horizons": {
+    "120": {
+     "band": ">= 7,5",
+     "ci95": [
+      1.4502,
+      10.1134
+     ],
+     "confidence": "elevee",
+     "estimate": 4.8277,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 76,
+     "p_outperf": 0.576,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "20": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.8348,
+      1.021
+     ],
+     "confidence": "elevee",
+     "estimate": 0.0875,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 233,
+     "p_outperf": 0.485,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "252": {
+     "band": ">= 7,5",
+     "ci95": [
+      0.1609,
+      19.174
+     ],
+     "confidence": "moyenne",
+     "estimate": 7.2099,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 44,
+     "p_outperf": 0.455,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "60": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.2233,
+      3.9435
+     ],
+     "confidence": "elevee",
+     "estimate": 1.6374,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 110,
+     "p_outperf": 0.497,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    }
+   },
+   "name": "Nvidia",
+   "score": 7.9,
+   "sector": "Information Technology",
+   "ticker": "NVDA.US"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": ">= 7,5",
+     "ci95": [
+      1.4502,
+      10.1134
+     ],
+     "confidence": "elevee",
+     "estimate": 4.8277,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 76,
+     "p_outperf": 0.576,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "20": {
+     "band": ">= 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 1.0128,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 14,
+     "p_outperf": 0.619,
+     "reco": "ACHAT FORT",
+     "scope": "secteur Health Care"
+    },
+    "252": {
+     "band": ">= 7,5",
+     "ci95": [
+      0.1609,
+      19.174
+     ],
+     "confidence": "moyenne",
+     "estimate": 7.2099,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 44,
+     "p_outperf": 0.455,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    },
+    "60": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.2233,
+      3.9435
+     ],
+     "confidence": "elevee",
+     "estimate": 1.6374,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 110,
+     "p_outperf": 0.497,
+     "reco": "ACHAT FORT",
+     "scope": "global"
+    }
+   },
+   "name": "Eli Lilly",
+   "score": 7.69,
+   "sector": "Health Care",
+   "ticker": "LLY.US"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -3.0164,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 62,
+     "p_outperf": 0.437,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.6386,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 291,
+     "p_outperf": 0.441,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -4.0547,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 25,
+     "p_outperf": 0.374,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -1.5739,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 114,
+     "p_outperf": 0.367,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    }
+   },
+   "name": "Meta",
+   "score": 7.4,
+   "sector": "Communication Services",
+   "ticker": "META.US"
+  },
   {
    "horizons": {
     "120": {
@@ -3964,6 +4153,174 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
+     "estimate": -3.0164,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 62,
+     "p_outperf": 0.437,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.6386,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 291,
+     "p_outperf": 0.441,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -4.0547,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 25,
+     "p_outperf": 0.374,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -1.5739,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 114,
+     "p_outperf": 0.367,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    }
+   },
+   "name": "Alphabet",
+   "score": 7.07,
+   "sector": "Communication Services",
+   "ticker": "GOOGL.US"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -1.2304,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 35,
+     "p_outperf": 0.454,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Consumer Discretionary"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.5532,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 145,
+     "p_outperf": 0.457,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Consumer Discretionary"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -2.2346,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 17,
+     "p_outperf": 0.374,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Consumer Discretionary"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.0504,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 65,
+     "p_outperf": 0.474,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Consumer Discretionary"
+    }
+   },
+   "name": "Amazon",
+   "score": 6.83,
+   "sector": "Consumer Discretionary",
+   "ticker": "AMZN.US"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.2151,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 38,
+     "p_outperf": 0.426,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Information Technology"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.0947,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 157,
+     "p_outperf": 0.49,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Information Technology"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 4.789,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 17,
+     "p_outperf": 0.374,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Information Technology"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.8709,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 65,
+     "p_outperf": 0.434,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Information Technology"
+    }
+   },
+   "name": "SAP",
+   "score": 6.82,
+   "sector": "Information Technology",
+   "ticker": "SAP.US"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
      "estimate": 0.8554,
      "kind": "sector",
      "legacy_included": false,
@@ -4017,56 +4374,56 @@
   {
    "horizons": {
     "120": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.2151,
+     "estimate": 0.2247,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 38,
-     "p_outperf": 0.426,
-     "reco": "ACHAT MODERE",
+     "n_indep": 47,
+     "p_outperf": 0.467,
+     "reco": "GARDER",
      "scope": "secteur Information Technology"
     },
     "20": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.0947,
+     "estimate": -0.3903,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 157,
-     "p_outperf": 0.49,
-     "reco": "ACHAT MODERE",
+     "n_indep": 187,
+     "p_outperf": 0.457,
+     "reco": "GARDER",
      "scope": "secteur Information Technology"
     },
     "252": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 4.789,
+     "estimate": 9.6425,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 17,
-     "p_outperf": 0.374,
-     "reco": "ACHAT MODERE",
+     "n_indep": 19,
+     "p_outperf": 0.539,
+     "reco": "GARDER",
      "scope": "secteur Information Technology"
     },
     "60": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.8709,
+     "estimate": -0.4724,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 65,
-     "p_outperf": 0.434,
-     "reco": "ACHAT MODERE",
+     "n_indep": 78,
+     "p_outperf": 0.418,
+     "reco": "GARDER",
      "scope": "secteur Information Technology"
     }
    },
    "name": "First Solar",
-   "score": 6.01,
+   "score": 5.84,
    "sector": "Information Technology",
    "ticker": "FSLR.US"
   },
@@ -4234,7 +4591,7 @@
     }
    },
    "name": "Exosens",
-   "score": 5.04,
+   "score": 5.25,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
   },
@@ -4290,7 +4647,7 @@
     }
    },
    "name": "Ouster",
-   "score": 4.6,
+   "score": 4.53,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },

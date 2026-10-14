@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 551,
-  "n_tickers": 212,
+  "matured": 561,
+  "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 729,
+    "en_attente": 796,
     "invalides": 0
    },
    "20": {
-    "closes": 335,
-    "en_attente": 394,
+    "closes": 340,
+    "en_attente": 456,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 729,
+    "en_attente": 796,
     "invalides": 0
    },
    "60": {
-    "closes": 216,
-    "en_attente": 513,
+    "closes": 221,
+    "en_attente": 575,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 729
+  "snapshots": 796
  },
- "generated_for": "2026-10-13",
+ "generated_for": "2026-10-14",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 12,
-  "candidats": 10,
+  "candidats": 6,
   "clotures": 0,
-  "en_attente": 10,
+  "en_attente": 6,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3905,62 +3905,56 @@
   {
    "horizons": {
     "120": {
-     "band": ">= 7,5",
-     "ci95": [
-      1.4502,
-      10.1134
-     ],
-     "confidence": "elevee",
-     "estimate": 4.8277,
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -3.0164,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
-     "scope": "global"
+     "n_indep": 62,
+     "p_outperf": 0.437,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
     },
     "20": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": null,
-     "confidence": "faible",
-     "estimate": -0.8549,
+     "confidence": "moyenne",
+     "estimate": -0.6386,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 24,
-     "p_outperf": 0.378,
-     "reco": "ACHAT FORT",
+     "n_indep": 291,
+     "p_outperf": 0.441,
+     "reco": "ACHAT MODERE",
      "scope": "secteur Communication Services"
     },
     "252": {
-     "band": ">= 7,5",
-     "ci95": [
-      0.1609,
-      19.174
-     ],
-     "confidence": "moyenne",
-     "estimate": 7.2099,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "60": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 0.3268,
+     "estimate": -4.0547,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 12,
-     "p_outperf": 0.453,
-     "reco": "ACHAT FORT",
+     "n_indep": 25,
+     "p_outperf": 0.374,
+     "reco": "ACHAT MODERE",
+     "scope": "secteur Communication Services"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -1.5739,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 114,
+     "p_outperf": 0.367,
+     "reco": "ACHAT MODERE",
      "scope": "secteur Communication Services"
     }
    },
    "name": "Meta",
-   "score": 7.61,
+   "score": 7.4,
    "sector": "Communication Services",
    "ticker": "META.US"
   },
@@ -4016,7 +4010,7 @@
     }
    },
    "name": "Apple",
-   "score": 6.75,
+   "score": 6.58,
    "sector": "Information Technology",
    "ticker": "AAPL.US"
   },
@@ -4131,7 +4125,7 @@
     }
    },
    "name": "Tesla",
-   "score": 4.09,
+   "score": 3.93,
    "sector": "Consumer Discretionary",
    "ticker": "TSLA.US"
   }

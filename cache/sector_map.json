@@ -29,6 +29,12 @@
   "sector": "Technology",
   "src": "yahoo"
  },
+ "AMZN.US": {
+  "fetched": "2026-10-14",
+  "industry": "Internet Retail",
+  "sector": "Consumer Cyclical",
+  "src": "yahoo"
+ },
  "BE.US": {
   "fetched": "2026-10-05",
   "industry": "Electrical Equipment & Parts",
@@ -59,6 +65,18 @@
   "sector": "Technology",
   "src": "yahoo"
  },
+ "GOOGL.US": {
+  "fetched": "2026-10-14",
+  "industry": "Internet Content & Information",
+  "sector": "Communication Services",
+  "src": "yahoo"
+ },
+ "LLY.US": {
+  "fetched": "2026-10-14",
+  "industry": "Drug Manufacturers - General",
+  "sector": "Healthcare",
+  "src": "yahoo"
+ },
  "META.US": {
   "fetched": "2026-09-29",
   "industry": "Internet Content & Information",
@@ -71,9 +89,21 @@
   "sector": "Basic Materials",
   "src": "yahoo"
  },
+ "NVDA.US": {
+  "fetched": "2026-10-14",
+  "industry": "Semiconductors",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
  "OUST.US": {
   "fetched": "2026-10-05",
   "industry": "Electronic Components",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
+ "SAP.US": {
+  "fetched": "2026-10-14",
+  "industry": "Software - Application",
   "sector": "Technology",
   "src": "yahoo"
  },
