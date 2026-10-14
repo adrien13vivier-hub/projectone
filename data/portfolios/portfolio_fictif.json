@@ -1,6 +1,6 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-14T13:13:44.368755+00:00",
+  "saved_at": "2026-10-14T13:15:45.318699+00:00",
   "settings": {
     "broker": "xtb",
     "indices": [
@@ -16,6 +16,10 @@
       "horizon": 20,
       "actif": true,
       "mutualiser": true
+    },
+    "stop_defaut": {
+      "type": "trailing",
+      "value": 5
     }
   },
   "closed": [],
