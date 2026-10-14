@@ -1,6 +1,6 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-14T13:15:45.318699+00:00",
+  "saved_at": "2026-10-14T13:15:55.788787+00:00",
   "settings": {
     "broker": "xtb",
     "indices": [
@@ -52,7 +52,7 @@
       "tags": [],
       "stop": {
         "type": "percent",
-        "value": 5
+        "value": 3
       },
       "sector": ""
     },
