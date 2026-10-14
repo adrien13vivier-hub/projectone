@@ -1,6 +1,6 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-14T13:12:53.518994+00:00",
+  "saved_at": "2026-10-14T13:13:44.368755+00:00",
   "settings": {
     "broker": "xtb",
     "indices": [
@@ -11,7 +11,7 @@
     "risque_pct": 5.0,
     "poids_max_pct": 18.0,
     "vol_cible_pct": 3.0,
-    "liquidites": 1000.0,
+    "liquidites": 2000.0,
     "apprentissage": {
       "horizon": 20,
       "actif": true,
