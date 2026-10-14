@@ -1,6 +1,6 @@
 {
   "username": "fictif",
-  "saved_at": "2026-10-14T10:31:37.683914+00:00",
+  "saved_at": "2026-10-14T13:12:53.518994+00:00",
   "settings": {
     "broker": "xtb",
     "indices": [
@@ -171,6 +171,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 217
+      },
       "buy_currency": "USD",
       "buy_fx": 0.8926,
       "sector": "",
@@ -187,6 +191,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 242
+      },
       "buy_currency": "USD",
       "buy_fx": 0.8926,
       "sector": "",
@@ -203,6 +211,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 333
+      },
       "buy_currency": "USD",
       "buy_fx": 0.8926,
       "sector": "",
@@ -219,6 +231,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 1095
+      },
       "buy_currency": "USD",
       "buy_fx": 0.8926,
       "sector": "",
@@ -235,6 +251,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 705
+      },
       "buy_currency": "USD",
       "buy_fx": 0.8926,
       "sector": "",
@@ -251,6 +271,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 179
+      },
       "sector": "",
       "achat_date": "2026-10-14"
     },
@@ -265,6 +289,10 @@
       "asset_class": "action",
       "account": "",
       "tags": [],
+      "stop": {
+        "type": "absolute",
+        "value": 900
+      },
       "sector": "",
       "achat_date": "2026-10-14"
     }
