@@ -15,10 +15,11 @@ ses chiffres comme une mesure du pouvoir predictif de la note.
 
 CE QUE CE SCRIPT REPOND, ET POURQUOI IL MANQUAIT
 --------------------------------------------------------------------------------
-Le rapport quotidien sort une note sur 10 et une recommandation (ACHAT FORT,
-GARDER, VENDRE...) pour chaque ligne. Jusqu'ici, rien ne verifiait si cette
-note avait raison : une valeur notee "ACHAT FORT" performe-t-elle vraiment
-mieux, dans les semaines qui suivent, qu'une valeur notee "VENDRE" ? Sans
+Le rapport quotidien sort une note sur 10 et un niveau de note (NOTE ELEVEE,
+NOTE MOYENNE, NOTE TRES FAIBLE...) pour chaque ligne. Jusqu'ici, rien ne
+verifiait si cette note avait raison : une valeur en "NOTE ELEVEE" performe-t-elle
+vraiment mieux, dans les semaines qui suivent, qu'une valeur en "NOTE TRES
+FAIBLE" ? Sans
 reponse a cette question, le reste de l'edifice (dimensionnement, stops...)
 s'appuie sur un signal dont la valeur predictive n'est jamais mesuree.
 
@@ -51,11 +52,11 @@ from datetime import datetime, timedelta
 # volontairement : ce script doit pouvoir tourner seul, sans dépendre du
 # reste de l'analyseur, sur un simple export CSV.
 SEUILS_RECOMMANDATION = [
-    (7.5, "ACHAT FORT"),
-    (6.0, "ACHAT MODÉRÉ"),
-    (4.5, "GARDER"),
-    (3.0, "À ÉVITER"),
-    (-float("inf"), "VENDRE"),
+    (7.5, "NOTE ÉLEVÉE"),
+    (6.0, "NOTE SOLIDE"),
+    (4.5, "NOTE MOYENNE"),
+    (3.0, "NOTE FAIBLE"),
+    (-float("inf"), "NOTE TRÈS FAIBLE"),
 ]
 
 
@@ -147,8 +148,8 @@ def correlation_pearson(xs: list, ys: list):
 
 def resume_par_recommandation(paires: list) -> list:
     """Rendement moyen et médian futur, groupé par la recommandation que le
-    score aurait donnée ce jour-là. Si le score est prédictif, ACHAT FORT
-    doit ressortir devant VENDRE -- pas l'inverse."""
+    score aurait donnée ce jour-là. Si le score est prédictif, NOTE ÉLEVÉE
+    doit ressortir devant NOTE TRÈS FAIBLE -- pas l'inverse."""
     groupes = defaultdict(list)
     for p in paires:
         groupes[classer(p["score"])].append(p["rendement_pct"])
@@ -198,15 +199,15 @@ def rapport(user: str, chemin: str, horizon_jours: int) -> None:
         print(f"  Corrélation score -> rendement à +{horizon_jours}j : "
              f"{corr:+.2f}  ({lecture})")
 
-    print(f"\n  Rendement moyen à +{horizon_jours}j, par recommandation du jour :")
-    print(f"  {'Recommandation':<16} {'N':>4}  {'Moyenne':>9}  {'Médiane':>9}")
+    print(f"\n  Rendement moyen à +{horizon_jours}j, par niveau de note du jour :")
+    print(f"  {'Niveau':<16} {'N':>4}  {'Moyenne':>9}  {'Médiane':>9}")
     for r in resume_par_recommandation(paires):
         print(f"  {r['label']:<16} {r['n']:>4}  {r['moyenne_pct']:>+8.2f}% "
              f" {r['mediane_pct']:>+8.2f}%")
 
     print(
-        "\n  Lecture : si le score est utile, ACHAT FORT doit en moyenne "
-        "afficher un meilleur rendement futur que VENDRE. Une seule mesure "
+        "\n  Lecture : si le score est utile, NOTE ÉLEVÉE doit en moyenne "
+        "afficher un meilleur rendement futur que NOTE TRÈS FAIBLE. Une seule mesure "
         "ne prouve rien -- ce script vaut surtout suivi dans le temps, à "
         "mesure que l'historique s'allonge, et par petits échantillons il "
         "reste sensible au hasard."
