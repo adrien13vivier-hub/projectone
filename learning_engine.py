@@ -110,13 +110,13 @@ HORIZON_MIN, HORIZON_MAX = 5, 504
 LEARNABLE_CLASSES = ("action", "etf")
 
 # Tranches de note : memes seuils que recommend() -> le tableau se lit avec
-# les libelles ACHAT FORT / ACHAT MODERE / GARDER / A EVITER / VENDRE.
+# les niveaux de note du rapport (15/10/2026 ; avant : ACHAT FORT ... VENDRE).
 BANDS = (
-    (0.0, 3.0, "< 3", "VENDRE"),
-    (3.0, 4.5, "3 - 4,5", "A EVITER"),
-    (4.5, 6.0, "4,5 - 6", "GARDER"),
-    (6.0, 7.5, "6 - 7,5", "ACHAT MODERE"),
-    (7.5, 10.01, ">= 7,5", "ACHAT FORT"),
+    (0.0, 3.0, "< 3", "NOTE TRÈS FAIBLE"),
+    (3.0, 4.5, "3 - 4,5", "NOTE FAIBLE"),
+    (4.5, 6.0, "4,5 - 6", "NOTE MOYENNE"),
+    (6.0, 7.5, "6 - 7,5", "NOTE SOLIDE"),
+    (7.5, 10.01, ">= 7,5", "NOTE ÉLEVÉE"),
 )
 
 SHRINK_MEAN_K = 15        # « poids » de la moyenne globale dans le retrecissement
