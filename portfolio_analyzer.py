@@ -42,8 +42,8 @@ NOUVELLE ARCHITECTURE : DEUX INDICATEURS DISTINCTS
       plus-value nette, seuil de rentabilite apres frais, poids dans le
       portefeuille, ecart au consensus de prix cible.
 
-La recommandation croise les deux : un titre bien note qu'on detient en
-moins-value n'appelle pas la meme action qu'un titre mal note en plus-value.
+Le niveau de note (NOTE ELEVEE ... NOTE TRES FAIBLE) ne lit QUE la note du
+titre : il decrit, il ne dit pas quoi faire (voir recommend(), 15/10/2026).
 
 GESTION DES DONNEES MANQUANTES
 ------------------------------
@@ -2315,7 +2315,7 @@ SCORE_VERSION = calcul_score_version(POIDS_NOTE)
 #
 # Consequence a garder en tete : un ETF peut afficher 100 % de confiance sur
 # deux criteres seulement. C'est exact, et c'est pour cela que le nombre de
-# criteres retenus est publie a cote — et que recommend() refuse de trancher
+# criteres retenus est publie a cote — et que recommend() refuse de classer
 # en dessous de trois.
 CRITERES_ENTREPRISE = ("valorisation", "sante", "croissance", "consensus")
 
@@ -2453,34 +2453,52 @@ def score_macro(indices_data):
     return round(max(0.0, min(10.0, 5.0 + sum(chgs) / len(chgs))), 2) if chgs else 5.0
 
 
+# Niveaux de note (15/10/2026). Descriptifs, jamais prescriptifs : ils
+# remplacent RENFORCER / CONSERVER / SURVEILLER / ALLEGER / SORTIR. Memes
+# seuils qu'avant, du plus haut au plus bas.
+NIVEAUX_NOTE = (
+    (7.5, "NOTE ÉLEVÉE"),
+    (6.0, "NOTE SOLIDE"),
+    (4.5, "NOTE MOYENNE"),
+    (3.0, "NOTE FAIBLE"),
+    (-float("inf"), "NOTE TRÈS FAIBLE"),
+)
+NIVEAU_INCOMPLET = "NOTE INCOMPLÈTE"
+NIVEAU_SANS_DONNEES = "DONNÉES INSUFFISANTES"
+
+
 def recommend(note, confiance: float = 100.0, pnl_net_pct: float = 0.0,
               nb_criteres: int = 6):
-    """Recommandation croisant qualite du titre et situation du detenteur."""
+    """Niveau de note : decrit le TITRE selon les criteres du programme.
+
+    CHANGEMENT (15/10/2026) : l'ancien vocabulaire (RENFORCER / CONSERVER /
+    SURVEILLER / ALLEGER / SORTIR / A EXAMINER) disait QUOI FAIRE, et la
+    variante « en moins-value » dependait de la situation du detenteur :
+    c'est la definition meme d'une recommandation personnalisee, donc du
+    conseil en investissement (activite reglementee, statut CIF). Le niveau
+    ne dit plus que ce que vaut la note : meme titre = meme niveau, quel que
+    soit le prix d'achat. `pnl_net_pct` n'est plus lu ; le parametre reste
+    pour ne casser aucun appel.
+    """
     if note is None:
-        return "DONNEES INSUFFISANTES"
+        return NIVEAU_SANS_DONNEES
 
     # En dessous de 40 % de confiance, la note repose sur une part trop faible
-    # des criteres APPLICABLES pour fonder une recommandation tranchee.
+    # des criteres APPLICABLES pour etre lue comme un niveau.
     if confiance < 40:
-        return "A EXAMINER (donnees partielles)"
+        return f"{NIVEAU_INCOMPLET} (données partielles)"
 
     # Deuxieme garde-fou, ajoute en v14. Depuis que la confiance se calcule
     # sur les criteres applicables, un ETF peut atteindre 100 % avec deux
     # criteres seulement — momentum et risque. Le pourcentage est exact, mais
-    # deux criteres ne suffisent pas a dire « RENFORCER » ou « SORTIR ».
+    # deux criteres ne suffisent pas a classer le titre.
     if nb_criteres < 3:
-        return "A EXAMINER (peu de criteres)"
+        return f"{NIVEAU_INCOMPLET} (peu de critères)"
 
-    if note >= 7.5:
-        return "RENFORCER"
-    if note >= 6.0:
-        return "CONSERVER"
-    if note >= 4.5:
-        # Zone grise : la situation du detenteur departage.
-        return "SURVEILLER" if pnl_net_pct >= 0 else "SURVEILLER (en moins-value)"
-    if note >= 3.0:
-        return "ALLEGER"
-    return "SORTIR"
+    for seuil, libelle in NIVEAUX_NOTE:
+        if note >= seuil:
+            return libelle
+    return NIVEAUX_NOTE[-1][1]
 
 
 def justification(name, net_pnl_eur, net_pnl_pct, detail: dict,
@@ -4653,7 +4671,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         lines += [
             f"### {asset['name']} `{asset['ticker_eod']}`",
             "",
-            "| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Recomm. |",
+            "| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |",
             "|-------|-----------|-----|----------|---------|------------------|---------|",
             f"| {r['price_eur']:.2f} EUR | {chg_str} | {r['vm']:.2f} EUR "
             f"| {pnl_b_str} | {pnl_n_str} | {note_s} | {r['rec']} |",
@@ -4786,7 +4804,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
     lines += [
         "## Synthese Portefeuille",
         "",
-        "| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Recomm. |",
+        "| Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Niveau |",
         "|--------|-----------|--------|----------|---------|------|-------|---------|",
     ]
     for r in results:
