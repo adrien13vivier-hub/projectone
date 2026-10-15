@@ -1345,8 +1345,8 @@ td{font-size:13px}
           Le pourcentage dit quelle part de ce qui <i>pouvait</i> être calculé
           l'a été, pas combien de critères ont servi. Les deux informations sont
           affichées ensemble. Et tant qu'il y a moins de trois critères, le
-          programme refuse de trancher : il écrit « à examiner » plutôt que
-          « renforcer » ou « sortir ».
+          programme refuse de classer le titre : il écrit « note incomplète »
+          plutôt qu'un niveau de note.
         </div>
         <p>
           Un changement lié : quand le consensus des analystes est introuvable,
@@ -2009,9 +2009,12 @@ let CLASSES = [
   {code:'cash',   label:'Liquidités',  manuel:true}
 ];
 // Choix proposes sur une LIGNE : le defaut du profil en premier.
-// Meme vocabulaire que les recommandations du rapport (28/09/2026).
-const RECO_FIAB = {'ACHAT FORT':'Renforcer','ACHAT MODERE':'Conserver','GARDER':'Surveiller',
-                   'A EVITER':'Alléger','VENDRE':'Sortir'};
+// Meme vocabulaire que les niveaux de note du rapport (15/10/2026). Les
+// anciennes cles (ACHAT FORT...) restent traduites pour un resume ancien.
+const RECO_FIAB = {'ACHAT FORT':'Note élevée','ACHAT MODERE':'Note solide','GARDER':'Note moyenne',
+                   'A EVITER':'Note faible','VENDRE':'Note très faible',
+                   'NOTE ÉLEVÉE':'Note élevée','NOTE SOLIDE':'Note solide','NOTE MOYENNE':'Note moyenne',
+                   'NOTE FAIBLE':'Note faible','NOTE TRÈS FAIBLE':'Note très faible'};
 
 function STOP_TYPES_LIGNE(){
   return [{code:'', label:'Défaut du profil', parametre:null}].concat(STOP_TYPES);
@@ -3209,7 +3212,7 @@ async function chargerAccueil(force){
     const plafond=Number(reglages.poids_max_pct)||15;
     const grosse=investi?(montantLigne(tri[0])/investi)*100:0;
     if(grosse>plafond){
-      t1.innerHTML="Réduire la<br>concentration.";
+      t1.innerHTML="Concentration<br>élevée.";
       t2.textContent=(tri[0].name||tri[0].ticker)+" pèse "+nb(grosse,0)+
         " % de l'investi.";
       pl.textContent="À examiner";
