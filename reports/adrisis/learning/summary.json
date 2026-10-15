@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 561,
-  "n_tickers": 233,
+  "matured": 568,
+  "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 778,
+    "en_attente": 846,
     "invalides": 0
    },
    "20": {
-    "closes": 340,
-    "en_attente": 438,
+    "closes": 345,
+    "en_attente": 501,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 778,
+    "en_attente": 846,
     "invalides": 0
    },
    "60": {
-    "closes": 221,
-    "en_attente": 557,
+    "closes": 223,
+    "en_attente": 623,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 778
+  "snapshots": 846
  },
- "generated_for": "2026-10-14",
+ "generated_for": "2026-10-15",
  "horizon": 60,
  "horizons": [
   20,
@@ -61,7 +61,7 @@
        "n": 33,
        "n_indep": 15,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 24.981
       },
       {
@@ -81,7 +81,7 @@
        "n": 316,
        "n_indep": 127,
        "p_outperf": 0.449,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 25.7239
       },
       {
@@ -101,7 +101,7 @@
        "n": 1668,
        "n_indep": 490,
        "p_outperf": 0.475,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 19.5272
       },
       {
@@ -121,7 +121,7 @@
        "n": 1844,
        "n_indep": 491,
        "p_outperf": 0.432,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 18.3745
       },
       {
@@ -141,7 +141,7 @@
        "n": 184,
        "n_indep": 76,
        "p_outperf": 0.541,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 19.394
       }
      ],
@@ -378,7 +378,7 @@
        "n": 33,
        "n_indep": 15,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 24.492
       },
       {
@@ -398,7 +398,7 @@
        "n": 316,
        "n_indep": 127,
        "p_outperf": 0.655,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 26.9623
       },
       {
@@ -418,7 +418,7 @@
        "n": 1668,
        "n_indep": 490,
        "p_outperf": 0.668,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 20.2255
       },
       {
@@ -438,7 +438,7 @@
        "n": 1844,
        "n_indep": 491,
        "p_outperf": 0.646,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 18.7465
       },
       {
@@ -458,7 +458,7 @@
        "n": 184,
        "n_indep": 76,
        "p_outperf": 0.742,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 19.7298
       }
      ],
@@ -695,7 +695,7 @@
        "n": 33,
        "n_indep": 15,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 22.6543
       },
       {
@@ -715,7 +715,7 @@
        "n": 316,
        "n_indep": 127,
        "p_outperf": 0.464,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 22.5543
       },
       {
@@ -735,7 +735,7 @@
        "n": 1668,
        "n_indep": 490,
        "p_outperf": 0.463,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 17.6656
       },
       {
@@ -755,7 +755,7 @@
        "n": 1844,
        "n_indep": 491,
        "p_outperf": 0.444,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 16.7238
       },
       {
@@ -775,7 +775,7 @@
        "n": 184,
        "n_indep": 76,
        "p_outperf": 0.576,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 18.7599
       }
      ],
@@ -1024,7 +1024,7 @@
        "n": 35,
        "n_indep": 35,
        "p_outperf": 0.462,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 10.7339
       },
       {
@@ -1044,7 +1044,7 @@
        "n": 358,
        "n_indep": 358,
        "p_outperf": 0.494,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 10.0577
       },
       {
@@ -1064,7 +1064,7 @@
        "n": 1926,
        "n_indep": 1926,
        "p_outperf": 0.487,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 7.4185
       },
       {
@@ -1084,7 +1084,7 @@
        "n": 2110,
        "n_indep": 2110,
        "p_outperf": 0.462,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 7.3731
       },
       {
@@ -1104,7 +1104,7 @@
        "n": 233,
        "n_indep": 233,
        "p_outperf": 0.505,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 7.9676
       }
      ],
@@ -1341,7 +1341,7 @@
        "n": 35,
        "n_indep": 35,
        "p_outperf": 0.57,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 11.449
       },
       {
@@ -1361,7 +1361,7 @@
        "n": 358,
        "n_indep": 358,
        "p_outperf": 0.567,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 10.8957
       },
       {
@@ -1381,7 +1381,7 @@
        "n": 1926,
        "n_indep": 1926,
        "p_outperf": 0.586,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 8.2635
       },
       {
@@ -1401,7 +1401,7 @@
        "n": 2110,
        "n_indep": 2110,
        "p_outperf": 0.545,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 7.8407
       },
       {
@@ -1421,7 +1421,7 @@
        "n": 233,
        "n_indep": 233,
        "p_outperf": 0.571,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 8.4579
       }
      ],
@@ -1658,7 +1658,7 @@
        "n": 35,
        "n_indep": 35,
        "p_outperf": 0.463,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 10.4036
       },
       {
@@ -1678,7 +1678,7 @@
        "n": 358,
        "n_indep": 358,
        "p_outperf": 0.483,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 8.93
       },
       {
@@ -1698,7 +1698,7 @@
        "n": 1926,
        "n_indep": 1926,
        "p_outperf": 0.495,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 6.6887
       },
       {
@@ -1718,7 +1718,7 @@
        "n": 2110,
        "n_indep": 2110,
        "p_outperf": 0.478,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 6.3575
       },
       {
@@ -1738,7 +1738,7 @@
        "n": 233,
        "n_indep": 233,
        "p_outperf": 0.485,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 7.1887
       }
      ],
@@ -1987,7 +1987,7 @@
        "n": 22,
        "n_indep": 8,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 27.2474
       },
       {
@@ -2007,7 +2007,7 @@
        "n": 249,
        "n_indep": 69,
        "p_outperf": 0.41,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 42.2308
       },
       {
@@ -2027,7 +2027,7 @@
        "n": 1301,
        "n_indep": 213,
        "p_outperf": 0.437,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 35.1637
       },
       {
@@ -2047,7 +2047,7 @@
        "n": 1465,
        "n_indep": 211,
        "p_outperf": 0.436,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 29.3011
       },
       {
@@ -2067,7 +2067,7 @@
        "n": 147,
        "n_indep": 44,
        "p_outperf": 0.508,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 29.5528
       }
      ],
@@ -2304,7 +2304,7 @@
        "n": 22,
        "n_indep": 8,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 25.8094
       },
       {
@@ -2324,7 +2324,7 @@
        "n": 249,
        "n_indep": 69,
        "p_outperf": 0.727,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 42.9727
       },
       {
@@ -2344,7 +2344,7 @@
        "n": 1301,
        "n_indep": 213,
        "p_outperf": 0.751,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 35.7971
       },
       {
@@ -2364,7 +2364,7 @@
        "n": 1465,
        "n_indep": 211,
        "p_outperf": 0.73,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 29.7736
       },
       {
@@ -2384,7 +2384,7 @@
        "n": 147,
        "n_indep": 44,
        "p_outperf": 0.712,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 30.2938
       }
      ],
@@ -2621,7 +2621,7 @@
        "n": 22,
        "n_indep": 8,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 22.7844
       },
       {
@@ -2641,7 +2641,7 @@
        "n": 249,
        "n_indep": 69,
        "p_outperf": 0.45,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 37.9392
       },
       {
@@ -2661,7 +2661,7 @@
        "n": 1301,
        "n_indep": 213,
        "p_outperf": 0.464,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 32.5306
       },
       {
@@ -2681,7 +2681,7 @@
        "n": 1465,
        "n_indep": 211,
        "p_outperf": 0.41,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 27.3855
       },
       {
@@ -2701,7 +2701,7 @@
        "n": 147,
        "n_indep": 44,
        "p_outperf": 0.455,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 28.296
       }
      ],
@@ -2950,7 +2950,7 @@
        "n": 34,
        "n_indep": 21,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 14.5612
       },
       {
@@ -2970,7 +2970,7 @@
        "n": 340,
        "n_indep": 189,
        "p_outperf": 0.546,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 17.3791
       },
       {
@@ -2990,7 +2990,7 @@
        "n": 1827,
        "n_indep": 844,
        "p_outperf": 0.461,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 14.0404
       },
       {
@@ -3010,7 +3010,7 @@
        "n": 2012,
        "n_indep": 879,
        "p_outperf": 0.46,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 12.6882
       },
       {
@@ -3030,7 +3030,7 @@
        "n": 201,
        "n_indep": 110,
        "p_outperf": 0.531,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 13.116
       }
      ],
@@ -3267,7 +3267,7 @@
        "n": 34,
        "n_indep": 21,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 14.5304
       },
       {
@@ -3287,7 +3287,7 @@
        "n": 340,
        "n_indep": 189,
        "p_outperf": 0.67,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 18.455
       },
       {
@@ -3307,7 +3307,7 @@
        "n": 1827,
        "n_indep": 844,
        "p_outperf": 0.607,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 14.6323
       },
       {
@@ -3327,7 +3327,7 @@
        "n": 2012,
        "n_indep": 879,
        "p_outperf": 0.617,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 13.1259
       },
       {
@@ -3347,7 +3347,7 @@
        "n": 201,
        "n_indep": 110,
        "p_outperf": 0.669,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 13.8987
       }
      ],
@@ -3584,7 +3584,7 @@
        "n": 34,
        "n_indep": 21,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 13.9619
       },
       {
@@ -3604,7 +3604,7 @@
        "n": 340,
        "n_indep": 189,
        "p_outperf": 0.531,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 15.1097
       },
       {
@@ -3624,7 +3624,7 @@
        "n": 1827,
        "n_indep": 844,
        "p_outperf": 0.482,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 12.6283
       },
       {
@@ -3644,7 +3644,7 @@
        "n": 2012,
        "n_indep": 879,
        "p_outperf": 0.457,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 11.0543
       },
       {
@@ -3664,7 +3664,7 @@
        "n": 201,
        "n_indep": 110,
        "p_outperf": 0.497,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 12.2141
       }
      ],
@@ -3893,7 +3893,7 @@
   }
  },
  "maturation": {
-  "appels": 12,
+  "appels": 13,
   "candidats": 6,
   "clotures": 0,
   "en_attente": 6,
@@ -3916,7 +3916,7 @@
      "legacy_included": false,
      "n_indep": 76,
      "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "20": {
@@ -3931,7 +3931,7 @@
      "legacy_included": false,
      "n_indep": 233,
      "p_outperf": 0.485,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "252": {
@@ -3946,7 +3946,7 @@
      "legacy_included": false,
      "n_indep": 44,
      "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "60": {
@@ -3961,75 +3961,7 @@
      "legacy_included": false,
      "n_indep": 110,
      "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    }
-   },
-   "name": "MSCI WORLD",
-   "score": 8.13,
-   "sector": "",
-   "ticker": "WPEA.PA"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": ">= 7,5",
-     "ci95": [
-      1.4502,
-      10.1134
-     ],
-     "confidence": "elevee",
-     "estimate": 4.8277,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "20": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.8348,
-      1.021
-     ],
-     "confidence": "elevee",
-     "estimate": 0.0875,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "252": {
-     "band": ">= 7,5",
-     "ci95": [
-      0.1609,
-      19.174
-     ],
-     "confidence": "moyenne",
-     "estimate": 7.2099,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
-     "scope": "global"
-    },
-    "60": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.2233,
-      3.9435
-     ],
-     "confidence": "elevee",
-     "estimate": 1.6374,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     }
    },
@@ -4052,7 +3984,7 @@
      "legacy_included": false,
      "n_indep": 76,
      "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "20": {
@@ -4067,7 +3999,7 @@
      "legacy_included": false,
      "n_indep": 233,
      "p_outperf": 0.485,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "252": {
@@ -4082,7 +4014,7 @@
      "legacy_included": false,
      "n_indep": 44,
      "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "60": {
@@ -4097,12 +4029,12 @@
      "legacy_included": false,
      "n_indep": 110,
      "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     }
    },
    "name": "MSCI WORLD",
-   "score": 8.13,
+   "score": 7.72,
    "sector": "",
    "ticker": "WPEA.PA"
   },
@@ -4120,7 +4052,7 @@
      "legacy_included": false,
      "n_indep": 76,
      "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "20": {
@@ -4135,7 +4067,7 @@
      "legacy_included": false,
      "n_indep": 233,
      "p_outperf": 0.485,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "252": {
@@ -4150,7 +4082,7 @@
      "legacy_included": false,
      "n_indep": 44,
      "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "60": {
@@ -4165,12 +4097,80 @@
      "legacy_included": false,
      "n_indep": 110,
      "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     }
    },
    "name": "MSCI WORLD",
-   "score": 8.13,
+   "score": 7.72,
+   "sector": "",
+   "ticker": "WPEA.PA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": ">= 7,5",
+     "ci95": [
+      1.4502,
+      10.1134
+     ],
+     "confidence": "elevee",
+     "estimate": 4.8277,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 76,
+     "p_outperf": 0.576,
+     "reco": "NOTE ÉLEVÉE",
+     "scope": "global"
+    },
+    "20": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.8348,
+      1.021
+     ],
+     "confidence": "elevee",
+     "estimate": 0.0875,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 233,
+     "p_outperf": 0.485,
+     "reco": "NOTE ÉLEVÉE",
+     "scope": "global"
+    },
+    "252": {
+     "band": ">= 7,5",
+     "ci95": [
+      0.1609,
+      19.174
+     ],
+     "confidence": "moyenne",
+     "estimate": 7.2099,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 44,
+     "p_outperf": 0.455,
+     "reco": "NOTE ÉLEVÉE",
+     "scope": "global"
+    },
+    "60": {
+     "band": ">= 7,5",
+     "ci95": [
+      -0.2233,
+      3.9435
+     ],
+     "confidence": "elevee",
+     "estimate": 1.6374,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 110,
+     "p_outperf": 0.497,
+     "reco": "NOTE ÉLEVÉE",
+     "scope": "global"
+    }
+   },
+   "name": "MSCI WORLD",
+   "score": 7.72,
    "sector": "",
    "ticker": "WPEA.PA"
   }

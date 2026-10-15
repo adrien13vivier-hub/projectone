@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 561,
+  "matured": 568,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 793,
+    "en_attente": 861,
     "invalides": 0
    },
    "20": {
-    "closes": 340,
-    "en_attente": 453,
+    "closes": 345,
+    "en_attente": 516,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 793,
+    "en_attente": 861,
     "invalides": 0
    },
    "60": {
-    "closes": 221,
-    "en_attente": 572,
+    "closes": 223,
+    "en_attente": 638,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 793
+  "snapshots": 861
  },
- "generated_for": "2026-10-14",
+ "generated_for": "2026-10-15",
  "horizon": 20,
  "horizons": [
   20,
@@ -61,7 +61,7 @@
        "n": 33,
        "n_indep": 15,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 24.981
       },
       {
@@ -81,7 +81,7 @@
        "n": 316,
        "n_indep": 127,
        "p_outperf": 0.449,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 25.7239
       },
       {
@@ -101,7 +101,7 @@
        "n": 1668,
        "n_indep": 490,
        "p_outperf": 0.475,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 19.5272
       },
       {
@@ -121,7 +121,7 @@
        "n": 1844,
        "n_indep": 491,
        "p_outperf": 0.432,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 18.3745
       },
       {
@@ -141,7 +141,7 @@
        "n": 184,
        "n_indep": 76,
        "p_outperf": 0.541,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 19.394
       }
      ],
@@ -378,7 +378,7 @@
        "n": 33,
        "n_indep": 15,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 24.492
       },
       {
@@ -398,7 +398,7 @@
        "n": 316,
        "n_indep": 127,
        "p_outperf": 0.655,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 26.9623
       },
       {
@@ -418,7 +418,7 @@
        "n": 1668,
        "n_indep": 490,
        "p_outperf": 0.668,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 20.2255
       },
       {
@@ -438,7 +438,7 @@
        "n": 1844,
        "n_indep": 491,
        "p_outperf": 0.646,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 18.7465
       },
       {
@@ -458,7 +458,7 @@
        "n": 184,
        "n_indep": 76,
        "p_outperf": 0.742,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 19.7298
       }
      ],
@@ -695,7 +695,7 @@
        "n": 33,
        "n_indep": 15,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 22.6543
       },
       {
@@ -715,7 +715,7 @@
        "n": 316,
        "n_indep": 127,
        "p_outperf": 0.464,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 22.5543
       },
       {
@@ -735,7 +735,7 @@
        "n": 1668,
        "n_indep": 490,
        "p_outperf": 0.463,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 17.6656
       },
       {
@@ -755,7 +755,7 @@
        "n": 1844,
        "n_indep": 491,
        "p_outperf": 0.444,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 16.7238
       },
       {
@@ -775,7 +775,7 @@
        "n": 184,
        "n_indep": 76,
        "p_outperf": 0.576,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 18.7599
       }
      ],
@@ -1024,7 +1024,7 @@
        "n": 35,
        "n_indep": 35,
        "p_outperf": 0.462,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 10.7339
       },
       {
@@ -1044,7 +1044,7 @@
        "n": 358,
        "n_indep": 358,
        "p_outperf": 0.494,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 10.0577
       },
       {
@@ -1064,7 +1064,7 @@
        "n": 1926,
        "n_indep": 1926,
        "p_outperf": 0.487,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 7.4185
       },
       {
@@ -1084,7 +1084,7 @@
        "n": 2110,
        "n_indep": 2110,
        "p_outperf": 0.462,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 7.3731
       },
       {
@@ -1104,7 +1104,7 @@
        "n": 233,
        "n_indep": 233,
        "p_outperf": 0.505,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 7.9676
       }
      ],
@@ -1341,7 +1341,7 @@
        "n": 35,
        "n_indep": 35,
        "p_outperf": 0.57,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 11.449
       },
       {
@@ -1361,7 +1361,7 @@
        "n": 358,
        "n_indep": 358,
        "p_outperf": 0.567,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 10.8957
       },
       {
@@ -1381,7 +1381,7 @@
        "n": 1926,
        "n_indep": 1926,
        "p_outperf": 0.586,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 8.2635
       },
       {
@@ -1401,7 +1401,7 @@
        "n": 2110,
        "n_indep": 2110,
        "p_outperf": 0.545,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 7.8407
       },
       {
@@ -1421,7 +1421,7 @@
        "n": 233,
        "n_indep": 233,
        "p_outperf": 0.571,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 8.4579
       }
      ],
@@ -1658,7 +1658,7 @@
        "n": 35,
        "n_indep": 35,
        "p_outperf": 0.463,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 10.4036
       },
       {
@@ -1678,7 +1678,7 @@
        "n": 358,
        "n_indep": 358,
        "p_outperf": 0.483,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 8.93
       },
       {
@@ -1698,7 +1698,7 @@
        "n": 1926,
        "n_indep": 1926,
        "p_outperf": 0.495,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 6.6887
       },
       {
@@ -1718,7 +1718,7 @@
        "n": 2110,
        "n_indep": 2110,
        "p_outperf": 0.478,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 6.3575
       },
       {
@@ -1738,7 +1738,7 @@
        "n": 233,
        "n_indep": 233,
        "p_outperf": 0.485,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 7.1887
       }
      ],
@@ -1987,7 +1987,7 @@
        "n": 22,
        "n_indep": 8,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 27.2474
       },
       {
@@ -2007,7 +2007,7 @@
        "n": 249,
        "n_indep": 69,
        "p_outperf": 0.41,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 42.2308
       },
       {
@@ -2027,7 +2027,7 @@
        "n": 1301,
        "n_indep": 213,
        "p_outperf": 0.437,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 35.1637
       },
       {
@@ -2047,7 +2047,7 @@
        "n": 1465,
        "n_indep": 211,
        "p_outperf": 0.436,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 29.3011
       },
       {
@@ -2067,7 +2067,7 @@
        "n": 147,
        "n_indep": 44,
        "p_outperf": 0.508,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 29.5528
       }
      ],
@@ -2304,7 +2304,7 @@
        "n": 22,
        "n_indep": 8,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 25.8094
       },
       {
@@ -2324,7 +2324,7 @@
        "n": 249,
        "n_indep": 69,
        "p_outperf": 0.727,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 42.9727
       },
       {
@@ -2344,7 +2344,7 @@
        "n": 1301,
        "n_indep": 213,
        "p_outperf": 0.751,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 35.7971
       },
       {
@@ -2364,7 +2364,7 @@
        "n": 1465,
        "n_indep": 211,
        "p_outperf": 0.73,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 29.7736
       },
       {
@@ -2384,7 +2384,7 @@
        "n": 147,
        "n_indep": 44,
        "p_outperf": 0.712,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 30.2938
       }
      ],
@@ -2621,7 +2621,7 @@
        "n": 22,
        "n_indep": 8,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 22.7844
       },
       {
@@ -2641,7 +2641,7 @@
        "n": 249,
        "n_indep": 69,
        "p_outperf": 0.45,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 37.9392
       },
       {
@@ -2661,7 +2661,7 @@
        "n": 1301,
        "n_indep": 213,
        "p_outperf": 0.464,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 32.5306
       },
       {
@@ -2681,7 +2681,7 @@
        "n": 1465,
        "n_indep": 211,
        "p_outperf": 0.41,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 27.3855
       },
       {
@@ -2701,7 +2701,7 @@
        "n": 147,
        "n_indep": 44,
        "p_outperf": 0.455,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 28.296
       }
      ],
@@ -2950,7 +2950,7 @@
        "n": 34,
        "n_indep": 21,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 14.5612
       },
       {
@@ -2970,7 +2970,7 @@
        "n": 340,
        "n_indep": 189,
        "p_outperf": 0.546,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 17.3791
       },
       {
@@ -2990,7 +2990,7 @@
        "n": 1827,
        "n_indep": 844,
        "p_outperf": 0.461,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 14.0404
       },
       {
@@ -3010,7 +3010,7 @@
        "n": 2012,
        "n_indep": 879,
        "p_outperf": 0.46,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 12.6882
       },
       {
@@ -3030,7 +3030,7 @@
        "n": 201,
        "n_indep": 110,
        "p_outperf": 0.531,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 13.116
       }
      ],
@@ -3267,7 +3267,7 @@
        "n": 34,
        "n_indep": 21,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 14.5304
       },
       {
@@ -3287,7 +3287,7 @@
        "n": 340,
        "n_indep": 189,
        "p_outperf": 0.67,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 18.455
       },
       {
@@ -3307,7 +3307,7 @@
        "n": 1827,
        "n_indep": 844,
        "p_outperf": 0.607,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 14.6323
       },
       {
@@ -3327,7 +3327,7 @@
        "n": 2012,
        "n_indep": 879,
        "p_outperf": 0.617,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 13.1259
       },
       {
@@ -3347,7 +3347,7 @@
        "n": 201,
        "n_indep": 110,
        "p_outperf": 0.669,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 13.8987
       }
      ],
@@ -3584,7 +3584,7 @@
        "n": 34,
        "n_indep": 21,
        "p_outperf": null,
-       "reco": "VENDRE",
+       "reco": "NOTE TRÈS FAIBLE",
        "std": 13.9619
       },
       {
@@ -3604,7 +3604,7 @@
        "n": 340,
        "n_indep": 189,
        "p_outperf": 0.531,
-       "reco": "A EVITER",
+       "reco": "NOTE FAIBLE",
        "std": 15.1097
       },
       {
@@ -3624,7 +3624,7 @@
        "n": 1827,
        "n_indep": 844,
        "p_outperf": 0.482,
-       "reco": "GARDER",
+       "reco": "NOTE MOYENNE",
        "std": 12.6283
       },
       {
@@ -3644,7 +3644,7 @@
        "n": 2012,
        "n_indep": 879,
        "p_outperf": 0.457,
-       "reco": "ACHAT MODERE",
+       "reco": "NOTE SOLIDE",
        "std": 11.0543
       },
       {
@@ -3664,7 +3664,7 @@
        "n": 201,
        "n_indep": 110,
        "p_outperf": 0.497,
-       "reco": "ACHAT FORT",
+       "reco": "NOTE ÉLEVÉE",
        "std": 12.2141
       }
      ],
@@ -3893,7 +3893,7 @@
   }
  },
  "maturation": {
-  "appels": 12,
+  "appels": 13,
   "candidats": 6,
   "clotures": 0,
   "en_attente": 6,
@@ -3916,7 +3916,7 @@
      "legacy_included": false,
      "n_indep": 76,
      "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "20": {
@@ -3931,7 +3931,7 @@
      "legacy_included": false,
      "n_indep": 233,
      "p_outperf": 0.485,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "252": {
@@ -3946,7 +3946,7 @@
      "legacy_included": false,
      "n_indep": 44,
      "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "60": {
@@ -3961,12 +3961,12 @@
      "legacy_included": false,
      "n_indep": 110,
      "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     }
    },
    "name": "Nvidia",
-   "score": 7.9,
+   "score": 7.8,
    "sector": "Information Technology",
    "ticker": "NVDA.US"
   },
@@ -3984,7 +3984,7 @@
      "legacy_included": false,
      "n_indep": 76,
      "p_outperf": 0.576,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "20": {
@@ -3996,7 +3996,7 @@
      "legacy_included": false,
      "n_indep": 14,
      "p_outperf": 0.619,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "secteur Health Care"
     },
     "252": {
@@ -4011,7 +4011,7 @@
      "legacy_included": false,
      "n_indep": 44,
      "p_outperf": 0.455,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     },
     "60": {
@@ -4026,68 +4026,74 @@
      "legacy_included": false,
      "n_indep": 110,
      "p_outperf": 0.497,
-     "reco": "ACHAT FORT",
+     "reco": "NOTE ÉLEVÉE",
      "scope": "global"
     }
    },
    "name": "Eli Lilly",
-   "score": 7.69,
+   "score": 7.77,
    "sector": "Health Care",
    "ticker": "LLY.US"
   },
   {
    "horizons": {
     "120": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -3.0164,
+     "band": ">= 7,5",
+     "ci95": [
+      1.4502,
+      10.1134
+     ],
+     "confidence": "elevee",
+     "estimate": 4.8277,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 62,
-     "p_outperf": 0.437,
-     "reco": "ACHAT MODERE",
-     "scope": "secteur Communication Services"
+     "n_indep": 76,
+     "p_outperf": 0.576,
+     "reco": "NOTE ÉLEVÉE",
+     "scope": "global"
     },
     "20": {
-     "band": "6 - 7,5",
+     "band": ">= 7,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.6386,
+     "confidence": "faible",
+     "estimate": -0.8549,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 291,
-     "p_outperf": 0.441,
-     "reco": "ACHAT MODERE",
+     "n_indep": 24,
+     "p_outperf": 0.378,
+     "reco": "NOTE ÉLEVÉE",
      "scope": "secteur Communication Services"
     },
     "252": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": -4.0547,
+     "band": ">= 7,5",
+     "ci95": [
+      0.1609,
+      19.174
+     ],
+     "confidence": "moyenne",
+     "estimate": 7.2099,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 25,
-     "p_outperf": 0.374,
-     "reco": "ACHAT MODERE",
-     "scope": "secteur Communication Services"
+     "n_indep": 44,
+     "p_outperf": 0.455,
+     "reco": "NOTE ÉLEVÉE",
+     "scope": "global"
     },
     "60": {
-     "band": "6 - 7,5",
+     "band": ">= 7,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -1.5739,
+     "confidence": "faible",
+     "estimate": 0.3268,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 114,
-     "p_outperf": 0.367,
-     "reco": "ACHAT MODERE",
+     "n_indep": 12,
+     "p_outperf": 0.453,
+     "reco": "NOTE ÉLEVÉE",
      "scope": "secteur Communication Services"
     }
    },
    "name": "Meta",
-   "score": 7.4,
+   "score": 7.51,
    "sector": "Communication Services",
    "ticker": "META.US"
   },
@@ -4102,7 +4108,7 @@
      "legacy_included": false,
      "n_indep": 43,
      "p_outperf": 0.442,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Materials"
     },
     "20": {
@@ -4114,7 +4120,7 @@
      "legacy_included": false,
      "n_indep": 183,
      "p_outperf": 0.419,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Materials"
     },
     "252": {
@@ -4126,7 +4132,7 @@
      "legacy_included": false,
      "n_indep": 21,
      "p_outperf": 0.455,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Materials"
     },
     "60": {
@@ -4138,12 +4144,12 @@
      "legacy_included": false,
      "n_indep": 81,
      "p_outperf": 0.479,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Materials"
     }
    },
    "name": "Newmont Corporation",
-   "score": 7.08,
+   "score": 7.2,
    "sector": "Materials",
    "ticker": "NEM.US"
   },
@@ -4158,7 +4164,7 @@
      "legacy_included": false,
      "n_indep": 62,
      "p_outperf": 0.437,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Communication Services"
     },
     "20": {
@@ -4170,7 +4176,7 @@
      "legacy_included": false,
      "n_indep": 291,
      "p_outperf": 0.441,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Communication Services"
     },
     "252": {
@@ -4182,7 +4188,7 @@
      "legacy_included": false,
      "n_indep": 25,
      "p_outperf": 0.374,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Communication Services"
     },
     "60": {
@@ -4194,12 +4200,12 @@
      "legacy_included": false,
      "n_indep": 114,
      "p_outperf": 0.367,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Communication Services"
     }
    },
    "name": "Alphabet",
-   "score": 7.07,
+   "score": 7.18,
    "sector": "Communication Services",
    "ticker": "GOOGL.US"
   },
@@ -4214,7 +4220,7 @@
      "legacy_included": false,
      "n_indep": 35,
      "p_outperf": 0.454,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Consumer Discretionary"
     },
     "20": {
@@ -4226,7 +4232,7 @@
      "legacy_included": false,
      "n_indep": 145,
      "p_outperf": 0.457,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Consumer Discretionary"
     },
     "252": {
@@ -4238,7 +4244,7 @@
      "legacy_included": false,
      "n_indep": 17,
      "p_outperf": 0.374,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Consumer Discretionary"
     },
     "60": {
@@ -4250,12 +4256,12 @@
      "legacy_included": false,
      "n_indep": 65,
      "p_outperf": 0.474,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Consumer Discretionary"
     }
    },
    "name": "Amazon",
-   "score": 6.83,
+   "score": 7.08,
    "sector": "Consumer Discretionary",
    "ticker": "AMZN.US"
   },
@@ -4270,7 +4276,7 @@
      "legacy_included": false,
      "n_indep": 38,
      "p_outperf": 0.426,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Information Technology"
     },
     "20": {
@@ -4282,7 +4288,7 @@
      "legacy_included": false,
      "n_indep": 157,
      "p_outperf": 0.49,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Information Technology"
     },
     "252": {
@@ -4294,7 +4300,7 @@
      "legacy_included": false,
      "n_indep": 17,
      "p_outperf": 0.374,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Information Technology"
     },
     "60": {
@@ -4306,12 +4312,12 @@
      "legacy_included": false,
      "n_indep": 65,
      "p_outperf": 0.434,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Information Technology"
     }
    },
    "name": "SAP",
-   "score": 6.82,
+   "score": 7.03,
    "sector": "Information Technology",
    "ticker": "SAP.US"
   },
@@ -4326,7 +4332,7 @@
      "legacy_included": false,
      "n_indep": 41,
      "p_outperf": 0.401,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Industrials"
     },
     "20": {
@@ -4338,7 +4344,7 @@
      "legacy_included": false,
      "n_indep": 166,
      "p_outperf": 0.55,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Industrials"
     },
     "252": {
@@ -4350,7 +4356,7 @@
      "legacy_included": false,
      "n_indep": 16,
      "p_outperf": 0.465,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Industrials"
     },
     "60": {
@@ -4362,14 +4368,70 @@
      "legacy_included": false,
      "n_indep": 72,
      "p_outperf": 0.507,
-     "reco": "ACHAT MODERE",
+     "reco": "NOTE SOLIDE",
      "scope": "secteur Industrials"
     }
    },
    "name": "Bloom Energy",
-   "score": 6.46,
+   "score": 6.12,
    "sector": "Industrials",
    "ticker": "BE.US"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.7635,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 43,
+     "p_outperf": 0.442,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.1496,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 183,
+     "p_outperf": 0.419,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -1.6306,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 21,
+     "p_outperf": 0.455,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.9177,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 81,
+     "p_outperf": 0.479,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    }
+   },
+   "name": "air liquide",
+   "score": 6.02,
+   "sector": "Materials",
+   "ticker": "AI.PA"
   },
   {
    "horizons": {
@@ -4382,7 +4444,7 @@
      "legacy_included": false,
      "n_indep": 47,
      "p_outperf": 0.467,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     },
     "20": {
@@ -4394,7 +4456,7 @@
      "legacy_included": false,
      "n_indep": 187,
      "p_outperf": 0.457,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     },
     "252": {
@@ -4406,7 +4468,7 @@
      "legacy_included": false,
      "n_indep": 19,
      "p_outperf": 0.539,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     },
     "60": {
@@ -4418,7 +4480,7 @@
      "legacy_included": false,
      "n_indep": 78,
      "p_outperf": 0.418,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     }
    },
@@ -4438,7 +4500,7 @@
      "legacy_included": false,
      "n_indep": 62,
      "p_outperf": 0.509,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Materials"
     },
     "20": {
@@ -4450,7 +4512,7 @@
      "legacy_included": false,
      "n_indep": 239,
      "p_outperf": 0.518,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Materials"
     },
     "252": {
@@ -4462,7 +4524,7 @@
      "legacy_included": false,
      "n_indep": 25,
      "p_outperf": 0.618,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Materials"
     },
     "60": {
@@ -4474,7 +4536,7 @@
      "legacy_included": false,
      "n_indep": 108,
      "p_outperf": 0.541,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Materials"
     }
    },
@@ -4489,68 +4551,12 @@
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 2.0059,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 62,
-     "p_outperf": 0.509,
-     "reco": "GARDER",
-     "scope": "secteur Materials"
-    },
-    "20": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.6244,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 239,
-     "p_outperf": 0.518,
-     "reco": "GARDER",
-     "scope": "secteur Materials"
-    },
-    "252": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": 5.2,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 25,
-     "p_outperf": 0.618,
-     "reco": "GARDER",
-     "scope": "secteur Materials"
-    },
-    "60": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 1.663,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 108,
-     "p_outperf": 0.541,
-     "reco": "GARDER",
-     "scope": "secteur Materials"
-    }
-   },
-   "name": "air liquide",
-   "score": 5.52,
-   "sector": "Materials",
-   "ticker": "AI.PA"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "moyenne",
      "estimate": -0.9199,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 46,
      "p_outperf": 0.458,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Industrials"
     },
     "20": {
@@ -4562,7 +4568,7 @@
      "legacy_included": false,
      "n_indep": 175,
      "p_outperf": 0.47,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Industrials"
     },
     "252": {
@@ -4574,7 +4580,7 @@
      "legacy_included": false,
      "n_indep": 20,
      "p_outperf": 0.421,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Industrials"
     },
     "60": {
@@ -4586,68 +4592,71 @@
      "legacy_included": false,
      "n_indep": 79,
      "p_outperf": 0.492,
-     "reco": "GARDER",
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Industrials"
     }
    },
    "name": "Exosens",
-   "score": 5.25,
+   "score": 5.04,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
   },
   {
    "horizons": {
     "120": {
-     "band": "4,5 - 6",
+     "band": "3 - 4,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.2247,
+     "confidence": "faible",
+     "estimate": -0.1535,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 47,
-     "p_outperf": 0.467,
-     "reco": "GARDER",
+     "n_indep": 12,
+     "p_outperf": 0.438,
+     "reco": "NOTE FAIBLE",
      "scope": "secteur Information Technology"
     },
     "20": {
-     "band": "4,5 - 6",
+     "band": "3 - 4,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.3903,
+     "confidence": "faible",
+     "estimate": 0.9301,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 187,
-     "p_outperf": 0.457,
-     "reco": "GARDER",
+     "n_indep": 34,
+     "p_outperf": 0.451,
+     "reco": "NOTE FAIBLE",
      "scope": "secteur Information Technology"
     },
     "252": {
-     "band": "4,5 - 6",
+     "band": "3 - 4,5",
+     "ci95": [
+      -9.4594,
+      8.6737
+     ],
+     "confidence": "moyenne",
+     "estimate": -0.3225,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 69,
+     "p_outperf": 0.45,
+     "reco": "NOTE FAIBLE",
+     "scope": "global"
+    },
+    "60": {
+     "band": "3 - 4,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 9.6425,
+     "estimate": 2.3156,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 19,
-     "p_outperf": 0.539,
-     "reco": "GARDER",
-     "scope": "secteur Information Technology"
-    },
-    "60": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.4724,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 78,
-     "p_outperf": 0.418,
-     "reco": "GARDER",
+     "p_outperf": 0.528,
+     "reco": "NOTE FAIBLE",
      "scope": "secteur Information Technology"
     }
    },
    "name": "Ouster",
-   "score": 4.53,
+   "score": 4.3,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },
@@ -4665,7 +4674,7 @@
      "legacy_included": false,
      "n_indep": 15,
      "p_outperf": null,
-     "reco": "VENDRE",
+     "reco": "NOTE TRÈS FAIBLE",
      "scope": "global"
     },
     "20": {
@@ -4680,7 +4689,7 @@
      "legacy_included": false,
      "n_indep": 35,
      "p_outperf": 0.463,
-     "reco": "VENDRE",
+     "reco": "NOTE TRÈS FAIBLE",
      "scope": "global"
     },
     "252": {
@@ -4695,7 +4704,7 @@
      "legacy_included": false,
      "n_indep": 8,
      "p_outperf": null,
-     "reco": "VENDRE",
+     "reco": "NOTE TRÈS FAIBLE",
      "scope": "global"
     },
     "60": {
@@ -4710,7 +4719,7 @@
      "legacy_included": false,
      "n_indep": 21,
      "p_outperf": null,
-     "reco": "VENDRE",
+     "reco": "NOTE TRÈS FAIBLE",
      "scope": "global"
     }
    },
