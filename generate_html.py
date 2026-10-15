@@ -27,6 +27,9 @@ Convertit reports/daily_report.md  →  docs/index.html
             échappement HTML de tout texte externe (actualités RSS, noms
             saisis) via esc() ; sanitisation de la watchlist (motif de la
             troncature au "|" traité côté portfolio_analyzer.py)
+  - v4.0 (15/10/2026) : les avis (RENFORCER / ALLÉGER / SORTIR...)
+            deviennent des niveaux de note descriptifs (NOTE ÉLEVÉE ...
+            NOTE TRÈS FAIBLE) : le rapport décrit, il ne conseille pas
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -189,7 +192,7 @@ def extract_positions(md: str) -> list[dict]:
         # Groupe 4 : pnl_brut complet (ex: - -7.00 EUR (-3.7%))
         # Groupe 5 : pnl_net complet (ex: - -20.90 EUR (-11.1%))
         # Groupe 6 : score (ex: 6.43/10)
-        # Groupe 7 : recommandation (ex: ACHAT MODERE)
+        # Groupe 7 : niveau de note (ex: NOTE SOLIDE)
         # La cellule de note vaut soit "**6.33/10**" (format v7.1), soit
         # "**6.33/10** (100%)" depuis la v7.2 qui y accole l'indice de
         # confiance, soit "n/d" quand aucune note n'a pu etre calculee.
@@ -203,7 +206,7 @@ def extract_positions(md: str) -> list[dict]:
             r"\s*([^|]*?EUR[^|]*?)\s*\|"               # pnl_net
             r"\s*\*{0,2}([\d.]+/10|n/d)\*{0,2}"        # note
             r"\s*(?:\(\s*([\d.]+)\s*%\s*\))?\s*\|"     # confiance, facultative
-            r"\s*([^|]+?)\s*\|",                       # recommandation
+            r"\s*([^|]+?)\s*\|",                       # niveau de note
             block)
         if not m_row:
             continue
@@ -479,26 +482,25 @@ def expl(contenu_html: str, label: str = "Voir l'explication") -> str:
     si on le souhaite."""
     return f'<details class="expl-toggle"><summary>{label}</summary>{contenu_html}</details>'
 
+# Niveaux de note (15/10/2026) -> classe de couleur du badge. Ordre important :
+# « TRÈS FAIBLE » et « INCOMPLÈTE » avant « FAIBLE ». L'ancien vocabulaire
+# (RENFORCER... puis ACHAT FORT...) reste reconnu pour un rapport ancien.
+_BADGE_NIVEAU = (
+    (("INCOMPLÈTE", "INCOMPLETE", "INSUFFISANTES", "NON COTE", "NON COTÉ",
+      "A EXAMINER", "À EXAMINER"), "unknown"),
+    (("TRÈS FAIBLE", "TRES FAIBLE", "SORTIR", "VENDRE"), "sell"),
+    (("ÉLEVÉE", "ELEVEE", "RENFORCER", "ACHAT FORT"), "buy-strong"),
+    (("SOLIDE", "CONSERVER", "ACHAT MOD"), "buy-mod"),
+    (("MOYENNE", "SURVEILLER", "GARDER"), "hold"),
+    (("FAIBLE", "ALLEGER", "ALLÉGER", "EVITER", "ÉVITER"), "avoid"),
+)
+
+
 def rec_badge(rec: str) -> str:
-    # BUG CORRIGE (21/09/2026) : ce test reconnaissait un vocabulaire
-    # (ACHAT FORT / ACHAT / GARDER / EVITER / VENDRE) que
-    # portfolio_analyzer.recommend() n'emet plus depuis la refonte des
-    # recommandations. Toute position tombait donc dans le "else" et
-    # affichait un badge "hold" gris identique quel que soit l'avis reel.
-    # Vocabulaire actuel de recommend() : RENFORCER / CONSERVER /
-    # SURVEILLER (+ variante "en moins-value") / ALLEGER / SORTIR, plus les
-    # etats "on ne peut pas conclure" (A EXAMINER x2 / DONNEES
-    # INSUFFISANTES) et NON COTE (actif non cote, hors echelle d'avis).
-    rec_u = rec.upper()
-    if "RENFORCER"    in rec_u: cls = "buy-strong"
-    elif "CONSERVER"  in rec_u: cls = "buy-mod"
-    elif "SURVEILLER" in rec_u: cls = "hold"
-    elif "ALLEGER"    in rec_u or "ALLÉGER" in rec_u: cls = "avoid"
-    elif "SORTIR"     in rec_u: cls = "sell"
-    elif "A EXAMINER" in rec_u or "À EXAMINER" in rec_u or "DONNEES INSUFFISANTES" in rec_u \
-        or "DONNÉES INSUFFISANTES" in rec_u or "NON COTE" in rec_u or "NON COTÉ" in rec_u:
-        cls = "unknown"
-    else:                       cls = "unknown"
+    """Badge du niveau de note (NOTE ÉLEVÉE ... NOTE TRÈS FAIBLE)."""
+    rec_u = (rec or "").upper()
+    cls = next((c for mots, c in _BADGE_NIVEAU if any(m in rec_u for m in mots)),
+               "unknown")
     return f'<span class="badge {cls}">{esc(rec)}</span>'
 
 def score_bar(score_str: str) -> str:
@@ -1140,16 +1142,20 @@ def build_trajectoire_html() -> str:
 #   - le détail complet, inchangé, plus bas sur la même page
 # ══════════════════════════════════════════════════════
 
-# Le moteur d'apprentissage nomme ses tranches avec l'ancien vocabulaire
-# (ACHAT FORT...). Le rapport, lui, parle RENFORCER / CONSERVER / ... depuis
-# le 21/09 : on traduit a l'affichage (28/09/2026) pour ne pas avoir deux
-# langages sur la meme page.
+# Libelle des tranches du moteur d'apprentissage. Le moteur nomme ses tranches
+# avec le niveau de note (15/10/2026) ; un resume calcule avant cette date
+# porte encore l'ancien vocabulaire : on le traduit a l'affichage.
 _RECO_FIAB = {
-    "ACHAT FORT":   "Renforcer",
-    "ACHAT MODERE": "Conserver",
-    "GARDER":       "Surveiller",
-    "A EVITER":     "Alléger",
-    "VENDRE":       "Sortir",
+    "ACHAT FORT":   "Note élevée",
+    "ACHAT MODERE": "Note solide",
+    "GARDER":       "Note moyenne",
+    "A EVITER":     "Note faible",
+    "VENDRE":       "Note très faible",
+    "NOTE ÉLEVÉE":      "Note élevée",
+    "NOTE SOLIDE":      "Note solide",
+    "NOTE MOYENNE":     "Note moyenne",
+    "NOTE FAIBLE":      "Note faible",
+    "NOTE TRÈS FAIBLE": "Note très faible",
 }
 
 
@@ -1731,7 +1737,7 @@ def build_synthese_html() -> str:
         pnl_raw   = champ(ligne, "p&l net", "pnl net")
         score_raw = champ(ligne, "note", "score")
         conf_raw  = champ(ligne, "conf", defaut="")
-        rec_raw   = champ(ligne, "recomm")
+        rec_raw   = champ(ligne, "niveau", "recomm")
 
         score_cell = (f"<td>{score_bar(score_raw)}</td>" if "/" in score_raw
                       else f"<td class='cell-num'>{score_raw}</td>")
@@ -1744,13 +1750,13 @@ def build_synthese_html() -> str:
 
     return f"""
 <article class="card section" id="synthese">
-  <div class="section-title"><h2>Synthèse &amp; recommandations</h2></div>
+  <div class="section-title"><h2>Synthèse des notes</h2></div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
           <th>Valeur</th><th>Valeur Marché</th>
-          <th>P&amp;L Net</th><th>Note</th><th>Confiance</th><th>Recommandation</th>
+          <th>P&amp;L Net</th><th>Note</th><th>Confiance</th><th>Niveau</th>
         </tr>
       </thead>
       <tbody>{rows_html}</tbody>
@@ -1792,18 +1798,19 @@ def build_explications_html() -> str:
 <div class="expl-grid">
 
   <article class="expl-item" id="expl-reco">
-    <h3>Les recommandations</h3>
-    <p>Chaque position reçoit un avis, du plus favorable au plus défavorable :</p>
+    <h3>Les niveaux de note</h3>
+    <p>Chaque titre reçoit un niveau, tiré de sa seule note sur 10 :</p>
     <div class="badges">
-      <span class="badge buy-strong">RENFORCER</span>
-      <span class="badge buy-mod">CONSERVER</span>
-      <span class="badge hold">SURVEILLER</span>
-      <span class="badge avoid">ALLÉGER</span>
-      <span class="badge sell">SORTIR</span>
-      <span class="badge unknown">À EXAMINER</span>
+      <span class="badge buy-strong">NOTE ÉLEVÉE</span>
+      <span class="badge buy-mod">NOTE SOLIDE</span>
+      <span class="badge hold">NOTE MOYENNE</span>
+      <span class="badge avoid">NOTE FAIBLE</span>
+      <span class="badge sell">NOTE TRÈS FAIBLE</span>
+      <span class="badge unknown">NOTE INCOMPLÈTE</span>
     </div>
-    <p>L'avis découle directement de la note sur 10 : <strong>RENFORCER</strong> à 7,5 et plus, <strong>CONSERVER</strong> de 6 à 7,5, <strong>SURVEILLER</strong> de 4,5 à 6 (précisé « en moins-value » si la ligne est en perte après frais), <strong>ALLÉGER</strong> de 3 à 4,5, <strong>SORTIR</strong> sous 3.</p>
-    <p>« À examiner » : le système refuse de trancher, soit parce que la note repose sur moins de 40&nbsp;% des critères attendus, soit parce qu'elle ne repose que sur un ou deux critères — c'est toujours le cas d'un ETF ou d'une crypto, notés sur le seul momentum et le risque. « Données insuffisantes » : aucun critère n'a pu être calculé. Ni bon ni mauvais signe, juste une note à prendre avec prudence.</p>
+    <p><strong>Note élevée</strong> à 7,5 et plus, <strong>solide</strong> de 6 à 7,5, <strong>moyenne</strong> de 4,5 à 6, <strong>faible</strong> de 3 à 4,5, <strong>très faible</strong> sous 3.</p>
+    <p>Le niveau décrit le <strong>titre</strong> selon les critères du programme : deux personnes qui détiennent la même action voient le même niveau, quel que soit leur prix d'achat. Ce n'est ni un conseil en investissement, ni une invitation à acheter ou à vendre : la décision t'appartient.</p>
+    <p>« Note incomplète » : la note repose sur moins de 40&nbsp;% des critères attendus, ou sur un ou deux critères seulement — c'est toujours le cas d'un ETF ou d'une crypto, notés sur le seul momentum et le risque. « Données insuffisantes » : aucun critère n'a pu être calculé. Ni bon ni mauvais signe, juste une note à prendre avec prudence.</p>
   </article>
 
   <article class="expl-item" id="expl-note">
@@ -2061,7 +2068,7 @@ img { max-width:100%; height:auto; }
 .pos-justif { margin:10px 0 0; padding-top:10px; border-top:1px solid var(--border); font-size:12.5px; color:var(--muted); line-height:1.6; }
 .pos-justif strong { color:var(--text); }
 
-/* ── badges recommandation / statut ───────────────────────────── */
+/* ── badges niveau de note / statut ──────────────────────────── */
 .badge { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:5px 10px 5px 8px; border-radius:999px; white-space:nowrap; }
 .badge::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
 .buy-strong { background:rgba(88,214,141,.13); color:var(--success); }
@@ -2437,7 +2444,7 @@ nav_technique = [x for x in [
 ] if x is not None]
 
 nav_explications = [
-    ["#guide", "Sommaire"], ["#expl-reco", "Recommandations"], ["#expl-note", "Note & confiance"],
+    ["#guide", "Sommaire"], ["#expl-reco", "Niveaux de note"], ["#expl-note", "Note & confiance"],
     ["#expl-stops", "Stops"], ["#expl-correlation", "Corrélation"], ["#expl-macro", "Macro"],
 ]
 
