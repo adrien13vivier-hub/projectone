@@ -46,16 +46,19 @@ applicables réellement calculés. Pour un ETF ou une crypto, valorisation,
 santé, croissance et avis des analystes sont *non applicables* : ils sortent
 sans pénaliser la confiance.
 
-| Note | Recommandation |
+| Note | Niveau affiché |
 |------|----------------|
-| ≥ 7,5 | RENFORCER |
-| ≥ 6,0 | CONSERVER |
-| ≥ 4,5 | SURVEILLER |
-| ≥ 3,0 | ALLÉGER |
-| < 3,0 | SORTIR |
+| ≥ 7,5 | NOTE ÉLEVÉE |
+| ≥ 6,0 | NOTE SOLIDE |
+| ≥ 4,5 | NOTE MOYENNE |
+| ≥ 3,0 | NOTE FAIBLE |
+| < 3,0 | NOTE TRÈS FAIBLE |
 
-Garde-fous : sous 40 % de confiance, ou avec moins de trois critères, la
-recommandation devient « À EXAMINER ». Chaque note porte une **version**
+Le niveau **décrit le titre**, il ne dit pas quoi faire : même titre, même
+niveau, quel que soit le prix d'achat (avant le 15/10/2026 : RENFORCER /
+CONSERVER / SURVEILLER / ALLÉGER / SORTIR, remplacés pour ne pas constituer un
+conseil en investissement personnalisé). Garde-fous : sous 40 % de confiance,
+ou avec moins de trois critères, le niveau devient « NOTE INCOMPLÈTE ». Chaque note porte une **version**
 (`SCORE_VERSION` = formule + empreinte des poids) : changer un poids ouvre une
 nouvelle cohorte dans le moteur d'apprentissage.
 
