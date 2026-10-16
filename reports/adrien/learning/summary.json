@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 568,
+  "matured": 580,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 844,
+    "en_attente": 909,
     "invalides": 0
    },
    "20": {
-    "closes": 345,
-    "en_attente": 499,
+    "closes": 357,
+    "en_attente": 552,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 844,
+    "en_attente": 909,
     "invalides": 0
    },
    "60": {
     "closes": 223,
-    "en_attente": 621,
+    "en_attente": 686,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 844
+  "snapshots": 909
  },
- "generated_for": "2026-10-15",
+ "generated_for": "2026-10-16",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 13,
-  "candidats": 13,
-  "clotures": 7,
-  "en_attente": 6,
+  "candidats": 16,
+  "clotures": 12,
+  "en_attente": 4,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3963,7 +3963,7 @@
     }
    },
    "name": "SM",
-   "score": 7.9,
+   "score": 8.38,
    "sector": "Energy",
    "ticker": "SM.US"
   },
@@ -4081,7 +4081,7 @@
     }
    },
    "name": "CoreWeave",
-   "score": 3.77,
+   "score": 3.71,
    "sector": "Information Technology",
    "ticker": "CRWV.US"
   },

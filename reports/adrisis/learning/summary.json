@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 568,
+  "matured": 580,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 846,
+    "en_attente": 911,
     "invalides": 0
    },
    "20": {
-    "closes": 345,
-    "en_attente": 501,
+    "closes": 357,
+    "en_attente": 554,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 846,
+    "en_attente": 911,
     "invalides": 0
    },
    "60": {
     "closes": 223,
-    "en_attente": 623,
+    "en_attente": 688,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 846
+  "snapshots": 911
  },
- "generated_for": "2026-10-15",
+ "generated_for": "2026-10-16",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 13,
-  "candidats": 6,
+  "candidats": 3,
   "clotures": 0,
-  "en_attente": 6,
+  "en_attente": 3,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3965,10 +3965,10 @@
      "scope": "global"
     }
    },
-   "name": "S&P500",
-   "score": 8.13,
+   "name": "MSCI WORLD",
+   "score": 7.72,
    "sector": "",
-   "ticker": "PSP5.PA"
+   "ticker": "WPEA.PA"
   },
   {
    "horizons": {
@@ -4033,10 +4033,10 @@
      "scope": "global"
     }
    },
-   "name": "MSCI WORLD",
+   "name": "S&P500",
    "score": 7.72,
    "sector": "",
-   "ticker": "WPEA.PA"
+   "ticker": "PSP5.PA"
   },
   {
    "horizons": {
