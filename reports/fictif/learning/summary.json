@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 580,
+  "matured": 588,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 926,
+    "en_attente": 991,
     "invalides": 0
    },
    "20": {
-    "closes": 357,
-    "en_attente": 569,
+    "closes": 363,
+    "en_attente": 628,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 926,
+    "en_attente": 991,
     "invalides": 0
    },
    "60": {
-    "closes": 223,
-    "en_attente": 703,
+    "closes": 225,
+    "en_attente": 766,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 926
+  "snapshots": 991
  },
- "generated_for": "2026-10-16",
+ "generated_for": "2026-10-19",
  "horizon": 20,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 13,
-  "candidats": 3,
+  "candidats": 16,
   "clotures": 0,
-  "en_attente": 3,
+  "en_attente": 16,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3963,7 +3963,7 @@
     }
    },
    "name": "Eli Lilly",
-   "score": 7.77,
+   "score": 7.69,
    "sector": "Health Care",
    "ticker": "LLY.US"
   },
@@ -4031,7 +4031,7 @@
     }
    },
    "name": "Nvidia",
-   "score": 7.7,
+   "score": 7.57,
    "sector": "Information Technology",
    "ticker": "NVDA.US"
   },
@@ -4153,55 +4153,55 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -3.0164,
+     "estimate": -1.2304,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 62,
-     "p_outperf": 0.437,
+     "n_indep": 35,
+     "p_outperf": 0.454,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     },
     "20": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.6386,
+     "estimate": -0.5532,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 291,
-     "p_outperf": 0.441,
+     "n_indep": 145,
+     "p_outperf": 0.457,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     },
     "252": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": -4.0547,
+     "estimate": -2.2346,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 25,
+     "n_indep": 17,
      "p_outperf": 0.374,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     },
     "60": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -1.5739,
+     "estimate": 0.0504,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 114,
-     "p_outperf": 0.367,
+     "n_indep": 65,
+     "p_outperf": 0.474,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     }
    },
-   "name": "Alphabet",
-   "score": 7.07,
-   "sector": "Communication Services",
-   "ticker": "GOOGL.US"
+   "name": "Amazon",
+   "score": 7.08,
+   "sector": "Consumer Discretionary",
+   "ticker": "AMZN.US"
   },
   {
    "horizons": {
@@ -4265,55 +4265,55 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -1.2304,
+     "estimate": -3.0164,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 35,
-     "p_outperf": 0.454,
+     "n_indep": 62,
+     "p_outperf": 0.437,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     },
     "20": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.5532,
+     "estimate": -0.6386,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 145,
-     "p_outperf": 0.457,
+     "n_indep": 291,
+     "p_outperf": 0.441,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     },
     "252": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": -2.2346,
+     "estimate": -4.0547,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 17,
+     "n_indep": 25,
      "p_outperf": 0.374,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     },
     "60": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.0504,
+     "estimate": -1.5739,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 65,
-     "p_outperf": 0.474,
+     "n_indep": 114,
+     "p_outperf": 0.367,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     }
    },
-   "name": "Amazon",
-   "score": 6.93,
-   "sector": "Consumer Discretionary",
-   "ticker": "AMZN.US"
+   "name": "Alphabet",
+   "score": 6.95,
+   "sector": "Communication Services",
+   "ticker": "GOOGL.US"
   },
   {
    "horizons": {
@@ -4479,7 +4479,7 @@
     }
    },
    "name": "Bloom Energy",
-   "score": 5.72,
+   "score": 5.83,
    "sector": "Industrials",
    "ticker": "BE.US"
   },
@@ -4591,7 +4591,7 @@
     }
    },
    "name": "Exosens",
-   "score": 5.26,
+   "score": 4.69,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
   },
@@ -4650,7 +4650,7 @@
     }
    },
    "name": "Ouster",
-   "score": 4.07,
+   "score": 3.94,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },

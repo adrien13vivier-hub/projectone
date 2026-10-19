@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 580,
+  "matured": 588,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 929,
+    "en_attente": 994,
     "invalides": 0
    },
    "20": {
-    "closes": 357,
-    "en_attente": 572,
+    "closes": 363,
+    "en_attente": 631,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 929,
+    "en_attente": 994,
     "invalides": 0
    },
    "60": {
-    "closes": 223,
-    "en_attente": 706,
+    "closes": 225,
+    "en_attente": 769,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 929
+  "snapshots": 994
  },
- "generated_for": "2026-10-16",
+ "generated_for": "2026-10-19",
  "horizon": 60,
  "horizons": [
   20,
@@ -3894,9 +3894,9 @@
  },
  "maturation": {
   "appels": 13,
-  "candidats": 3,
+  "candidats": 16,
   "clotures": 0,
-  "en_attente": 3,
+  "en_attente": 16,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -4066,7 +4066,7 @@
     }
    },
    "name": "Advanced micro devices",
-   "score": 6.49,
+   "score": 6.11,
    "sector": "Information Technology",
    "ticker": "AMD.US"
   },
@@ -4125,7 +4125,7 @@
     }
    },
    "name": "Tesla",
-   "score": 3.82,
+   "score": 4.11,
    "sector": "Consumer Discretionary",
    "ticker": "TSLA.US"
   }
