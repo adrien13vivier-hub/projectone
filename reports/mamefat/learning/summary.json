@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 588,
+  "matured": 598,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 994,
+    "en_attente": 1056,
     "invalides": 0
    },
    "20": {
-    "closes": 363,
-    "en_attente": 631,
+    "closes": 369,
+    "en_attente": 687,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 994,
+    "en_attente": 1056,
     "invalides": 0
    },
    "60": {
-    "closes": 225,
-    "en_attente": 769,
+    "closes": 229,
+    "en_attente": 827,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 994
+  "snapshots": 1056
  },
- "generated_for": "2026-10-19",
+ "generated_for": "2026-10-20",
  "horizon": 60,
  "horizons": [
   20,
@@ -4010,63 +4010,63 @@
     }
    },
    "name": "Apple",
-   "score": 6.73,
+   "score": 6.64,
    "sector": "Information Technology",
    "ticker": "AAPL.US"
   },
   {
    "horizons": {
     "120": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.2151,
+     "estimate": 0.2247,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 38,
-     "p_outperf": 0.426,
-     "reco": "NOTE SOLIDE",
+     "n_indep": 47,
+     "p_outperf": 0.467,
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     },
     "20": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.0947,
+     "estimate": -0.3903,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 157,
-     "p_outperf": 0.49,
-     "reco": "NOTE SOLIDE",
+     "n_indep": 187,
+     "p_outperf": 0.457,
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     },
     "252": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 4.789,
+     "estimate": 9.6425,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 17,
-     "p_outperf": 0.374,
-     "reco": "NOTE SOLIDE",
+     "n_indep": 19,
+     "p_outperf": 0.539,
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     },
     "60": {
-     "band": "6 - 7,5",
+     "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.8709,
+     "estimate": -0.4724,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 65,
-     "p_outperf": 0.434,
-     "reco": "NOTE SOLIDE",
+     "n_indep": 78,
+     "p_outperf": 0.418,
+     "reco": "NOTE MOYENNE",
      "scope": "secteur Information Technology"
     }
    },
    "name": "Advanced micro devices",
-   "score": 6.11,
+   "score": 5.8,
    "sector": "Information Technology",
    "ticker": "AMD.US"
   },
@@ -4125,7 +4125,7 @@
     }
    },
    "name": "Tesla",
-   "score": 4.11,
+   "score": 4.3,
    "sector": "Consumer Discretionary",
    "ticker": "TSLA.US"
   }

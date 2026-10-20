@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 20/10/2026 01:55 (Paris)
+# Rapport de Portefeuille v7.5 -- 21/10/2026 01:22 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 4.65/10
-**EUR/USD :** 1 EUR = 1.1215 USD
+**Tendance : Neutre** | Score macro : 4.95/10
+**EUR/USD :** 1 EUR = 1.123 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.41% | 7 690.73 |
-| CAC 40 | v -1.11% | 7 868.05 |
+| S&P 500 | ^ +0.28% | 7 712.57 |
+| CAC 40 | v -0.38% | 7 838.49 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 5.14% | -- |
-| OAT 10 ans (FR) | -- | 4.93% | -- |
-| Ecart OAT - UST | -- | -21 pb | -- |
+| UST 10 ans (US) | -- | 5.12% | -- |
+| OAT 10 ans (FR) | -- | 4.92% | -- |
+| Ecart OAT - UST | -- | -20 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,17 +38,17 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| TotalEnergies | -- | Aucun | Aucun stop défini | -- | 80.23 | -- | Aucun |
+| TotalEnergies | -- | Aucun | Aucun stop défini | -- | 80.21 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **6 418.57 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **64.19 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **6 416.83 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **64.17 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| TotalEnergies | 24.6 % (Modérée, sur 1 an) | 1.13 % | 16.0 % | -- | 520.99 EUR (dimensionné par la volatilité) | 6 418.57 EUR | 5 897.58 EUR |
+| TotalEnergies | 24.6 % (Modérée, sur 1 an) | 1.04 % | 16.0 % | -- | 521.69 EUR (dimensionné par la volatilité) | 6 416.83 EUR | 5 895.14 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -70,7 +70,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 6 418.57 EUR | 100.0% |
+| Actions | 6 416.83 EUR | 100.0% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -83,7 +83,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 **Apprentissage mutualise** : calibre sur 234 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 977** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 588** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 1039** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 598** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
@@ -126,7 +126,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| TotalEnergies | 7.68/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| TotalEnergies | 7.56/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
 
 **Modele : non active** -- historique insuffisant : 0/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
@@ -139,11 +139,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 80.23 EUR | v -1.52% | 6418.57 EUR | - -73581.43 EUR (-92.0%) | - -73685.13 EUR (-92.1%) | **7.68/10** (100%) | NOTE ÉLEVÉE |
+| 80.21 EUR | ^ +0.14% | 6416.83 EUR | - -73583.17 EUR (-92.0%) | - -73686.87 EUR (-92.1%) | **7.56/10** (100%) | NOTE ÉLEVÉE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> TotalEnergies (ENXTPA:TTE) Flags Record Q3 Production And LNG Driven Profit Upswing | Exxon vs. TotalEnergies: Which Dividend Stock Pays You More in 10 Years? | Better Dividend Stock: Chevron vs. TotalEnergies
+> TotalEnergies (ENXTPA:TTE) Renewable Push Keeps Undervalued View In Focus | TotalEnergies (ENXTPA:TTE) Takes Center Stage In Mozambique’s $250 Million Gas Plan | Best Momentum Stock to Buy for October 20th
 
 **Detail de la note :**
 
@@ -152,16 +152,16 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 8.9/10 | 24% |
 | Sante financiere | 6.4/10 | 19% |
 | Croissance | 9.4/10 | 16% |
-| Momentum | 6.9/10 | 21% |
+| Momentum | 6.3/10 | 21% |
 | Consensus | 6.6/10 | 15% |
 | Risque | 7.9/10 | 5% |
 
 **Fondamentaux :** PER 11.3 | PEG 0.7 | EV/EBITDA 5.9 | P/B 1.6 | Marge nette 9.1% | ROE 14.5% | Croiss. CA 27.8% | Beta 0.1 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:6 B:13 H:10 S:4 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M +0.2% | 3M +9.0% | 6M +5.4% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +0.4% | 3M +7.3% | 6M +4.5% -- NEUTRE *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.7/10 (confiance 100%). Points forts : croissance 9.4, valorisation 8.9. Momentum HAUSSIER. Position : -73685.13 EUR (-92.1%) apres frais.
+**Justification :** Note 7.6/10 (confiance 100%). Points forts : croissance 9.4, valorisation 8.9. Momentum NEUTRE. Position : -73686.87 EUR (-92.1%) apres frais.
 
 ---
 
@@ -169,8 +169,8 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Niveau |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| TotalEnergies | 80.23 | 6418.57 | -73581.43 (-92.0%) | -73685.13 (-92.1%) | 7.68/10 | 100% | NOTE ÉLEVÉE |
-| **TOTAL** | — | **6418.57** | **-73581.43 (-92.0%)** | **-73685.13 (-92.1%)** | — | — | — |
+| TotalEnergies | 80.21 | 6416.83 | -73583.17 (-92.0%) | -73686.87 (-92.1%) | 7.56/10 | 100% | NOTE ÉLEVÉE |
+| **TOTAL** | — | **6416.83** | **-73583.17 (-92.0%)** | **-73686.87 (-92.1%)** | — | — | — |
 
 ---
 
@@ -178,7 +178,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| TotalEnergies | énergie | 80.53 EUR | v -0.22% | Equinor's North Sea Oil & Gas Discovery Boosts Oseberg's Resources / Which Oil M… |
+| TotalEnergies | énergie | 79.94 EUR | v -0.73% | TotalEnergies (ENXTPA:TTE) Renewable Push Keeps Undervalued View In Focus / Tota… |
 
 ---
 

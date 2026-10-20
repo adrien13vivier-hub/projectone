@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 588,
+  "matured": 598,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 976,
+    "en_attente": 1038,
     "invalides": 0
    },
    "20": {
-    "closes": 363,
-    "en_attente": 613,
+    "closes": 369,
+    "en_attente": 669,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 976,
+    "en_attente": 1038,
     "invalides": 0
    },
    "60": {
-    "closes": 225,
-    "en_attente": 751,
+    "closes": 229,
+    "en_attente": 809,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 976
+  "snapshots": 1038
  },
- "generated_for": "2026-10-19",
+ "generated_for": "2026-10-20",
  "horizon": 60,
  "horizons": [
   20,

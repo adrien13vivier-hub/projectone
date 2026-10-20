@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 588,
+  "matured": 598,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 977,
+    "en_attente": 1039,
     "invalides": 0
    },
    "20": {
-    "closes": 363,
-    "en_attente": 614,
+    "closes": 369,
+    "en_attente": 670,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 977,
+    "en_attente": 1039,
     "invalides": 0
    },
    "60": {
-    "closes": 225,
-    "en_attente": 752,
+    "closes": 229,
+    "en_attente": 810,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 977
+  "snapshots": 1039
  },
- "generated_for": "2026-10-19",
+ "generated_for": "2026-10-20",
  "horizon": 60,
  "horizons": [
   20,
@@ -3963,7 +3963,7 @@
     }
    },
    "name": "TotalEnergies",
-   "score": 7.68,
+   "score": 7.56,
    "sector": "Energy",
    "ticker": "TTE.US"
   }
