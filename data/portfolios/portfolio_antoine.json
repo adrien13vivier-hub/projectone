@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:59:11.786298+00:00",
+  "saved_at": "2026-10-22T15:07:30.233579+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -25,6 +25,12 @@
         "ticker": "DP4B",
         "market": "xetra",
         "sector": "Transport"
+      },
+      {
+        "name": "hyundai heavy industries",
+        "ticker": "HHI",
+        "market": "us",
+        "sector": "Naval"
       }
     ],
     "risque_pct": 1.0,
