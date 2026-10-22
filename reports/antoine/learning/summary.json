@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 608,
-  "n_tickers": 234,
+  "matured": 618,
+  "n_tickers": 235,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 1106,
+    "en_attente": 1177,
     "invalides": 0
    },
    "20": {
-    "closes": 375,
-    "en_attente": 731,
+    "closes": 381,
+    "en_attente": 796,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 1106,
+    "en_attente": 1177,
     "invalides": 0
    },
    "60": {
-    "closes": 233,
-    "en_attente": 873,
+    "closes": 237,
+    "en_attente": 940,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 1106
+  "snapshots": 1177
  },
- "generated_for": "2026-10-21",
+ "generated_for": "2026-10-22",
  "horizon": 60,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 13,
-  "candidats": 13,
+  "appels": 15,
+  "candidats": 18,
   "clotures": 0,
-  "en_attente": 13,
+  "en_attente": 18,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3962,10 +3962,178 @@
      "scope": "global"
     }
    },
-   "name": "TotalEnergies",
-   "score": 7.68,
+   "name": "TOTALENERGIES",
+   "score": 7.89,
    "sector": "Energy",
-   "ticker": "TTE.US"
+   "ticker": "TTE.PA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.9199,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 46,
+     "p_outperf": 0.458,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Industrials"
+    },
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.2339,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 175,
+     "p_outperf": 0.47,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Industrials"
+    },
+    "252": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -2.0767,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 20,
+     "p_outperf": 0.421,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Industrials"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.2114,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 79,
+     "p_outperf": 0.492,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Industrials"
+    }
+   },
+   "name": "VEOLIA ENVIRON",
+   "score": 5.58,
+   "sector": "Industrials",
+   "ticker": "VIE.PA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 2.0059,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 62,
+     "p_outperf": 0.509,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    },
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.6244,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 239,
+     "p_outperf": 0.518,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    },
+    "252": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 5.2,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 25,
+     "p_outperf": 0.618,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 1.663,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 108,
+     "p_outperf": 0.541,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    }
+   },
+   "name": "Arcelor Mital",
+   "score": 4.98,
+   "sector": "Materials",
+   "ticker": "MT.AS"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.2247,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 47,
+     "p_outperf": 0.467,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Information Technology"
+    },
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.3903,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 187,
+     "p_outperf": 0.457,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Information Technology"
+    },
+    "252": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 9.6425,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 19,
+     "p_outperf": 0.539,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Information Technology"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.4724,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 78,
+     "p_outperf": 0.418,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Information Technology"
+    }
+   },
+   "name": "OVH",
+   "score": 4.9,
+   "sector": "Information Technology",
+   "ticker": "OVH.PA"
   }
  ],
  "score_version": "v14-5fd53e",

@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 608,
+  "matured": 618,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 1103,
+    "en_attente": 1171,
     "invalides": 0
    },
    "20": {
-    "closes": 375,
-    "en_attente": 728,
+    "closes": 381,
+    "en_attente": 790,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 1103,
+    "en_attente": 1171,
     "invalides": 0
    },
    "60": {
-    "closes": 233,
-    "en_attente": 870,
+    "closes": 237,
+    "en_attente": 934,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 1103
+  "snapshots": 1171
  },
- "generated_for": "2026-10-21",
+ "generated_for": "2026-10-22",
  "horizon": 60,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 13,
-  "candidats": 26,
+  "appels": 15,
+  "candidats": 28,
   "clotures": 10,
-  "en_attente": 16,
+  "en_attente": 18,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -4022,7 +4022,7 @@
     }
    },
    "name": "Credit Agricole SA",
-   "score": 5.3,
+   "score": 5.15,
    "sector": "Financials",
    "ticker": "ACA.PA"
   },

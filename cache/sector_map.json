@@ -83,6 +83,12 @@
   "sector": "Communication Services",
   "src": "yahoo"
  },
+ "MT.AS": {
+  "fetched": "2026-10-22",
+  "industry": "Steel",
+  "sector": "Basic Materials",
+  "src": "yahoo"
+ },
  "NEM.US": {
   "fetched": "2026-10-05",
   "industry": "Gold",
@@ -98,6 +104,12 @@
  "OUST.US": {
   "fetched": "2026-10-05",
   "industry": "Electronic Components",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
+ "OVH.PA": {
+  "fetched": "2026-10-22",
+  "industry": "Software - Infrastructure",
   "sector": "Technology",
   "src": "yahoo"
  },
@@ -119,6 +131,12 @@
   "sector": "Consumer Cyclical",
   "src": "yahoo"
  },
+ "TTE.PA": {
+  "fetched": "2026-10-22",
+  "industry": "Oil & Gas Integrated",
+  "sector": "Energy",
+  "src": "yahoo"
+ },
  "TTE.US": {
   "fetched": "2026-10-12",
   "industry": "Oil & Gas Integrated",
@@ -129,6 +147,12 @@
   "fetched": "2026-10-05",
   "industry": "Other Industrial Metals & Mining",
   "sector": "Basic Materials",
+  "src": "yahoo"
+ },
+ "VIE.PA": {
+  "fetched": "2026-10-22",
+  "industry": "Waste Management",
+  "sector": "Industrials",
   "src": "yahoo"
  }
 }

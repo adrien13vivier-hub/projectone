@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 608,
-  "n_tickers": 234,
+  "matured": 618,
+  "n_tickers": 235,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 1120,
+    "en_attente": 1191,
     "invalides": 0
    },
    "20": {
-    "closes": 375,
-    "en_attente": 745,
+    "closes": 381,
+    "en_attente": 810,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 1120,
+    "en_attente": 1191,
     "invalides": 0
    },
    "60": {
-    "closes": 233,
-    "en_attente": 887,
+    "closes": 237,
+    "en_attente": 954,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 1120
+  "snapshots": 1191
  },
- "generated_for": "2026-10-21",
+ "generated_for": "2026-10-22",
  "horizon": 20,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 13,
-  "candidats": 13,
+  "appels": 15,
+  "candidats": 18,
   "clotures": 0,
-  "en_attente": 13,
+  "en_attente": 18,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3963,75 +3963,63 @@
     }
    },
    "name": "Eli Lilly",
-   "score": 7.59,
+   "score": 7.7,
    "sector": "Health Care",
    "ticker": "LLY.US"
   },
   {
    "horizons": {
     "120": {
-     "band": ">= 7,5",
-     "ci95": [
-      1.4502,
-      10.1134
-     ],
-     "confidence": "elevee",
-     "estimate": 4.8277,
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.2151,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
+     "n_indep": 38,
+     "p_outperf": 0.426,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Information Technology"
     },
     "20": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.8348,
-      1.021
-     ],
-     "confidence": "elevee",
-     "estimate": 0.0875,
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.0947,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
+     "n_indep": 157,
+     "p_outperf": 0.49,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Information Technology"
     },
     "252": {
-     "band": ">= 7,5",
-     "ci95": [
-      0.1609,
-      19.174
-     ],
-     "confidence": "moyenne",
-     "estimate": 7.2099,
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 4.789,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
+     "n_indep": 17,
+     "p_outperf": 0.374,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Information Technology"
     },
     "60": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.2233,
-      3.9435
-     ],
-     "confidence": "elevee",
-     "estimate": 1.6374,
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.8709,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
+     "n_indep": 65,
+     "p_outperf": 0.434,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Information Technology"
     }
    },
    "name": "Nvidia",
-   "score": 7.58,
+   "score": 7.18,
    "sector": "Information Technology",
    "ticker": "NVDA.US"
   },
@@ -4087,7 +4075,7 @@
     }
    },
    "name": "Newmont Corporation",
-   "score": 7.18,
+   "score": 7.1,
    "sector": "Materials",
    "ticker": "NEM.US"
   },
@@ -4143,65 +4131,9 @@
     }
    },
    "name": "SAP",
-   "score": 7.11,
+   "score": 6.99,
    "sector": "Information Technology",
    "ticker": "SAP.US"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -1.2304,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 35,
-     "p_outperf": 0.454,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
-    },
-    "20": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.5532,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 145,
-     "p_outperf": 0.457,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
-    },
-    "252": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": -2.2346,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 17,
-     "p_outperf": 0.374,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
-    },
-    "60": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.0504,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 65,
-     "p_outperf": 0.474,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Consumer Discretionary"
-    }
-   },
-   "name": "Amazon",
-   "score": 7.06,
-   "sector": "Consumer Discretionary",
-   "ticker": "AMZN.US"
   },
   {
    "horizons": {
@@ -4255,7 +4187,7 @@
     }
    },
    "name": "Alphabet",
-   "score": 6.98,
+   "score": 6.67,
    "sector": "Communication Services",
    "ticker": "GOOGL.US"
   },
@@ -4311,7 +4243,7 @@
     }
    },
    "name": "Meta",
-   "score": 6.97,
+   "score": 6.67,
    "sector": "Communication Services",
    "ticker": "META.US"
   },
@@ -4321,55 +4253,55 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.8554,
+     "estimate": -1.2304,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 41,
-     "p_outperf": 0.401,
+     "n_indep": 35,
+     "p_outperf": 0.454,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Industrials"
+     "scope": "secteur Consumer Discretionary"
     },
     "20": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.0822,
+     "estimate": -0.5532,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 166,
-     "p_outperf": 0.55,
+     "n_indep": 145,
+     "p_outperf": 0.457,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Industrials"
+     "scope": "secteur Consumer Discretionary"
     },
     "252": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 1.0901,
+     "estimate": -2.2346,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 16,
-     "p_outperf": 0.465,
+     "n_indep": 17,
+     "p_outperf": 0.374,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Industrials"
+     "scope": "secteur Consumer Discretionary"
     },
     "60": {
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.1391,
+     "estimate": 0.0504,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 72,
-     "p_outperf": 0.507,
+     "n_indep": 65,
+     "p_outperf": 0.474,
      "reco": "NOTE SOLIDE",
-     "scope": "secteur Industrials"
+     "scope": "secteur Consumer Discretionary"
     }
    },
-   "name": "Bloom Energy",
-   "score": 6.09,
-   "sector": "Industrials",
-   "ticker": "BE.US"
+   "name": "Amazon",
+   "score": 6.54,
+   "sector": "Consumer Discretionary",
+   "ticker": "AMZN.US"
   },
   {
    "horizons": {
@@ -4377,55 +4309,55 @@
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 2.0059,
+     "estimate": -0.9199,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 62,
-     "p_outperf": 0.509,
+     "n_indep": 46,
+     "p_outperf": 0.458,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Materials"
+     "scope": "secteur Industrials"
     },
     "20": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.6244,
+     "estimate": 0.2339,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 239,
-     "p_outperf": 0.518,
+     "n_indep": 175,
+     "p_outperf": 0.47,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Materials"
+     "scope": "secteur Industrials"
     },
     "252": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 5.2,
+     "estimate": -2.0767,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 25,
-     "p_outperf": 0.618,
+     "n_indep": 20,
+     "p_outperf": 0.421,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Materials"
+     "scope": "secteur Industrials"
     },
     "60": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 1.663,
+     "estimate": 0.2114,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 108,
-     "p_outperf": 0.541,
+     "n_indep": 79,
+     "p_outperf": 0.492,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Materials"
+     "scope": "secteur Industrials"
     }
    },
-   "name": "air liquide",
-   "score": 5.87,
-   "sector": "Materials",
-   "ticker": "AI.PA"
+   "name": "Bloom Energy",
+   "score": 5.91,
+   "sector": "Industrials",
+   "ticker": "BE.US"
   },
   {
    "horizons": {
@@ -4479,7 +4411,7 @@
     }
    },
    "name": "First Solar",
-   "score": 5.86,
+   "score": 5.82,
    "sector": "Information Technology",
    "ticker": "FSLR.US"
   },
@@ -4534,8 +4466,64 @@
      "scope": "secteur Materials"
     }
    },
+   "name": "air liquide",
+   "score": 5.75,
+   "sector": "Materials",
+   "ticker": "AI.PA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 2.0059,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 62,
+     "p_outperf": 0.509,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    },
+    "20": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.6244,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 239,
+     "p_outperf": 0.518,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    },
+    "252": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": 5.2,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 25,
+     "p_outperf": 0.618,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    },
+    "60": {
+     "band": "4,5 - 6",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 1.663,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 108,
+     "p_outperf": 0.541,
+     "reco": "NOTE MOYENNE",
+     "scope": "secteur Materials"
+    }
+   },
    "name": "Vale",
-   "score": 5.34,
+   "score": 5.32,
    "sector": "Materials",
    "ticker": "VALE.US"
   },
@@ -4597,7 +4585,7 @@
     }
    },
    "name": "Exosens",
-   "score": 4.31,
+   "score": 4.27,
    "sector": "Industrials",
    "ticker": "EXENS.PA"
   },
@@ -4656,7 +4644,7 @@
     }
    },
    "name": "Ouster",
-   "score": 4.07,
+   "score": 4.03,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },

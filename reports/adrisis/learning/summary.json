@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 608,
+  "matured": 618,
   "n_tickers": 234,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 1105,
+    "en_attente": 1173,
     "invalides": 0
    },
    "20": {
-    "closes": 375,
-    "en_attente": 730,
+    "closes": 381,
+    "en_attente": 792,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 1105,
+    "en_attente": 1173,
     "invalides": 0
    },
    "60": {
-    "closes": 233,
-    "en_attente": 872,
+    "closes": 237,
+    "en_attente": 936,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 1105
+  "snapshots": 1173
  },
- "generated_for": "2026-10-21",
+ "generated_for": "2026-10-22",
  "horizon": 60,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 13,
-  "candidats": 13,
+  "appels": 15,
+  "candidats": 18,
   "clotures": 0,
-  "en_attente": 13,
+  "en_attente": 18,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3905,272 +3905,272 @@
   {
    "horizons": {
     "120": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      1.4502,
-      10.1134
+      -1.8271,
+      1.3322
      ],
      "confidence": "elevee",
-     "estimate": 4.8277,
+     "estimate": -0.2403,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 491,
+     "p_outperf": 0.444,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "20": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      -0.8348,
-      1.021
+      -0.4666,
+      0.0762
      ],
      "confidence": "elevee",
-     "estimate": 0.0875,
+     "estimate": -0.1938,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 2110,
+     "p_outperf": 0.478,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "252": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      0.1609,
-      19.174
+      -6.1222,
+      2.6845
      ],
      "confidence": "moyenne",
-     "estimate": 7.2099,
+     "estimate": -1.6047,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 211,
+     "p_outperf": 0.41,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "60": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      -0.2233,
-      3.9435
+      -1.037,
+      0.4385
      ],
      "confidence": "elevee",
-     "estimate": 1.6374,
+     "estimate": -0.2941,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
-    }
-   },
-   "name": "MSCI WORLD",
-   "score": 7.72,
-   "sector": "",
-   "ticker": "WPEA.PA"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": ">= 7,5",
-     "ci95": [
-      1.4502,
-      10.1134
-     ],
-     "confidence": "elevee",
-     "estimate": 4.8277,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
-    },
-    "20": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.8348,
-      1.021
-     ],
-     "confidence": "elevee",
-     "estimate": 0.0875,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
-    },
-    "252": {
-     "band": ">= 7,5",
-     "ci95": [
-      0.1609,
-      19.174
-     ],
-     "confidence": "moyenne",
-     "estimate": 7.2099,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "NOTE ÉLEVÉE",
-     "scope": "global"
-    },
-    "60": {
-     "band": ">= 7,5",
-     "ci95": [
-      -0.2233,
-      3.9435
-     ],
-     "confidence": "elevee",
-     "estimate": 1.6374,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 879,
+     "p_outperf": 0.457,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     }
    },
    "name": "S&P500",
-   "score": 7.72,
+   "score": 7.32,
    "sector": "",
    "ticker": "PSP5.PA"
   },
   {
    "horizons": {
     "120": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      1.4502,
-      10.1134
+      -1.8271,
+      1.3322
      ],
      "confidence": "elevee",
-     "estimate": 4.8277,
+     "estimate": -0.2403,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 491,
+     "p_outperf": 0.444,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "20": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      -0.8348,
-      1.021
+      -0.4666,
+      0.0762
      ],
      "confidence": "elevee",
-     "estimate": 0.0875,
+     "estimate": -0.1938,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 2110,
+     "p_outperf": 0.478,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "252": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      0.1609,
-      19.174
+      -6.1222,
+      2.6845
      ],
      "confidence": "moyenne",
-     "estimate": 7.2099,
+     "estimate": -1.6047,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 211,
+     "p_outperf": 0.41,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "60": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      -0.2233,
-      3.9435
+      -1.037,
+      0.4385
      ],
      "confidence": "elevee",
-     "estimate": 1.6374,
+     "estimate": -0.2941,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 879,
+     "p_outperf": 0.457,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     }
    },
    "name": "MSCI WORLD",
-   "score": 7.72,
+   "score": 6.92,
    "sector": "",
    "ticker": "WPEA.PA"
   },
   {
    "horizons": {
     "120": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      1.4502,
-      10.1134
+      -1.8271,
+      1.3322
      ],
      "confidence": "elevee",
-     "estimate": 4.8277,
+     "estimate": -0.2403,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 76,
-     "p_outperf": 0.576,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 491,
+     "p_outperf": 0.444,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "20": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      -0.8348,
-      1.021
+      -0.4666,
+      0.0762
      ],
      "confidence": "elevee",
-     "estimate": 0.0875,
+     "estimate": -0.1938,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 233,
-     "p_outperf": 0.485,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 2110,
+     "p_outperf": 0.478,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "252": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      0.1609,
-      19.174
+      -6.1222,
+      2.6845
      ],
      "confidence": "moyenne",
-     "estimate": 7.2099,
+     "estimate": -1.6047,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 44,
-     "p_outperf": 0.455,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 211,
+     "p_outperf": 0.41,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     },
     "60": {
-     "band": ">= 7,5",
+     "band": "6 - 7,5",
      "ci95": [
-      -0.2233,
-      3.9435
+      -1.037,
+      0.4385
      ],
      "confidence": "elevee",
-     "estimate": 1.6374,
+     "estimate": -0.2941,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 110,
-     "p_outperf": 0.497,
-     "reco": "NOTE ÉLEVÉE",
+     "n_indep": 879,
+     "p_outperf": 0.457,
+     "reco": "NOTE SOLIDE",
      "scope": "global"
     }
    },
    "name": "MSCI WORLD",
-   "score": 7.72,
+   "score": 6.92,
+   "sector": "",
+   "ticker": "WPEA.PA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": [
+      -1.8271,
+      1.3322
+     ],
+     "confidence": "elevee",
+     "estimate": -0.2403,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 491,
+     "p_outperf": 0.444,
+     "reco": "NOTE SOLIDE",
+     "scope": "global"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": [
+      -0.4666,
+      0.0762
+     ],
+     "confidence": "elevee",
+     "estimate": -0.1938,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 2110,
+     "p_outperf": 0.478,
+     "reco": "NOTE SOLIDE",
+     "scope": "global"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": [
+      -6.1222,
+      2.6845
+     ],
+     "confidence": "moyenne",
+     "estimate": -1.6047,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 211,
+     "p_outperf": 0.41,
+     "reco": "NOTE SOLIDE",
+     "scope": "global"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": [
+      -1.037,
+      0.4385
+     ],
+     "confidence": "elevee",
+     "estimate": -0.2941,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 879,
+     "p_outperf": 0.457,
+     "reco": "NOTE SOLIDE",
+     "scope": "global"
+    }
+   },
+   "name": "MSCI WORLD",
+   "score": 6.92,
    "sector": "",
    "ticker": "WPEA.PA"
   }

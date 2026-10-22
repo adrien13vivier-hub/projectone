@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 608,
-  "n_tickers": 234,
+  "matured": 618,
+  "n_tickers": 235,
   "par_horizon": {
    "120": {
     "closes": 0,
-    "en_attente": 1123,
+    "en_attente": 1194,
     "invalides": 0
    },
    "20": {
-    "closes": 375,
-    "en_attente": 748,
+    "closes": 381,
+    "en_attente": 813,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 1123,
+    "en_attente": 1194,
     "invalides": 0
    },
    "60": {
-    "closes": 233,
-    "en_attente": 890,
+    "closes": 237,
+    "en_attente": 957,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 1123
+  "snapshots": 1194
  },
- "generated_for": "2026-10-21",
+ "generated_for": "2026-10-22",
  "horizon": 60,
  "horizons": [
   20,
@@ -3893,10 +3893,10 @@
   }
  },
  "maturation": {
-  "appels": 13,
-  "candidats": 13,
+  "appels": 15,
+  "candidats": 18,
   "clotures": 0,
-  "en_attente": 13,
+  "en_attente": 18,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3954,7 +3954,7 @@
     }
    },
    "name": "Meta",
-   "score": 6.97,
+   "score": 6.67,
    "sector": "Communication Services",
    "ticker": "META.US"
   },
@@ -4073,56 +4073,59 @@
   {
    "horizons": {
     "120": {
-     "band": "4,5 - 6",
+     "band": "3 - 4,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.5498,
+     "confidence": "faible",
+     "estimate": -1.0096,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 38,
-     "p_outperf": 0.43,
-     "reco": "NOTE MOYENNE",
+     "n_indep": 12,
+     "p_outperf": 0.438,
+     "reco": "NOTE FAIBLE",
      "scope": "secteur Consumer Discretionary"
     },
     "20": {
-     "band": "4,5 - 6",
+     "band": "3 - 4,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.0386,
+     "confidence": "faible",
+     "estimate": 0.373,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 159,
-     "p_outperf": 0.455,
-     "reco": "NOTE MOYENNE",
+     "n_indep": 46,
+     "p_outperf": 0.479,
+     "reco": "NOTE FAIBLE",
      "scope": "secteur Consumer Discretionary"
     },
     "252": {
-     "band": "4,5 - 6",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": 2.6402,
+     "band": "3 - 4,5",
+     "ci95": [
+      -9.4594,
+      8.6737
+     ],
+     "confidence": "moyenne",
+     "estimate": -0.3225,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 17,
-     "p_outperf": 0.579,
-     "reco": "NOTE MOYENNE",
-     "scope": "secteur Consumer Discretionary"
+     "n_indep": 69,
+     "p_outperf": 0.45,
+     "reco": "NOTE FAIBLE",
+     "scope": "global"
     },
     "60": {
-     "band": "4,5 - 6",
+     "band": "3 - 4,5",
      "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.1393,
+     "confidence": "faible",
+     "estimate": 1.3446,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 71,
-     "p_outperf": 0.479,
-     "reco": "NOTE MOYENNE",
+     "n_indep": 22,
+     "p_outperf": 0.541,
+     "reco": "NOTE FAIBLE",
      "scope": "secteur Consumer Discretionary"
     }
    },
    "name": "Tesla",
-   "score": 4.68,
+   "score": 4.45,
    "sector": "Consumer Discretionary",
    "ticker": "TSLA.US"
   }
