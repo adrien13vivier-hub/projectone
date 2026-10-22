@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:54:36.056736+00:00",
+  "saved_at": "2026-10-22T14:56:17.973691+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -19,6 +19,12 @@
         "ticker": "CTH",
         "market": "xetra",
         "sector": "port"
+      },
+      {
+        "name": "COSCO Shipping holding",
+        "ticker": "C6G0",
+        "market": "us",
+        "sector": "Transport"
       }
     ],
     "risque_pct": 1.0,
