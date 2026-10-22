@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:56:17.973691+00:00",
+  "saved_at": "2026-10-22T14:59:03.758166+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -24,6 +24,12 @@
         "name": "COSCO Shipping holding",
         "ticker": "C6G0",
         "market": "us",
+        "sector": "Transport"
+      },
+      {
+        "name": "Maerks",
+        "ticker": "DP4B",
+        "market": "xetra",
         "sector": "Transport"
       }
     ],
