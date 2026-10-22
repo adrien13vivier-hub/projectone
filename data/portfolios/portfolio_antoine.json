@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:40:37.825901+00:00",
+  "saved_at": "2026-10-22T14:42:48.907621+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -109,6 +109,20 @@
       "tags": [],
       "sector": "",
       "achat_date": "2026-04-09"
+    },
+    {
+      "name": "VEOLIA ENVIRON",
+      "ticker": "VIE",
+      "isin": "FR0000124141",
+      "quantity": 165.0,
+      "buy_price": 30.5,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "Fortuneo",
+      "tags": [],
+      "sector": "",
+      "achat_date": "2026-10-05"
     }
   ]
 }
