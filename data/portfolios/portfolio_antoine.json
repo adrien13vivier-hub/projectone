@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:42:48.907621+00:00",
+  "saved_at": "2026-10-22T14:54:36.056736+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -13,6 +13,12 @@
         "ticker": "TTE",
         "market": "euronext_paris",
         "sector": "énergie"
+      },
+      {
+        "name": "COSCO shipping ports",
+        "ticker": "CTH",
+        "market": "xetra",
+        "sector": "port"
       }
     ],
     "risque_pct": 1.0,
