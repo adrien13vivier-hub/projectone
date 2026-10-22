@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:59:03.758166+00:00",
+  "saved_at": "2026-10-22T14:59:11.786298+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -8,12 +8,6 @@
       "CAC 40"
     ],
     "watchlist": [
-      {
-        "name": "TotalEnergies",
-        "ticker": "TTE",
-        "market": "euronext_paris",
-        "sector": "énergie"
-      },
       {
         "name": "COSCO shipping ports",
         "ticker": "CTH",
