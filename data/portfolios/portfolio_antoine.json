@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-22T14:32:57.404443+00:00",
+  "saved_at": "2026-10-22T14:34:40.978857+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -53,6 +53,20 @@
       "tags": [],
       "sector": "",
       "achat_date": "2025-10-28"
+    },
+    {
+      "name": "TOTALENERGIES",
+      "ticker": "TTE",
+      "isin": "FR0000120271",
+      "quantity": 80.0,
+      "buy_price": 52.41,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "Fortuneo",
+      "tags": [],
+      "sector": "",
+      "achat_date": "2025-05-15"
     }
   ]
 }
