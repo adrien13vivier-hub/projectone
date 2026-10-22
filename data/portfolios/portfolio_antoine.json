@@ -1,6 +1,6 @@
 {
   "username": "antoine",
-  "saved_at": "2026-10-11T18:38:37.691474+00:00",
+  "saved_at": "2026-10-22T14:32:57.404443+00:00",
   "settings": {
     "broker": "autre",
     "indices": [
@@ -27,17 +27,32 @@
   "closed": [],
   "lines": [
     {
-      "name": "TotalEnergies",
-      "ticker": "TTE",
-      "isin": "FR0000120271",
-      "quantity": 80.0,
-      "buy_price": 1000.0,
-      "market": "us",
+      "name": "Arcelor Mital",
+      "ticker": "MT",
+      "isin": "LU1598757687",
+      "quantity": 150.0,
+      "buy_price": 28.252,
+      "market": "euronext_ams",
       "asset_type": "action",
       "asset_class": "action",
-      "account": "",
+      "account": "Fortuneo",
       "tags": [],
-      "sector": ""
+      "sector": "",
+      "achat_date": "2025-07-16"
+    },
+    {
+      "name": "OVH",
+      "ticker": "OVH",
+      "isin": "FR0014005HJ9",
+      "quantity": 700.0,
+      "buy_price": 8.134,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "action",
+      "account": "Fortuneo",
+      "tags": [],
+      "sector": "",
+      "achat_date": "2025-10-28"
     }
   ]
 }
