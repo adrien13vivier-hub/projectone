@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-10-02T13:26:49.337410+00:00",
+  "saved_at": "2026-10-28T19:38:51.088322+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -54,7 +54,7 @@
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
-      "account": "",
+      "account": "ord",
       "tags": [],
       "sector": ""
     },
@@ -67,7 +67,7 @@
       "market": "euronext_paris",
       "asset_type": "action",
       "asset_class": "action",
-      "account": "",
+      "account": "ord",
       "tags": [],
       "sector": ""
     },
@@ -80,7 +80,7 @@
       "market": "euronext_paris",
       "asset_type": "action",
       "asset_class": "action",
-      "account": "",
+      "account": "ord",
       "tags": [],
       "achats": [
         {
@@ -105,9 +105,25 @@
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
-      "account": "",
+      "account": "ord",
       "tags": [],
       "sector": ""
+    },
+    {
+      "name": "WPEA",
+      "ticker": "WPEA",
+      "isin": "",
+      "quantity": 25.0,
+      "buy_price": 7.221,
+      "market": "euronext_paris",
+      "asset_type": "action",
+      "asset_class": "etf",
+      "account": "pea",
+      "tags": [
+        "socle"
+      ],
+      "sector": "",
+      "achat_date": "2026-10-28"
     }
   ]
 }
