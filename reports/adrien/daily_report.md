@@ -1,23 +1,23 @@
-# Rapport de Portefeuille v7.5 -- 27/10/2026 01:45 (Paris)
+# Rapport de Portefeuille v7.5 -- 28/10/2026 01:42 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.76/10
-**EUR/USD :** 1 EUR = 1.1174 USD
+**Tendance : Neutre** | Score macro : 5.55/10
+**EUR/USD :** 1 EUR = 1.113 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.70% | 7 676.77 |
-| CAC 40 | ^ +0.83% | 7 847.32 |
+| S&P 500 | ^ +0.60% | 7 722.60 |
+| CAC 40 | ^ +0.51% | 7 887.14 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 4.99% | -- |
-| OAT 10 ans (FR) | -- | 4.91% | -- |
+| UST 10 ans (US) | -- | 5.00% | -- |
+| OAT 10 ans (FR) | -- | 4.92% | -- |
 | Ecart OAT - UST | -- | -8 pb | -- |
 
 **Manchettes macro :**
@@ -38,23 +38,23 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| SM | -- | Aucun | Aucun stop défini | -- | 35.94 | -- | Aucun |
-| Credit Agricole SA | -- | Aucun | Aucun stop défini | -- | 15.10 | -- | Aucun |
-| CoreWeave | -- | Aucun | Aucun stop défini | -- | 49.37 | -- | Aucun |
+| SM | -- | Aucun | Aucun stop défini | -- | 35.10 | -- | Aucun |
+| Credit Agricole SA | -- | Aucun | Aucun stop défini | -- | 15.21 | -- | Aucun |
+| CoreWeave | -- | Aucun | Aucun stop défini | -- | 53.50 | -- | Aucun |
 | Abionyx Pharma | -- | Aucun | Aucun stop défini | -- | 1.62 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **649.63 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **6.50 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **650.52 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **6.51 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| SM | 51.3 % (Élevée, sur 1 an) | 1.80 % | 33.4 % | -- | 25.31 EUR (dimensionné par la volatilité) | 359.44 EUR | 334.13 EUR |
-| Credit Agricole SA | 21.7 % (Modérée, sur 1 an) | 1.17 % | 14.1 % | -- | 59.96 EUR (dimensionné par la volatilité) | 150.95 EUR | 90.99 EUR |
-| CoreWeave | 96.0 % (Extrême, sur 1 an) | 4.81 % | 40.0 % | -- | 13.53 EUR (dimensionné par la volatilité) | 98.74 EUR | 85.21 EUR |
-| Abionyx Pharma | 56.0 % (Extrême, sur 1 an) | 2.43 % | 36.4 % | -- | 23.18 EUR (dimensionné par la volatilité) | 40.50 EUR | 17.32 EUR |
+| SM | 51.4 % (Élevée, sur 1 an) | 1.96 % | 33.4 % | -- | 25.33 EUR (dimensionné par la volatilité) | 351.02 EUR | 325.69 EUR |
+| Credit Agricole SA | 21.7 % (Modérée, sur 1 an) | 0.98 % | 14.1 % | -- | 60.04 EUR (dimensionné par la volatilité) | 152.10 EUR | 92.06 EUR |
+| CoreWeave | 96.3 % (Extrême, sur 1 an) | 5.13 % | 40.0 % | -- | 13.50 EUR (dimensionné par la volatilité) | 107.00 EUR | 93.50 EUR |
+| Abionyx Pharma | 54.6 % (Élevée, sur 1 an) | 2.37 % | 35.5 % | -- | 23.84 EUR (dimensionné par la volatilité) | 40.40 EUR | 16.56 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -65,7 +65,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ### Exposition corrélée
 
-**Corrélation moyenne du portefeuille : -3.4 %** (Négative (les lignes s'amortissent entre elles)) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -75.6 % à +73.7 %.
+**Corrélation moyenne du portefeuille : -3.1 %** (Négative (les lignes s'amortissent entre elles)) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -74.8 % à +74.1 %.
 
 *Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment les unes des autres -- une diversification qui se voit dans les mouvements réels, pas seulement dans les étiquettes de classe d'actif ou de secteur. Un chiffre élevé et négatif est aussi une forme de concentration, sur le pari inverse.*
 
@@ -73,7 +73,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Groupe | Poids cumulé | Alerte |
 |--------|--------------|--------|
-| SM, Abionyx Pharma | 61.56 % | Oui |
+| SM, Abionyx Pharma | 60.17 % | Oui |
 
 *Seuil de corrélation : 0.70. Seuil d'alerte sur le poids cumulé : 25 %.*
 
@@ -86,14 +86,14 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 649.63 EUR | 100.0% |
+| Actions | 650.52 EUR | 100.0% |
 
 **Par devise**
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| USD | 458.18 EUR | 70.5% |
-| EUR | 191.45 EUR | 29.5% |
+| USD | 458.02 EUR | 70.4% |
+| EUR | 192.50 EUR | 29.6% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -106,7 +106,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 **Apprentissage mutualise** : calibre sur 235 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 1306** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 638** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 1369** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 648** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
@@ -140,7 +140,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Horizon (seances) | N indep. | IC de rang | Notes >= 7,5 | Notes < 4,5 | Cible |
 |-------------------|----------|------------|--------------|-------------|-------|
-| 20 | 4666 | -0.01 | +0.2% | +0.1% | surperformance sectorielle |
+| 20 | 4666 | -0.01 | +0.2% | -0.1% | surperformance sectorielle |
 | 60 | 1472 | -0.01 | +1.9% | +2.0% | surperformance sectorielle |
 | 120 | 736 | +0.04 | +5.8% | +2.0% | surperformance sectorielle |
 | 252 | 245 | +0.00 | +9.7% | +5.4% | surperformance sectorielle |
@@ -150,9 +150,9 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
 | SM | 8.74/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
-| Credit Agricole SA | 5.15/10 | +2.9% | -- | 51% | moyenne | 35 | secteur Financials |
-| CoreWeave | 3.73/10 | +2.3% | -- | 53% | faible | 19 | secteur Information Technology |
-| Abionyx Pharma | 1.31/10 | +2.1% | [-1.8 ; +9.2] | -- | faible | 21 | global |
+| Credit Agricole SA | 5.3/10 | +2.9% | -- | 51% | moyenne | 35 | secteur Financials |
+| CoreWeave | 3.98/10 | +2.3% | -- | 53% | faible | 19 | secteur Information Technology |
+| Abionyx Pharma | 1.45/10 | +2.1% | [-1.8 ; +9.2] | -- | faible | 21 | global |
 
 **Modele : non active** -- historique insuffisant : 0/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
@@ -165,11 +165,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 35.94 EUR | ^ +0.10% | 359.44 EUR | - -20.66 EUR (-5.4%) | - -36.11 EUR (-9.5%) | **8.74/10** (100%) | NOTE ÉLEVÉE |
+| 35.10 EUR | v -2.69% | 351.02 EUR | - -29.08 EUR (-7.7%) | - -44.52 EUR (-11.7%) | **8.74/10** (100%) | NOTE ÉLEVÉE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Looking for a Growth Stock? 3 Reasons Why SM Energy (SM) is a Solid Choice | Zacks Value Trader Highlights: Ecopetrol, BP, Devon Energy, Diamondback Energy and SM Energy | SM Energy Company (SM) is Attracting Investor Attention: Here is What You Should Know
+> SM Energy (SM) Earnings Expected to Grow: Should You Buy? | Brokers Suggest Investing in SM Energy (SM): Read This Before Placing a Bet | Looking for a Growth Stock? 3 Reasons Why SM Energy (SM) is a Solid Choice
 
 **Detail de la note :**
 
@@ -182,12 +182,12 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Consensus | 7.2/10 | 15% |
 | Risque | 5.3/10 | 5% |
 
-**Fondamentaux :** PER 7.1 | PEG 0.6 | EV/EBITDA 5.1 | P/B 1.2 | Marge nette 20.2% | ROE 16.1% | Croiss. CA 176.1% | Beta 1.0 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 6.9 | PEG 0.6 | EV/EBITDA 5.0 | P/B 1.2 | Marge nette 20.2% | ROE 16.1% | Croiss. CA 176.1% | Beta 1.0 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:5 B:14 H:6 S:1 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M +18.4% | 3M +36.2% | 6M +31.0% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +15.2% | 3M +23.9% | 6M +29.9% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.7/10 (confiance 100%). Points forts : croissance 10.0, momentum 9.8. Momentum HAUSSIER. Position : -36.11 EUR (-9.5%) apres frais.
+**Justification :** Note 8.7/10 (confiance 100%). Points forts : croissance 10.0, momentum 9.8. Momentum HAUSSIER. Position : -44.52 EUR (-11.7%) apres frais.
 
 ---
 
@@ -195,7 +195,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 15.10 EUR | ^ +1.17% | 150.95 EUR | - -18.05 EUR (-10.7%) | - -22.03 EUR (-13.0%) | **5.15/10** (85%) | NOTE MOYENNE |
+| 15.21 EUR | ^ +0.76% | 152.10 EUR | - -16.90 EUR (-10.0%) | - -20.88 EUR (-12.4%) | **5.3/10** (85%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -208,17 +208,17 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 8.3/10 | 28% |
 | Sante financiere | 7.5/10 | 22% |
 | Croissance | 2.5/10 | 19% |
-| Momentum | 1.0/10 | 25% |
+| Momentum | 1.6/10 | 25% |
 | Risque | 7.2/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 7.6 | PEG 1.4 | P/B 0.7 | Marge nette 25.3% | ROE 8.6% | Croiss. CA -6.3% | Beta 0.8 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 7.7 | PEG 1.4 | P/B 0.7 | Marge nette 25.3% | ROE 8.6% | Croiss. CA -6.3% | Beta 0.8 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -14.0% | 3M -16.2% | 6M +0.8% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -13.3% | 3M -14.2% | 6M +2.1% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +2.9% de surperformance sectorielle a 60 seances, P(surperf.) 51% -- confiance moyenne, 35 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 5.2/10 (confiance 85%). Points forts : valorisation 8.3, sante financiere 7.5. Points faibles : croissance 2.5, momentum 1.0. Momentum BAISSIER. Position : -22.03 EUR (-13.0%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 5.3/10 (confiance 85%). Points forts : valorisation 8.3, sante financiere 7.5. Points faibles : croissance 2.5, momentum 1.6. Momentum BAISSIER. Position : -20.88 EUR (-12.4%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -226,11 +226,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 49.37 EUR | ^ +1.76% | 98.74 EUR | - -89.08 EUR (-47.4%) | - -103.58 EUR (-55.1%) | **3.73/10** (100%) | NOTE FAIBLE |
+| 53.50 EUR | ^ +7.94% | 107.00 EUR | - -80.82 EUR (-43.0%) | - -95.33 EUR (-50.8%) | **3.98/10** (100%) | NOTE FAIBLE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Will Elon Musk’s Prediction of ‘Guppy Level Death’ Sink Neoclouds like CoreWeave, Nebius, and Terawulf? | Musk predicts ‘guppy-level death’ as SpaceX closes $40B GPU deal | Is CoreWeave a Screaming Buy Right Now? 3 Reasons the Stock Could Hit $100 Before the End of the Year.
+> CoreWeave Stock Surges 6%, But Investors Are Still Worried | Stock Market Today, Oct. 27: CoreWeave Surges on Denmark Data Center Launch | Nebius vs. CoreWeave: Which neocloud stock has more debt?
 
 **Detail de la note :**
 
@@ -239,16 +239,16 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 2.9/10 | 24% |
 | Sante financiere | 1.1/10 | 19% |
 | Croissance | 10.0/10 | 16% |
-| Momentum | 0.0/10 | 21% |
+| Momentum | 1.2/10 | 21% |
 | Consensus | 7.2/10 | 15% |
 | Risque | 2.7/10 | 5% |
 
-**Fondamentaux :** EV/EBITDA 20.2 | P/B 6.1 | Marge nette -25.4% | ROE -43.6% | Croiss. CA 112.5% *(source : Yahoo Finance)*
+**Fondamentaux :** EV/EBITDA 20.8 | P/B 6.5 | Marge nette -25.4% | ROE -43.6% | Croiss. CA 112.5% *(source : Yahoo Finance)*
 **Consensus analystes :** SB:11 B:26 H:11 S:1 SS:1 *(source : Finnhub)*
-**Perf. historique :** 1M -37.0% | 3M -18.0% | 6M -50.5% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -32.0% | 3M -2.1% | 6M -49.9% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 3 - 4,5 a valu +2.3% de surperformance sectorielle a 60 seances, P(surperf.) 53% -- confiance faible, 19 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 3.7/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.2. Points faibles : sante financiere 1.1, momentum 0.0. Momentum BAISSIER. Position : -103.58 EUR (-55.1%) apres frais.
+**Justification :** Note 4.0/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.2. Points faibles : momentum 1.2, sante financiere 1.1. Momentum BAISSIER. Position : -95.33 EUR (-50.8%) apres frais.
 
 ---
 
@@ -256,11 +256,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1.62 EUR | ^ +0.62% | 40.50 EUR | - -26.70 EUR (-39.7%) | - -30.68 EUR (-45.6%) | **1.31/10** (85%) | NOTE TRÈS FAIBLE |
+| 1.62 EUR | v -0.25% | 40.40 EUR | - -26.80 EUR (-39.9%) | - -30.78 EUR (-45.8%) | **1.45/10** (85%) | NOTE TRÈS FAIBLE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> ABIONYX Pharma and OLON Enter Into Strategic Manufacturing Partnership to Prepare CER-001 Biologic for Regulatory Approv… | ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital | ABIONYX Pharma Announces the Settlement of an Anticipated Amortization Payment in Accordance With the Terms of Its Bonds…
+> ABIONYX Pharma Finalizes the Structuring of Its CER-001 Bioproduction Chain Through a Strategic Partnership with AXPLORA… | ABIONYX Pharma and OLON Enter Into Strategic Manufacturing Partnership to Prepare CER-001 Biologic for Regulatory Approv… | ABIONYX Pharma: Monthly Statement of Total Voting Rights and Shares Forming the Company’s Share Capital
 
 **Detail de la note :**
 
@@ -269,17 +269,17 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 1.8/10 | 28% |
 | Sante financiere | 1.1/10 | 22% |
 | Croissance | 1.0/10 | 19% |
-| Momentum | 0.0/10 | 25% |
+| Momentum | 0.6/10 | 25% |
 | Risque | 6.5/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** EV/EBITDA -10.6 | P/B 12.7 | Marge nette -136.6% | ROE -92.3% | Croiss. CA -11.9% | Beta 0.5 *(source : Yahoo Finance)*
+**Fondamentaux :** EV/EBITDA -10.6 | P/B 12.6 | Marge nette -136.6% | ROE -92.3% | Croiss. CA -11.9% | Beta 0.5 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403, EODHD:HTTP 403))*
-**Perf. historique :** 1M -9.0% | 3M -15.4% | 6M -52.3% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -9.2% | 3M -13.4% | 6M -51.9% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche < 3 a valu +2.1% de surperformance sectorielle a 60 seances, IC 95 % [-1.8 ; +9.2] -- confiance faible, 21 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 1.3/10 (confiance 85%). Points faibles : croissance 1.0, momentum 0.0. Momentum BAISSIER. Position : -30.68 EUR (-45.6%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 1.4/10 (confiance 85%). Points faibles : croissance 1.0, momentum 0.6. Momentum BAISSIER. Position : -30.78 EUR (-45.8%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -300,11 +300,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Niveau |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| SM | 35.94 | 359.44 | -20.66 (-5.4%) | -36.11 (-9.5%) | 8.74/10 | 100% | NOTE ÉLEVÉE |
-| Credit Agricole SA | 15.10 | 150.95 | -18.05 (-10.7%) | -22.03 (-13.0%) | 5.15/10 | 85% | NOTE MOYENNE |
-| CoreWeave | 49.37 | 98.74 | -89.08 (-47.4%) | -103.58 (-55.1%) | 3.73/10 | 100% | NOTE FAIBLE |
-| Abionyx Pharma | 1.62 | 40.50 | -26.70 (-39.7%) | -30.68 (-45.6%) | 1.31/10 | 85% | NOTE TRÈS FAIBLE |
-| **TOTAL** | — | **649.63** | **-154.49 (-19.2%)** | **-192.40 (-23.9%)** | — | — | — |
+| SM | 35.10 | 351.02 | -29.08 (-7.7%) | -44.52 (-11.7%) | 8.74/10 | 100% | NOTE ÉLEVÉE |
+| Credit Agricole SA | 15.21 | 152.10 | -16.90 (-10.0%) | -20.88 (-12.4%) | 5.3/10 | 85% | NOTE MOYENNE |
+| CoreWeave | 53.50 | 107.00 | -80.82 (-43.0%) | -95.33 (-50.8%) | 3.98/10 | 100% | NOTE FAIBLE |
+| Abionyx Pharma | 1.62 | 40.40 | -26.80 (-39.9%) | -30.78 (-45.8%) | 1.45/10 | 85% | NOTE TRÈS FAIBLE |
+| **TOTAL** | — | **650.52** | **-153.60 (-19.1%)** | **-191.51 (-23.8%)** | — | — | — |
 
 ---
 
@@ -312,8 +312,8 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Secteur | Cours EUR | Variation | Actualite |
 |--------|---------|-----------|-----------|-----------|
-| SNAP | tech | 5.67 EUR | ^ +0.00% | Should You Buy Snap Stock For Its Cash? / Was There Any Sign Snap Stock Would Ru… |
-| Apple | Tech | 307.76 EUR | v -1.10% | Mark Cuban puts Bitcoin and Apple in the same bucket / Apple (AAPL) Stock Falls … |
+| SNAP | tech | 5.46 EUR | v -4.10% | Snap (SNAP) Stock Drops Despite Market Gains: Important Facts to Note / Reddit v… |
+| Apple | Tech | 311.85 EUR | ^ +0.93% | Why GM is still an automaker despite its move to the Nasdaq / The AI economy, Ap… |
 
 ---
 
@@ -329,6 +329,6 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 - **ABNX.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403, EODHD:HTTP 403), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 - **SM.US** : cours: TwelveData, consensus: Finnhub, historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '53/600', 'finnhub': '4/3000'}
+**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '52/600', 'finnhub': '4/3000'}
 
 **Profil :** adrien | **Courtier :** BoursoBank
