@@ -15,8 +15,12 @@
     "SM.US": {
       "arme": true,
       "hwm": null
+    },
+    "WPEA.PA": {
+      "arme": true,
+      "hwm": null
     }
   },
-  "maj": "2026-10-28 00:42",
+  "maj": "2026-10-29 01:11",
   "schema": 1
 }
