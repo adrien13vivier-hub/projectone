@@ -373,6 +373,12 @@ DEFAULT_BROKERAGE = {
 }
 BROKERAGE   = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
 BROKER_NAME = "Grille par defaut"
+# Le prix de revient saisi inclut-il deja les frais d'achat ? (02/11/2026)
+# Oui par defaut : c'est le PRU qu'affichent BoursoBank, Bourse Direct,
+# Fortuneo, Trade Republic... et donc celui que l'utilisateur recopie. Le
+# rapport ne doit alors PAS deduire une seconde fois les frais d'achat, sinon
+# la plus-value nette est trop pessimiste (cf. pnl_position()).
+PRU_FRAIS_INCLUS = True
 
 PROFILE: dict = {}
 
@@ -389,7 +395,7 @@ RISQUE: dict = {
 def apply_profile(profile: dict):
     """Charge un profil utilisateur dans l'etat global du module."""
     global PORTFOLIO, WATCHLIST, INDICES, BROKERAGE, BROKER_NAME, PROFILE, CLOSED
-    global RISQUE
+    global RISQUE, PRU_FRAIS_INCLUS
 
     PROFILE   = profile or {}
     settings  = PROFILE.get("settings") or {}
@@ -422,6 +428,7 @@ def apply_profile(profile: dict):
     else:
         BROKERAGE = {k: dict(v) for k, v in DEFAULT_BROKERAGE.items()}
     BROKER_NAME = settings.get("broker_label") or settings.get("broker") or "Grille par defaut"
+    PRU_FRAIS_INCLUS = settings.get("pru_frais_inclus") is not False
 
     set_user(PROFILE.get("username") or "default")
 
@@ -498,6 +505,34 @@ def calc_fee(amount: float, marche: str, pea: bool = False) -> float:
 
 _MEMO: dict = {}
 
+
+
+def pnl_position(price_eur: float, cost_eur: float, qty: float, marche: str,
+                 pea: bool = False, frais_inclus: bool = None) -> dict:
+    """Plus-value latente d'une ligne, brute et nette (02/11/2026).
+
+    - brut : (cours - prix de revient) x quantite. Avec un PRU recopie du
+      courtier (frais d'achat inclus), c'est exactement la « +/- value
+      latente » de son application.
+    - net : ce qui resterait si l'on vendait aujourd'hui, frais de vente
+      estimes deduits. Les frais d'achat ne sont retires QUE si le prix de
+      revient ne les contient pas deja (frais_inclus=False) ; avant ce
+      correctif ils l'etaient toujours, donc deux fois pour un PRU de courtier.
+    """
+    if frais_inclus is None:
+        frais_inclus = PRU_FRAIS_INCLUS
+    vm = round(price_eur * qty, 2)
+    investi = cost_eur * qty
+    brut = round((price_eur - cost_eur) * qty, 2)
+    frais_achat = 0.0 if frais_inclus else calc_fee(investi, marche, pea)
+    frais_vente = calc_fee(vm, marche, pea)
+    net = round(brut - frais_achat - frais_vente, 2)
+    return {
+        "vm": vm, "brut": brut, "net": net,
+        "brut_pct": round(brut / investi * 100, 2) if investi else 0.0,
+        "net_pct": round(net / investi * 100, 2) if investi else 0.0,
+        "frais_achat": frais_achat, "frais_vente": frais_vente,
+    }
 
 def memo_stats() -> dict:
     return {"entrees": len(_MEMO)}
@@ -2380,8 +2415,9 @@ def compute_closed_trades(closes: list) -> tuple:
     en disparait entierement, et le gain qu'elle a produit avec elle. Ce
     registre conserve la trace de ces operations.
 
-    Convention de frais identique aux positions ouvertes : aller-retour,
-    c'est-a-dire les frais d'achat ET ceux de vente.
+    Convention de frais identique aux positions ouvertes (pnl_position) :
+    frais de vente toujours deduits ; frais d'achat seulement si le prix de
+    revient ne les inclut pas deja (reglage pru_frais_inclus, 02/11/2026).
 
     Le taux de change est celui FIGE au moment de la vente : le gain de
     change fait partie du resultat et ne doit pas etre recalcule avec un
@@ -2402,7 +2438,7 @@ def compute_closed_trades(closes: list) -> tuple:
         montant_achat = round(achat * qty, 2)
         produit_brut  = round(vente * qty * taux, 2)
 
-        frais_achat = calc_fee(montant_achat, marche)
+        frais_achat = 0.0 if PRU_FRAIS_INCLUS else calc_fee(montant_achat, marche)
         frais_vente = calc_fee(produit_brut,  marche)
         frais_tot   = round(frais_achat + frais_vente, 2)
 
@@ -4381,15 +4417,9 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
         qty      = asset["qty"]
         cost_eur = asset["cost_eur"]
 
-        vm        = round(price_eur * qty, 2)
-        pnl_brut  = round((price_eur - cost_eur) * qty, 2)
-        pnl_brut_pct = round(pnl_brut / (cost_eur * qty) * 100, 2)
-
-        pea_ligne = est_pea(asset)
-        buy_fee   = calc_fee(cost_eur * qty, asset["marche"], pea_ligne)
-        sell_fee  = calc_fee(vm, asset["marche"], pea_ligne)
-        pnl_net   = round(pnl_brut - buy_fee - sell_fee, 2)
-        pnl_net_pct = round(pnl_net / (cost_eur * qty) * 100, 2)
+        pnl = pnl_position(price_eur, cost_eur, qty, asset["marche"], est_pea(asset))
+        vm, pnl_brut, pnl_brut_pct = pnl["vm"], pnl["brut"], pnl["brut_pct"]
+        pnl_net, pnl_net_pct = pnl["net"], pnl["net_pct"]
 
         # ── NOTE DU TITRE : independante du detenteur ────────────────────
         fonda = d.get("fonda") or {}
@@ -4775,7 +4805,7 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "*Positions vendues. Ces lignes ne figurent plus dans le portefeuille "
             "et n'entrent pas dans la valorisation ci-dessus.*",
             "",
-            "| Valeur | Qte | Achat | Vente | Produit | Frais A/R | +/- value nette |",
+            "| Valeur | Qte | Achat | Vente | Produit | Frais | +/- value nette |",
             "|--------|-----|-------|-------|---------|-----------|-----------------|",
         ]
         for o in ops_closes:
