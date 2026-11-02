@@ -658,6 +658,11 @@ td{font-size:13px}
             <label>Courtier</label>
             <select id="cfg-broker" onchange="onBrokerChange()"></select>
             <small id="broker-note" style="color:var(--muted);font-size:.78rem"></small>
+            <label style="display:flex;align-items:flex-start;gap:.55rem;font-size:.85rem;margin-top:.6rem">
+              <input type="checkbox" id="cfg-pru-frais" checked style="width:auto;margin-top:.15rem">
+              <span>Mes prix de revient incluent les frais d'achat (le PRU affiché par mon courtier)
+              <small style="display:block;color:var(--muted);font-size:.75rem">Coché : le rapport ne retire que les frais de vente, comme votre application de bourse. Décochez si vous saisissez le prix d'exécution sans les frais.</small></span>
+            </label>
           </div>
           <div class="form-group">
             <label>Indices macro suivis</label>
@@ -952,7 +957,7 @@ td{font-size:13px}
             <tr><td>Classe</td><td>Action, ETF, Crypto — ou Liquidités pour ce qui n'est pas coté</td></tr>
             <tr><td>Ticker</td><td>Le code de la valeur : <code>AI.PA</code>, <code>AAPL</code>, <code>BTC</code></td></tr>
             <tr><td>Qté / Valeur</td><td>Le nombre de titres — ou, pour un actif non coté, sa valeur actuelle en euros</td></tr>
-            <tr><td>Prix de revient</td><td>Ce que vous avez payé par titre — ou le prix d'acquisition pour un actif non coté</td></tr>
+            <tr><td>Prix de revient</td><td>Le prix de revient (PRU) affiché par votre courtier, frais d'achat compris — ou le prix d'acquisition pour un actif non coté. <b>Toujours en euros</b> : pour une action américaine, choisissez « USD » dans la colonne Devise si vous tapez le prix en dollars</td></tr>
             <tr><td>Date d'achat</td><td>Facultatif. Le jour du premier achat : c'est là que démarre la courbe de la ligne dans le graphique de performance du rapport (base 100 = prix de revient). Sans date, la courbe part du premier soir où le programme a vu la ligne</td></tr>
             <tr><td>Compte</td><td>Où l'actif est détenu (PEA, assurance-vie, Ledger…). Sert de regroupement dans le rapport</td></tr>
             <tr><td>Étiquettes</td><td>Vos propres catégories, séparées par des virgules : <code>dividende, socle</code></td></tr>
@@ -1197,8 +1202,9 @@ td{font-size:13px}
           <b>Pourquoi ne pas simplement supprimer la ligne ?</b> Parce que le
           rapport photographie le portefeuille à l'instant T : une ligne effacée
           emporte avec elle le gain qu'elle a produit. Le registre conserve cette
-          trace, et le rapport quotidien en calcule la plus-value <b>nette</b>, frais
-          d'achat et de vente déduits selon la grille de votre courtier. Les montants
+          trace, et le rapport quotidien en calcule la plus-value <b>nette</b> : frais
+          de vente déduits selon la grille de votre courtier, et frais d'achat aussi si
+          votre prix de revient ne les inclut pas (réglage « Mon profil »). Les montants
           affichés dans le registre, eux, sont bruts de frais.
         </div>
         <p>
@@ -2231,6 +2237,7 @@ async function loadPortfolio(){
     poser('cfg-poidsmax',   cfg.poids_max_pct, 15);
     poser('cfg-volcible',   cfg.vol_cible_pct, 2);
     poser('cfg-liquidites', cfg.liquidites,    '');
+    document.getElementById('cfg-pru-frais').checked = cfg.pru_frais_inclus !== false;
     const sd = cfg.stop_defaut;
     document.getElementById('cfg-stopdefaut').value =
       (sd && (sd.type || sd)) ? (sd.type || sd) : 'none';
@@ -2388,6 +2395,7 @@ function readSettings(){
     vol_cible_pct: nombreOuNull(document.getElementById('cfg-volcible').value),
     liquidites:    nombreOuNull(document.getElementById('cfg-liquidites').value),
     stop_defaut:   stopDefaut,
+    pru_frais_inclus: document.getElementById('cfg-pru-frais').checked,
     apprentissage: {
       horizon:     Number(document.getElementById('cfg-apprentissage-horizon').value) || 60,
       actif:       document.getElementById('cfg-apprentissage-actif').checked,
@@ -3267,7 +3275,7 @@ function rafraichir(btn){
 // Le rapport photographie le portefeuille a l'instant T : une ligne
 // vendue en disparait, et le gain qu'elle a produit avec elle. On tient
 // donc un registre separe, `closed`, que portfolio_analyzer relit pour
-// calculer les plus-values realisees, frais d'aller-retour compris.
+// calculer les plus-values realisees, nettes de frais.
 // ═══════════════════════════════════════════════════════════════════
 
 let VENTES = [];          // registre charge depuis le serveur
@@ -3454,8 +3462,8 @@ function afficherVentes(){
     + VENTES.length + ' opération(s) · investi <b>' + nb(totalAchat, 2) + ' €</b> · '
     + 'produit <b>' + nb(totalProduit, 2) + ' €</b> · plus-value brute <b class="' + signe(pvTot) + '">'
     + (pvTot > 0 ? '+' : '') + nb(pvTot, 2) + ' €</b><br>'
-    + '<span style="opacity:.75">Brut de frais. Le rapport quotidien en déduit le courtage '
-    + 'aller-retour et publie la plus-value nette.</span></div>';
+    + '<span style="opacity:.75">Brut de frais. Le rapport quotidien en déduit les frais '
+    + 'et publie la plus-value nette.</span></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════
