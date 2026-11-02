@@ -1471,6 +1471,177 @@ def model_predict(ldir: str, horizon: int, snapshot_like: dict) -> dict | None:
 # SYNTHESE
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PROGRESSION VERS DES NOTES FIABLES (02/11/2026)
+# ─────────────────────────────────────────────────────────────────────────────
+# L'ancienne jauge du rapport divisait les observations closes par TOUTES les
+# notes enregistrees : chaque soir ajoute ~65 notes alors qu'une note ne se
+# juge qu'au bout de H seances, donc le pourcentage stagnait, voire baissait,
+# sans rien dire de l'avancement reel. On publie a la place les etapes qui
+# comptent, chacune avec son avancement (0-1) et une date estimee.
+
+_FERIES_FIXES = ((12, 25), (1, 1))
+
+
+def _seance_suivante(d: date) -> date:
+    d += timedelta(days=1)
+    while d.weekday() >= 5 or (d.month, d.day) in _FERIES_FIXES:
+        d += timedelta(days=1)
+    return d
+
+
+def ajouter_seances(d: date, n: int) -> date:
+    """d + n seances de bourse (jours ouvres, hors 25/12 et 1/1 ; estimation)."""
+    for _ in range(max(0, int(n))):
+        d = _seance_suivante(d)
+    return d
+
+
+def _etat_cumule(snaps: list, horizon: int):
+    """Parcourt les notes par date et rend, apres chaque date, l'etat cumule
+    qu'aurait l'echantillon si toutes ces notes etaient closes : (date,
+    n_notes, n_dates, n_indep, n_titres_indep, n_periodes). Meme regle
+    d'independance que thin() et n_periodes()."""
+    pas_j = int(math.ceil(horizon * CAL_DAYS_PER_SESSION))
+    origine = date(2000, 1, 1)
+    dernier, titres, fenetres = {}, set(), set()
+    n_notes = n_indep = 0
+    dates_vues = []
+    for s in sorted(snaps, key=lambda s: (str(s["as_of"])[:10], s["ticker"])):
+        d = _d(s["as_of"])
+        if not dates_vues or dates_vues[-1] != d:
+            if dates_vues:
+                yield (dates_vues[-1], n_notes, len(dates_vues), n_indep, len(titres), len(fenetres))
+            dates_vues.append(d)
+        n_notes += 1
+        prec = dernier.get(s["ticker"])
+        if prec is None or (d - prec).days >= pas_j:
+            dernier[s["ticker"]] = d
+            n_indep += 1
+            titres.add(s["ticker"])
+            fenetres.add((d - origine).days // pas_j)
+    if dates_vues:
+        yield (dates_vues[-1], n_notes, len(dates_vues), n_indep, len(titres), len(fenetres))
+
+
+def _premiere_date(etats: list, cond, horizon: int, derniere_seance: date):
+    """Premiere date de note ou `cond` est remplie ; au-dela des notes deja
+    enregistrees, projection au rythme moyen observe (une date de plus par
+    seance, notes et observations independantes au rythme moyen)."""
+    for e in etats:
+        if cond(*e[1:]):
+            return e[0]
+    if not etats:
+        return None
+    d, n, nd, ni, nt, nf = etats[-1]
+    pas_j = int(math.ceil(horizon * CAL_DAYS_PER_SESSION))
+    origine = date(2000, 1, 1)
+    rythme_n = n / max(nd, 1)
+    rythme_i = ni / max(nd, 1)
+    fenetres = {((e[0] - origine).days // pas_j) for e in etats}
+    jour = max(d, derniere_seance)
+    for _ in range(1500):                     # ~6 ans : au-dela, sans objet
+        jour = _seance_suivante(jour)
+        nd += 1
+        n += rythme_n
+        ni += rythme_i
+        fenetres.add((jour - origine).days // pas_j)
+        if cond(n, nd, ni, max(nt, min(ni, 10 ** 6)), len(fenetres)):
+            return jour
+    return None
+
+
+def progression_apprentissage(obs: list, snapshots: list, score_version: str,
+                              horizon: int, today, modele: dict = None) -> dict:
+    """Etapes vers une mesure fiable des VRAIES notes a un horizon donne.
+
+    Avancement = sur les observations deja closes ; date estimee = date a
+    laquelle les notes deja enregistrees (puis le rythme actuel) atteignent le
+    seuil, plus H seances d'attente du resultat.
+    """
+    h = int(horizon)
+    today = _d(today)
+    vivantes = [o for o in obs if o.get("horizon") == h and not o.get("reconstitue")
+                and o.get("version") == score_version]
+    ind = thin(vivantes, h)
+    n_tk = len({o["ticker"] for o in ind})
+    n_per = n_periodes(ind, h) if ind else 0
+    n_dates = len({str(o["as_of"])[:10] for o in vivantes})
+    snaps = [s for s in snapshots if s.get("score_version") == score_version
+             and s.get("source") != SOURCE_RECONSTITUE and s.get("as_of") and s.get("ticker")]
+    etats = list(_etat_cumule(snaps, h))
+    premier = min((_d(s["as_of"]) for s in snaps), default=None)
+
+    def estimer(cond):
+        d = _premiere_date(etats, cond, h, today)
+        return _iso(ajouter_seances(d, h)) if d else None
+
+    def borne(x):
+        return round(max(0.0, min(1.0, x)), 3)
+
+    def limitant(*composantes):
+        """(avancement, texte) de la composante la moins avancee."""
+        ratio, texte = min(composantes, key=lambda c: c[0])
+        return borne(ratio), texte
+
+    av_moy, txt_moy = limitant((len(ind) / 30, f"{len(ind)} / 30 observations indépendantes"),
+                               (n_tk / 8, f"{n_tk} / 8 titres"),
+                               (n_per / 3, f"{n_per} / 3 périodes de marché"))
+    av_ele, txt_ele = limitant((len(ind) / 60, f"{len(ind)} / 60 observations indépendantes"),
+                               (n_tk / 15, f"{n_tk} / 15 titres"),
+                               (n_per / 6, f"{n_per} / 6 périodes de marché"))
+    av_mod, txt_mod = limitant((len(vivantes) / ML_MIN_OBS, f"{len(vivantes)} / {ML_MIN_OBS} résultats"),
+                               (n_dates / ML_MIN_DATES, f"{n_dates} / {ML_MIN_DATES} jours de notes"))
+
+    # Avant le premier resultat, la barre avance avec le temps ecoule : la
+    # note la plus ancienne se rapproche chaque soir de son echeance.
+    ecoulees = 0
+    if premier:
+        j = premier
+        while j < today and ecoulees < h:
+            j = _seance_suivante(j)
+            ecoulees += 1
+    etapes = [
+        {"cle": "premiers", "libelle": "Premiers résultats des vraies notes",
+         "fait": bool(vivantes), "avancement": 1.0 if vivantes else borne(ecoulees / h),
+         "detail": (f"{len(vivantes)} résultat(s)" if vivantes
+                    else f"{ecoulees} / {h} séances écoulées"),
+         "date_estimee": _iso(ajouter_seances(premier, h)) if premier else None},
+        {"cle": "relais", "libelle": "Les vraies notes remplacent les notes reconstituées",
+         "fait": len(ind) >= RELAIS_RECONSTITUE_N,
+         "avancement": borne(len(ind) / RELAIS_RECONSTITUE_N),
+         "detail": f"{len(ind)} / {RELAIS_RECONSTITUE_N} observations indépendantes",
+         "date_estimee": estimer(lambda n, nd, ni, nt, nf: ni >= RELAIS_RECONSTITUE_N)},
+        {"cle": "moyenne", "libelle": "Confiance « moyenne » sur les vraies notes",
+         "fait": len(ind) >= 30 and n_tk >= 8 and n_per >= 3,
+         "avancement": av_moy, "detail": txt_moy,
+         "date_estimee": estimer(lambda n, nd, ni, nt, nf: ni >= 30 and nt >= 8 and nf >= 3)},
+        {"cle": "elevee", "libelle": "Confiance « élevée »",
+         "fait": len(ind) >= 60 and n_tk >= 15 and n_per >= 6,
+         "avancement": av_ele, "detail": txt_ele,
+         "date_estimee": estimer(lambda n, nd, ni, nt, nf: ni >= 60 and nt >= 15 and nf >= 6)},
+        {"cle": "modele", "libelle": "Premier test du modèle",
+         "fait": len(vivantes) >= ML_MIN_OBS and n_dates >= ML_MIN_DATES,
+         "avancement": av_mod, "detail": txt_mod,
+         "date_estimee": estimer(lambda n, nd, ni, nt, nf: n >= ML_MIN_OBS and nd >= ML_MIN_DATES)},
+    ]
+    if modele and modele.get("active"):
+        etapes[-1]["detail"] = "modèle actif (test réussi)"
+    elif etapes[-1]["fait"] and modele:
+        etapes[-1]["detail"] = "testé : non activé (ne fait pas mieux que la moyenne)"
+    for e in etapes:
+        if e["fait"]:
+            e["date_estimee"] = None
+    # Affichage chronologique : etapes franchies, puis les autres par date.
+    faites = [e for e in etapes if e["fait"]]
+    restantes = sorted((e for e in etapes if not e["fait"]),
+                       key=lambda e: (e["date_estimee"] is None, e["date_estimee"] or ""))
+    etapes = faites + restantes
+    prochaine = next((e["cle"] for e in etapes if not e["fait"]), None)
+    return {"horizon": h, "premiere_note": _iso(premier) if premier else None,
+            "etapes": etapes, "prochaine": prochaine}
+
+
 def build_summary(user: str, ldir: str, positions: list, score_version: str,
                   today, settings: dict, maturation: dict = None,
                   train_models: bool = True, mutualise: bool = False) -> dict:
@@ -1520,6 +1691,15 @@ def build_summary(user: str, ldir: str, positions: list, score_version: str,
                 modele = {"active": False, "raison": f"erreur : {type(e).__name__}"}
         hs[str(h)] = {"headline": head, "kinds": per_kind, "modele": modele}
 
+    progression = {}
+    for h in horizons:
+        try:
+            progression[str(h)] = progression_apprentissage(
+                obs, store["snapshots"], score_version, h, today,
+                (hs.get(str(h)) or {}).get("modele"))
+        except Exception as e:                           # jamais fatal
+            progression[str(h)] = {"horizon": h, "erreur": type(e).__name__, "etapes": []}
+
     pos_out = []
     for p in positions:
         entree = {"ticker": p["ticker"], "name": p.get("name", p["ticker"]),
@@ -1556,6 +1736,7 @@ def build_summary(user: str, ldir: str, positions: list, score_version: str,
                    "par_horizon": par_horizon},
         "maturation": maturation or {},
         "horizons_stats": hs,
+        "progression": progression,
         "positions": pos_out,
     }
 
