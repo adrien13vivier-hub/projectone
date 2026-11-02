@@ -941,6 +941,9 @@ class ProfileSettings(BaseModel):
     liquidites:    Optional[float] = None   # cash disponible pour de nouvelles entrées
     stop_defaut:   Optional[dict]  = None   # stop appliqué aux lignes sans stop
     capital_reference: Optional[float] = None  # force le capital de dimensionnement
+    # 02/11/2026 : le prix de revient saisi inclut-il deja les frais d'achat
+    # (PRU recopie du courtier) ? Oui par defaut ; voir pnl_position().
+    pru_frais_inclus: Optional[bool] = None
     # Moteur d'apprentissage : {"horizon": 60, "horizons": [90], "actif": true,
     # "mutualiser": true, "classes": [...]} (borné par
     # learning_engine.normalize_settings). Déclaré ici pour ne pas être rejeté
