@@ -2646,6 +2646,31 @@ async function chargerFiabilite(){
     '<div class="tuile"><div class="k">'+esc(t[0])+'</div><div class="v">'+esc(t[1])+'</div></div>').join('');
 
   let html='';
+  // 02/11/2026 : étapes vers des notes fiables (remplace la lecture
+  // « observations clôturées / notes enregistrées », qui stagnait chaque soir).
+  const prog=(d.progression||{})[h];
+  if(prog && prog.etapes && prog.etapes.length){
+    const fr=iso=>{ if(!iso) return ''; const p=String(iso).slice(0,10).split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+    let vue=false;
+    html += '<div class="info-box neutral" style="margin-bottom:1rem"><b>Progression à '+esc(h)+' séances</b>'
+          + '<ol style="list-style:none;margin:.6rem 0 0;padding:0;display:grid;gap:.55rem">';
+    prog.etapes.forEach(e=>{
+      let ico='○', mot='à venir', coul='var(--muted)';
+      if(e.fait){ ico='✓'; mot='fait'; coul='var(--success, #1F9D63)'; }
+      else if(!vue){ ico='●'; mot='en cours'; coul='var(--accent, #49D3C4)'; vue=true; }
+      const av=Math.max(0,Math.min(1,Number(e.avancement)||0))*100;
+      const quand=(!e.fait && e.date_estimee) ? ' · vers le '+fr(e.date_estimee) : '';
+      html += '<li style="display:grid;grid-template-columns:1.2rem 1fr;gap:.4rem">'
+            + '<span style="color:'+coul+'" aria-hidden="true">'+ico+'</span><div>'
+            + '<div style="font-size:.85rem;font-weight:600">'+esc(e.libelle)+'</div>'
+            + '<div style="height:5px;border-radius:99px;background:rgba(127,127,127,.18);margin:.3rem 0 .2rem;overflow:hidden">'
+            + '<span style="display:block;height:100%;width:'+av.toFixed(1)+'%;background:'+coul+'"></span></div>'
+            + '<small style="color:var(--muted);font-size:.75rem">'+esc(mot)+' · '+esc(e.detail||'')+esc(quand)+'</small>'
+            + '</div></li>';
+    });
+    html += '</ol><small style="display:block;margin-top:.55rem;color:var(--muted);font-size:.75rem">'
+          + 'Une note ne se juge qu’au bout de '+esc(h)+' séances : les dates sont des estimations, recalculées chaque soir.</small></div>';
+  }
   if(d.mutualise){
     html += '<div class="info-box neutral" style="margin-bottom:1rem">Apprentissage mutualisé : '
           + 'calibré sur '+nb(c.n_tickers,0)+' titre(s) : ceux des profils participants et un '
