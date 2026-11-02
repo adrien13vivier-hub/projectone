@@ -30,6 +30,8 @@ Convertit reports/daily_report.md  →  docs/index.html
   - v4.0 (15/10/2026) : les avis (RENFORCER / ALLÉGER / SORTIR...)
             deviennent des niveaux de note descriptifs (NOTE ÉLEVÉE ...
             NOTE TRÈS FAIBLE) : le rapport décrit, il ne conseille pas
+  - v4.1 (02/11/2026) : graphique base 100 interactif et carte de progression
+            de l'apprentissage (à la place de la jauge « observations évaluées »)
 • Historique des 30 derniers rapports (archive.json)
 • Mode sombre / clair
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -103,6 +105,17 @@ report_date = date_match.group(1) if date_match else \
 combined_b64 = ""
 if COMBINED_PNG.exists():
     combined_b64 = base64.b64encode(COMBINED_PNG.read_bytes()).decode()
+
+# ── Graphique interactif (02/11/2026) : donnees ecrites par portfolio_analyzer
+# a cote du PNG. Absentes ou illisibles -> on garde l'image.
+BASE100_JSON = CHARTS_DIR / "base100.json"
+base100 = {}
+try:
+    _b = json.loads(BASE100_JSON.read_text(encoding="utf-8"))
+    if isinstance(_b, dict) and _b.get("dates") and _b.get("lignes"):
+        base100 = _b
+except (OSError, ValueError):
+    base100 = {}
 
 # ══════════════════════════════════════════════════════
 # EXTRACTION KPI
@@ -1159,7 +1172,89 @@ _RECO_FIAB = {
 }
 
 
+def _date_fr(iso) -> str:
+    try:
+        a, m, j = str(iso)[:10].split("-")
+        return f"{j}/{m}/{a}"
+    except ValueError:
+        return str(iso or "")
+
+
+def _etapes_html(etapes: list) -> str:
+    """Liste des etapes de progression (02/11/2026) : etat lisible sans la
+    couleur (coche / point / cercle + mot), barre d'avancement, date."""
+    items, prochaine_vue = "", False
+    for e in etapes:
+        if e.get("fait"):
+            etat, ico, mot = "done", "✓", "fait"
+        elif not prochaine_vue:
+            etat, ico, mot = "next", "●", "en cours"
+            prochaine_vue = True
+        else:
+            etat, ico, mot = "todo", "○", "à venir"
+        av = max(0.0, min(1.0, float(e.get("avancement") or 0)))
+        quand = ("" if e.get("fait") or not e.get("date_estimee")
+                 else f" · vers le {_date_fr(e['date_estimee'])}")
+        items += (f'<li class="prog-step {etat}"><span class="prog-ico" aria-hidden="true">{ico}</span>'
+                  f'<div class="prog-body"><b>{esc(e.get("libelle", ""))}</b>'
+                  f'<div class="prog-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" '
+                  f'aria-valuenow="{av * 100:.0f}"><span style="width:{av * 100:.1f}%"></span></div>'
+                  f'<small><span class="prog-mot">{mot}</span> · {esc(e.get("detail", ""))}{quand}</small>'
+                  f'</div></li>')
+    return f'<ol class="prog-steps">{items}</ol>'
+
+
 def build_fiabilite_ring_html() -> str:
+    """Carte « Progression de l'apprentissage » (02/11/2026).
+
+    Remplace la jauge « observations évaluées » (closes / notes enregistrées),
+    qui stagnait ou baissait chaque soir sans rien dire de l'avancement : on
+    montre les étapes qui comptent, leur avancement et une date estimée.
+    """
+    if not learning:
+        return ""
+    h = str(learning.get("horizon"))
+    prog = (learning.get("progression") or {}).get(h) or {}
+    etapes = prog.get("etapes") or []
+    if not etapes:
+        return _ancienne_jauge_html()
+
+    proch = next((e for e in etapes if not e.get("fait")), None)
+    if proch:
+        titre = f"Prochaine étape : {proch['libelle'][0].lower()}{proch['libelle'][1:]}"
+        if proch.get("date_estimee"):
+            titre += f", vers le {_date_fr(proch['date_estimee'])}"
+    else:
+        titre = "Toutes les étapes sont franchies"
+
+    autres = ""
+    for h2 in sorted((learning.get("progression") or {}), key=lambda x: int(x)):
+        if int(h2) >= int(h):
+            continue
+        e2 = next((e for e in learning["progression"][h2].get("etapes") or []
+                   if not e.get("fait")), None)
+        if e2:
+            quand = f" vers le {_date_fr(e2['date_estimee'])}" if e2.get("date_estimee") else ""
+            autres = (f'<p class="prog-aussi">À {esc(h2)} séances, plus rapide : '
+                      f'{esc(e2["libelle"][0].lower() + e2["libelle"][1:])}{quand}.</p>')
+            break
+
+    debut = (f" Premières vraies notes enregistrées le {_date_fr(prog['premiere_note'])}."
+             if prog.get("premiere_note") else "")
+    return f"""
+<aside class="card prog-card section sticky" id="fiabilite-ring">
+  <span class="label">Apprentissage · horizon {esc(h)} séances</span>
+  <h3>{esc(titre)}</h3>
+  {_etapes_html(etapes)}
+  {autres}
+  <p class="prog-note">Une note ne se juge qu'au bout de {esc(h)} séances : les dates sont des
+  estimations, recalculées chaque soir.{debut}</p>
+  <a class="ring-link" data-goto="technique" data-anchor="fiabilite" href="#fiabilite">Voir le détail complet</a>
+</aside>"""
+
+
+def _ancienne_jauge_html() -> str:
+    """Repli : resume calcule avant le 02/11/2026 (sans « progression »)."""
     if not learning:
         return ""
     c = learning["counts"]
@@ -1515,7 +1610,347 @@ def build_indices_html() -> str:
 </article>"""
 
 
+_B100_JS = r"""(function(){
+  var root = document.getElementById('b100');
+  var src = document.getElementById('b100-data');
+  if(!root || !src) return;
+  var D;
+  try { D = JSON.parse(src.textContent); } catch(e){ return; }
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = root.querySelector('.b100-svg'), tip = root.querySelector('.b100-tip');
+  var plot = root.querySelector('.b100-plot'), leg = root.querySelector('.b100-legend');
+  var dates = D.dates.map(function(s){ return new Date(s + 'T00:00:00'); });
+  var L = D.lignes || [], N = L.length, PF = D.portefeuille || [];
+  var avecPF = N > 1;
+  var SLOTS = 8;
+  var MOIS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+
+  function couleur(i){ return 'var(--b100-s' + ((i % SLOTS) + 1) + ')'; }
+  function tirets(i){ return i >= SLOTS ? '5 3' : null; }
+  function perf(v){
+    if(v === null || v === undefined) return '—';
+    var x = v - 100, t = Math.abs(x).toFixed(1).replace('.', ',');
+    return (x > 0 ? '+' : x < 0 ? '−' : '') + t + ' %';
+  }
+  function court(nom, n){ return nom.length > n ? nom.slice(0, n - 1) + '…' : nom; }
+  function el(tag, attrs, parent){
+    var e = document.createElementNS(NS, tag);
+    for(var k in attrs){ if(attrs[k] !== null && attrs[k] !== undefined) e.setAttribute(k, attrs[k]); }
+    if(parent) parent.appendChild(e);
+    return e;
+  }
+
+  // ── état ─────────────────────────────────────────────────────────
+  var sel = new Set(), mode = 'principales', periode = 'tout';
+  var survol = null, idxSurvol = null, extra = null;   // extra : paire survolée dans la matrice
+
+  function choisirMode(m){
+    mode = m; sel = new Set();
+    if(m === 'principales'){ for(var i = 0; i < Math.min(N, N <= 6 ? N : 5); i++) sel.add(i); }
+    else if(m === 'toutes'){ for(var j = 0; j < N; j++) sel.add(j); }
+    majBoutons(); construireLegende(); dessiner();
+  }
+  function majBoutons(){
+    root.querySelectorAll('[data-mode]').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-mode') === mode ? 'true' : 'false'); });
+    root.querySelectorAll('[data-periode]').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-periode') === periode ? 'true' : 'false'); });
+  }
+
+  // ── légende (puces cliquables) ───────────────────────────────────
+  function construireLegende(){
+    leg.textContent = '';
+    if(avecPF){
+      var p = document.createElement('span');
+      p.className = 'b100-chip pf';
+      var sw = document.createElement('i'); sw.className = 'sw'; p.appendChild(sw);
+      var n = document.createElement('span'); n.textContent = 'Portefeuille'; p.appendChild(n);
+      var v = document.createElement('b'); v.textContent = perf(dernier(PF)); p.appendChild(v);
+      leg.appendChild(p);
+    }
+    L.forEach(function(l, i){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'b100-chip';
+      b.setAttribute('aria-pressed', sel.has(i) ? 'true' : 'false');
+      b.title = l.nom + ' — ' + String(l.poids_pct).replace('.', ',') + ' % du portefeuille';
+      var sw = document.createElement('i'); sw.className = 'sw' + (i >= SLOTS ? ' dash' : '');
+      sw.style.setProperty('--c', couleur(i)); b.appendChild(sw);
+      var n = document.createElement('span'); n.textContent = court(l.nom, 22); b.appendChild(n);
+      var v = document.createElement('b'); v.textContent = perf(l.dernier); b.appendChild(v);
+      b.addEventListener('click', function(){
+        if(sel.has(i)) sel.delete(i); else sel.add(i);
+        mode = 'perso'; majBoutons();
+        b.setAttribute('aria-pressed', sel.has(i) ? 'true' : 'false'); dessiner();
+      });
+      b.addEventListener('mouseenter', function(){ survol = i; dessiner(); });
+      b.addEventListener('mouseleave', function(){ survol = null; dessiner(); });
+      b.addEventListener('focus', function(){ survol = i; dessiner(); });
+      b.addEventListener('blur', function(){ survol = null; dessiner(); });
+      leg.appendChild(b);
+    });
+  }
+  function dernier(vals){ for(var k = vals.length - 1; k >= 0; k--){ if(vals[k] !== null) return vals[k]; } return null; }
+
+  // ── dessin ───────────────────────────────────────────────────────
+  var geo = null;
+  function visibles(){
+    var v = new Set(sel);
+    if(extra){ v.add(extra[0]); v.add(extra[1]); }
+    return v;
+  }
+  function bornes(){
+    var i1 = dates.length - 1, i0 = 0;
+    var jours = {'1m': 31, '3m': 92, '6m': 183}[periode];
+    if(jours){
+      var lim = dates[i1].getTime() - jours * 864e5;
+      while(i0 < i1 && dates[i0].getTime() < lim) i0++;
+    }
+    return [i0, i1];
+  }
+  function chemin(vals, x, y, i0, i1){
+    var d = '', on = false;
+    for(var k = i0; k <= i1; k++){
+      var v = vals[k];
+      if(v === null || v === undefined){ on = false; continue; }
+      d += (on ? 'L' : 'M') + x(k).toFixed(1) + ',' + y(v).toFixed(1);
+      on = true;
+    }
+    return d;
+  }
+  function pasRond(etendue){
+    var brut = etendue / 4, p = Math.pow(10, Math.floor(Math.log10(brut)));
+    var m = brut / p;
+    return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+  }
+  function dessiner(){
+    var W = Math.max(280, plot.clientWidth), H = W < 560 ? 290 : 360;
+    var vis = visibles();
+    var etiquettes = (vis.size + (avecPF ? 1 : 0)) <= 5 && W >= 520;
+    var m = {l: 40, r: etiquettes ? 158 : 14, t: 12, b: 26};
+    var b = bornes(), i0 = b[0], i1 = b[1];
+    var lo = 100, hi = 100;
+    function etendre(vals){ for(var k = i0; k <= i1; k++){ var v = vals[k]; if(v !== null && v !== undefined){ if(v < lo) lo = v; if(v > hi) hi = v; } } }
+    if(avecPF) etendre(PF);
+    vis.forEach(function(i){ etendre(L[i].valeurs); });
+    if(!avecPF && !vis.size) L.forEach(function(l){ etendre(l.valeurs); });
+    var pad = Math.max((hi - lo) * 0.08, 2); lo -= pad; hi += pad;
+    var pw = W - m.l - m.r, ph = H - m.t - m.b;
+    var x = function(k){ return m.l + (i1 === i0 ? pw / 2 : (k - i0) / (i1 - i0) * pw); };
+    var y = function(v){ return m.t + (hi - v) / (hi - lo) * ph; };
+    geo = {x: x, y: y, i0: i0, i1: i1, m: m, pw: pw, W: W, H: H};
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('height', H);
+    svg.textContent = '';
+
+    // grille + axes
+    var pas = pasRond(hi - lo), g = el('g', {'class': 'ax'}, svg);
+    for(var t = Math.ceil(lo / pas) * pas; t <= hi; t += pas){
+      el('line', {x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), 'class': 'grid'}, g);
+      el('text', {x: m.l - 6, y: y(t) + 3.5, 'text-anchor': 'end'}, g).textContent = Math.round(t);
+    }
+    var span = (dates[i1] - dates[i0]) / 864e5, nx = W < 560 ? 3 : 5;
+    for(var q = 0; q <= nx; q++){
+      var k = Math.round(i0 + (i1 - i0) * q / nx), d = dates[k];
+      var lab = span > 120 ? MOIS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2)
+                           : ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2);
+      el('text', {x: x(k), y: H - 8, 'text-anchor': q === 0 ? 'start' : q === nx ? 'end' : 'middle'}, g).textContent = lab;
+    }
+    el('line', {x1: m.l, x2: W - m.r, y1: y(100), y2: y(100), 'class': 'ref'}, svg);
+
+    // lignes non sélectionnées : contexte discret
+    if(mode !== 'pf' || extra){
+      L.forEach(function(l, i){
+        if(vis.has(i)) return;
+        el('path', {d: chemin(l.valeurs, x, y, i0, i1), 'class': 'ctx'}, svg);
+      });
+    }
+    // lignes sélectionnées
+    var labels = [];
+    vis.forEach(function(i){
+      var l = L[i], att = extra ? (extra[0] === i || extra[1] === i) : (survol === null || survol === i);
+      el('path', {d: chemin(l.valeurs, x, y, i0, i1), 'class': 'ser' + (att ? '' : ' dim'),
+                  stroke: couleur(i), 'stroke-dasharray': tirets(i)}, svg);
+      var f0 = l.valeurs.findIndex(function(v){ return v !== null && v !== undefined; });
+      if(f0 >= i0 && f0 <= i1)        // point d'entrée : là où la ligne commence
+        el('circle', {cx: x(f0), cy: y(l.valeurs[f0]), r: 3.5, 'class': 'entree' + (att ? '' : ' dim'), fill: couleur(i)}, svg);
+      var fin = null, kf = null;
+      for(var k2 = i1; k2 >= i0; k2--){ if(l.valeurs[k2] !== null){ fin = l.valeurs[k2]; kf = k2; break; } }
+      if(fin !== null) labels.push({y: y(fin), x: x(kf), nom: court(l.nom, 12), v: fin, c: couleur(i)});
+    });
+    if(avecPF){
+      el('path', {d: chemin(PF, x, y, i0, i1), 'class': 'pf' + (survol === null && !extra ? '' : ' dim')}, svg);
+      var fpf = PF[i1];
+      if(fpf !== null && fpf !== undefined) labels.push({y: y(fpf), x: x(i1), nom: 'Portefeuille', v: fpf, c: 'var(--text)', pf: true});
+    }
+    // étiquettes de fin de courbe, écartées pour ne pas se chevaucher
+    if(etiquettes && labels.length){
+      labels.sort(function(a, c){ return a.y - c.y; });
+      for(var a = 1; a < labels.length; a++){ if(labels[a].y - labels[a - 1].y < 13) labels[a].y = labels[a - 1].y + 13; }
+      var deb = labels[labels.length - 1].y - (H - m.b);
+      if(deb > 0) labels.forEach(function(l){ l.y -= deb; });
+      labels.forEach(function(l){
+        el('line', {x1: W - m.r + 3, x2: W - m.r + 11, y1: l.y, y2: l.y, stroke: l.c, 'class': 'tick'}, svg);
+        var tx = el('text', {x: W - m.r + 14, y: l.y + 3.5, 'class': 'lab' + (l.pf ? ' fort' : '')}, svg);
+        tx.textContent = l.nom + ' ' + perf(l.v);
+      });
+    }
+    // réticule
+    if(idxSurvol !== null && idxSurvol >= i0 && idxSurvol <= i1){
+      var cx = x(idxSurvol);
+      el('line', {x1: cx, x2: cx, y1: m.t, y2: H - m.b, 'class': 'cross'}, svg);
+      vis.forEach(function(i){
+        var v = L[i].valeurs[idxSurvol];
+        if(v !== null) el('circle', {cx: cx, cy: y(v), r: 3.5, fill: couleur(i), 'class': 'pt'}, svg);
+      });
+      if(avecPF && PF[idxSurvol] !== null) el('circle', {cx: cx, cy: y(PF[idxSurvol]), r: 4, 'class': 'pt pfpt'}, svg);
+    }
+  }
+
+  // ── info-bulle ───────────────────────────────────────────────────
+  function montrer(k){
+    idxSurvol = k; dessiner();
+    var d = dates[k];
+    tip.textContent = '';
+    var h = document.createElement('div'); h.className = 'tip-d';
+    h.textContent = d.toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'});
+    tip.appendChild(h);
+    var rangs = [];
+    if(avecPF && PF[k] !== null) rangs.push({nom: 'Portefeuille', v: PF[k], c: 'var(--text)', pf: true});
+    visibles().forEach(function(i){ var v = L[i].valeurs[k]; if(v !== null) rangs.push({nom: L[i].nom, v: v, c: couleur(i), dash: i >= SLOTS}); });
+    rangs.sort(function(a, c){ return c.v - a.v; });
+    rangs.forEach(function(r){
+      var row = document.createElement('div'); row.className = 'tip-r' + (r.pf ? ' pf' : '');
+      var sw = document.createElement('i'); sw.className = 'sw' + (r.dash ? ' dash' : ''); sw.style.setProperty('--c', r.c); row.appendChild(sw);
+      var v = document.createElement('b'); v.textContent = perf(r.v); row.appendChild(v);
+      var n = document.createElement('span'); n.textContent = court(r.nom, 26); row.appendChild(n);
+      tip.appendChild(row);
+    });
+    if(!rangs.length){ var vide = document.createElement('div'); vide.className = 'tip-r'; vide.textContent = 'Aucune ligne détenue à cette date'; tip.appendChild(vide); }
+    tip.hidden = false;
+    var cx = geo.x(k), tw = tip.offsetWidth, left = cx + 14;
+    if(left + tw > geo.W - 4) left = cx - 14 - tw;
+    tip.style.left = Math.max(4, left) + 'px';
+    tip.style.top = (geo.m.t + 4) + 'px';
+  }
+  function cacher(){ idxSurvol = null; tip.hidden = true; dessiner(); }
+  function indexDepuis(evt){
+    var r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * geo.W / r.width;
+    var f = (px - geo.m.l) / geo.pw;
+    return Math.max(geo.i0, Math.min(geo.i1, Math.round(geo.i0 + f * (geo.i1 - geo.i0))));
+  }
+  svg.addEventListener('pointermove', function(e){ montrer(indexDepuis(e)); });
+  svg.addEventListener('pointerdown', function(e){ montrer(indexDepuis(e)); });
+  svg.addEventListener('pointerleave', cacher);
+  svg.addEventListener('keydown', function(e){
+    if(!geo) return;
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){
+      var k = idxSurvol === null ? geo.i1 : idxSurvol + (e.key === 'ArrowRight' ? 1 : -1);
+      montrer(Math.max(geo.i0, Math.min(geo.i1, k))); e.preventDefault();
+    } else if(e.key === 'Escape'){ cacher(); }
+  });
+  svg.addEventListener('blur', cacher);
+
+  // ── barre de filtres ─────────────────────────────────────────────
+  root.querySelectorAll('[data-mode]').forEach(function(b){
+    b.addEventListener('click', function(){ choisirMode(b.getAttribute('data-mode')); });
+  });
+  root.querySelectorAll('[data-periode]').forEach(function(b){
+    b.addEventListener('click', function(){ periode = b.getAttribute('data-periode'); majBoutons(); dessiner(); if(idxSurvol !== null) cacher(); });
+  });
+
+  if(window.ResizeObserver) new ResizeObserver(function(){ dessiner(); }).observe(plot);
+  else window.addEventListener('resize', dessiner);
+  choisirMode(N > 6 ? 'principales' : 'toutes');
+})();
+"""
+
+
 def build_combined_chart_html() -> str:
+    """Graphique base 100 interactif (02/11/2026), l'image en repli.
+
+    Avec plusieurs lignes, le PNG devenait illisible : courbes emmêlées,
+    légende tassée, aucune valeur lisible à une date. Ici : lignes à afficher
+    ou masquer (5 principales par défaut au-delà de 6), valeurs de toutes les
+    lignes à la date survolée, période réglable. (La matrice des corrélations
+    ajoutée le même jour a été retirée à la demande de Gaby : illisible.)
+    """
+    if not base100:
+        return _combined_chart_png_html()
+    lignes = base100.get("lignes") or []
+    n = len(lignes)
+    donnees = json.dumps(base100, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+    def pct(v):
+        return "—" if v is None else f"{v - 100:+.1f} %".replace(".", ",").replace("-", "−")
+    rangs = ""
+    if n > 1 and base100.get("portefeuille"):
+        pf = [v for v in base100["portefeuille"] if v is not None]
+        if pf:
+            rangs += (f"<tr><th scope='row'>Portefeuille</th><td class='cell-num'>100 %</td>"
+                      f"<td class='cell-num'>{pct(pf[-1])}</td><td class='cell-num'>{pct(max(pf))}</td>"
+                      f"<td class='cell-num'>{pct(min(pf))}</td></tr>")
+    for l in lignes:
+        vals = [v for v in l.get("valeurs") or [] if v is not None]
+        if not vals:
+            continue
+        rangs += (f"<tr><th scope='row'>{esc(l.get('nom', '?'))}</th>"
+                  f"<td class='cell-num'>{str(round(l.get('poids_pct') or 0, 1)).replace('.', ',')} %</td>"
+                  f"<td class='cell-num'>{pct(vals[-1])}</td><td class='cell-num'>{pct(max(vals))}</td>"
+                  f"<td class='cell-num'>{pct(min(vals))}</td></tr>")
+
+    jours = 0
+    try:
+        d0, d1 = base100["dates"][0], base100["dates"][-1]
+        jours = (datetime.fromisoformat(d1) - datetime.fromisoformat(d0)).days
+    except (ValueError, KeyError, IndexError):
+        pass
+    periodes = "".join(f'<button type="button" data-periode="{k}" aria-pressed="false">{lib}</button>'
+                       for k, lib, mini in (("1m", "1 mois", 45), ("3m", "3 mois", 110), ("6m", "6 mois", 200))
+                       if jours >= mini)
+    periodes += '<button type="button" data-periode="tout" aria-pressed="true">Tout</button>'
+    modes = ('<button type="button" data-mode="principales" aria-pressed="false">5 principales</button>'
+             if n > 6 else "")
+    modes += ('<button type="button" data-mode="toutes" aria-pressed="false">Toutes</button>'
+              '<button type="button" data-mode="pf" aria-pressed="false">Portefeuille seul</button>'
+              if n > 1 else "")
+    tronque = " · historique limité à 12 mois" if base100.get("tronque") else ""
+
+    return f"""
+<article class="card chart-card section" id="tendances">
+  <div class="section-title"><h2>Tendances — performance depuis l'achat (base 100)</h2><p>100 = votre prix de revient{tronque}</p></div>
+  <div class="b100" id="b100">
+    <div class="b100-bar">
+      <div class="b100-seg" role="group" aria-label="Période">{periodes}</div>
+      <div class="b100-seg" role="group" aria-label="Lignes affichées">{modes}</div>
+    </div>
+    <div class="b100-legend" aria-label="Lignes : cliquer pour afficher ou masquer"></div>
+    <div class="b100-plot">
+      <svg class="b100-svg" tabindex="0" role="img" width="100%"
+           aria-label="Performance de chaque position depuis son achat, base 100 = prix de revient. Flèches gauche et droite pour parcourir les dates."></svg>
+      <div class="b100-tip" hidden></div>
+    </div>
+  </div>
+  <details class="b100-chiffres">
+    <summary>Voir les chiffres</summary>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Ligne</th><th>Poids</th><th>Depuis l'achat</th><th>Plus haut</th><th>Plus bas</th></tr></thead>
+      <tbody>{rangs}</tbody>
+    </table></div>
+  </details>
+  <p class="chart-caption">
+    Chaque courbe part de la date d'achat (point) et se lit directement en plus-value latente :
+    100 = prix de revient, 120 = +20 %. Survolez le graphique pour lire toutes les lignes à une date ;
+    cliquez sur un nom pour l'afficher ou le masquer, survolez-le pour le faire ressortir. Les lignes
+    masquées restent en gris clair pour situer l'ensemble. La courbe blanche (noire en thème clair) suit
+    le portefeuille en rendement pondéré dans le temps : un achat ou une vente ne la fait pas sauter.
+  </p>
+  <script type="application/json" id="b100-data">{donnees}</script>
+  <script>{_B100_JS}</script>
+</article>"""
+
+
+def _combined_chart_png_html() -> str:
     if not combined_b64:
         return ""
     return f"""
@@ -1994,6 +2429,59 @@ img { max-width:100%; height:auto; }
 .chart-empty { color:var(--faint); font-size:13px; padding:40px 0; text-align:center; }
 .combined-chart-wrap { background:var(--surface2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
 .combined-chart-img { width:100%; display:block; max-height:520px; object-fit:contain; }
+/* ── graphique base 100 interactif (02/11/2026) ─────────────────── */
+.b100 {
+  --b100-s1:#3987e5; --b100-s2:#d95926; --b100-s3:#199e70; --b100-s4:#c98500;
+  --b100-s5:#d55181; --b100-s6:#008300; --b100-s7:#9085e9; --b100-s8:#e66767;
+}
+[data-theme="light"] .b100 {
+  --b100-s1:#2a78d6; --b100-s2:#eb6834; --b100-s3:#1baf7a; --b100-s4:#eda100;
+  --b100-s5:#e87ba4; --b100-s6:#008300; --b100-s7:#6250d6; --b100-s8:#e34948;
+}
+.b100-bar { display:flex; flex-wrap:wrap; gap:8px 14px; margin-bottom:10px; }
+.b100-seg { display:inline-flex; border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+.b100-seg button { padding:5px 11px; font-size:12px; color:var(--muted); border-right:1px solid var(--border); }
+.b100-seg button:last-child { border-right:0; }
+.b100-seg button[aria-pressed="true"] { background:var(--surface2); color:var(--text); font-weight:600; }
+.b100-seg button:hover { color:var(--text); }
+.b100-legend { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.b100-chip { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border:1px solid var(--border);
+  border-radius:999px; font-size:12px; color:var(--muted); background:transparent; }
+.b100-chip[aria-pressed="true"] { color:var(--text); border-color:var(--border-strong); background:var(--surface2); }
+.b100-chip[aria-pressed="false"] .sw { opacity:.35; }
+.b100-chip b { font-family:var(--mono); font-weight:600; font-size:11.5px; color:var(--text); }
+.b100-chip.pf { color:var(--text); border-style:dashed; }
+.b100 .sw { width:14px; height:0; border-top:3px solid var(--c, var(--text)); border-radius:2px; flex-shrink:0; }
+.b100 .sw.dash { border-top-style:dashed; }
+.b100-chip.pf .sw, .tip-r.pf .sw { border-top-color:var(--text); border-top-width:3.5px; }
+.b100-plot { position:relative; background:var(--surface2); border:1px solid var(--border); border-radius:10px; }
+.b100-svg { display:block; width:100%; touch-action:pan-y; outline:none; }
+.b100-svg:focus-visible { box-shadow:0 0 0 2px var(--accent); border-radius:10px; }
+.b100-svg .ax text { fill:var(--muted); font-family:var(--mono); font-size:10px; }
+.b100-svg .grid { stroke:var(--border); stroke-width:1; }
+.b100-svg .ref { stroke:var(--muted); stroke-width:1; stroke-dasharray:4 4; }
+.b100-svg .ctx { fill:none; stroke:var(--faint); stroke-width:1; opacity:.7; }
+.b100-svg .ser { fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; transition:opacity .15s; }
+.b100-svg .pf { fill:none; stroke:var(--text); stroke-width:2.6; stroke-linejoin:round; transition:opacity .15s; }
+.b100-svg .dim { opacity:.18; }
+.b100-svg .entree { stroke:var(--surface2); stroke-width:2; }
+.b100-svg .cross { stroke:var(--muted); stroke-width:1; }
+.b100-svg .pt { stroke:var(--surface2); stroke-width:2; }
+.b100-svg .pfpt { fill:var(--text); }
+.b100-svg .tick { stroke-width:2; }
+.b100-svg .lab { fill:var(--muted); font-size:11px; font-family:var(--mono); }
+.b100-svg .lab.fort { fill:var(--text); font-weight:600; }
+.b100-tip { position:absolute; z-index:3; min-width:170px; max-width:260px; padding:9px 11px; border-radius:9px;
+  background:var(--surface); border:1px solid var(--border-strong); box-shadow:0 6px 24px rgba(0,0,0,.25);
+  font-size:12px; pointer-events:none; }
+.b100-tip .tip-d { color:var(--muted); font-family:var(--mono); font-size:11px; margin-bottom:5px; }
+.b100-tip .tip-r { display:grid; grid-template-columns:16px 62px 1fr; align-items:center; gap:6px; line-height:1.55; }
+.b100-tip .tip-r b { font-family:var(--mono); font-weight:600; color:var(--text); text-align:right; }
+.b100-tip .tip-r span { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.b100-tip .tip-r.pf span { color:var(--text); }
+.b100-chiffres { margin-top:12px; font-size:13px; }
+.b100-chiffres summary { cursor:pointer; color:var(--muted); font-size:12.5px; }
+.b100-chiffres table { margin-top:8px; }
 
 /* ── répartition / concentration ──────────────────────────────── */
 .alloc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
@@ -2140,6 +2628,21 @@ tbody tr:hover td { background:var(--surface2); }
 
 /* ── jauges rondes (fiabilité / corrélation) ──────────────────── */
 .ring-card { text-align:center; }
+.prog-card h3 { font-size:15px; margin:6px 0 12px; line-height:1.35; }
+.prog-steps { list-style:none; display:grid; gap:11px; margin:0 0 12px; }
+.prog-step { display:grid; grid-template-columns:20px 1fr; gap:8px; align-items:start; }
+.prog-ico { font-family:var(--mono); font-size:13px; line-height:1.4; text-align:center; color:var(--muted); }
+.prog-step.done .prog-ico { color:var(--success); }
+.prog-step.next .prog-ico { color:var(--accent); }
+.prog-body b { display:block; font-size:12.5px; font-weight:600; line-height:1.35; }
+.prog-step.todo .prog-body b { color:var(--muted); font-weight:500; }
+.prog-bar { height:5px; border-radius:99px; background:var(--surface2); overflow:hidden; margin:5px 0 3px; }
+.prog-bar span { display:block; height:100%; border-radius:99px; background:var(--faint); }
+.prog-step.done .prog-bar span { background:var(--success); }
+.prog-step.next .prog-bar span { background:var(--accent); }
+.prog-body small { font-size:11px; color:var(--muted); font-family:var(--mono); }
+.prog-mot { text-transform:uppercase; letter-spacing:.04em; }
+.prog-aussi, .prog-note { font-size:11.5px; color:var(--muted); margin-bottom:8px; line-height:1.45; }
 .ring { width:112px; height:112px; border-radius:50%; display:grid; place-items:center; position:relative; flex-shrink:0; }
 .ring::before { content:""; position:absolute; inset:11px; border-radius:50%; background:var(--surface); }
 .ring div { position:relative; display:flex; flex-direction:column; align-items:center; }
