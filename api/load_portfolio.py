@@ -111,6 +111,11 @@ MARCHES = {
     "euronext_mil":   {"suffixe": ".MI",    "marche": "euronext", "devise": "EUR", "label": "Borsa Italiana"},
     "xetra":          {"suffixe": ".XETRA", "marche": "euronext", "devise": "EUR", "label": "Xetra (Francfort)"},
     "madrid":         {"suffixe": ".MC",    "marche": "euronext", "devise": "EUR", "label": "Bolsa de Madrid"},
+    # AJOUT (02/11/2026) : la Bourse de Francfort (Börse Frankfurt, suffixe
+    # EODHD et Yahoo « .F ») cote en euros des actions etrangeres absentes de
+    # Xetra chez EODHD -- BYD (BY6), Daikin (DKI), Xiaomi (3CP)... Saisies en
+    # « Xetra », ces lignes n'avaient aucun cours et disparaissaient du rapport.
+    "francfort":      {"suffixe": ".F",     "marche": "euronext", "devise": "EUR", "label": "Francfort (Börse Frankfurt, titres étrangers)"},
     # BUG CORRIGE (19/09/2026) : EODHD publie la plupart des titres LSE en
     # PENCE (GBX), pas en livre (GBP) -- une ligne ressortait alors 100 fois
     # trop haute une fois "convertie" comme si le cours etait en GBP. "GBX"
@@ -128,6 +133,10 @@ MARCHES = {
 }
 
 SUFFIXE_VERS_MARCHE = {v["suffixe"].lstrip("."): k for k, v in MARCHES.items()}
+# Suffixes « a la Yahoo » que les utilisateurs recopient souvent (SAP.DE,
+# VOD.L) : ils designent sans ambiguite une place, meme si ce n'est pas la
+# convention EODHD (02/11/2026).
+SUFFIXE_VERS_MARCHE.update({"DE": "xetra", "L": "londres", "AMS": "euronext_ams"})
 
 # BUG CORRIGE (19/09/2026) : `ticker_yf` reprenait tel quel le suffixe EODHD
 # (".LSE", ".XETRA"...), alors que Yahoo Finance a sa PROPRE convention de
@@ -200,7 +209,7 @@ ALIAS_MARCHES = {
     "euronext": "euronext_paris", "paris": "euronext_paris", "france": "euronext_paris",
     "amsterdam": "euronext_ams", "bruxelles": "euronext_bru", "brussels": "euronext_bru",
     "lisbonne": "euronext_lis", "milan": "euronext_mil", "italie": "euronext_mil",
-    "francfort": "xetra", "allemagne": "xetra", "frankfurt": "xetra",
+    "allemagne": "xetra", "frankfurt": "francfort", "francfort_boerse": "francfort",
     "espagne": "madrid", "london": "londres", "royaume-uni": "londres",
     "zurich": "suisse", "switzerland": "suisse",
 }
@@ -286,18 +295,25 @@ def detecter_marche(ticker: str, marche_saisi: str = None,
     if place_imposee in MARCHES:
         return place_imposee
 
+    t = str(ticker or "").strip().upper()
+    place_suffixe = None
+    if "." in t:
+        place_suffixe = SUFFIXE_VERS_MARCHE.get(t.rsplit(".", 1)[1])
+
     if marche_saisi:
         cle = str(marche_saisi).strip().lower().replace(" ", "_")
-        if cle in MARCHES:
+        cle = cle if cle in MARCHES else ALIAS_MARCHES.get(cle)
+        # CORRECTION (02/11/2026) : « us » est la place proposee par defaut
+        # dans l'interface. Un ticker qui porte un suffixe de place explicite
+        # (SAP.DE, RHM.DE) gardait pourtant « us » et partait sur le mauvais
+        # titre (SAP.US, un ADR en dollars) ou sur rien du tout (RHM.US). Le
+        # suffixe l'emporte donc sur ce defaut ; une autre place choisie
+        # expressement reste prioritaire.
+        if cle and not (cle == "us" and place_suffixe and place_suffixe != "us"):
             return cle
-        if cle in ALIAS_MARCHES:
-            return ALIAS_MARCHES[cle]
 
-    t = str(ticker or "").strip().upper()
-    if "." in t:
-        suffixe = t.rsplit(".", 1)[1]
-        if suffixe in SUFFIXE_VERS_MARCHE:
-            return SUFFIXE_VERS_MARCHE[suffixe]
+    if place_suffixe:
+        return place_suffixe
 
     # Un ticker nu, sans suffixe, est américain dans l'immense majorité des cas.
     return "us"
