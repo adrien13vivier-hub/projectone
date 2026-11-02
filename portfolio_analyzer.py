@@ -2916,6 +2916,74 @@ def generate_combined_chart(positions: list, chart_path: str, seance=None) -> bo
         return False
 
 
+def export_base100_json(positions: list, chemin: str, seance=None) -> bool:
+    """Donnees du graphique interactif (02/11/2026), a cote du PNG.
+
+    Le PNG devient illisible au-dela de quatre ou cinq lignes : courbes
+    emmelees, legende tassee, aucune valeur lisible a une date donnee. Le
+    rapport HTML redessine donc le graphique a partir de ce fichier : courbes
+    a afficher ou masquer, valeurs a la date survolee, et matrice des
+    correlations entre titres (variations glissantes a 3 mois, la meme mesure
+    que l'indice de correlation moyenne du rapport).
+
+    positions : celles du PNG, avec en plus "poids_pct" (part de la valeur).
+    """
+    try:
+        data = donnees_base100(positions, seance)
+        if not data:
+            return False
+        par_nom = {}
+        for p in positions:
+            par_nom.setdefault(p.get("nom") or "?", p)
+
+        lignes = []
+        for nom, vals in data["lignes"].items():
+            p = par_nom.get(nom) or par_nom.get(nom.rsplit(" (", 1)[0]) or {}
+            dernier = next((v for v in reversed(vals) if v is not None), None)
+            lignes.append({"nom": nom, "valeurs": vals, "dernier": dernier,
+                           "poids_pct": round(float(p.get("poids_pct") or 0), 2)})
+        # Ordre STABLE (poids decroissant) : la couleur suit le titre, pas son rang
+        # de performance du jour.
+        lignes.sort(key=lambda l: (-l["poids_pct"], l["nom"]))
+
+        noms = [l["nom"] for l in lignes]
+        matrice = [[None] * len(noms) for _ in noms]
+        if risk_engine is not None:
+            for i, a in enumerate(noms):
+                matrice[i][i] = 1.0
+                pa_ = par_nom.get(a) or par_nom.get(a.rsplit(" (", 1)[0]) or {}
+                for j in range(i + 1, len(noms)):
+                    pb = par_nom.get(noms[j]) or par_nom.get(noms[j].rsplit(" (", 1)[0]) or {}
+                    try:
+                        c = risk_engine.correlation(
+                            pa_.get("closes") or [], pb.get("closes") or [],
+                            dates_a=[str(d)[:10] for d in (pa_.get("dates") or [])],
+                            dates_b=[str(d)[:10] for d in (pb.get("dates") or [])])
+                    except Exception:
+                        c = None
+                    if c is not None:
+                        matrice[i][j] = matrice[j][i] = round(c, 3)
+
+        sortie = {
+            "version": 1,
+            "dates": [d.isoformat() for d in data["dates"]],
+            "portefeuille": data["portefeuille"],
+            "lignes": lignes,
+            "correlation": {"noms": noms, "valeurs": matrice,
+                            "fenetre_seances": getattr(risk_engine, "CORRELATION_FENETRE_JOURS", 63)},
+            "tronque": bool(data["tronque"]),
+        }
+        os.makedirs(os.path.dirname(chemin) or ".", exist_ok=True)
+        tmp = chemin + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(sortie, f, ensure_ascii=False, separators=(",", ":"))
+        os.replace(tmp, chemin)
+        return True
+    except Exception as e:
+        _log.warning("Donnees du graphique interactif non generees : %s", e)
+        return False
+
+
 # =============================================================================
 # HISTORIQUE CSV
 # =============================================================================
@@ -4585,6 +4653,15 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
             "calendrier": calendrier_detention(a, debut_suivi),
         })
     chart_ok     = generate_combined_chart(positions_graph, chart_path, seance=jour_seance)
+    # Graphique interactif du rapport HTML (02/11/2026) : memes courbes, plus
+    # le poids de chaque ligne (ordre et couleur stables) et la matrice des
+    # correlations.
+    vm_total = sum(r.get("vm") or 0 for r in results if not r["asset"].get("manuel")) or 0
+    for pg, r in zip(positions_graph,
+                     [r for r in results if not r["asset"].get("manuel")]):
+        pg["poids_pct"] = (r.get("vm") or 0) / vm_total * 100 if vm_total else 0
+    export_base100_json(positions_graph, os.path.join(CHARTS_DIR, "base100.json"),
+                        seance=jour_seance)
 
     # ── 11. Sauvegarde cache ──────────────────────────────────────────────────
     if save_cache:
