@@ -680,6 +680,10 @@ def normalize_profile(raw: dict, username: str = None) -> dict:
 
     settings["stop_defaut"] = normaliser_stop(settings.get("stop_defaut"))
 
+    # 02/11/2026 : PRU frais d'achat inclus (celui qu'affiche le courtier) par
+    # defaut. Seul un False explicite fait deduire les frais d'achat au rapport.
+    settings["pru_frais_inclus"] = settings.get("pru_frais_inclus") is not False
+
     # Moteur d'apprentissage : horizon(s) borne(s) a l'entree. Import tolerant,
     # comme partout ailleurs : sans le module, le reglage est simplement conserve.
     try:
