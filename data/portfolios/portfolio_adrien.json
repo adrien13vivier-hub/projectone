@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-10-28T19:38:51.088322+00:00",
+  "saved_at": "2026-11-02T18:41:32.837211+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -101,12 +101,14 @@
       "ticker": "SM",
       "isin": "US78454L1008",
       "quantity": 10.0,
-      "buy_price": 38.01,
+      "buy_price": 34.041756,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
       "account": "ord",
       "tags": [],
+      "buy_currency": "USD",
+      "buy_fx": 0.8956,
       "sector": ""
     },
     {
