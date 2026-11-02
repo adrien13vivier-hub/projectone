@@ -506,6 +506,7 @@ def place_suffix(symbol: str) -> str:
 _PLACE_DEVISE = {
     "US": "USD", "PA": "EUR", "XETRA": "EUR", "AS": "EUR", "BR": "EUR",
     "LS": "EUR", "MI": "EUR", "MC": "EUR", "LSE": "GBP", "SW": "CHF",
+    "F": "EUR",   # Bourse de Francfort (titres etrangers cotes en euros)
 }
 
 
