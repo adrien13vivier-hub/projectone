@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-11-02T18:42:02.846164+00:00",
+  "saved_at": "2026-11-02T19:03:04.679067+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -50,14 +50,12 @@
       "ticker": "CRWV",
       "isin": "",
       "quantity": 2.0,
-      "buy_price": 84.105796,
+      "buy_price": 93.91,
       "market": "us",
       "asset_type": "action",
       "asset_class": "action",
       "account": "ord",
       "tags": [],
-      "buy_currency": "USD",
-      "buy_fx": 0.8956,
       "sector": ""
     },
     {
