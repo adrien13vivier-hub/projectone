@@ -4412,6 +4412,15 @@ def main(profile: dict = None, shared_cache: dict = None, save_cache: bool = Tru
 
         if price_eur is None:
             _log.warning("Cours introuvable pour %s — position ignorée dans le rapport", key)
+            # CORRECTION (02/11/2026) : la ligne disparaissait SANS RIEN DIRE.
+            # Valeur et plus-value du portefeuille etaient alors fausses sans
+            # que personne ne le sache (3 lignes d'un profil absentes pendant
+            # des semaines). L'absence est desormais ecrite en tete de page.
+            cache_warns.append(
+                f"{asset['name']} ({key}) -- AUCUN COURS TROUVE ({price_src}) : "
+                f"cette ligne n'est PAS comptee dans la valeur ni dans la "
+                f"plus-value du portefeuille. Verifiez le ticker et la place de "
+                f"cotation dans l'interface.")
             continue
 
         qty      = asset["qty"]
