@@ -1700,13 +1700,14 @@ def build_closes_html() -> str:
   {expl('''
   <p class="section-note">
     Positions vendues. Elles ne figurent plus dans le portefeuille et n'entrent
-    pas dans la valorisation. Frais aller-retour déduits.
+    pas dans la valorisation. Frais de vente déduits, et frais d'achat aussi si le
+    prix de revient saisi ne les inclut pas.
   </p>''')}
   <div class="table-wrap">
     <table>
       <thead>
         <tr><th>Valeur</th><th>Qté</th><th>Prix d'achat</th>
-            <th>Prix de vente</th><th>Frais A/R</th><th>+/- value nette</th></tr>
+            <th>Prix de vente</th><th>Frais</th><th>+/- value nette</th></tr>
       </thead>
       <tbody>{lignes}{pied}</tbody>
     </table>
