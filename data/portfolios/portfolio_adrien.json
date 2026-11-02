@@ -1,6 +1,6 @@
 {
   "username": "adrien",
-  "saved_at": "2026-11-02T18:41:32.837211+00:00",
+  "saved_at": "2026-11-02T18:41:42.869467+00:00",
   "settings": {
     "broker": "boursobank",
     "indices": [
@@ -116,7 +116,7 @@
       "ticker": "WPEA",
       "isin": "",
       "quantity": 25.0,
-      "buy_price": 7.221,
+      "buy_price": 7.26,
       "market": "euronext_paris",
       "asset_type": "action",
       "asset_class": "etf",
