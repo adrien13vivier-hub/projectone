@@ -113,8 +113,20 @@
   "sector": "Technology",
   "src": "yahoo"
  },
+ "RHM.XETRA": {
+  "fetched": "2026-11-02",
+  "industry": "Aerospace & Defense",
+  "sector": "Industrials",
+  "src": "yahoo"
+ },
  "SAP.US": {
   "fetched": "2026-10-14",
+  "industry": "Software - Application",
+  "sector": "Technology",
+  "src": "yahoo"
+ },
+ "SAP.XETRA": {
+  "fetched": "2026-11-02",
   "industry": "Software - Application",
   "sector": "Technology",
   "src": "yahoo"
