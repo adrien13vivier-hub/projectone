@@ -3,34 +3,34 @@
   "corrompus": 0,
   "invalid": 0,
   "legacy": 381,
-  "matured": 719,
+  "matured": 741,
   "n_tickers": 235,
   "par_horizon": {
    "120": {
-    "closes": 9,
-    "en_attente": 1657,
+    "closes": 12,
+    "en_attente": 1714,
     "invalides": 0
    },
    "20": {
-    "closes": 449,
-    "en_attente": 1217,
+    "closes": 464,
+    "en_attente": 1262,
     "invalides": 0
    },
    "252": {
     "closes": 0,
-    "en_attente": 1666,
+    "en_attente": 1726,
     "invalides": 0
    },
    "60": {
-    "closes": 261,
-    "en_attente": 1405,
+    "closes": 265,
+    "en_attente": 1461,
     "invalides": 0
    }
   },
   "reconstitues": 4662,
-  "snapshots": 1666
+  "snapshots": 1726
  },
- "generated_for": "2026-11-02",
+ "generated_for": "2026-11-03",
  "horizon": 20,
  "horizons": [
   20,
@@ -1009,23 +1009,23 @@
      "bands": [
       {
        "ci95": [
-        -4.3233,
-        3.4055
+        -4.9592,
+        2.7696
        ],
        "confidence": "moyenne",
-       "estimate": -0.3353,
+       "estimate": -0.7878,
        "hi": 3.0,
-       "hit": 0.3721,
+       "hit": 0.3556,
        "hit_indep": 0.4324,
        "label": "< 3",
        "lo": 0.0,
-       "mean": -0.4589,
+       "mean": -1.0948,
        "median": -1.7968,
-       "n": 43,
+       "n": 45,
        "n_indep": 37,
        "p_outperf": 0.442,
        "reco": "NOTE TRÈS FAIBLE",
-       "std": 10.8593
+       "std": 11.3939
       },
       {
        "ci95": [
@@ -1049,130 +1049,130 @@
       },
       {
        "ci95": [
-        -0.3181,
-        0.3521
+        -0.3653,
+        0.3049
        ],
        "confidence": "elevee",
-       "estimate": 0.0166,
+       "estimate": -0.0302,
        "hi": 6.0,
-       "hit": 0.4841,
+       "hit": 0.4833,
        "hit_indep": 0.4868,
        "label": "4,5 - 6",
        "lo": 4.5,
-       "mean": 0.017,
-       "median": -0.2521,
-       "n": 1944,
+       "mean": -0.0302,
+       "median": -0.2653,
+       "n": 1951,
        "n_indep": 1933,
        "p_outperf": 0.487,
        "reco": "NOTE MOYENNE",
-       "std": 7.7049
+       "std": 7.7929
       },
       {
        "ci95": [
-        -0.6314,
-        -0.0011
+        -0.6448,
+        -0.0144
        ],
        "confidence": "elevee",
-       "estimate": -0.3143,
+       "estimate": -0.3275,
        "hi": 7.5,
-       "hit": 0.4631,
+       "hit": 0.4626,
        "hit_indep": 0.4622,
        "label": "6 - 7,5",
        "lo": 6.0,
-       "mean": -0.3163,
-       "median": -0.6708,
-       "n": 2125,
+       "mean": -0.3296,
+       "median": -0.6743,
+       "n": 2127,
        "n_indep": 2116,
        "p_outperf": 0.462,
        "reco": "NOTE SOLIDE",
-       "std": 7.3946
+       "std": 7.4102
       },
       {
        "ci95": [
-        -0.7053,
-        1.3646
+        -0.7646,
+        1.3053
        ],
        "confidence": "elevee",
-       "estimate": 0.3082,
+       "estimate": 0.2525,
        "hi": 10.0,
-       "hit": 0.5137,
+       "hit": 0.5097,
        "hit_indep": 0.5105,
        "label": ">= 7,5",
        "lo": 7.5,
-       "mean": 0.3296,
-       "median": 0.3417,
-       "n": 255,
+       "mean": 0.2704,
+       "median": 0.126,
+       "n": 259,
        "n_indep": 237,
        "p_outperf": 0.509,
        "reco": "NOTE ÉLEVÉE",
-       "std": 8.3871
+       "std": 8.3845
       }
      ],
      "confidence": "elevee",
      "global": {
       "ci95": [
-       -0.2998,
-       0.1447
+       -0.3342,
+       0.1103
       ],
-      "hit": 0.4763,
+      "hit": 0.4754,
       "hit_indep": 0.4769,
-      "mean": -0.0775,
-      "median": -0.3922,
-      "n": 4730,
+      "mean": -0.1119,
+      "median": -0.4018,
+      "n": 4745,
       "n_indep": 4680,
-      "std": 7.8663
+      "std": 7.9171
      },
      "horizon": 20,
-     "ic": -0.012,
+     "ic": -0.011,
      "ic_indep": -0.018,
      "kind": "market",
      "legacy_included": false,
-     "n_dates": 45,
+     "n_dates": 46,
      "n_reconstitues": 4662,
      "n_reconstitues_indep": 4662,
      "n_tickers": 137,
      "regions": [
       {
        "ci95": null,
-       "hit": 0.3667,
+       "hit": 0.3333,
        "hit_indep": 0.5,
-       "mean": -2.8448,
-       "median": -3.1194,
-       "n": 30,
+       "mean": -2.9057,
+       "median": -3.7496,
+       "n": 36,
        "n_indep": 6,
        "region": "EUROPE",
-       "std": 5.6656
+       "std": 5.5691
       },
       {
        "ci95": [
-        -0.2822,
-        0.1626
+        -0.313,
+        0.1318
        ],
-       "hit": 0.477,
+       "hit": 0.4765,
        "hit_indep": 0.4769,
-       "mean": -0.0598,
-       "median": -0.3827,
-       "n": 4700,
+       "mean": -0.0906,
+       "median": -0.3874,
+       "n": 4709,
        "n_indep": 4674,
        "region": "US",
-       "std": 7.8757
+       "std": 7.929
       }
      ],
      "sectors": [
       {
        "ci95": [
-        -0.8101,
-        0.5799
+        -0.8336,
+        0.5564
        ],
-       "hit": 0.4786,
+       "hit": 0.4777,
        "hit_indep": 0.4822,
-       "ic": -0.068,
-       "mean": -0.1151,
-       "median": -0.2859,
-       "n": 537,
+       "ic": -0.072,
+       "mean": -0.1386,
+       "median": -0.3465,
+       "n": 538,
        "n_indep": 533,
        "sector": "Communication Services",
-       "std": 8.2486
+       "std": 8.259
       },
       {
        "ci95": [
@@ -1206,93 +1206,93 @@
       },
       {
        "ci95": [
-        -0.5811,
-        1.1688
+        -0.5602,
+        1.1897
        ],
-       "hit": 0.4786,
+       "hit": 0.4801,
        "hit_indep": 0.4696,
-       "ic": -0.037,
-       "mean": 0.2939,
-       "median": -0.4662,
-       "n": 351,
+       "ic": -0.031,
+       "mean": 0.3148,
+       "median": -0.4597,
+       "n": 352,
        "n_indep": 345,
        "sector": "Energy",
-       "std": 8.4356
+       "std": 8.4327
       },
       {
        "ci95": [
-        0.1144,
-        1.3043
+        0.083,
+        1.2728
        ],
-       "hit": 0.5416,
+       "hit": 0.5401,
        "hit_indep": 0.5504,
-       "ic": -0.034,
-       "mean": 0.7093,
-       "median": 0.5749,
-       "n": 373,
+       "ic": -0.026,
+       "mean": 0.6779,
+       "median": 0.5564,
+       "n": 374,
        "n_indep": 367,
        "sector": "Financials",
-       "std": 5.8972
+       "std": 5.9205
       },
       {
        "ci95": [
-        -0.9364,
-        0.6244
+        -0.9391,
+        0.6217
        ],
-       "hit": 0.4677,
+       "hit": 0.4665,
        "hit_indep": 0.4751,
-       "ic": -0.0,
-       "mean": -0.156,
-       "median": -0.5359,
-       "n": 387,
+       "ic": 0.0,
+       "mean": -0.1587,
+       "median": -0.5571,
+       "n": 388,
        "n_indep": 381,
        "sector": "Health Care",
-       "std": 7.7067
+       "std": 7.6969
       },
       {
        "ci95": [
-        -0.5001,
-        1.0503
+        -0.576,
+        0.9745
        ],
-       "hit": 0.4921,
+       "hit": 0.4896,
        "hit_indep": 0.4921,
-       "ic": -0.038,
-       "mean": 0.2751,
-       "median": -0.1615,
-       "n": 382,
+       "ic": -0.04,
+       "mean": 0.1993,
+       "median": -0.2,
+       "n": 384,
        "n_indep": 382,
        "sector": "Industrials",
-       "std": 7.7061
+       "std": 7.7921
       },
       {
        "ci95": [
-        -1.0784,
-        1.3417
+        -1.2389,
+        1.1812
        ],
-       "hit": 0.4698,
+       "hit": 0.4688,
        "hit_indep": 0.4753,
-       "ic": 0.051,
-       "mean": 0.1316,
-       "median": -0.6788,
-       "n": 398,
+       "ic": 0.061,
+       "mean": -0.0288,
+       "median": -0.6826,
+       "n": 401,
        "n_indep": 385,
        "sector": "Information Technology",
-       "std": 12.6654
+       "std": 12.8684
       },
       {
        "ci95": [
-        -0.8219,
-        0.5239
+        -0.8533,
+        0.4925
        ],
-       "hit": 0.4804,
+       "hit": 0.4796,
        "hit_indep": 0.4804,
-       "ic": -0.039,
-       "mean": -0.149,
-       "median": -0.3102,
-       "n": 535,
+       "ic": -0.042,
+       "mean": -0.1804,
+       "median": -0.3385,
+       "n": 538,
        "n_indep": 535,
        "sector": "Materials",
-       "std": 7.9232
+       "std": 7.9486
       },
       {
        "ci95": [
@@ -1311,18 +1311,18 @@
       },
       {
        "ci95": [
-        -1.147,
-        -0.1333
+        -1.1988,
+        -0.1851
        ],
-       "hit": 0.439,
+       "hit": 0.4382,
        "hit_indep": 0.439,
-       "ic": -0.003,
-       "mean": -0.6401,
-       "median": -0.9302,
-       "n": 533,
+       "ic": 0.002,
+       "mean": -0.692,
+       "median": -0.9303,
+       "n": 534,
        "n_indep": 533,
        "sector": "Utilities",
-       "std": 5.9568
+       "std": 6.0707
       }
      ],
      "slope": {
@@ -1337,23 +1337,23 @@
      "bands": [
       {
        "ci95": [
-        -3.2747,
-        5.173
+        -3.9999,
+        4.4478
        ],
        "confidence": "moyenne",
-       "estimate": 1.0817,
+       "estimate": 0.5657,
        "hi": 3.0,
-       "hit": 0.4651,
+       "hit": 0.4667,
        "hit_indep": 0.5405,
        "label": "< 3",
        "lo": 0.0,
-       "mean": 0.9492,
+       "mean": 0.224,
        "median": -0.3699,
-       "n": 43,
+       "n": 45,
        "n_indep": 37,
        "p_outperf": 0.546,
        "reco": "NOTE TRÈS FAIBLE",
-       "std": 11.9862
+       "std": 12.6705
       },
       {
        "ci95": [
@@ -1377,130 +1377,130 @@
       },
       {
        "ci95": [
-        1.1584,
-        1.9051
+        1.1023,
+        1.849
        ],
        "confidence": "elevee",
-       "estimate": 1.5308,
+       "estimate": 1.4751,
        "hi": 6.0,
-       "hit": 0.5813,
+       "hit": 0.5802,
        "hit_indep": 0.5846,
        "label": "4,5 - 6",
        "lo": 4.5,
-       "mean": 1.5317,
-       "median": 1.4821,
-       "n": 1944,
+       "mean": 1.4756,
+       "median": 1.4683,
+       "n": 1951,
        "n_indep": 1933,
        "p_outperf": 0.584,
        "reco": "NOTE MOYENNE",
-       "std": 8.568
+       "std": 8.6697
       },
       {
        "ci95": [
-        0.6657,
-        1.3363
+        0.6481,
+        1.3188
        ],
        "confidence": "elevee",
-       "estimate": 1.0039,
+       "estimate": 0.9865,
        "hi": 7.5,
-       "hit": 0.5454,
+       "hit": 0.5449,
        "hit_indep": 0.5449,
        "label": "6 - 7,5",
        "lo": 6.0,
-       "mean": 1.001,
-       "median": 0.7952,
-       "n": 2125,
+       "mean": 0.9835,
+       "median": 0.7824,
+       "n": 2127,
        "n_indep": 2116,
        "p_outperf": 0.545,
        "reco": "NOTE SOLIDE",
-       "std": 7.8676
+       "std": 7.8906
       },
       {
        "ci95": [
-        0.1126,
-        2.2967
+        0.0305,
+        2.2146
        ],
        "confidence": "elevee",
-       "estimate": 1.2168,
+       "estimate": 1.1396,
        "hi": 10.0,
-       "hit": 0.5725,
+       "hit": 0.5676,
        "hit_indep": 0.5738,
        "label": ">= 7,5",
        "lo": 7.5,
-       "mean": 1.2047,
-       "median": 1.1097,
-       "n": 255,
+       "mean": 1.1226,
+       "median": 1.0586,
+       "n": 259,
        "n_indep": 237,
        "p_outperf": 0.573,
        "reco": "NOTE ÉLEVÉE",
-       "std": 8.784
+       "std": 8.7888
       }
      ],
      "confidence": "elevee",
      "global": {
       "ci95": [
-       1.1024,
-       1.5856
+       1.06,
+       1.5431
       ],
-      "hit": 0.5628,
+      "hit": 0.5619,
       "hit_indep": 0.5643,
-      "mean": 1.344,
-      "median": 1.1898,
-      "n": 4730,
+      "mean": 1.3016,
+      "median": 1.1631,
+      "n": 4745,
       "n_indep": 4680,
-      "std": 8.5389
+      "std": 8.6021
      },
      "horizon": 20,
      "ic": -0.037,
      "ic_indep": -0.043,
      "kind": "raw",
      "legacy_included": false,
-     "n_dates": 45,
+     "n_dates": 46,
      "n_reconstitues": 4662,
      "n_reconstitues_indep": 4662,
      "n_tickers": 137,
      "regions": [
       {
        "ci95": null,
-       "hit": 0.3667,
+       "hit": 0.3611,
        "hit_indep": 0.5,
-       "mean": -3.1934,
-       "median": -0.8967,
-       "n": 30,
+       "mean": -2.8672,
+       "median": -1.2429,
+       "n": 36,
        "n_indep": 6,
        "region": "EUROPE",
-       "std": 5.6832
+       "std": 5.631
       },
       {
        "ci95": [
-        1.1313,
-        1.6147
+        1.0917,
+        1.5751
        ],
-       "hit": 0.564,
+       "hit": 0.5634,
        "hit_indep": 0.5644,
-       "mean": 1.373,
-       "median": 1.2058,
-       "n": 4700,
+       "mean": 1.3334,
+       "median": 1.1993,
+       "n": 4709,
        "n_indep": 4674,
        "region": "US",
-       "std": 8.5468
+       "std": 8.6135
       }
      ],
      "sectors": [
       {
        "ci95": [
-        0.5665,
-        2.0783
+        0.5344,
+        2.0462
        ],
-       "hit": 0.5568,
+       "hit": 0.5558,
        "hit_indep": 0.561,
-       "ic": -0.094,
-       "mean": 1.3224,
-       "median": 1.4629,
-       "n": 537,
+       "ic": -0.098,
+       "mean": 1.2903,
+       "median": 1.4359,
+       "n": 538,
        "n_indep": 533,
        "sector": "Communication Services",
-       "std": 8.9823
+       "std": 9.0048
       },
       {
        "ci95": [
@@ -1534,93 +1534,93 @@
       },
       {
        "ci95": [
-        0.7542,
-        2.626
+        0.7621,
+        2.6339
        ],
-       "hit": 0.5556,
+       "hit": 0.5568,
        "hit_indep": 0.5478,
-       "ic": -0.088,
-       "mean": 1.6901,
-       "median": 1.2969,
-       "n": 351,
+       "ic": -0.085,
+       "mean": 1.698,
+       "median": 1.3639,
+       "n": 352,
        "n_indep": 345,
        "sector": "Energy",
-       "std": 8.9497
+       "std": 8.9382
       },
       {
        "ci95": [
-        1.312,
-        2.8631
+        1.2822,
+        2.8333
        ],
-       "hit": 0.5952,
+       "hit": 0.5936,
        "hit_indep": 0.6049,
-       "ic": -0.064,
-       "mean": 2.0876,
-       "median": 1.5906,
-       "n": 373,
+       "ic": -0.057,
+       "mean": 2.0577,
+       "median": 1.589,
+       "n": 374,
        "n_indep": 367,
        "sector": "Financials",
-       "std": 7.6464
+       "std": 7.6579
       },
       {
        "ci95": [
-        0.4708,
-        2.0537
+        0.4695,
+        2.0524
        ],
-       "hit": 0.5581,
+       "hit": 0.5593,
        "hit_indep": 0.5669,
        "ic": -0.01,
-       "mean": 1.2622,
-       "median": 1.003,
-       "n": 387,
+       "mean": 1.261,
+       "median": 0.9616,
+       "n": 388,
        "n_indep": 381,
        "sector": "Health Care",
-       "std": 7.8373
+       "std": 7.8272
       },
       {
        "ci95": [
-        0.8444,
-        2.5988
+        0.7579,
+        2.5124
        ],
-       "hit": 0.555,
+       "hit": 0.5521,
        "hit_indep": 0.555,
-       "ic": -0.091,
-       "mean": 1.7216,
-       "median": 1.2772,
-       "n": 382,
+       "ic": -0.093,
+       "mean": 1.6352,
+       "median": 1.2429,
+       "n": 384,
        "n_indep": 382,
        "sector": "Industrials",
-       "std": 8.7198
+       "std": 8.8273
       },
       {
        "ci95": [
-        0.2177,
-        2.7704
+        0.0233,
+        2.576
        ],
-       "hit": 0.5452,
+       "hit": 0.5436,
        "hit_indep": 0.5532,
-       "ic": 0.034,
-       "mean": 1.4941,
-       "median": 1.466,
-       "n": 398,
+       "ic": 0.045,
+       "mean": 1.2996,
+       "median": 1.4526,
+       "n": 401,
        "n_indep": 385,
        "sector": "Information Technology",
-       "std": 13.3643
+       "std": 13.6108
       },
       {
        "ci95": [
-        0.5263,
-        2.0573
+        0.4788,
+        2.0097
        ],
-       "hit": 0.5589,
+       "hit": 0.5576,
        "hit_indep": 0.5589,
-       "ic": -0.034,
-       "mean": 1.2918,
-       "median": 1.3465,
-       "n": 535,
+       "ic": -0.039,
+       "mean": 1.2442,
+       "median": 1.3456,
+       "n": 538,
        "n_indep": 535,
        "sector": "Materials",
-       "std": 9.013
+       "std": 9.0565
       },
       {
        "ci95": [
@@ -1639,18 +1639,18 @@
       },
       {
        "ci95": [
-        0.3162,
-        1.2968
+        0.2557,
+        1.2363
        ],
-       "hit": 0.5816,
+       "hit": 0.5805,
        "hit_indep": 0.5816,
-       "ic": -0.05,
-       "mean": 0.8065,
-       "median": 0.7623,
-       "n": 533,
+       "ic": -0.044,
+       "mean": 0.746,
+       "median": 0.7547,
+       "n": 534,
        "n_indep": 533,
        "sector": "Utilities",
-       "std": 5.7623
+       "std": 5.9243
       }
      ],
      "slope": {
@@ -1665,23 +1665,23 @@
      "bands": [
       {
        "ci95": [
-        -6.8557,
-        1.5498
+        -7.8556,
+        0.55
        ],
        "confidence": "moyenne",
-       "estimate": -1.8984,
+       "estimate": -2.6098,
        "hi": 3.0,
-       "hit": 0.3721,
+       "hit": 0.3556,
        "hit_indep": 0.4324,
        "label": "< 3",
        "lo": 0.0,
-       "mean": -2.653,
-       "median": -3.0511,
-       "n": 43,
+       "mean": -3.6528,
+       "median": -3.7809,
+       "n": 45,
        "n_indep": 37,
        "p_outperf": 0.444,
        "reco": "NOTE TRÈS FAIBLE",
-       "std": 12.9097
+       "std": 13.6911
       },
       {
        "ci95": [
@@ -1705,85 +1705,85 @@
       },
       {
        "ci95": [
-        -0.2926,
-        0.3128
+        -0.3284,
+        0.277
        ],
        "confidence": "elevee",
-       "estimate": 0.0097,
+       "estimate": -0.0258,
        "hi": 6.0,
-       "hit": 0.4915,
+       "hit": 0.4905,
        "hit_indep": 0.4943,
        "label": "4,5 - 6",
        "lo": 4.5,
-       "mean": 0.0101,
-       "median": -0.132,
-       "n": 1943,
+       "mean": -0.0257,
+       "median": -0.1484,
+       "n": 1949,
        "n_indep": 1932,
        "p_outperf": 0.494,
        "reco": "NOTE MOYENNE",
-       "std": 6.9182
+       "std": 6.9964
       },
       {
        "ci95": [
-        -0.4743,
-        0.0716
+        -0.4934,
+        0.0525
        ],
        "confidence": "elevee",
-       "estimate": -0.2002,
+       "estimate": -0.2192,
        "hi": 7.5,
-       "hit": 0.4776,
+       "hit": 0.4772,
        "hit_indep": 0.4773,
        "label": "6 - 7,5",
        "lo": 6.0,
-       "mean": -0.2014,
-       "median": -0.2642,
-       "n": 2121,
+       "mean": -0.2205,
+       "median": -0.2643,
+       "n": 2123,
        "n_indep": 2114,
        "p_outperf": 0.477,
        "reco": "NOTE SOLIDE",
-       "std": 6.4124
+       "std": 6.4431
       },
       {
        "ci95": [
-        -0.8497,
-        0.9996
+        -0.8783,
+        0.971
        ],
        "confidence": "elevee",
-       "estimate": 0.0683,
+       "estimate": 0.0413,
        "hi": 10.0,
-       "hit": 0.4898,
+       "hit": 0.4858,
        "hit_indep": 0.4851,
        "label": ">= 7,5",
        "lo": 7.5,
-       "mean": 0.075,
+       "mean": 0.0463,
        "median": -0.1484,
-       "n": 245,
+       "n": 247,
        "n_indep": 235,
        "p_outperf": 0.485,
        "reco": "NOTE ÉLEVÉE",
-       "std": 7.1536
+       "std": 7.1379
       }
      ],
      "confidence": "elevee",
      "global": {
       "ci95": [
-       -0.2903,
-       0.1046
+       -0.3255,
+       0.0694
       ],
-      "hit": 0.4838,
+      "hit": 0.4828,
       "hit_indep": 0.4849,
-      "mean": -0.0928,
-      "median": -0.1938,
-      "n": 4715,
+      "mean": -0.1281,
+      "median": -0.2128,
+      "n": 4727,
       "n_indep": 4677,
-      "std": 6.9791
+      "std": 7.0442
      },
      "horizon": 20,
-     "ic": -0.007,
+     "ic": -0.005,
      "ic_indep": -0.014,
      "kind": "sector",
      "legacy_included": false,
-     "n_dates": 45,
+     "n_dates": 46,
      "n_reconstitues": 4662,
      "n_reconstitues_indep": 4662,
      "n_tickers": 134,
@@ -1792,43 +1792,43 @@
        "ci95": null,
        "hit": 0.0,
        "hit_indep": 0.0,
-       "mean": -11.4631,
-       "median": -9.2141,
-       "n": 15,
+       "mean": -10.6411,
+       "median": -8.92,
+       "n": 18,
        "n_indep": 3,
        "region": "EUROPE",
-       "std": 4.9153
+       "std": 5.3046
       },
       {
        "ci95": [
-        -0.2539,
-        0.1408
+        -0.2853,
+        0.1095
        ],
-       "hit": 0.4853,
+       "hit": 0.4846,
        "hit_indep": 0.4852,
-       "mean": -0.0565,
-       "median": -0.1763,
-       "n": 4700,
+       "mean": -0.0879,
+       "median": -0.1805,
+       "n": 4709,
        "n_indep": 4674,
        "region": "US",
-       "std": 6.9554
+       "std": 7.0203
       }
      ],
      "sectors": [
       {
        "ci95": [
-        -0.9361,
-        0.3999
+        -0.9482,
+        0.3877
        ],
-       "hit": 0.4637,
+       "hit": 0.4628,
        "hit_indep": 0.4672,
-       "ic": -0.084,
-       "mean": -0.2681,
-       "median": -0.6495,
-       "n": 537,
+       "ic": -0.087,
+       "mean": -0.2803,
+       "median": -0.6679,
+       "n": 538,
        "n_indep": 533,
        "sector": "Communication Services",
-       "std": 7.8496
+       "std": 7.8474
       },
       {
        "ci95": [
@@ -1862,93 +1862,93 @@
       },
       {
        "ci95": [
-        -0.712,
-        0.5509
+        -0.7121,
+        0.5507
        ],
-       "hit": 0.453,
+       "hit": 0.4517,
        "hit_indep": 0.4435,
        "ic": 0.009,
-       "mean": -0.0806,
-       "median": -0.4928,
-       "n": 351,
+       "mean": -0.0807,
+       "median": -0.4917,
+       "n": 352,
        "n_indep": 345,
        "sector": "Energy",
-       "std": 5.9524
+       "std": 5.9439
       },
       {
        "ci95": [
-        0.1085,
-        1.0962
+        0.0923,
+        1.0801
        ],
-       "hit": 0.5469,
+       "hit": 0.5455,
        "hit_indep": 0.5559,
-       "ic": -0.001,
-       "mean": 0.6024,
-       "median": 0.507,
-       "n": 373,
+       "ic": 0.005,
+       "mean": 0.5862,
+       "median": 0.502,
+       "n": 374,
        "n_indep": 367,
        "sector": "Financials",
-       "std": 4.8629
+       "std": 4.8665
       },
       {
        "ci95": [
-        -0.7662,
-        0.6154
+        -0.8003,
+        0.5813
        ],
-       "hit": 0.4961,
+       "hit": 0.4948,
        "hit_indep": 0.5039,
-       "ic": 0.012,
-       "mean": -0.0754,
-       "median": -0.0313,
-       "n": 387,
+       "ic": 0.02,
+       "mean": -0.1095,
+       "median": -0.0518,
+       "n": 388,
        "n_indep": 381,
        "sector": "Health Care",
-       "std": 7.0994
+       "std": 7.122
       },
       {
        "ci95": [
-        -0.6842,
-        0.7695
+        -0.7583,
+        0.6954
        ],
-       "hit": 0.5052,
+       "hit": 0.5026,
        "hit_indep": 0.5052,
-       "ic": 0.019,
-       "mean": 0.0426,
-       "median": 0.0413,
-       "n": 382,
+       "ic": 0.014,
+       "mean": -0.0314,
+       "median": 0.0209,
+       "n": 384,
        "n_indep": 382,
        "sector": "Industrials",
-       "std": 7.2252
+       "std": 7.3421
       },
       {
        "ci95": [
-        -1.5784,
-        0.5233
+        -1.6633,
+        0.4384
        ],
-       "hit": 0.4623,
+       "hit": 0.4613,
        "hit_indep": 0.4675,
-       "ic": 0.04,
-       "mean": -0.5275,
-       "median": -0.8964,
-       "n": 398,
+       "ic": 0.05,
+       "mean": -0.6124,
+       "median": -0.9237,
+       "n": 401,
        "n_indep": 385,
        "sector": "Information Technology",
-       "std": 10.9384
+       "std": 11.0757
       },
       {
        "ci95": [
-        -0.5418,
-        0.7513
+        -0.6191,
+        0.674
        ],
-       "hit": 0.4738,
+       "hit": 0.472,
        "hit_indep": 0.4738,
-       "ic": -0.025,
-       "mean": 0.1047,
-       "median": -0.4614,
-       "n": 534,
+       "ic": -0.029,
+       "mean": 0.0275,
+       "median": -0.5108,
+       "n": 536,
        "n_indep": 534,
        "sector": "Materials",
-       "std": 7.6057
+       "std": 7.7084
       },
       {
        "ci95": [
@@ -1967,18 +1967,18 @@
       },
       {
        "ci95": [
-        -0.9608,
-        -0.1387
+        -1.0291,
+        -0.2069
        ],
-       "hit": 0.4859,
+       "hit": 0.485,
        "hit_indep": 0.4859,
-       "ic": -0.031,
-       "mean": -0.5498,
-       "median": -0.1425,
-       "n": 533,
+       "ic": -0.025,
+       "mean": -0.618,
+       "median": -0.1512,
+       "n": 534,
        "n_indep": 533,
        "sector": "Utilities",
-       "std": 4.8311
+       "std": 5.0778
       }
      ],
      "slope": {
@@ -1993,8 +1993,8 @@
    "modele": {
     "active": false,
     "min_obs": 250,
-    "n_obs": 53,
-    "raison": "historique insuffisant : 53/250 observations closes avec sous-notes",
+    "n_obs": 65,
+    "raison": "historique insuffisant : 65/250 observations closes avec sous-notes",
     "walk_forward": null
    }
   },
@@ -3926,10 +3926,10 @@
   }
  },
  "maturation": {
-  "appels": 29,
-  "candidats": 37,
+  "appels": 28,
+  "candidats": 33,
   "clotures": 2,
-  "en_attente": 35,
+  "en_attente": 31,
   "invalides": 0,
   "symboles_en_echec": []
  },
@@ -3956,7 +3956,7 @@
      "band": ">= 7,5",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 1.0029,
+     "estimate": 0.9889,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 14,
@@ -4006,62 +4006,6 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.7635,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 43,
-     "p_outperf": 0.442,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    },
-    "20": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.2209,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 184,
-     "p_outperf": 0.416,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    },
-    "252": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": -1.6306,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 21,
-     "p_outperf": 0.455,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    },
-    "60": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.9177,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 81,
-     "p_outperf": 0.479,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    }
-   },
-   "name": "Newmont Corporation",
-   "score": 7.37,
-   "sector": "Materials",
-   "ticker": "NEM.US"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
      "estimate": -3.0164,
      "kind": "sector",
      "legacy_included": false,
@@ -4074,7 +4018,7 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.6389,
+     "estimate": -0.6398,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 291,
@@ -4130,7 +4074,7 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.1218,
+     "estimate": 0.1202,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 159,
@@ -4164,9 +4108,65 @@
     }
    },
    "name": "SAP",
-   "score": 7.32,
+   "score": 7.1,
    "sector": "Information Technology",
    "ticker": "SAP.XETRA"
+  },
+  {
+   "horizons": {
+    "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.7635,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 43,
+     "p_outperf": 0.442,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.2223,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 184,
+     "p_outperf": 0.416,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -1.6306,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 21,
+     "p_outperf": 0.455,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.9177,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 81,
+     "p_outperf": 0.479,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    }
+   },
+   "name": "Newmont Corporation",
+   "score": 7.07,
+   "sector": "Materials",
+   "ticker": "NEM.US"
   },
   {
    "horizons": {
@@ -4186,7 +4186,7 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.1218,
+     "estimate": 0.1202,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 159,
@@ -4220,65 +4220,9 @@
     }
    },
    "name": "Nvidia",
-   "score": 6.7,
+   "score": 6.87,
    "sector": "Information Technology",
    "ticker": "NVDA.US"
-  },
-  {
-   "horizons": {
-    "120": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.7635,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 43,
-     "p_outperf": 0.442,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    },
-    "20": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": -0.2209,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 184,
-     "p_outperf": 0.416,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    },
-    "252": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "faible",
-     "estimate": -1.6306,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 21,
-     "p_outperf": 0.455,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    },
-    "60": {
-     "band": "6 - 7,5",
-     "ci95": null,
-     "confidence": "moyenne",
-     "estimate": 0.9177,
-     "kind": "sector",
-     "legacy_included": false,
-     "n_indep": 81,
-     "p_outperf": 0.479,
-     "reco": "NOTE SOLIDE",
-     "scope": "secteur Materials"
-    }
-   },
-   "name": "air liquide",
-   "score": 6.26,
-   "sector": "Materials",
-   "ticker": "AI.PA"
   },
   {
    "horizons": {
@@ -4298,7 +4242,7 @@
      "band": "6 - 7,5",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.1218,
+     "estimate": 0.1202,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 159,
@@ -4339,58 +4283,114 @@
   {
    "horizons": {
     "120": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.7635,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 43,
+     "p_outperf": 0.442,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "20": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": -0.2223,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 184,
+     "p_outperf": 0.416,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "252": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "faible",
+     "estimate": -1.6306,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 21,
+     "p_outperf": 0.455,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    },
+    "60": {
+     "band": "6 - 7,5",
+     "ci95": null,
+     "confidence": "moyenne",
+     "estimate": 0.9177,
+     "kind": "sector",
+     "legacy_included": false,
+     "n_indep": 81,
+     "p_outperf": 0.479,
+     "reco": "NOTE SOLIDE",
+     "scope": "secteur Materials"
+    }
+   },
+   "name": "air liquide",
+   "score": 6.08,
+   "sector": "Materials",
+   "ticker": "AI.PA"
+  },
+  {
+   "horizons": {
+    "120": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.8866,
+     "estimate": -0.5498,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 45,
-     "p_outperf": 0.411,
+     "n_indep": 38,
+     "p_outperf": 0.43,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     },
     "20": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.436,
+     "estimate": 0.0239,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 170,
-     "p_outperf": 0.522,
+     "n_indep": 159,
+     "p_outperf": 0.455,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     },
     "252": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "faible",
-     "estimate": -3.1056,
+     "estimate": 2.6402,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 19,
-     "p_outperf": 0.367,
+     "n_indep": 17,
+     "p_outperf": 0.579,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     },
     "60": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 1.0712,
+     "estimate": -0.1393,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 77,
-     "p_outperf": 0.515,
+     "n_indep": 71,
+     "p_outperf": 0.479,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Communication Services"
+     "scope": "secteur Consumer Discretionary"
     }
    },
-   "name": "Alphabet",
-   "score": 5.74,
-   "sector": "Communication Services",
-   "ticker": "GOOGL.US"
+   "name": "Amazon",
+   "score": 5.85,
+   "sector": "Consumer Discretionary",
+   "ticker": "AMZN.US"
   },
   {
    "horizons": {
@@ -4410,7 +4410,7 @@
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.1769,
+     "estimate": 0.1741,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 176,
@@ -4454,55 +4454,55 @@
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.5498,
+     "estimate": -0.8866,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 38,
-     "p_outperf": 0.43,
+     "n_indep": 45,
+     "p_outperf": 0.411,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     },
     "20": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.027,
+     "estimate": 0.4331,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 159,
-     "p_outperf": 0.455,
+     "n_indep": 170,
+     "p_outperf": 0.522,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     },
     "252": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "faible",
-     "estimate": 2.6402,
+     "estimate": -3.1056,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 17,
-     "p_outperf": 0.579,
+     "n_indep": 19,
+     "p_outperf": 0.367,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     },
     "60": {
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": -0.1393,
+     "estimate": 1.0712,
      "kind": "sector",
      "legacy_included": false,
-     "n_indep": 71,
-     "p_outperf": 0.479,
+     "n_indep": 77,
+     "p_outperf": 0.515,
      "reco": "NOTE MOYENNE",
-     "scope": "secteur Consumer Discretionary"
+     "scope": "secteur Communication Services"
     }
    },
-   "name": "Amazon",
-   "score": 5.73,
-   "sector": "Consumer Discretionary",
-   "ticker": "AMZN.US"
+   "name": "Alphabet",
+   "score": 5.62,
+   "sector": "Communication Services",
+   "ticker": "GOOGL.US"
   },
   {
    "horizons": {
@@ -4522,7 +4522,7 @@
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "moyenne",
-     "estimate": 0.1769,
+     "estimate": 0.1741,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 176,
@@ -4556,7 +4556,7 @@
     }
    },
    "name": "Bloom Energy",
-   "score": 5.4,
+   "score": 5.3,
    "sector": "Industrials",
    "ticker": "BE.US"
   },
@@ -4578,7 +4578,7 @@
      "band": "4,5 - 6",
      "ci95": null,
      "confidence": "elevee",
-     "estimate": 0.5031,
+     "estimate": 0.501,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 240,
@@ -4733,7 +4733,7 @@
     }
    },
    "name": "Ouster",
-   "score": 4.26,
+   "score": 4.18,
    "sector": "Information Technology",
    "ticker": "OUST.US"
   },
@@ -4757,11 +4757,11 @@
     "20": {
      "band": "< 3",
      "ci95": [
-      -6.8557,
-      1.5498
+      -7.8556,
+      0.55
      ],
      "confidence": "moyenne",
-     "estimate": -1.8984,
+     "estimate": -2.6098,
      "kind": "sector",
      "legacy_included": false,
      "n_indep": 37,
@@ -4801,7 +4801,7 @@
     }
    },
    "name": "Fluence Energy Inc",
-   "score": 2.77,
+   "score": 2.72,
    "sector": "Utilities",
    "ticker": "FLNC.US"
   }
@@ -4810,10 +4810,10 @@
   "120": {
    "etapes": [
     {
-     "avancement": 0.217,
+     "avancement": 0.225,
      "cle": "premiers",
      "date_estimee": "2027-03-16",
-     "detail": "26 / 120 séances écoulées",
+     "detail": "27 / 120 séances écoulées",
      "fait": false,
      "libelle": "Premiers résultats des vraies notes"
     },
@@ -4860,7 +4860,7 @@
      "avancement": 1.0,
      "cle": "premiers",
      "date_estimee": null,
-     "detail": "68 résultat(s)",
+     "detail": "83 résultat(s)",
      "fait": true,
      "libelle": "Premiers résultats des vraies notes"
     },
@@ -4881,10 +4881,10 @@
      "libelle": "Confiance « moyenne » sur les vraies notes"
     },
     {
-     "avancement": 0.117,
+     "avancement": 0.133,
      "cle": "modele",
      "date_estimee": "2027-01-18",
-     "detail": "7 / 60 jours de notes",
+     "detail": "8 / 60 jours de notes",
      "fait": false,
      "libelle": "Premier test du modèle"
     },
@@ -4904,10 +4904,10 @@
   "252": {
    "etapes": [
     {
-     "avancement": 0.103,
+     "avancement": 0.107,
      "cle": "premiers",
      "date_estimee": "2027-09-16",
-     "detail": "26 / 252 séances écoulées",
+     "detail": "27 / 252 séances écoulées",
      "fait": false,
      "libelle": "Premiers résultats des vraies notes"
     },
@@ -4951,10 +4951,10 @@
   "60": {
    "etapes": [
     {
-     "avancement": 0.433,
+     "avancement": 0.45,
      "cle": "premiers",
      "date_estimee": "2026-12-18",
-     "detail": "26 / 60 séances écoulées",
+     "detail": "27 / 60 séances écoulées",
      "fait": false,
      "libelle": "Premiers résultats des vraies notes"
     },

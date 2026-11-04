@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 03/11/2026 04:02 (Paris)
+# Rapport de Portefeuille v7.5 -- 04/11/2026 02:37 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.24/10
-**EUR/USD :** 1 EUR = 1.1188 USD
+**Tendance : Neutre** | Score macro : 5.01/10
+**EUR/USD :** 1 EUR = 1.1252 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | v -0.51% | 7 541.40 |
-| CAC 40 | ^ +0.98% | 8 047.69 |
+| S&P 500 | ^ +0.36% | 7 568.92 |
+| CAC 40 | v -0.34% | 8 020.31 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 4.91% | -- |
-| OAT 10 ans (FR) | -- | 4.90% | -- |
-| Ecart OAT - UST | -- | -1 pb | -- |
+| UST 10 ans (US) | -- | 4.95% | -- |
+| OAT 10 ans (FR) | -- | 4.94% | -- |
+| Ecart OAT - UST | -- | -2 pb | -- |
 
 **Manchettes macro :**
 
@@ -38,23 +38,23 @@ Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule a
 
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| TOTALENERGIES | Fortuneo | Aucun | Aucun stop défini | -- | 83.61 | -- | Aucun |
-| VEOLIA ENVIRON | Fortuneo | Aucun | Aucun stop défini | -- | 33.01 | -- | Aucun |
-| Arcelor Mital | Fortuneo | Aucun | Aucun stop défini | -- | 55.50 | -- | Aucun |
-| OVH | Fortuneo | Aucun | Aucun stop défini | -- | 13.10 | -- | Aucun |
+| TOTALENERGIES | Fortuneo | Aucun | Aucun stop défini | -- | 82.71 | -- | Aucun |
+| VEOLIA ENVIRON | Fortuneo | Aucun | Aucun stop défini | -- | 32.95 | -- | Aucun |
+| Arcelor Mital | Fortuneo | Aucun | Aucun stop défini | -- | 54.16 | -- | Aucun |
+| OVH | Fortuneo | Aucun | Aucun stop défini | -- | 13.45 | -- | Aucun |
 
 ### Dimensionnement des positions
 
-Capital de référence : **29 630.45 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **296.30 EUR**. Plafond de poids par ligne : 15 %.
+Capital de référence : **29 592.55 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **1 %**, soit **295.93 EUR**. Plafond de poids par ligne : 15 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (2 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| TOTALENERGIES | 23.3 % (Modérée, sur 1 an) | 1.08 % | 15.2 % | -- | 2 541.20 EUR (dimensionné par la volatilité) | 6 688.80 EUR | 4 147.60 EUR |
-| VEOLIA ENVIRON | 19.2 % (Modérée, sur 1 an) | 0.57 % | 12.5 % | -- | 3 080.09 EUR (dimensionné par la volatilité) | 5 446.65 EUR | 2 366.56 EUR |
-| Arcelor Mital | 42.3 % (Élevée, sur 1 an) | 1.58 % | 27.5 % | -- | 1 400.30 EUR (dimensionné par la volatilité) | 8 325.00 EUR | 6 924.70 EUR |
-| OVH | 68.7 % (Extrême, sur 1 an) | 5.13 % | 40.0 % | -- | 862.98 EUR (dimensionné par la volatilité) | 9 170.00 EUR | 8 307.02 EUR |
+| TOTALENERGIES | 23.4 % (Modérée, sur 1 an) | 1.13 % | 15.2 % | -- | 2 534.69 EUR (dimensionné par la volatilité) | 6 616.80 EUR | 4 082.11 EUR |
+| VEOLIA ENVIRON | 19.2 % (Modérée, sur 1 an) | 0.51 % | 12.5 % | -- | 3 076.15 EUR (dimensionné par la volatilité) | 5 436.75 EUR | 2 360.60 EUR |
+| Arcelor Mital | 42.4 % (Élevée, sur 1 an) | 1.73 % | 27.5 % | -- | 1 397.52 EUR (dimensionné par la volatilité) | 8 124.00 EUR | 6 726.48 EUR |
+| OVH | 68.6 % (Extrême, sur 1 an) | 5.28 % | 40.0 % | -- | 862.25 EUR (dimensionné par la volatilité) | 9 415.00 EUR | 8 552.75 EUR |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -65,7 +65,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ### Exposition corrélée
 
-**Corrélation moyenne du portefeuille : +19.5 %** (Faible) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -34.3 % à +58.2 %.
+**Corrélation moyenne du portefeuille : +20.0 %** (Modérée) -- calculée sur 6 paire(s) de lignes (4 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -33.9 % à +58.4 %.
 
 *Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment les unes des autres -- une diversification qui se voit dans les mouvements réels, pas seulement dans les étiquettes de classe d'actif ou de secteur. Un chiffre élevé et négatif est aussi une forme de concentration, sur le pari inverse.*
 
@@ -80,7 +80,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 29 630.45 EUR | 100.0% |
+| Actions | 29 592.55 EUR | 100.0% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -93,7 +93,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 **Apprentissage mutualise** : calibre sur 235 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 1651** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 717** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 1711** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 739** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 60 seances, cible : surperformance sectorielle
 
@@ -127,7 +127,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Horizon (seances) | N indep. | IC de rang | Notes >= 7,5 | Notes < 4,5 | Cible |
 |-------------------|----------|------------|--------------|-------------|-------|
-| 20 | 4677 | -0.01 | +0.1% | -1.2% | surperformance sectorielle |
+| 20 | 4677 | -0.00 | +0.1% | -1.7% | surperformance sectorielle |
 | 60 | 1472 | -0.01 | +1.9% | +2.0% | surperformance sectorielle |
 | 120 | 736 | +0.04 | +5.8% | +2.0% | surperformance sectorielle |
 | 252 | 245 | +0.00 | +9.7% | +5.4% | surperformance sectorielle |
@@ -136,10 +136,10 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| TOTALENERGIES | 8.78/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
-| VEOLIA ENVIRON | 5.99/10 | +0.2% | -- | 49% | moyenne | 79 | secteur Industrials |
-| Arcelor Mital | 5.28/10 | +1.7% | -- | 54% | moyenne | 108 | secteur Materials |
-| OVH | 4.53/10 | -0.5% | -- | 42% | moyenne | 78 | secteur Information Technology |
+| TOTALENERGIES | 8.65/10 | +1.6% | [-0.2 ; +3.9] | 50% | elevee | 110 | global |
+| VEOLIA ENVIRON | 6.19/10 | +0.1% | -- | 51% | moyenne | 72 | secteur Industrials |
+| Arcelor Mital | 4.98/10 | +1.7% | -- | 54% | moyenne | 108 | secteur Materials |
+| OVH | 4.81/10 | -0.5% | -- | 42% | moyenne | 78 | secteur Information Technology |
 
 **Modele : non active** -- historique insuffisant : 0/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
@@ -152,11 +152,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 83.61 EUR | v -2.13% | 6688.80 EUR | + +2496.00 EUR (+59.5%) | + +2455.87 EUR (+58.6%) | **8.78/10** (85%) | NOTE ÉLEVÉE |
+| 82.71 EUR | v -1.08% | 6616.80 EUR | + +2424.00 EUR (+57.8%) | + +2384.30 EUR (+56.9%) | **8.65/10** (85%) | NOTE ÉLEVÉE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> TotalEnergies Publishes its Annual Report on Scenarios for the Evolution of the Global Energy System | Top Integrated Oil Stock According To TD Cowen | Global Waste-to-Hydrogen Market to Reach US$11.4 Billion by 2036: Shares, Trends, ROI and Competition Analysis (2026-203…
+> If You Ride the TotalEnergies Stock Merry-Go-Round, Make Sure You Have an Exit Plan | Director/PDMR Shareholding | Energy Transfer Q3 Earnings Miss Estimates Despite Record Gas Volumes
 
 **Detail de la note :**
 
@@ -165,17 +165,17 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 9.0/10 | 28% |
 | Sante financiere | 7.7/10 | 22% |
 | Croissance | 10.0/10 | 19% |
-| Momentum | 8.8/10 | 25% |
+| Momentum | 8.3/10 | 25% |
 | Risque | 7.9/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 9.7 | PEG 0.7 | EV/EBITDA 4.4 | P/B 1.6 | Marge nette 10.5% | ROE 17.8% | Croiss. CA 41.1% | Beta 0.0 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 9.6 | PEG 0.7 | EV/EBITDA 4.4 | P/B 1.5 | Marge nette 10.5% | ROE 17.8% | Croiss. CA 41.1% | Beta 0.0 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M +12.3% | 3M +13.9% | 6M +13.8% -- HAUSSIER *(source : EODHD)*
+**Perf. historique :** 1M +11.1% | 3M +13.4% | 6M +11.8% -- HAUSSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.6% de surperformance sectorielle a 60 seances, IC 95 % [-0.2 ; +3.9], P(surperf.) 50% -- confiance elevee, 110 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 8.8/10 (confiance 85%). Points forts : croissance 10.0, valorisation 9.0. Momentum HAUSSIER. Position : +2455.87 EUR (+58.6%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 8.7/10 (confiance 85%). Points forts : croissance 10.0, valorisation 9.0. Momentum HAUSSIER. Position : +2384.30 EUR (+56.9%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -183,7 +183,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 33.01 EUR | ^ +0.00% | 5446.65 EUR | + +414.15 EUR (+8.2%) | + +381.47 EUR (+7.6%) | **5.99/10** (85%) | NOTE MOYENNE |
+| 32.95 EUR | v -0.18% | 5436.75 EUR | + +404.25 EUR (+8.0%) | + +371.63 EUR (+7.4%) | **6.19/10** (85%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -196,17 +196,17 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 8.3/10 | 28% |
 | Sante financiere | 5.2/10 | 22% |
 | Croissance | 5.1/10 | 19% |
-| Momentum | 4.3/10 | 25% |
+| Momentum | 5.1/10 | 25% |
 | Risque | 7.9/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
 **Fondamentaux :** PER 19.2 | PEG 1.0 | EV/EBITDA 8.8 | P/B 3.4 | Marge nette 2.8% | ROE 13.4% | Croiss. CA 0.7% | Beta 1.0 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M +7.4% | 3M -5.6% | 6M -4.1% -- NEUTRE *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +0.2% de surperformance sectorielle a 60 seances, P(surperf.) 49% -- confiance moyenne, 79 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M +7.2% | 3M -6.6% | 6M -4.0% -- NEUTRE *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu +0.1% de surperformance sectorielle a 60 seances, P(surperf.) 51% -- confiance moyenne, 72 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 6.0/10 (confiance 85%). Points forts : valorisation 8.3, profil de risque 7.9. Points faibles : momentum 4.3. Momentum NEUTRE. Position : +381.47 EUR (+7.6%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 6.2/10 (confiance 85%). Points forts : valorisation 8.3, profil de risque 7.9. Momentum NEUTRE. Position : +371.63 EUR (+7.4%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -214,11 +214,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 55.50 EUR | ^ +3.54% | 8325.00 EUR | + +4087.20 EUR (+96.5%) | + +4037.25 EUR (+95.3%) | **5.28/10** (85%) | NOTE MOYENNE |
+| 54.16 EUR | v -2.41% | 8124.00 EUR | + +3886.20 EUR (+91.7%) | + +3837.46 EUR (+90.5%) | **4.98/10** (85%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Oasis Management Sends Letter to Vail Resorts Shareholders in Connection with the Company's 2026 Annual Meeting | ArcelorMittal announces the publication of its third quarter 2026 sell-side analyst consensus figures | Marriott International Earnings Ahead: What Past Reactions Say About The Stock
+> Strategic Shareholder Activism: InvestorCom President & CEO John Grau, Live at NYSE | Wall Street's Insights Into Key Metrics Ahead of ArcelorMittal (MT) Q3 Earnings | ArcelorMittal (ENXTAM:MT) Backs Liberia Iron Ore Buildout With First Concentrator
 
 **Detail de la note :**
 
@@ -227,17 +227,17 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 9.3/10 | 28% |
 | Sante financiere | 4.1/10 | 22% |
 | Croissance | 3.1/10 | 19% |
-| Momentum | 3.4/10 | 25% |
+| Momentum | 2.2/10 | 25% |
 | Risque | 5.3/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 27.3 | PEG 0.4 | EV/EBITDA 9.8 | P/B 0.9 | Marge nette 2.9% | ROE 3.3% | Croiss. CA 5.2% | Beta 1.7 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 26.7 | PEG 0.4 | EV/EBITDA 9.6 | P/B 0.8 | Marge nette 2.9% | ROE 3.3% | Croiss. CA 5.2% | Beta 1.7 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M -3.1% | 3M -13.7% | 6M +4.6% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -5.4% | 3M -16.0% | 6M +4.5% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +1.7% de surperformance sectorielle a 60 seances, P(surperf.) 54% -- confiance moyenne, 108 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 5.3/10 (confiance 85%). Points forts : valorisation 9.3. Points faibles : momentum 3.4, croissance 3.1. Momentum BAISSIER. Position : +4037.25 EUR (+95.3%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 5.0/10 (confiance 85%). Points forts : valorisation 9.3. Points faibles : croissance 3.1, momentum 2.2. Momentum BAISSIER. Position : +3837.46 EUR (+90.5%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -245,7 +245,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 13.10 EUR | v -1.13% | 9170.00 EUR | + +3476.20 EUR (+61.0%) | + +3421.18 EUR (+60.1%) | **4.53/10** (85%) | NOTE MOYENNE |
+| 13.45 EUR | ^ +2.67% | 9415.00 EUR | + +3721.20 EUR (+65.4%) | + +3664.71 EUR (+64.4%) | **4.81/10** (85%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -258,17 +258,17 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 | Valorisation | 5.2/10 | 28% |
 | Sante financiere | 5.7/10 | 22% |
 | Croissance | 6.0/10 | 19% |
-| Momentum | 1.6/10 | 25% |
+| Momentum | 2.7/10 | 25% |
 | Risque | 4.8/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 218.3 | EV/EBITDA 9.7 | P/B 72.8 | Marge nette 0.8% | ROE 18.3% | Croiss. CA 7.5% | Beta 1.1 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 224.2 | EV/EBITDA 9.9 | P/B 29.9 | Marge nette 0.8% | ROE 18.3% | Croiss. CA 7.5% | Beta 1.1 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M -19.7% | 3M -18.8% | 6M +9.5% -- BAISSIER *(source : EODHD)*
+**Perf. historique :** 1M -17.5% | 3M -14.4% | 6M +12.6% -- BAISSIER *(source : EODHD)*
 **Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu -0.5% de surperformance sectorielle a 60 seances, P(surperf.) 42% -- confiance moyenne, 78 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 4.5/10 (confiance 85%). Points faibles : momentum 1.6. Momentum BAISSIER. Position : +3421.18 EUR (+60.1%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 4.8/10 (confiance 85%). Points faibles : momentum 2.7. Momentum BAISSIER. Position : +3664.71 EUR (+64.4%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -276,11 +276,11 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Niveau |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| TOTALENERGIES | 83.61 | 6688.80 | +2496.00 (+59.5%) | +2455.87 (+58.6%) | 8.78/10 | 85% | NOTE ÉLEVÉE |
-| VEOLIA ENVIRON | 33.01 | 5446.65 | +414.15 (+8.2%) | +381.47 (+7.6%) | 5.99/10 | 85% | NOTE MOYENNE |
-| Arcelor Mital | 55.50 | 8325.00 | +4087.20 (+96.5%) | +4037.25 (+95.3%) | 5.28/10 | 85% | NOTE MOYENNE |
-| OVH | 13.10 | 9170.00 | +3476.20 (+61.0%) | +3421.18 (+60.1%) | 4.53/10 | 85% | NOTE MOYENNE |
-| **TOTAL** | — | **29630.45** | **+10473.55 (+54.7%)** | **+10295.77 (+53.7%)** | — | — | — |
+| TOTALENERGIES | 82.71 | 6616.80 | +2424.00 (+57.8%) | +2384.30 (+56.9%) | 8.65/10 | 85% | NOTE ÉLEVÉE |
+| VEOLIA ENVIRON | 32.95 | 5436.75 | +404.25 (+8.0%) | +371.63 (+7.4%) | 6.19/10 | 85% | NOTE SOLIDE |
+| Arcelor Mital | 54.16 | 8124.00 | +3886.20 (+91.7%) | +3837.46 (+90.5%) | 4.98/10 | 85% | NOTE MOYENNE |
+| OVH | 13.45 | 9415.00 | +3721.20 (+65.4%) | +3664.71 (+64.4%) | 4.81/10 | 85% | NOTE MOYENNE |
+| **TOTAL** | — | **29592.55** | **+10435.65 (+54.5%)** | **+10258.10 (+53.5%)** | — | — | — |
 
 ---
 
@@ -290,7 +290,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 |--------|---------|-----------|-----------|-----------|
 | COSCO shipping ports | port | N/D | N/D | Aucune actualite disponible via RSS. |
 | COSCO Shipping holding | Transport | N/D | N/D | Aucune actualite disponible via RSS. |
-| Maerks | Transport | 3111.00 EUR | v -0.10% | Transactions in connection with share buy-back program / OpenGate Capital Comple… |
+| Maerks | Transport | 3076.00 EUR | v -1.13% | Transactions in connection with share buy-back program / OpenGate Capital Comple… |
 | hyundai heavy industries | Naval | N/D | N/D | Aucune actualite disponible via RSS. |
 
 ---
@@ -307,7 +307,7 @@ Aucun regroupement de lignes fortement corrélées (seuil 0.70) détecté sur l'
 - **TTE.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 - **VIE.PA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '81/600', 'finnhub': '7/3000'}
+**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '2/780', 'eodhd': '80/600', 'finnhub': '7/3000'}
 
 **Profil :** antoine | **Courtier :** Autre / personnalisé
 
