@@ -1,24 +1,24 @@
-# Rapport de Portefeuille v7.5 -- 04/11/2026 02:37 (Paris)
+# Rapport de Portefeuille v7.5 -- 05/11/2026 02:45 (Paris)
 
 ---
 
 ## Contexte Economique
 
-**Tendance : Neutre** | Score macro : 5.01/10
-**EUR/USD :** 1 EUR = 1.1252 USD
+**Tendance : Haussiere** | Score macro : 6.77/10
+**EUR/USD :** 1 EUR = 1.1257 USD
 
 | Indice | Variation | Cours |
 |--------|-----------|-------|
-| S&P 500 | ^ +0.36% | 7 568.92 |
-| CAC 40 | v -0.34% | 8 020.31 |
+| S&P 500 | ^ +1.58% | 7 688.62 |
+| CAC 40 | ^ +1.96% | 8 177.89 |
 
 **Taux souverains 10 ans :**
 
 | Taux | Variation | Niveau | Sur 1 mois |
 |------|-----------|--------|------------|
-| UST 10 ans (US) | -- | 4.95% | -- |
-| OAT 10 ans (FR) | -- | 4.94% | -- |
-| Ecart OAT - UST | -- | -2 pb | -- |
+| UST 10 ans (US) | -- | 4.89% | -- |
+| OAT 10 ans (FR) | -- | 4.82% | -- |
+| Ecart OAT - UST | -- | -7 pb | -- |
 
 **Manchettes macro :**
 
@@ -32,51 +32,55 @@
 
 ## Stops et Alertes
 
-**Stops actifs : 15** | **Franchis : 10** | **Sans stop : 0** | Nouvelles alertes du jour : 0
+**Stops actifs : 15** | **Franchis : 11** | **Sans stop : 0** | Nouvelles alertes du jour : 1
 
 Règle de franchissement : la CLÔTURE du jour passe sous le niveau. Une seule alerte par franchissement ; le déclencheur se ré-arme quand le cours repasse au-dessus. Les stops suiveurs et VQ montent avec le cours et ne redescendent jamais.
 
+**ALERTES DU JOUR :**
+
+- **Bloom Energy** a clôturé à 177.94 EUR, sous son stop VQ (volatilité) de 184.80 EUR.
+
 | Valeur | Compte | Type | Configuration | Niveau | Cloture | Distance | Statut |
 |--------|--------|------|---------------|--------|---------|----------|--------|
-| Eli Lilly | -- | Absolu | Fixé à 1095 | 1 095.00 | 1 252.55 | +12.6% | OK |
-| Meta | -- | Absolu | Fixé à 705 | 705.00 | 551.85 | -27.8% | FRANCHI |
-| SAP | -- | Absolu | Fixé à 179 | 179.00 | 206.65 | +13.4% | OK |
-| Newmont Corporation | -- | Suiveur | 5 % sous le plus haut 120.61 | 114.58 | 95.49 | -20.0% | FRANCHI |
-| Nvidia | -- | Absolu | Fixé à 217 | 217.00 | 183.58 | -18.2% | FRANCHI |
-| First Solar | -- | Suiveur | 5 % sous le plus haut 284.63 | 270.40 | 165.19 | -63.7% | FRANCHI |
-| air liquide | -- | Pourcentage | 3 % sous le prix de revient | 165.06 | 182.56 | +9.6% | OK |
-| Amazon | -- | Absolu | Fixé à 242 | 242.00 | 222.84 | -8.6% | FRANCHI |
-| Rheinmetall | -- | Absolu | Fixé à 900 | 900.00 | 1 004.80 | +10.4% | OK |
-| Alphabet | -- | Absolu | Fixé à 333 | 333.00 | 248.76 | -33.9% | FRANCHI |
-| Bloom Energy | -- | VQ (volatilité) | VQ 40.0 % (auto) sous le plus haut 308.00 | 184.80 | 190.18 | +2.8% | OK |
-| Vale | -- | Suiveur | 5 % sous le plus haut 15.50 | 14.72 | 9.75 | -50.9% | FRANCHI |
-| Exosens | -- | Suiveur | 5 % sous le plus haut 69.20 | 65.74 | 55.45 | -18.6% | FRANCHI |
-| Ouster | -- | Suiveur | 5 % sous le plus haut 55.91 | 53.12 | 25.76 | -106.2% | FRANCHI |
-| Fluence Energy Inc | -- | Suiveur | 5 % sous le plus haut 24.96 | 23.71 | 4.88 | -385.6% | FRANCHI |
+| Newmont Corporation | -- | Suiveur | 5 % sous le plus haut 120.61 | 114.58 | 104.96 | -9.2% | FRANCHI |
+| Eli Lilly | -- | Absolu | Fixé à 1095 | 1 095.00 | 1 260.04 | +13.1% | OK |
+| Meta | -- | Absolu | Fixé à 705 | 705.00 | 559.55 | -26.0% | FRANCHI |
+| SAP | -- | Absolu | Fixé à 179 | 179.00 | 214.30 | +16.5% | OK |
+| Amazon | -- | Absolu | Fixé à 242 | 242.00 | 236.42 | -2.4% | FRANCHI |
+| Nvidia | -- | Absolu | Fixé à 217 | 217.00 | 177.91 | -22.0% | FRANCHI |
+| First Solar | -- | Suiveur | 5 % sous le plus haut 284.63 | 270.40 | 172.79 | -56.5% | FRANCHI |
+| air liquide | -- | Pourcentage | 3 % sous le prix de revient | 165.06 | 187.36 | +11.9% | OK |
+| Rheinmetall | -- | Absolu | Fixé à 900 | 900.00 | 1 003.40 | +10.3% | OK |
+| Alphabet | -- | Absolu | Fixé à 333 | 333.00 | 256.72 | -29.7% | FRANCHI |
+| Bloom Energy | -- | VQ (volatilité) | VQ 40.0 % (auto) sous le plus haut 308.00 | 184.80 | 177.94 | -3.9% | FRANCHI |
+| Vale | -- | Suiveur | 5 % sous le plus haut 15.50 | 14.72 | 10.15 | -45.1% | FRANCHI |
+| Ouster | -- | Suiveur | 5 % sous le plus haut 55.91 | 53.12 | 29.86 | -77.9% | FRANCHI |
+| Exosens | -- | Suiveur | 5 % sous le plus haut 69.20 | 65.74 | 54.00 | -21.7% | FRANCHI |
+| Fluence Energy Inc | -- | Suiveur | 5 % sous le plus haut 24.96 | 23.71 | 5.37 | -341.2% | FRANCHI |
 
 ### Dimensionnement des positions
 
-Capital de référence : **8 001.58 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **5 %**, soit **400.08 EUR**. Plafond de poids par ligne : 18 %.
+Capital de référence : **8 096.34 EUR** (valeurs cotées + liquidités, hors actifs illiquides). Risque par idée : **5 %**, soit **404.82 EUR**. Plafond de poids par ligne : 18 %.
 
 Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volatilités différentes reçoivent ainsi le même risque, pas le même montant. Sans stop exploitable : montant = capital x budget de volatilité (3 %) / volatilité de la ligne.
 
 | Valeur | Volatilite an. | Amplitude/jour | VQ | Distance stop | Taille suggeree | Detenu | Ecart |
 |--------|----------------|----------------|-----|---------------|-----------------|--------|-------|
-| Eli Lilly | 35.2 % (Élevée, sur 1 an) | 1.91 % | 22.9 % | 12.6 % | 1 440.28 EUR (plafonné à 18 % du capital) | 1 252.55 EUR | -187.73 EUR |
-| Meta | 41.1 % (Élevée, sur 1 an) | 1.88 % | 26.7 % | -27.8 % | -- | 551.85 EUR | -- |
-| SAP | 40.9 % (Élevée, sur 1 an) | 1.31 % | 26.6 % | 13.4 % | 1 440.28 EUR (plafonné à 18 % du capital) | 619.95 EUR | -820.33 EUR |
-| Newmont Corporation | 47.7 % (Élevée, sur 1 an) | 2.15 % | 31.0 % | -20.0 % | -- | 286.48 EUR | -- |
-| Nvidia | 37.1 % (Élevée, sur 1 an) | 1.82 % | 24.1 % | -18.2 % | -- | 183.58 EUR | -- |
-| First Solar | 52.2 % (Élevée, sur 1 an) | 1.69 % | 33.9 % | -63.7 % | -- | 330.37 EUR | -- |
-| air liquide | 17.8 % (Faible, sur 1 an) | 0.69 % | 11.6 % | 9.6 % | 1 440.28 EUR (plafonné à 18 % du capital) | 1 825.60 EUR | 385.32 EUR |
-| Amazon | 33.3 % (Élevée, sur 1 an) | 1.81 % | 21.7 % | -8.6 % | -- | 222.84 EUR | -- |
-| Rheinmetall | 47.4 % (Élevée, sur 1 an) | 2.17 % | 30.8 % | 10.4 % | 1 440.28 EUR (plafonné à 18 % du capital) | 1 004.80 EUR | -435.48 EUR |
-| Alphabet | 33.6 % (Élevée, sur 1 an) | 2.10 % | 21.8 % | -33.9 % | -- | 248.76 EUR | -- |
-| Bloom Energy | 110.3 % (Extrême, sur 1 an) | 5.65 % | 40.0 % | 2.8 % | 1 440.28 EUR (plafonné à 18 % du capital) | 950.88 EUR | -489.40 EUR |
-| Vale | 33.5 % (Élevée, sur 1 an) | 1.90 % | 21.8 % | -50.9 % | -- | 146.31 EUR | -- |
-| Exosens | 45.7 % (Élevée, sur 1 an) | 1.91 % | 29.7 % | -18.6 % | -- | 277.25 EUR | -- |
-| Ouster | 102.0 % (Extrême, sur 1 an) | 4.56 % | 40.0 % | -106.2 % | -- | 51.53 EUR | -- |
-| Fluence Energy Inc | 115.5 % (Extrême, sur 1 an) | 4.27 % | 40.0 % | -385.6 % | -- | 48.83 EUR | -- |
+| Newmont Corporation | 48.5 % (Élevée, sur 1 an) | 2.59 % | 31.6 % | -9.2 % | -- | 314.87 EUR | -- |
+| Eli Lilly | 35.1 % (Élevée, sur 1 an) | 1.70 % | 22.8 % | 13.1 % | 1 457.34 EUR (plafonné à 18 % du capital) | 1 260.04 EUR | -197.30 EUR |
+| Meta | 41.1 % (Élevée, sur 1 an) | 1.98 % | 26.7 % | -26.0 % | -- | 559.55 EUR | -- |
+| SAP | 41.0 % (Élevée, sur 1 an) | 1.41 % | 26.7 % | 16.5 % | 1 457.34 EUR (plafonné à 18 % du capital) | 642.90 EUR | -814.44 EUR |
+| Amazon | 33.9 % (Élevée, sur 1 an) | 2.23 % | 22.0 % | -2.4 % | -- | 236.42 EUR | -- |
+| Nvidia | 37.2 % (Élevée, sur 1 an) | 1.92 % | 24.2 % | -22.0 % | -- | 177.91 EUR | -- |
+| First Solar | 52.1 % (Élevée, sur 1 an) | 2.01 % | 33.9 % | -56.5 % | -- | 345.58 EUR | -- |
+| air liquide | 18.0 % (Faible, sur 1 an) | 0.76 % | 11.7 % | 11.9 % | 1 457.34 EUR (plafonné à 18 % du capital) | 1 873.60 EUR | 416.26 EUR |
+| Rheinmetall | 47.4 % (Élevée, sur 1 an) | 1.87 % | 30.8 % | 10.3 % | 1 457.34 EUR (plafonné à 18 % du capital) | 1 003.40 EUR | -453.94 EUR |
+| Alphabet | 33.7 % (Élevée, sur 1 an) | 2.30 % | 21.9 % | -29.7 % | -- | 256.72 EUR | -- |
+| Bloom Energy | 110.1 % (Extrême, sur 1 an) | 6.01 % | 40.0 % | -3.9 % | -- | 889.70 EUR | -- |
+| Vale | 33.6 % (Élevée, sur 1 an) | 2.09 % | 21.9 % | -45.1 % | -- | 152.19 EUR | -- |
+| Ouster | 102.9 % (Extrême, sur 1 an) | 5.56 % | 40.0 % | -77.9 % | -- | 59.71 EUR | -- |
+| Exosens | 45.7 % (Élevée, sur 1 an) | 2.04 % | 29.7 % | -21.7 % | -- | 270.00 EUR | -- |
+| Fluence Energy Inc | 115.6 % (Extrême, sur 1 an) | 4.74 % | 40.0 % | -341.2 % | -- | 53.75 EUR | -- |
 
 *« Amplitude/jour » : de combien la valeur bouge en moyenne d'une cloture a l'autre. C'est la lecture concrete de la volatilite.*
 
@@ -87,7 +91,7 @@ Formule : montant = (capital x risque) / distance au stop. Deux valeurs de volat
 
 ### Exposition corrélée
 
-**Corrélation moyenne du portefeuille : +4.7 %** (Faible) -- calculée sur 105 paire(s) de lignes (15 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -64.8 % à +84.1 %.
+**Corrélation moyenne du portefeuille : +4.9 %** (Faible) -- calculée sur 105 paire(s) de lignes (15 ligne(s) cotée(s) avec un historique suffisant). Étendue observée : de -65.4 % à +84.2 %.
 
 *Plus ce chiffre est proche de 0, plus les lignes bougent indépendamment les unes des autres -- une diversification qui se voit dans les mouvements réels, pas seulement dans les étiquettes de classe d'actif ou de secteur. Un chiffre élevé et négatif est aussi une forme de concentration, sur le pari inverse.*
 
@@ -95,8 +99,9 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Groupe | Poids cumulé | Alerte |
 |--------|--------------|--------|
-| Nvidia, First Solar, Amazon, Alphabet, Bloom Energy, Ouster, Fluence Energy Inc | 25.45 % | Oui |
-| Newmont Corporation, Rheinmetall | 16.14 % | Non |
+| Amazon, Nvidia, First Solar, Alphabet, Bloom Energy, Ouster, Fluence Energy Inc | 24.95 % | Non |
+| Newmont Corporation, Rheinmetall | 16.28 % | Non |
+| Vale, Exosens | 5.21 % | Non |
 
 *Seuil de corrélation : 0.70. Seuil d'alerte sur le poids cumulé : 25 %.*
 
@@ -109,14 +114,14 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| Actions | 8 001.58 EUR | 100.0% |
+| Actions | 8 096.34 EUR | 100.0% |
 
 **Par devise**
 
 | Poste | Montant | Part |
 |-------|---------|------|
-| USD | 4 273.98 EUR | 53.4% |
-| EUR | 3 727.60 EUR | 46.6% |
+| USD | 4 306.44 EUR | 53.2% |
+| EUR | 3 789.90 EUR | 46.8% |
 
 *Un actif peut porter plusieurs étiquettes : la somme des parts par étiquette peut dépasser 100 %.*
 
@@ -129,48 +134,46 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 **Apprentissage mutualise** : calibre sur 235 titre(s) : ceux des profils participants et un univers de reference d'environ 220 actions (US et zone euro, 11 secteurs) note chaque semaine. Seuls le titre, la date, la note et le resultat sont partages -- jamais l'identite, les quantites ni les prix de revient.
 
-**Snapshots : 1726** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 741** | **Invalides : 0** | Version de la note : `v14-5fd53e`
+**Snapshots : 1794** (dont 381 herites de history.csv) | **Reconstitues (amorcage) : 4662** | **Clotures : 807** | **Invalides : 0** | Version de la note : `v14-5fd53e`
 
 ### Notes par tranche -- horizon 20 seances, cible : surperformance sectorielle
 
-*Dont 4662 observation(s) independante(s) RECONSTITUEE(S) sur 4677 : notes recalculees sur le passe (actions US, comptes dates par publication, sans l'avis des analystes, biais de selection retire). Elles s'effacent d'elles-memes quand les vraies notes atteignent 60 observations independantes.*
-
 | Tranche | N | N indep. | Surperf. moyenne | Mediane | % positifs | IC 95 % | Esperance calibree | Confiance |
 |---------|---|----------|------------------|---------|------------|---------|--------------------|-----------|
-| < 3 (NOTE TRÈS FAIBLE) | 45 | 37 | -3.7% | -3.8% | 36% | [-7.9 ; +0.6] | -2.6% | moyenne |
-| 3 - 4,5 (NOTE FAIBLE) | 363 | 360 | +0.2% | -0.2% | 49% | [-0.8 ; +1.1] | +0.2% | elevee |
-| 4,5 - 6 (NOTE MOYENNE) | 1949 | 1932 | -0.0% | -0.1% | 49% | [-0.3 ; +0.3] | -0.0% | elevee |
-| 6 - 7,5 (NOTE SOLIDE) | 2123 | 2114 | -0.2% | -0.3% | 48% | [-0.5 ; +0.1] | -0.2% | elevee |
-| >= 7,5 (NOTE ÉLEVÉE) | 247 | 235 | +0.0% | -0.1% | 49% | [-0.9 ; +1.0] | +0.0% | elevee |
+| < 3 (NOTE TRÈS FAIBLE) | 12 | 2 | -20.4% | -17.4% | 0% | -- | -- | insuffisante |
+| 3 - 4,5 (NOTE FAIBLE) | 9 | 5 | -5.6% | +2.0% | 56% | -- | -- | insuffisante |
+| 4,5 - 6 (NOTE MOYENNE) | 48 | 26 | -5.4% | -5.7% | 35% | [-10.9 ; +0.1] | -4.1% | faible |
+| 6 - 7,5 (NOTE SOLIDE) | 28 | 17 | -2.5% | -3.2% | 43% | [-11.0 ; +6.0] | -2.2% | faible |
+| >= 7,5 (NOTE ÉLEVÉE) | 20 | 6 | -2.7% | -4.5% | 40% | -- | -- | insuffisante |
 
-**Lien note -> surperformance :** IC de rang -0.01 (echantillon independant : -0.01) | pente -0.06 pt par point de note | 134 titre(s) sur 46 seance(s).
+**Lien note -> surperformance :** IC de rang +0.28 (echantillon independant : +0.00) | pente +1.62 pt par point de note | 55 titre(s) sur 9 seance(s).
 
 | Secteur | N | N indep. | Surperf. moyenne | % positifs | IC de rang |
 |---------|---|----------|------------------|------------|------------|
-| Communication Services | 538 | 533 | -0.3% | 46% | -0.09 |
-| Consumer Discretionary | 384 | 381 | -0.2% | 46% | -0.07 |
-| Consumer Staples | 380 | 380 | +0.1% | 50% | +0.06 |
-| Energy | 352 | 345 | -0.1% | 45% | +0.01 |
-| Financials | 374 | 367 | +0.6% | 55% | +0.01 |
-| Health Care | 388 | 381 | -0.1% | 49% | +0.02 |
-| Industrials | 384 | 382 | -0.0% | 50% | +0.01 |
-| Information Technology | 401 | 385 | -0.6% | 46% | +0.05 |
-| Materials | 536 | 534 | +0.0% | 47% | -0.03 |
-| Real Estate | 456 | 456 | -0.1% | 48% | +0.01 |
-| Utilities | 534 | 533 | -0.6% | 48% | -0.03 |
+| Communication Services | 10 | 4 | -0.1% | 30% | -0.59 |
+| Consumer Discretionary | 8 | 5 | +3.8% | 75% | -- |
+| Consumer Staples | 4 | 4 | -6.0% | 50% | -- |
+| Energy | 13 | 5 | +2.4% | 77% | -0.51 |
+| Financials | 13 | 5 | -4.7% | 15% | -0.02 |
+| Health Care | 13 | 5 | -12.7% | 8% | +0.24 |
+| Industrials | 10 | 6 | -10.7% | 20% | -0.60 |
+| Information Technology | 28 | 9 | -6.4% | 39% | +0.78 |
+| Materials | 9 | 5 | -13.1% | 22% | -- |
+| Real Estate | 3 | 3 | +1.4% | 33% | -- |
+| Utilities | 6 | 4 | -14.9% | 33% | -- |
 
 *Ventilation par region, a titre indicatif (n'entre pas dans le calcul de l'esperance calibree) :*
 
 | Region | N | N indep. | Surperf. moyenne | % positifs |
 |--------|---|----------|------------------|------------|
-| EUROPE | 18 | 3 | -10.6% | 0% |
-| US | 4709 | 4674 | -0.1% | 48% |
+| EUROPE | 35 | 17 | -6.1% | 20% |
+| US | 82 | 38 | -5.7% | 43% |
 
 ### Quel horizon colle le mieux a la note ?
 
 | Horizon (seances) | N indep. | IC de rang | Notes >= 7,5 | Notes < 4,5 | Cible |
 |-------------------|----------|------------|--------------|-------------|-------|
-| 20 | 4677 | -0.01 | +0.0% | -1.7% | surperformance sectorielle |
+| 20 | 55 | +0.28 | -2.7% | -13.0% | surperformance sectorielle |
 | 60 | 1472 | -0.01 | +1.9% | +2.0% | surperformance sectorielle |
 | 120 | 736 | +0.04 | +5.8% | +2.0% | surperformance sectorielle |
 | 252 | 245 | +0.00 | +9.7% | +5.4% | surperformance sectorielle |
@@ -179,38 +182,68 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Note | Surperf. attendue | IC 95 % | P(surperf.) | Confiance | Echantillon | Cohorte |
 |--------|------|-------------------|---------|-------------|-----------|-------------|---------|
-| Eli Lilly | 7.6/10 | +1.0% | -- | 62% | faible | 14 | secteur Health Care |
-| Meta | 7.35/10 | -0.6% | -- | 44% | moyenne | 291 | secteur Communication Services |
-| SAP | 7.1/10 | +0.1% | -- | 49% | moyenne | 159 | secteur Information Technology |
-| Newmont Corporation | 7.07/10 | -0.2% | -- | 42% | moyenne | 184 | secteur Materials |
-| Nvidia | 6.87/10 | +0.1% | -- | 49% | moyenne | 159 | secteur Information Technology |
-| First Solar | 6.25/10 | +0.1% | -- | 49% | moyenne | 159 | secteur Information Technology |
-| air liquide | 6.08/10 | -0.2% | -- | 42% | moyenne | 184 | secteur Materials |
-| Amazon | 5.85/10 | +0.0% | -- | 46% | moyenne | 159 | secteur Consumer Discretionary |
-| Rheinmetall | 5.74/10 | +0.2% | -- | 47% | moyenne | 176 | secteur Industrials |
-| Alphabet | 5.62/10 | +0.4% | -- | 52% | moyenne | 170 | secteur Communication Services |
-| Bloom Energy | 5.3/10 | +0.2% | -- | 47% | moyenne | 176 | secteur Industrials |
-| Vale | 4.9/10 | +0.5% | -- | 52% | elevee | 240 | secteur Materials |
-| Exosens | 4.28/10 | +0.5% | -- | 48% | faible | 29 | secteur Industrials |
-| Ouster | 4.18/10 | +0.3% | -- | 44% | moyenne | 35 | secteur Information Technology |
-| Fluence Energy Inc | 2.72/10 | -2.6% | [-7.9 ; +0.6] | 44% | moyenne | 37 | global |
+| Newmont Corporation | 7.73/10 | n/d | -- | -- | insuffisante | 6 | global |
+| Eli Lilly | 7.6/10 | n/d | -- | -- | insuffisante | 6 | global |
+| Meta | 7.37/10 | -2.2% | [-11.0 ; +6.0] | -- | faible | 17 | global |
+| SAP | 6.95/10 | -2.2% | [-11.0 ; +6.0] | -- | faible | 17 | global |
+| Amazon | 6.57/10 | -2.2% | [-11.0 ; +6.0] | -- | faible | 17 | global |
+| Nvidia | 6.56/10 | -2.2% | [-11.0 ; +6.0] | -- | faible | 17 | global |
+| First Solar | 6.34/10 | -2.2% | [-11.0 ; +6.0] | -- | faible | 17 | global |
+| air liquide | 6.33/10 | -2.2% | [-11.0 ; +6.0] | -- | faible | 17 | global |
+| Rheinmetall | 5.77/10 | -4.1% | [-10.9 ; +0.1] | -- | faible | 26 | global |
+| Alphabet | 5.62/10 | -4.1% | [-10.9 ; +0.1] | -- | faible | 26 | global |
+| Bloom Energy | 5.38/10 | -4.1% | [-10.9 ; +0.1] | -- | faible | 26 | global |
+| Vale | 4.9/10 | -4.1% | [-10.9 ; +0.1] | -- | faible | 26 | global |
+| Ouster | 4.16/10 | n/d | -- | -- | insuffisante | 5 | global |
+| Exosens | 4.13/10 | n/d | -- | -- | insuffisante | 5 | global |
+| Fluence Energy Inc | 2.72/10 | n/d | -- | -- | insuffisante | 2 | global |
 
-**Modele : non active** -- historique insuffisant : 65/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
+**Modele : non active** -- historique insuffisant : 117/250 observations closes avec sous-notes. La calibration statistique ci-dessus reste la seule prevision affichee.
 
 
 ---
 
 ## Analyse par Valeur
 
+### Newmont Corporation `NEM.US`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 104.96 EUR | ^ +9.90% | 314.87 EUR | + +6.91 EUR (+2.2%) | + +5.34 EUR (+1.7%) | **7.73/10** (100%) | NOTE ÉLEVÉE |
+
+**Actualite recente :** *(source : RSS Yahoo Finance)*
+
+> Agnico Eagle Soars 10%, Wheaton Precious Up 12% as Democratic Midterm Win Lifts Gold | Can Newmont's Strong Free Cash Flow Momentum Carry Into Q4? | Do Wall Street Analysts Like Newmont Stock?
+
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Valorisation | 6.2/10 | 24% |
+| Sante financiere | 10.0/10 | 19% |
+| Croissance | 8.5/10 | 16% |
+| Momentum | 6.8/10 | 21% |
+| Consensus | 8.0/10 | 15% |
+| Risque | 7.1/10 | 5% |
+
+**Fondamentaux :** PER 13.7 | PEG 2.8 | EV/EBITDA 6.8 | P/B 3.5 | Marge nette 34.7% | ROE 27.3% | Croiss. CA 15.2% | Beta 0.6 *(source : Yahoo Finance)*
+**Consensus analystes :** SB:10 B:17 H:4 S:0 SS:0 *(source : Finnhub)*
+**Perf. historique :** 1M +2.0% | 3M +12.3% | 6M -1.7% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** historique insuffisant a 20 seances (6 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
+
+**Justification :** Note 7.7/10 (confiance 100%). Points forts : sante financiere 10.0, croissance 8.5. Momentum HAUSSIER. Position : +5.34 EUR (+1.7%) apres frais.
+
+---
+
 ### Eli Lilly `LLY.US`
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1252.55 EUR | v -0.11% | 1252.55 EUR | + +211.32 EUR (+20.3%) | + +205.06 EUR (+19.7%) | **7.6/10** (100%) | NOTE ÉLEVÉE |
+| 1260.04 EUR | ^ +0.61% | 1260.04 EUR | + +218.81 EUR (+21.0%) | + +212.51 EUR (+20.4%) | **7.6/10** (100%) | NOTE ÉLEVÉE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Top Analyst Reports for Eli Lilly, Cisco & KLA | Raised Guidance Altering The Investment Case For Eli Lilly Stock? | Forget Nvidia: Eli Lilly Will Become “the Most Valuable Company in the World,” Says Macro Investor
+> Eli Lilly Stocks Rise 2.32% While Revenue Guidance Faces a Quality-of-Growth Test | National Advertising Division Recommends Good Life Discontinue Health Benefit and Personalization Claims for Compounded… | Is Eli Lilly Stock Increasing Your Market Risk?
 
 **Detail de la note :**
 
@@ -223,12 +256,12 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Consensus | 7.8/10 | 15% |
 | Risque | 7.3/10 | 5% |
 
-**Fondamentaux :** PER 45.7 | PEG 1.3 | EV/EBITDA 28.0 | P/B 31.2 | Marge nette 31.9% | ROE 86.0% | Croiss. CA 38.6% | Beta 0.4 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 46.0 | PEG 1.3 | EV/EBITDA 28.1 | P/B 31.4 | Marge nette 31.9% | ROE 86.0% | Croiss. CA 38.6% | Beta 0.4 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:11 B:21 H:4 S:1 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M +23.3% | 3M +20.6% | 6M +49.1% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche >= 7,5 a valu +1.0% de surperformance sectorielle a 20 seances, P(surperf.) 62% -- confiance faible, 14 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M +24.0% | 3M +19.1% | 6M +47.1% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** historique insuffisant a 20 seances (6 observation(s) independante(s) dans la tranche >= 7,5) -- aucune esperance publiee.
 
-**Justification :** Note 7.6/10 (confiance 100%). Points forts : sante financiere 9.6, croissance 9.0. Points faibles : valorisation 4.0. Momentum HAUSSIER. Position : +205.06 EUR (+19.7%) apres frais.
+**Justification :** Note 7.6/10 (confiance 100%). Points forts : sante financiere 9.6, croissance 9.0. Points faibles : valorisation 4.0. Momentum HAUSSIER. Position : +212.51 EUR (+20.4%) apres frais.
 
 ---
 
@@ -236,29 +269,29 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 551.85 EUR | ^ +2.36% | 551.85 EUR | - -128.76 EUR (-18.9%) | - -131.52 EUR (-19.3%) | **7.35/10** (100%) | NOTE SOLIDE |
+| 559.55 EUR | ^ +1.44% | 559.55 EUR | - -121.06 EUR (-17.8%) | - -123.86 EUR (-18.2%) | **7.37/10** (100%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> S&P 500, Nasdaq Recover From AI Rout On US Midterm Election Day — META, AAPL, AMD, SKHY In Focus | A Dem Sweep Could Get the Bond Market’s Attention | Snap Settled a Social Media Addiction Suit. Here’s What Its November 4 Report Has to Prove
+> Dow Jones Futures Rise, But Techs Tumble; Apple, Microsoft, Amazon Flash Buy Signals In Postelection Rally | Is the AI Bubble Popping? | Top 3 Founder Led Stocks To Watch In November 2026
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Valorisation | 6.8/10 | 24% |
+| Valorisation | 6.4/10 | 24% |
 | Sante financiere | 10.0/10 | 19% |
 | Croissance | 9.4/10 | 16% |
-| Momentum | 3.9/10 | 21% |
+| Momentum | 4.5/10 | 21% |
 | Consensus | 7.9/10 | 15% |
 | Risque | 6.2/10 | 5% |
 
-**Fondamentaux :** PER 21.2 | PEG 0.8 | EV/EBITDA 13.9 | P/B 5.8 | Marge nette 31.1% | ROE 32.3% | Croiss. CA 26.1% | Beta 1.3 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 21.5 | PEG 0.8 | EV/EBITDA 14.1 | P/B 5.9 | Marge nette 31.1% | ROE 32.3% | Croiss. CA 26.1% | Beta 1.3 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:20 B:41 H:7 S:1 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -14.7% | 3M +5.6% | 6M +2.0% -- NEUTRE *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -0.6% de surperformance sectorielle a 20 seances, P(surperf.) 44% -- confiance moyenne, 291 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -15.1% | 3M +6.9% | 6M +5.4% -- NEUTRE *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -2.2% de surperformance sectorielle a 20 seances, IC 95 % [-11.0 ; +6.0] -- confiance faible, 17 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.3/10 (confiance 100%). Points forts : sante financiere 10.0, croissance 9.4. Points faibles : momentum 3.9. Momentum NEUTRE. Position : -131.52 EUR (-19.3%) apres frais.
+**Justification :** Note 7.4/10 (confiance 100%). Points forts : sante financiere 10.0, croissance 9.4. Points faibles : momentum 4.5. Momentum NEUTRE. Position : -123.86 EUR (-18.2%) apres frais.
 
 ---
 
@@ -266,60 +299,60 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 206.65 EUR | v -1.83% | 619.95 EUR | + +25.95 EUR (+4.4%) | + +25.95 EUR (+4.4%) | **7.1/10** (85%) | NOTE SOLIDE |
+| 214.30 EUR | ^ +3.70% | 642.90 EUR | + +48.90 EUR (+8.2%) | + +48.90 EUR (+8.2%) | **6.95/10** (85%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> SAP Stocks Decline as Sovereign AI Faces a Margin Test | LicenseFortress Raises Client Satisfaction Score to 88.6% as Client Base and Licensing Complexity Grow | SAP (XTRA:SAP) Gains Ground In European E Invoicing Compliance
+> SAP Stocks Rise 4.1% as Sovereign AI Launch Faces Its First Commercial Test | Reply Included in The SAP Services Landscape, Q3 2026 | Rimini Street Awarded CANUT Third-Party Maintenance Framework Agreement
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Valorisation | 4.9/10 | 28% |
+| Valorisation | 4.5/10 | 28% |
 | Sante financiere | 8.3/10 | 22% |
 | Croissance | 6.9/10 | 19% |
 | Momentum | 8.8/10 | 25% |
-| Risque | 6.6/10 | 6% |
+| Risque | 6.0/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 29.9 | PEG 1.8 | EV/EBITDA 19.4 | P/B 5.2 | Marge nette 20.4% | ROE 18.2% | Croiss. CA 13.2% | Beta 0.7 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 31.0 | PEG 1.8 | EV/EBITDA 20.1 | P/B 5.4 | Marge nette 20.4% | ROE 18.2% | Croiss. CA 13.2% | Beta 0.7 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M +12.4% | 3M +22.1% | 6M +41.3% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu +0.1% de surperformance sectorielle a 20 seances, P(surperf.) 49% -- confiance moyenne, 159 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M +15.8% | 3M +25.3% | 6M +48.3% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -2.2% de surperformance sectorielle a 20 seances, IC 95 % [-11.0 ; +6.0] -- confiance faible, 17 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.1/10 (confiance 85%). Points forts : momentum 8.8, sante financiere 8.3. Momentum HAUSSIER. Position : +25.95 EUR (+4.4%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 7.0/10 (confiance 85%). Points forts : momentum 8.8, sante financiere 8.3. Points faibles : valorisation 4.5. Momentum HAUSSIER. Position : +48.90 EUR (+8.2%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
-### Newmont Corporation `NEM.US`
+### Amazon `AMZN.US`
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 95.49 EUR | v -1.49% | 286.48 EUR | - -21.48 EUR (-7.0%) | - -22.91 EUR (-7.4%) | **7.07/10** (100%) | NOTE SOLIDE |
+| 236.42 EUR | ^ +6.12% | 236.42 EUR | + +5.61 EUR (+2.4%) | + +4.43 EUR (+1.9%) | **6.57/10** (100%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Not Newmont. Not Barrick. This Gold Stock Collects Cash Without Running a Mine. | Gold Has Cooled From Its First-Quarter Record, Yet Miners Still Sold Ounces at Prices More Than 20% Above Last Year | What Changed In Newmont's Story?
+> Dow Jones Futures Rise, But Techs Tumble; Apple, Microsoft, Amazon Flash Buy Signals In Postelection Rally | Amazon workers in the Greater Toronto Area launch fight for better jobs with Unifor | Stock Market Today, Nov. 4: Amazon Jumps 6% From New Perspective on AWS Growth and AI Strategy Following Election Result…
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Valorisation | 6.2/10 | 24% |
-| Sante financiere | 10.0/10 | 19% |
-| Croissance | 8.5/10 | 16% |
-| Momentum | 3.7/10 | 21% |
-| Consensus | 8.0/10 | 15% |
-| Risque | 7.1/10 | 5% |
+| Valorisation | 5.7/10 | 24% |
+| Sante financiere | 8.3/10 | 19% |
+| Croissance | 5.5/10 | 16% |
+| Momentum | 6.0/10 | 21% |
+| Consensus | 8.1/10 | 15% |
+| Risque | 5.3/10 | 5% |
 
-**Fondamentaux :** PER 12.5 | PEG 2.8 | EV/EBITDA 6.2 | P/B 3.1 | Marge nette 34.7% | ROE 27.3% | Croiss. CA 15.2% | Beta 0.6 *(source : Yahoo Finance)*
-**Consensus analystes :** SB:10 B:17 H:4 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -7.0% | 3M +3.3% | 6M -7.4% -- NEUTRE *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -0.2% de surperformance sectorielle a 20 seances, P(surperf.) 42% -- confiance moyenne, 184 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Fondamentaux :** PER 21.5 | PEG 1.2 | EV/EBITDA 16.7 | P/B 4.7 | Marge nette 16.9% | ROE 27.4% | Croiss. CA 12.1% | Beta 1.5 *(source : Yahoo Finance)*
+**Consensus analystes :** SB:19 B:48 H:3 S:0 SS:0 *(source : Finnhub)*
+**Perf. historique :** 1M +5.8% | 3M -2.3% | 6M -1.1% -- NEUTRE *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -2.2% de surperformance sectorielle a 20 seances, IC 95 % [-11.0 ; +6.0] -- confiance faible, 17 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 7.1/10 (confiance 100%). Points forts : sante financiere 10.0, croissance 8.5. Points faibles : momentum 3.7. Momentum NEUTRE. Position : -22.91 EUR (-7.4%) apres frais.
+**Justification :** Note 6.6/10 (confiance 100%). Points forts : sante financiere 8.3, consensus analystes 8.1. Momentum NEUTRE. Position : +4.43 EUR (+1.9%) apres frais.
 
 ---
 
@@ -327,11 +360,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 183.58 EUR | ^ +2.29% | 183.58 EUR | - -20.39 EUR (-10.0%) | - -21.31 EUR (-10.4%) | **6.87/10** (100%) | NOTE SOLIDE |
+| 177.91 EUR | v -3.17% | 177.91 EUR | - -26.06 EUR (-12.8%) | - -26.95 EUR (-13.2%) | **6.56/10** (100%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> What Is Nvidia (NVDA) Asking Cloud Clients To Change Under New China Rules? | Ferrari N.V. Q3 2026 Earnings Call Summary | Regal Rexnord Corporation Q3 2026 Earnings Call Summary
+> Here's What $10,000 Invested in SpaceX and Nvidia Could Be Worth by 2030 | 5-star analyst resets Nvidia stock target after Intel crash | Steve Weiss Says the Midterms Just Put a Lid on AI Spending. Here’s Who Could Get Hurt
 
 **Detail de la note :**
 
@@ -340,16 +373,16 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 6.2/10 | 24% |
 | Sante financiere | 9.6/10 | 19% |
 | Croissance | 10.0/10 | 16% |
-| Momentum | 2.3/10 | 21% |
+| Momentum | 0.8/10 | 21% |
 | Consensus | 8.3/10 | 15% |
-| Risque | 4.6/10 | 5% |
+| Risque | 4.7/10 | 5% |
 
-**Fondamentaux :** PER 26.1 | PEG 0.2 | EV/EBITDA 24.6 | P/B 21.8 | Marge nette 63.7% | ROE 117.2% | Croiss. CA 105.9% | Beta 2.2 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 25.3 | PEG 0.2 | EV/EBITDA 23.9 | P/B 21.1 | Marge nette 63.7% | ROE 117.2% | Croiss. CA 105.9% | Beta 2.2 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:25 B:41 H:2 S:1 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -11.7% | 3M -5.6% | 6M -3.7% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu +0.1% de surperformance sectorielle a 20 seances, P(surperf.) 49% -- confiance moyenne, 159 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -16.2% | 3M -8.5% | 6M -8.6% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -2.2% de surperformance sectorielle a 20 seances, IC 95 % [-11.0 ; +6.0] -- confiance faible, 17 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 6.9/10 (confiance 100%). Points forts : croissance 10.0, sante financiere 9.6. Points faibles : momentum 2.3. Momentum BAISSIER. Position : -21.31 EUR (-10.4%) apres frais.
+**Justification :** Note 6.6/10 (confiance 100%). Points forts : croissance 10.0, sante financiere 9.6. Points faibles : momentum 0.8. Momentum BAISSIER. Position : -26.95 EUR (-13.2%) apres frais.
 
 ---
 
@@ -357,11 +390,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 165.19 EUR | ^ +2.11% | 330.37 EUR | + +20.16 EUR (+6.5%) | + +18.51 EUR (+6.0%) | **6.25/10** (100%) | NOTE SOLIDE |
+| 172.79 EUR | ^ +4.63% | 345.58 EUR | + +35.36 EUR (+11.4%) | + +33.63 EUR (+10.8%) | **6.34/10** (100%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Should You Buy First Solar Stock Now Or Wait? | First Solar: 3 Key Takeaways for Long-Term Investors | FSLR Q3 deep dive: bookings slowdown and pricing strength amid policy uncertainty
+> Can First Solar Stock Jump 50%? | First Solar Jumps 9% as Democratic Sweep Revives Clean-Energy Hopes; Enphase Surges 9%, SolarEdge Sinks 8% | “Blue Trade” Sends First Solar And Sunrun Soaring While Data Center Stocks Slump As Investors Weigh Democrats’ Big Night
 
 **Detail de la note :**
 
@@ -370,16 +403,16 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 8.8/10 | 24% |
 | Sante financiere | 9.2/10 | 19% |
 | Croissance | 4.2/10 | 16% |
-| Momentum | 2.3/10 | 21% |
+| Momentum | 2.7/10 | 21% |
 | Consensus | 7.0/10 | 15% |
 | Risque | 3.9/10 | 5% |
 
-**Fondamentaux :** PER 10.8 | PEG 0.3 | EV/EBITDA 7.5 | P/B 1.8 | Marge nette 37.1% | ROE 18.7% | Croiss. CA -22.8% | Beta 1.7 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 11.2 | PEG 0.3 | EV/EBITDA 7.9 | P/B 1.9 | Marge nette 37.1% | ROE 18.7% | Croiss. CA -22.8% | Beta 1.7 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:7 B:27 H:11 S:0 SS:2 *(source : Finnhub)*
-**Perf. historique :** 1M +6.5% | 3M -21.5% | 6M -15.5% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu +0.1% de surperformance sectorielle a 20 seances, P(surperf.) 49% -- confiance moyenne, 159 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M +10.4% | 3M -20.3% | 6M -16.6% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -2.2% de surperformance sectorielle a 20 seances, IC 95 % [-11.0 ; +6.0] -- confiance faible, 17 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 6.2/10 (confiance 100%). Points forts : sante financiere 9.2, valorisation 8.8. Points faibles : profil de risque 3.9, momentum 2.3. Momentum BAISSIER. Position : +18.51 EUR (+6.0%) apres frais.
+**Justification :** Note 6.3/10 (confiance 100%). Points forts : sante financiere 9.2, valorisation 8.8. Points faibles : profil de risque 3.9, momentum 2.7. Momentum BAISSIER. Position : +33.63 EUR (+10.8%) apres frais.
 
 ---
 
@@ -387,7 +420,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 182.56 EUR | ^ +0.29% | 1825.60 EUR | + +124.00 EUR (+7.3%) | + +124.00 EUR (+7.3%) | **6.08/10** (85%) | NOTE SOLIDE |
+| 187.36 EUR | ^ +2.63% | 1873.60 EUR | + +172.00 EUR (+10.1%) | + +172.00 EUR (+10.1%) | **6.33/10** (85%) | NOTE SOLIDE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -400,47 +433,17 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 4.5/10 | 28% |
 | Sante financiere | 7.2/10 | 22% |
 | Croissance | 4.5/10 | 19% |
-| Momentum | 7.8/10 | 25% |
+| Momentum | 8.8/10 | 25% |
 | Risque | 7.5/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 32.9 | PEG 2.0 | EV/EBITDA 17.3 | P/B 4.4 | Marge nette 13.1% | ROE 14.0% | Croiss. CA 0.8% | Beta 0.6 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 33.8 | PEG 2.0 | EV/EBITDA 17.7 | P/B 4.5 | Marge nette 13.1% | ROE 14.0% | Croiss. CA 0.8% | Beta 0.6 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M +7.3% | 3M +5.2% | 6M +17.1% -- HAUSSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -0.2% de surperformance sectorielle a 20 seances, P(surperf.) 42% -- confiance moyenne, 184 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M +9.7% | 3M +8.2% | 6M +19.6% -- HAUSSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 6 - 7,5 a valu -2.2% de surperformance sectorielle a 20 seances, IC 95 % [-11.0 ; +6.0] -- confiance faible, 17 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 6.1/10 (confiance 85%). Points forts : momentum 7.8, profil de risque 7.5. Points faibles : croissance 4.5, valorisation 4.5. Momentum HAUSSIER. Position : +124.00 EUR (+7.3%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
-
----
-
-### Amazon `AMZN.US`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
-|-------|-----------|-----|----------|---------|------------------|---------|
-| 222.84 EUR | ^ +2.06% | 222.84 EUR | - -7.97 EUR (-3.5%) | - -9.08 EUR (-3.9%) | **5.85/10** (100%) | NOTE MOYENNE |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> Ricardo Domínguez's Entre Cajas Academy, After Training 5,000 Entrepreneurs, is Building KILTA for Amazon Sellers | Jeff Bezos has simple advice for retirees watching the AI market | Shopify vs. Amazon: Which Stock Wins When AI Agents Do the Shopping?
-
-**Detail de la note :**
-
-| Composante | Note | Poids |
-|------------|------|-------|
-| Valorisation | 5.7/10 | 24% |
-| Sante financiere | 8.3/10 | 19% |
-| Croissance | 5.5/10 | 16% |
-| Momentum | 2.6/10 | 21% |
-| Consensus | 8.1/10 | 15% |
-| Risque | 5.3/10 | 5% |
-
-**Fondamentaux :** PER 20.3 | PEG 1.4 | EV/EBITDA 15.8 | P/B 4.4 | Marge nette 16.9% | ROE 27.4% | Croiss. CA 12.1% | Beta 1.5 *(source : Yahoo Finance)*
-**Consensus analystes :** SB:19 B:48 H:3 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -0.3% | 3M -8.1% | 6M -8.1% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +0.0% de surperformance sectorielle a 20 seances, P(surperf.) 46% -- confiance moyenne, 159 observation(s) independante(s). *Mesure historique, pas une prevision.*
-
-**Justification :** Note 5.8/10 (confiance 100%). Points forts : sante financiere 8.3, consensus analystes 8.1. Points faibles : momentum 2.6. Momentum BAISSIER. Position : -9.08 EUR (-3.9%) apres frais.
+**Justification :** Note 6.3/10 (confiance 85%). Points forts : momentum 8.8, profil de risque 7.5. Points faibles : croissance 4.5, valorisation 4.5. Momentum HAUSSIER. Position : +172.00 EUR (+10.1%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -448,7 +451,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 1004.80 EUR | ^ +0.48% | 1004.80 EUR | + +24.80 EUR (+2.5%) | + +24.80 EUR (+2.5%) | **5.74/10** (85%) | NOTE MOYENNE |
+| 1003.40 EUR | v -0.14% | 1003.40 EUR | + +23.40 EUR (+2.4%) | + +23.40 EUR (+2.4%) | **5.77/10** (85%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -461,17 +464,17 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 6.4/10 | 28% |
 | Sante financiere | 7.4/10 | 22% |
 | Croissance | 7.0/10 | 19% |
-| Momentum | 2.3/10 | 25% |
+| Momentum | 2.4/10 | 25% |
 | Risque | 6.5/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
 **Fondamentaux :** PER 39.0 | PEG 0.4 | EV/EBITDA 21.8 | P/B 9.4 | Marge nette 6.3% | ROE 25.7% | Croiss. CA 68.8% | Beta 0.5 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M +5.0% | 3M -16.3% | 6M -16.7% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +0.2% de surperformance sectorielle a 20 seances, P(surperf.) 47% -- confiance moyenne, 176 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M +2.4% | 3M -13.4% | 6M -14.5% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu -4.1% de surperformance sectorielle a 20 seances, IC 95 % [-10.9 ; +0.1] -- confiance faible, 26 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 5.7/10 (confiance 85%). Points forts : sante financiere 7.4, croissance 7.0. Points faibles : momentum 2.3. Momentum BAISSIER. Position : +24.80 EUR (+2.5%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
+**Justification :** Note 5.8/10 (confiance 85%). Points forts : sante financiere 7.4, croissance 7.0. Points faibles : momentum 2.4. Momentum BAISSIER. Position : +23.40 EUR (+2.4%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -479,11 +482,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 248.76 EUR | ^ +0.37% | 248.76 EUR | - -67.02 EUR (-21.2%) | - -68.26 EUR (-21.6%) | **5.62/10** (100%) | NOTE MOYENNE |
+| 256.72 EUR | ^ +3.18% | 256.72 EUR | - -59.07 EUR (-18.7%) | - -60.35 EUR (-19.1%) | **5.62/10** (100%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> People Inc (PPLI) Q3 2026 Earnings Call Highlights: Digital Revenue Extends Growth Streak to 12 ... | CrowdStrike (CRWD) stock trades down, here is why | Cloudflare, MongoDB, Datadog, JFrog, and Elastic shares plummet, what you need to know
+> Q3 Earnings Scorecard: Solid Beats, Upward Revisions, and AI Drivers | Dow Jones Futures Rise, But Techs Tumble; Apple, Microsoft, Amazon Flash Buy Signals In Postelection Rally | What Is Going On With Zoom Stock?
 
 **Detail de la note :**
 
@@ -496,12 +499,12 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Consensus | 8.0/10 | 15% |
 | Risque | 5.4/10 | 5% |
 
-**Fondamentaux :** PER 14.6 | PEG 1.0 | EV/EBITDA 18.0 | P/B 5.2 | Marge nette 50.0% | ROE 44.3% | Croiss. CA 24.7% | Beta 1.2 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 15.1 | PEG 1.0 | EV/EBITDA 18.6 | P/B 5.4 | Marge nette 50.0% | ROE 44.3% | Croiss. CA 24.7% | Beta 1.2 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:20 B:41 H:7 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -18.5% | 3M -22.7% | 6M -30.0% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +0.4% de surperformance sectorielle a 20 seances, P(surperf.) 52% -- confiance moyenne, 170 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -16.6% | 3M -19.2% | 6M -25.6% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu -4.1% de surperformance sectorielle a 20 seances, IC 95 % [-10.9 ; +0.1] -- confiance faible, 26 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 5.6/10 (confiance 100%). Points forts : sante financiere 9.6, consensus analystes 8.0. Points faibles : momentum 0.0. Momentum BAISSIER. Position : -68.26 EUR (-21.6%) apres frais.
+**Justification :** Note 5.6/10 (confiance 100%). Points forts : sante financiere 9.6, consensus analystes 8.0. Points faibles : momentum 0.0. Momentum BAISSIER. Position : -60.35 EUR (-19.1%) apres frais.
 
 ---
 
@@ -509,29 +512,29 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 190.18 EUR | ^ +9.05% | 950.88 EUR | - -333.38 EUR (-26.0%) | - -338.13 EUR (-26.3%) | **5.3/10** (100%) | NOTE MOYENNE |
+| 177.94 EUR | v -6.36% | 889.70 EUR | - -394.56 EUR (-30.7%) | - -399.01 EUR (-31.1%) | **5.38/10** (100%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> BE Stock Heads For Best Week In Over A Month: This Analyst Says Bloom’s Demand Trends Are Getting ‘Harder To Ignore’ | Bloom Energy (BE) Signed A Carbon Captured Power Deal In California | Why Did Bloom Energy Stock Jump 10% Today?
+> Bloom Energy Stock In Focus After California Power Deal | The AI Data-Center Backlash Is Real. Why Bloom Energy Stock Can Be a Winner. | Bloom Energy Sinks 8%, Lumentum Down 11% as AI Power Stocks Fade After Democrat Sweep
 
 **Detail de la note :**
 
 | Composante | Note | Poids |
 |------------|------|-------|
-| Valorisation | 4.2/10 | 24% |
+| Valorisation | 4.6/10 | 24% |
 | Sante financiere | 7.9/10 | 19% |
 | Croissance | 10.0/10 | 16% |
-| Momentum | 0.1/10 | 21% |
+| Momentum | 0.0/10 | 21% |
 | Consensus | 6.9/10 | 15% |
-| Risque | 2.8/10 | 5% |
+| Risque | 2.9/10 | 5% |
 
-**Fondamentaux :** PER 129.7 | PEG 0.4 | EV/EBITDA 105.5 | P/B 32.7 | Marge nette 13.5% | ROE 39.6% | Croiss. CA 138.1% | Beta 3.6 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 121.5 | PEG 0.4 | EV/EBITDA 98.8 | P/B 30.6 | Marge nette 13.5% | ROE 39.6% | Croiss. CA 138.1% | Beta 3.6 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:7 B:17 H:15 S:1 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -26.0% | 3M -8.7% | 6M -18.0% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +0.2% de surperformance sectorielle a 20 seances, P(surperf.) 47% -- confiance moyenne, 176 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -30.1% | 3M -12.5% | 6M -29.4% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu -4.1% de surperformance sectorielle a 20 seances, IC 95 % [-10.9 ; +0.1] -- confiance faible, 26 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 5.3/10 (confiance 100%). Points forts : croissance 10.0, sante financiere 7.9. Points faibles : profil de risque 2.8, momentum 0.1. Momentum BAISSIER. Position : -338.13 EUR (-26.3%) apres frais.
+**Justification :** Note 5.4/10 (confiance 100%). Points forts : croissance 10.0, sante financiere 7.9. Points faibles : profil de risque 2.9, momentum 0.0. Momentum BAISSIER. Position : -399.01 EUR (-31.1%) apres frais.
 
 ---
 
@@ -539,11 +542,11 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 9.75 EUR | v -3.18% | 146.31 EUR | - -37.04 EUR (-20.2%) | - -37.77 EUR (-20.6%) | **4.9/10** (100%) | NOTE MOYENNE |
+| 10.15 EUR | ^ +4.10% | 152.19 EUR | - -31.16 EUR (-17.0%) | - -31.92 EUR (-17.4%) | **4.9/10** (100%) | NOTE MOYENNE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
-> Vale Q3 Earnings Call Highlights | Vale (VALE) Q3 2026 Earnings Call Transcript | Compared to Estimates, VALE (VALE) Q3 Earnings: A Look at Key Metrics
+> Here is What to Know Beyond Why VALE S.A. (VALE) is a Trending Stock | Vale Q3 Earnings Call Highlights | Vale (VALE) Q3 2026 Earnings Call Transcript
 
 **Detail de la note :**
 
@@ -556,12 +559,42 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Consensus | 7.0/10 | 15% |
 | Risque | 6.6/10 | 5% |
 
-**Fondamentaux :** PER 68.6 | PEG 0.3 | EV/EBITDA 1.9 | P/B 1.2 | Marge nette 1.0% | ROE 0.3% | Croiss. CA -3.9% | Beta 0.7 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 71.4 | PEG 0.3 | EV/EBITDA 2.0 | P/B 1.3 | Marge nette 1.0% | ROE 0.3% | Croiss. CA -3.9% | Beta 0.7 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:4 B:11 H:9 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -20.2% | 3M -24.4% | 6M -32.1% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu +0.5% de surperformance sectorielle a 20 seances, P(surperf.) 52% -- confiance elevee, 240 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -19.2% | 3M -20.1% | 6M -31.1% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** une note de la tranche 4,5 - 6 a valu -4.1% de surperformance sectorielle a 20 seances, IC 95 % [-10.9 ; +0.1] -- confiance faible, 26 observation(s) independante(s). *Mesure historique, pas une prevision.*
 
-**Justification :** Note 4.9/10 (confiance 100%). Points forts : valorisation 9.5, consensus analystes 7.0. Points faibles : croissance 1.9, momentum 0.0. Momentum BAISSIER. Position : -37.77 EUR (-20.6%) apres frais.
+**Justification :** Note 4.9/10 (confiance 100%). Points forts : valorisation 9.5, consensus analystes 7.0. Points faibles : croissance 1.9, momentum 0.0. Momentum BAISSIER. Position : -31.92 EUR (-17.4%) apres frais.
+
+---
+
+### Ouster `OUST.US`
+
+| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
+|-------|-----------|-----|----------|---------|------------------|---------|
+| 29.86 EUR | ^ +15.74% | 59.71 EUR | - -19.15 EUR (-24.3%) | - -19.45 EUR (-24.7%) | **4.16/10** (100%) | NOTE FAIBLE |
+
+**Actualite recente :** *(source : RSS Yahoo Finance)*
+
+> Is Ouster (OUST) A Bargain As Record Q3 Revenue Lifts Its Outlook? | Ouster (OUST) Q3 2026 Earnings Call Transcript | OUST Q3 Earnings Call Highlights REV8 Demand and Robotics Growth
+
+**Detail de la note :**
+
+| Composante | Note | Poids |
+|------------|------|-------|
+| Valorisation | 2.1/10 | 24% |
+| Sante financiere | 1.1/10 | 19% |
+| Croissance | 10.0/10 | 16% |
+| Momentum | 2.6/10 | 21% |
+| Consensus | 7.7/10 | 15% |
+| Risque | 2.9/10 | 5% |
+
+**Fondamentaux :** EV/EBITDA -31.7 | P/B 7.8 | Marge nette -26.0% | ROE -18.0% | Croiss. CA 55.9% | Beta 3.5 *(source : Yahoo Finance)*
+**Consensus analystes :** SB:3 B:7 H:2 S:0 SS:0 *(source : Finnhub)*
+**Perf. historique :** 1M -24.0% | 3M -26.4% | 6M +25.1% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** historique insuffisant a 20 seances (5 observation(s) independante(s) dans la tranche 3 - 4,5) -- aucune esperance publiee.
+
+**Justification :** Note 4.2/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.7. Points faibles : valorisation 2.1, sante financiere 1.1. Momentum BAISSIER. Position : -19.45 EUR (-24.7%) apres frais.
 
 ---
 
@@ -569,7 +602,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 55.45 EUR | ^ +0.27% | 277.25 EUR | - -18.75 EUR (-6.3%) | - -18.75 EUR (-6.3%) | **4.28/10** (85%) | NOTE FAIBLE |
+| 54.00 EUR | v -2.61% | 270.00 EUR | - -26.00 EUR (-8.8%) | - -26.00 EUR (-8.8%) | **4.13/10** (85%) | NOTE FAIBLE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -582,47 +615,17 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Valorisation | 4.2/10 | 28% |
 | Sante financiere | 6.4/10 | 22% |
 | Croissance | 4.9/10 | 19% |
-| Momentum | 1.4/10 | 25% |
+| Momentum | 0.8/10 | 25% |
 | Risque | 6.7/10 | 6% |
 
 *Attendu mais non obtenu : Consensus -- poids redistribues sur les composantes ci-dessus. C'est ce qui fait baisser l'indice de confiance.*
 
-**Fondamentaux :** PER 132.0 | EV/EBITDA 28.8 | P/B 6.3 | Marge nette 6.0% | ROE 12.7% | Croiss. CA 15.3% | Beta 0.8 *(source : Yahoo Finance)*
+**Fondamentaux :** PER 128.6 | EV/EBITDA 28.1 | P/B 6.1 | Marge nette 6.0% | ROE 12.7% | Croiss. CA 15.3% | Beta 0.8 *(source : Yahoo Finance)*
 **Consensus analystes :** N/D *(source : indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)))*
-**Perf. historique :** 1M -6.3% | 3M -12.3% | 6M -7.2% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 3 - 4,5 a valu +0.5% de surperformance sectorielle a 20 seances, P(surperf.) 48% -- confiance faible, 29 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -11.6% | 3M -15.0% | 6M -7.1% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** historique insuffisant a 20 seances (5 observation(s) independante(s) dans la tranche 3 - 4,5) -- aucune esperance publiee.
 
-**Justification :** Note 4.3/10 (confiance 85%). Points forts : profil de risque 6.7. Points faibles : valorisation 4.2, momentum 1.4. Momentum BAISSIER. Position : -18.75 EUR (-6.3%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
-
----
-
-### Ouster `OUST.US`
-
-| Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
-|-------|-----------|-----|----------|---------|------------------|---------|
-| 25.76 EUR | ^ +2.69% | 51.53 EUR | - -27.34 EUR (-34.7%) | - -27.60 EUR (-35.0%) | **4.18/10** (100%) | NOTE FAIBLE |
-
-**Actualite recente :** *(source : RSS Yahoo Finance)*
-
-> Ouster rises on revenue beat and solid guidance | Ouster, Inc. (OUST) Reports Q3 Loss, Beats Revenue Estimates | Ouster Announces Results for Third Quarter 2026
-
-**Detail de la note :**
-
-| Composante | Note | Poids |
-|------------|------|-------|
-| Valorisation | 2.6/10 | 24% |
-| Sante financiere | 1.1/10 | 19% |
-| Croissance | 10.0/10 | 16% |
-| Momentum | 2.1/10 | 21% |
-| Consensus | 7.7/10 | 15% |
-| Risque | 2.9/10 | 5% |
-
-**Fondamentaux :** EV/EBITDA -31.7 | P/B 5.3 | Marge nette -26.0% | ROE -18.0% | Croiss. CA 55.9% | Beta 3.5 *(source : Yahoo Finance)*
-**Consensus analystes :** SB:3 B:7 H:2 S:0 SS:0 *(source : Finnhub)*
-**Perf. historique :** 1M -34.7% | 3M -35.8% | 6M +15.0% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche 3 - 4,5 a valu +0.3% de surperformance sectorielle a 20 seances, P(surperf.) 44% -- confiance moyenne, 35 observation(s) independante(s). *Mesure historique, pas une prevision.*
-
-**Justification :** Note 4.2/10 (confiance 100%). Points forts : croissance 10.0, consensus analystes 7.7. Points faibles : momentum 2.1, sante financiere 1.1. Momentum BAISSIER. Position : -27.60 EUR (-35.0%) apres frais.
+**Justification :** Note 4.1/10 (confiance 85%). Points forts : profil de risque 6.7. Points faibles : valorisation 4.2, momentum 0.8. Momentum BAISSIER. Position : -26.00 EUR (-8.8%) apres frais. Critere(s) attendu(s) mais non obtenu(s) : consensus analystes.
 
 ---
 
@@ -630,7 +633,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Cours | Variation | VM | P&L Brut | P&L Net | Note (confiance) | Niveau |
 |-------|-----------|-----|----------|---------|------------------|---------|
-| 4.88 EUR | ^ +5.57% | 48.83 EUR | - -18.76 EUR (-27.8%) | - -19.00 EUR (-28.1%) | **2.72/10** (100%) | NOTE TRÈS FAIBLE |
+| 5.37 EUR | ^ +10.18% | 53.75 EUR | - -13.85 EUR (-20.5%) | - -14.12 EUR (-20.9%) | **2.72/10** (100%) | NOTE TRÈS FAIBLE |
 
 **Actualite recente :** *(source : RSS Yahoo Finance)*
 
@@ -647,12 +650,12 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 | Consensus | 4.4/10 | 15% |
 | Risque | 2.1/10 | 5% |
 
-**Fondamentaux :** PEG 3.2 | EV/EBITDA -11.8 | P/B 2.1 | Marge nette -3.1% | ROE -23.5% | Croiss. CA 7.9% | Beta 2.8 *(source : Yahoo Finance)*
+**Fondamentaux :** PEG 3.2 | EV/EBITDA -12.8 | P/B 2.3 | Marge nette -3.1% | ROE -23.5% | Croiss. CA 7.9% | Beta 2.8 *(source : Yahoo Finance)*
 **Consensus analystes :** SB:1 B:3 H:17 S:6 SS:3 *(source : Finnhub)*
-**Perf. historique :** 1M -27.7% | 3M -61.3% | 6M -77.2% -- BAISSIER *(source : EODHD)*
-**Fiabilite de la note :** une note de la tranche < 3 a valu -2.6% de surperformance sectorielle a 20 seances, IC 95 % [-7.9 ; +0.6], P(surperf.) 44% -- confiance moyenne, 37 observation(s) independante(s). *Mesure historique, pas une prevision.*
+**Perf. historique :** 1M -20.8% | 3M -54.1% | 6M -76.0% -- BAISSIER *(source : EODHD)*
+**Fiabilite de la note :** historique insuffisant a 20 seances (2 observation(s) independante(s) dans la tranche < 3) -- aucune esperance publiee.
 
-**Justification :** Note 2.7/10 (confiance 100%). Points faibles : sante financiere 1.1, momentum 0.0. Momentum BAISSIER. Position : -19.00 EUR (-28.1%) apres frais.
+**Justification :** Note 2.7/10 (confiance 100%). Points faibles : sante financiere 1.1, momentum 0.0. Momentum BAISSIER. Position : -14.12 EUR (-20.9%) apres frais.
 
 ---
 
@@ -660,22 +663,22 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 
 | Valeur | Cours EUR | VM EUR | P&L Brut | P&L Net | Note | Conf. | Niveau |
 |--------|-----------|--------|----------|---------|------|-------|---------|
-| Eli Lilly | 1252.55 | 1252.55 | +211.32 (+20.3%) | +205.06 (+19.7%) | 7.6/10 | 100% | NOTE ÉLEVÉE |
-| Meta | 551.85 | 551.85 | -128.76 (-18.9%) | -131.52 (-19.3%) | 7.35/10 | 100% | NOTE SOLIDE |
-| SAP | 206.65 | 619.95 | +25.95 (+4.4%) | +25.95 (+4.4%) | 7.1/10 | 85% | NOTE SOLIDE |
-| Newmont Corporation | 95.49 | 286.48 | -21.48 (-7.0%) | -22.91 (-7.4%) | 7.07/10 | 100% | NOTE SOLIDE |
-| Nvidia | 183.58 | 183.58 | -20.39 (-10.0%) | -21.31 (-10.4%) | 6.87/10 | 100% | NOTE SOLIDE |
-| First Solar | 165.19 | 330.37 | +20.16 (+6.5%) | +18.51 (+6.0%) | 6.25/10 | 100% | NOTE SOLIDE |
-| air liquide | 182.56 | 1825.60 | +124.00 (+7.3%) | +124.00 (+7.3%) | 6.08/10 | 85% | NOTE SOLIDE |
-| Amazon | 222.84 | 222.84 | -7.97 (-3.5%) | -9.08 (-3.9%) | 5.85/10 | 100% | NOTE MOYENNE |
-| Rheinmetall | 1004.80 | 1004.80 | +24.80 (+2.5%) | +24.80 (+2.5%) | 5.74/10 | 85% | NOTE MOYENNE |
-| Alphabet | 248.76 | 248.76 | -67.02 (-21.2%) | -68.26 (-21.6%) | 5.62/10 | 100% | NOTE MOYENNE |
-| Bloom Energy | 190.18 | 950.88 | -333.38 (-26.0%) | -338.13 (-26.3%) | 5.3/10 | 100% | NOTE MOYENNE |
-| Vale | 9.75 | 146.31 | -37.04 (-20.2%) | -37.77 (-20.6%) | 4.9/10 | 100% | NOTE MOYENNE |
-| Exosens | 55.45 | 277.25 | -18.75 (-6.3%) | -18.75 (-6.3%) | 4.28/10 | 85% | NOTE FAIBLE |
-| Ouster | 25.76 | 51.53 | -27.34 (-34.7%) | -27.60 (-35.0%) | 4.18/10 | 100% | NOTE FAIBLE |
-| Fluence Energy Inc | 4.88 | 48.83 | -18.76 (-27.8%) | -19.00 (-28.1%) | 2.72/10 | 100% | NOTE TRÈS FAIBLE |
-| **TOTAL** | — | **8001.58** | **-274.66 (-3.3%)** | **-296.01 (-3.6%)** | — | — | — |
+| Newmont Corporation | 104.96 | 314.87 | +6.91 (+2.2%) | +5.34 (+1.7%) | 7.73/10 | 100% | NOTE ÉLEVÉE |
+| Eli Lilly | 1260.04 | 1260.04 | +218.81 (+21.0%) | +212.51 (+20.4%) | 7.6/10 | 100% | NOTE ÉLEVÉE |
+| Meta | 559.55 | 559.55 | -121.06 (-17.8%) | -123.86 (-18.2%) | 7.37/10 | 100% | NOTE SOLIDE |
+| SAP | 214.30 | 642.90 | +48.90 (+8.2%) | +48.90 (+8.2%) | 6.95/10 | 85% | NOTE SOLIDE |
+| Amazon | 236.42 | 236.42 | +5.61 (+2.4%) | +4.43 (+1.9%) | 6.57/10 | 100% | NOTE SOLIDE |
+| Nvidia | 177.91 | 177.91 | -26.06 (-12.8%) | -26.95 (-13.2%) | 6.56/10 | 100% | NOTE SOLIDE |
+| First Solar | 172.79 | 345.58 | +35.36 (+11.4%) | +33.63 (+10.8%) | 6.34/10 | 100% | NOTE SOLIDE |
+| air liquide | 187.36 | 1873.60 | +172.00 (+10.1%) | +172.00 (+10.1%) | 6.33/10 | 85% | NOTE SOLIDE |
+| Rheinmetall | 1003.40 | 1003.40 | +23.40 (+2.4%) | +23.40 (+2.4%) | 5.77/10 | 85% | NOTE MOYENNE |
+| Alphabet | 256.72 | 256.72 | -59.07 (-18.7%) | -60.35 (-19.1%) | 5.62/10 | 100% | NOTE MOYENNE |
+| Bloom Energy | 177.94 | 889.70 | -394.56 (-30.7%) | -399.01 (-31.1%) | 5.38/10 | 100% | NOTE MOYENNE |
+| Vale | 10.15 | 152.19 | -31.16 (-17.0%) | -31.92 (-17.4%) | 4.9/10 | 100% | NOTE MOYENNE |
+| Ouster | 29.86 | 59.71 | -19.15 (-24.3%) | -19.45 (-24.7%) | 4.16/10 | 100% | NOTE FAIBLE |
+| Exosens | 54.00 | 270.00 | -26.00 (-8.8%) | -26.00 (-8.8%) | 4.13/10 | 85% | NOTE FAIBLE |
+| Fluence Energy Inc | 5.37 | 53.75 | -13.85 (-20.5%) | -14.12 (-20.9%) | 2.72/10 | 100% | NOTE TRÈS FAIBLE |
+| **TOTAL** | — | **8096.34** | **-179.92 (-2.2%)** | **-201.45 (-2.4%)** | — | — | — |
 
 ---
 
@@ -709,7 +712,7 @@ Lignes dont les variations à 3 mois sont fortement corrélées entre elles (mes
 - **SAP.XETRA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 - **RHM.XETRA** : cours: EODHD, consensus: indisponible (Finnhub:HTTP 403 (abonnement), EODHD:HTTP 403 (abonnement)), historique: EODHD, synthese: RSS Yahoo Finance, fondamentaux: Yahoo Finance
 
-**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '13/780', 'eodhd': '104/600', 'finnhub': '19/3000'}
+**Quotas API utilisés :** {'alphavantage': '1/20', 'twelvedata': '13/780', 'eodhd': '160/600', 'finnhub': '19/3000'}
 
 **Profil :** fictif | **Courtier :** XTB
 
